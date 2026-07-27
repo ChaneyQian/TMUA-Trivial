@@ -1,34 +1,26 @@
 'use client';
 
-// 做题记录与错题统计。
-//
-// 存在浏览器 localStorage 里：本站是纯静态托管（GitHub Pages 只发文件、
-// 收不到也存不了数据），所以记录只留在用户自己这台设备上，不会上传到任何地方。
-// 跨设备同步见 README 的说明。
-
 import type { IndexEntry, ExamDb } from './exam';
 
 const KEY = 'mcq-test:records:v1';
-/** 会话日志上限，防止长期使用后无限膨胀 */
 const MAX_SESSIONS = 200;
+const MAX_IMPORT_BYTES = 5 * 1024 * 1024;
 
-/** 单题统计：做过几次 / 错过几次 / 最后一次时间与对错 */
 export interface QuestionStat {
-  a: number; // attempts
-  w: number; // wrong
-  t: number; // last timestamp (ms)
-  c: 0 | 1;  // last correct
+  a: number;
+  w: number;
+  t: number;
+  c: 0 | 1;
 }
 
-/** 一次考试的汇总 */
 export interface SessionRecord {
   ts: number;
   db: string;
   mode: 'practice' | 'mock';
-  n: number;        // 题数
-  right: number;    // 答对
-  answered: number; // 作答数
-  sec: number;      // 用时
+  n: number;
+  right: number;
+  answered: number;
+  sec: number;
 }
 
 export interface Records {
@@ -37,200 +29,298 @@ export interface Records {
   s: SessionRecord[];
 }
 
-const EMPTY: Records = { v: 1, q: {}, s: [] };
+export interface SessionResult {
+  qid: number;
+  selected: string | null;
+  answer: string;
+  correct: boolean;
+  answered: boolean;
+}
+
+export interface SessionInput {
+  db: string;
+  mode: 'practice' | 'mock';
+  n: number;
+  right: number;
+  answered: number;
+  sec: number;
+}
+
+export function createEmptyRecords(): Records {
+  return { v: 1, q: {}, s: [] };
+}
 
 export function loadRecords(): Records {
-  if (typeof window === 'undefined') return EMPTY;
+  if (typeof window === 'undefined') return createEmptyRecords();
   try {
     const raw = localStorage.getItem(KEY);
-    if (!raw) return EMPTY;
+    if (!raw) return createEmptyRecords();
     const parsed = JSON.parse(raw);
-    if (parsed?.v !== 1 || typeof parsed.q !== 'object') return EMPTY;
+    if (parsed?.v !== 1 || typeof parsed.q !== 'object') return createEmptyRecords();
     return { v: 1, q: parsed.q || {}, s: Array.isArray(parsed.s) ? parsed.s : [] };
   } catch {
-    return EMPTY;
+    return createEmptyRecords();
   }
 }
 
-function save(r: Records): void {
+export function saveRecords(records: Records): void {
   try {
-    localStorage.setItem(KEY, JSON.stringify(r));
+    localStorage.setItem(KEY, JSON.stringify(records));
   } catch {
-    // 隐私模式或配额满：静默降级，不影响做题
+    // Private browsing or a full quota should not prevent the current test.
   }
 }
 
-/** 记录一次考试：逐题累计，再写一条会话汇总。只统计真正作答过的题。 */
-export function recordSession(
-  results: { qid: number; correct: boolean; answered: boolean }[],
-  session: Omit<SessionRecord, 'ts'>
+export function addSession(
+  records: Records,
+  results: SessionResult[],
+  session: SessionInput,
+  identity: { now?: number } = {},
 ): Records {
-  const r = loadRecords();
-  const now = Date.now();
+  const now = identity.now ?? Date.now();
+  const q = { ...records.q };
   for (const item of results) {
-    if (!item.answered) continue; // 未作答不计入错题频次，否则会把「没来得及做」算成「不会做」
-    const k = String(item.qid);
-    const cur = r.q[k] || { a: 0, w: 0, t: 0, c: 1 as 0 | 1 };
-    r.q[k] = {
-      a: cur.a + 1,
-      w: cur.w + (item.correct ? 0 : 1),
+    if (!item.answered) continue;
+    const key = String(item.qid);
+    const previous = q[key] || { a: 0, w: 0, t: 0, c: 1 as 0 | 1 };
+    q[key] = {
+      a: previous.a + 1,
+      w: previous.w + (item.correct ? 0 : 1),
       t: now,
       c: item.correct ? 1 : 0,
     };
   }
-  r.s.unshift({ ts: now, ...session });
-  if (r.s.length > MAX_SESSIONS) r.s.length = MAX_SESSIONS;
-  save(r);
-  return r;
+  const s = [{ ts: now, ...session }, ...records.s].slice(0, MAX_SESSIONS);
+  return { v: 1, q, s };
+}
+
+export function recordSession(results: SessionResult[], session: SessionInput): Records {
+  const records = addSession(loadRecords(), results, session);
+  saveRecords(records);
+  return records;
 }
 
 export function clearRecords(): Records {
   try {
     localStorage.removeItem(KEY);
   } catch {}
-  return EMPTY;
+  return createEmptyRecords();
 }
 
-// ---------------- 统计 ----------------
-
 export interface Overview {
-  seen: number;      // 做过的不同题数
-  attempts: number;  // 总作答次数
-  wrong: number;     // 总错误次数
-  wrongNow: number;  // 当前仍处于「最后一次做错」状态的题数
+  seen: number;
+  attempts: number;
+  wrong: number;
+  wrongNow: number;
   sessions: number;
 }
 
-export function overview(r: Records): Overview {
+export function overview(records: Records): Overview {
   let attempts = 0;
   let wrong = 0;
   let wrongNow = 0;
-  const keys = Object.keys(r.q);
-  for (const k of keys) {
-    const s = r.q[k];
-    attempts += s.a;
-    wrong += s.w;
-    if (s.c === 0) wrongNow++;
+  const stats = Object.values(records.q);
+  for (const stat of stats) {
+    attempts += stat.a;
+    wrong += stat.w;
+    if (stat.c === 0) wrongNow++;
   }
-  return { seen: keys.length, attempts, wrong, wrongNow, sessions: r.s.length };
+  return { seen: stats.length, attempts, wrong, wrongNow, sessions: records.s.length };
 }
 
-/** 错题频次排行：错得最多的排前面，同分则最近做的排前面 */
-export function wrongRanking(r: Records, limit = 10): { qid: number; stat: QuestionStat }[] {
-  return Object.entries(r.q)
-    .filter(([, s]) => s.w > 0)
-    .map(([k, s]) => ({ qid: Number(k), stat: s }))
+export function wrongRanking(records: Records, limit = 10): { qid: number; stat: QuestionStat }[] {
+  return Object.entries(records.q)
+    .filter(([, stat]) => stat.w > 0)
+    .map(([key, stat]) => ({ qid: Number(key), stat }))
     .sort((x, y) => y.stat.w - x.stat.w || y.stat.t - x.stat.t)
     .slice(0, limit);
 }
 
-// ---------------- 抽题策略 ----------------
-
 export interface PickOptions {
-  /** 只从没做过的题里抽 */
   excludeSeen: boolean;
-  /** 优先补入做错过的题 */
   mixWrong: boolean;
 }
 
-/** 混入错题时，错题最多占整卷的比例 */
-const WRONG_SHARE = 1 / 3;
+export type PickMode = 'random' | 'wrong-and-new' | 'new-only';
 
-function shuffle<T>(arr: T[]): T[] {
-  for (let i = arr.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [arr[i], arr[j]] = [arr[j], arr[i]];
-  }
-  return arr;
+export function optionsForPickMode(mode: PickMode): PickOptions {
+  if (mode === 'wrong-and-new') return { excludeSeen: true, mixWrong: true };
+  if (mode === 'new-only') return { excludeSeen: true, mixWrong: false };
+  return { excludeSeen: false, mixWrong: false };
 }
 
-/**
- * 按设置挑出本次要考的 qid。
- *
- * 两个选项同时开启时的语义：以没做过的新题为主，再用做错过的题补足（最多 1/3）。
- * 「排除已做过」本身会把错题也排除掉，但既然用户明确要求混入错题，
- * 就把错题当成例外放回来——否则两个选项一起勾等于第二个失效。
- */
+const WRONG_SHARE = 1 / 3;
+
+function shuffle<T>(items: T[]): T[] {
+  for (let i = items.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [items[i], items[j]] = [items[j], items[i]];
+  }
+  return items;
+}
+
 export function pickQids(
   index: IndexEntry[],
   db: ExamDb,
   count: number,
-  opts: PickOptions,
-  r: Records
+  options: PickOptions,
+  records: Records,
 ): number[] {
-  const inDb = index.filter((e) => db === 'ALL' || e.db === db);
-
-  const isSeen = (qid: number) => r.q[String(qid)] !== undefined;
-  const isWrongNow = (qid: number) => r.q[String(qid)]?.c === 0;
-
-  let wrongPool: number[] = [];
-  if (opts.mixWrong) {
-    wrongPool = shuffle(inDb.filter((e) => isWrongNow(e.qid)).map((e) => e.qid));
-  }
-
+  const inDatabase = index.filter((entry) => db === 'ALL' || entry.db === db);
+  const isSeen = (qid: number) => records.q[String(qid)] !== undefined;
+  const isWrongNow = (qid: number) => records.q[String(qid)]?.c === 0;
+  const wrongPool = options.mixWrong
+    ? shuffle(inDatabase.filter((entry) => isWrongNow(entry.qid)).map((entry) => entry.qid))
+    : [];
   const basePool = shuffle(
-    inDb
-      .filter((e) => (opts.excludeSeen ? !isSeen(e.qid) : true))
-      .map((e) => e.qid)
+    inDatabase
+      .filter((entry) => (options.excludeSeen ? !isSeen(entry.qid) : true))
+      .map((entry) => entry.qid),
   );
 
   const picked: number[] = [];
-  const take = (list: number[], n: number) => {
-    for (const qid of list) {
-      if (picked.length >= count || n <= 0) break;
+  const take = (pool: number[], amount: number) => {
+    for (const qid of pool) {
+      if (picked.length >= count || amount <= 0) break;
       if (picked.includes(qid)) continue;
       picked.push(qid);
-      n--;
+      amount--;
     }
   };
 
-  if (opts.mixWrong) take(wrongPool, Math.ceil(count * WRONG_SHARE));
+  if (options.mixWrong) take(wrongPool, Math.ceil(count * WRONG_SHARE));
   take(basePool, count - picked.length);
-  // 新题不够时，用剩下的错题补满，再不够就放开限制
-  if (picked.length < count && opts.mixWrong) take(wrongPool, count - picked.length);
-  if (picked.length < count && opts.excludeSeen) {
-    take(shuffle(inDb.map((e) => e.qid)), count - picked.length);
-  }
-
+  if (picked.length < count && options.mixWrong) take(wrongPool, count - picked.length);
   return shuffle(picked);
 }
 
-/** 设置页用：当前条件下还剩多少题可抽 */
-export function availableCount(index: IndexEntry[], db: ExamDb, opts: PickOptions, r: Records): number {
-  const inDb = index.filter((e) => db === 'ALL' || e.db === db);
-  if (!opts.excludeSeen) return inDb.length;
-  const fresh = inDb.filter((e) => r.q[String(e.qid)] === undefined).length;
-  if (!opts.mixWrong) return fresh;
-  return fresh + inDb.filter((e) => r.q[String(e.qid)]?.c === 0).length;
+export function pickQidsForMode(
+  index: IndexEntry[],
+  db: ExamDb,
+  count: number,
+  mode: PickMode,
+  records: Records,
+): number[] {
+  return pickQids(index, db, count, optionsForPickMode(mode), records);
 }
 
-// ---------------- 导出 / 导入 ----------------
-
-export function exportRecords(r: Records): string {
-  return JSON.stringify(r, null, 2);
+export function availableCount(
+  index: IndexEntry[],
+  db: ExamDb,
+  options: PickOptions,
+  records: Records,
+): number {
+  const inDatabase = index.filter((entry) => db === 'ALL' || entry.db === db);
+  if (!options.excludeSeen) return inDatabase.length;
+  const fresh = inDatabase.filter((entry) => records.q[String(entry.qid)] === undefined).length;
+  if (!options.mixWrong) return fresh;
+  return fresh + inDatabase.filter((entry) => records.q[String(entry.qid)]?.c === 0).length;
 }
 
-/** 导入并与现有记录合并；返回合并后的结果，格式不对则抛错 */
-export function importRecords(text: string): Records {
-  const incoming = JSON.parse(text);
-  if (incoming?.v !== 1 || typeof incoming.q !== 'object') {
-    throw new Error('文件格式不对，应为本站导出的记录 JSON');
+export function availableCountForMode(
+  index: IndexEntry[],
+  db: ExamDb,
+  mode: PickMode,
+  records: Records,
+): number {
+  return availableCount(index, db, optionsForPickMode(mode), records);
+}
+
+type ImportedCell = string | number | boolean | Date | null;
+
+const HEADERS = ['QID', '最后作答时间', '最近结果', '错误次数', '作答次数'] as const;
+
+const headerCell = (value: string) => ({
+  value,
+  fontWeight: 'bold' as const,
+  textColor: '#FFFFFF',
+  backgroundColor: '#17324D',
+  alignVertical: 'center' as const,
+  height: 24,
+});
+
+export async function exportRecordsWorkbook(records: Records): Promise<Blob> {
+  const writeExcelFile = (await import('write-excel-file/browser')).default;
+  const rows = [
+    HEADERS.map(headerCell),
+    ...Object.entries(records.q)
+      .sort(([, a], [, b]) => b.t - a.t)
+      .map(([qid, stat]) => [
+        Number(qid),
+        new Date(stat.t),
+        stat.c ? '正确' : '错误',
+        stat.w,
+        stat.a,
+      ]),
+  ];
+
+  return writeExcelFile(rows, {
+    sheet: '做题记录',
+    columns: [{ width: 18 }, { width: 22 }, { width: 12 }, { width: 12 }, { width: 12 }],
+    stickyRowsCount: 1,
+    dateFormat: 'yyyy-mm-dd hh:mm:ss',
+  }).toBlob();
+}
+
+function integerValue(value: ImportedCell, field: string): number {
+  if (typeof value !== 'number' || !Number.isSafeInteger(value) || value < 0) {
+    throw new Error(`记录文件格式错误：${field} 不是有效整数`);
   }
-  const cur = loadRecords();
-  const merged: Records = { v: 1, q: { ...cur.q }, s: [...cur.s] };
-  for (const [k, raw] of Object.entries(incoming.q as Record<string, QuestionStat>)) {
-    const s = raw;
-    const old = merged.q[k];
-    merged.q[k] = old
-      ? { a: old.a + s.a, w: old.w + s.w, t: Math.max(old.t, s.t), c: s.t >= old.t ? s.c : old.c }
-      : s;
+  return value;
+}
+
+function timeValue(value: ImportedCell): number {
+  if (value instanceof Date && Number.isFinite(value.getTime())) return value.getTime();
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  if (typeof value === 'string') {
+    const parsed = Date.parse(value);
+    if (Number.isFinite(parsed)) return parsed;
   }
-  const seenTs = new Set(merged.s.map((x) => x.ts));
-  for (const s of (incoming.s || []) as SessionRecord[]) {
-    if (!seenTs.has(s.ts)) merged.s.push(s);
+  throw new Error('记录文件格式错误：最后作答时间无效');
+}
+
+export async function importRecordsWorkbook(input: Blob | ArrayBuffer): Promise<Records> {
+  const size = input instanceof ArrayBuffer ? input.byteLength : input.size;
+  if (size > MAX_IMPORT_BYTES) throw new Error('记录文件过大，最大支持 5 MB');
+
+  const readExcelFile = (await import('read-excel-file/browser')).default;
+  let sheets;
+  try {
+    sheets = await readExcelFile(input);
+  } catch {
+    throw new Error('无法读取 Excel，请选择本站导出的 .xlsx 记录文件');
   }
-  merged.s.sort((a, b) => b.ts - a.ts);
-  if (merged.s.length > MAX_SESSIONS) merged.s.length = MAX_SESSIONS;
-  save(merged);
-  return merged;
+
+  const sheet = sheets.find((item) => item.sheet === '做题记录');
+  if (!sheet) throw new Error('这不是有效的 MCQ Test 记录文件：缺少“做题记录”工作表');
+  // read-excel-file declares date cells as `typeof Date`, while its runtime API returns Date instances.
+  const rows = sheet.data as unknown as ImportedCell[][];
+  const header = rows[0] || [];
+  if (HEADERS.some((name, index) => header[index] !== name)) {
+    throw new Error('MCQ Test 记录文件格式错误：表头不匹配');
+  }
+
+  const q: Record<string, QuestionStat> = {};
+  for (const [index, row] of rows.slice(1).entries()) {
+    if (row.every((value) => value === null)) continue;
+    const line = index + 2;
+    const qid = integerValue(row[0], `第 ${line} 行 QID`);
+    if (qid === 0) throw new Error(`记录文件格式错误：第 ${line} 行 QID 无效`);
+    if (q[String(qid)]) throw new Error(`记录文件格式错误：QID ${qid} 重复`);
+    const result = row[2];
+    if (result !== '正确' && result !== '错误') {
+      throw new Error(`记录文件格式错误：第 ${line} 行最近结果只能是正确或错误`);
+    }
+    const wrong = integerValue(row[3], `第 ${line} 行错误次数`);
+    const attempts = integerValue(row[4], `第 ${line} 行作答次数`);
+    if (wrong > attempts) throw new Error(`记录文件格式错误：第 ${line} 行错误次数不能超过作答次数`);
+    q[String(qid)] = {
+      a: attempts,
+      w: wrong,
+      t: timeValue(row[1]),
+      c: result === '正确' ? 1 : 0,
+    };
+  }
+
+  return { v: 1, q, s: [] };
 }

@@ -2,10 +2,12 @@
   "name": "mcq-test",
   "version": "1.0.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "data": "node scripts/build-data.mjs",
     "dev": "npm run data && next dev -p 3210",
     "build": "npm run data && next build",
+    "test": "node --experimental-strip-types --test tests/*.test.ts",
     "serve": "node scripts/serve.mjs",
     "start": "node scripts/serve.mjs"
   },
@@ -16,7 +18,9 @@
     "marked": "^18.0.5",
     "next": "16.2.7",
     "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "react-dom": "19.2.4",
+    "read-excel-file": "^9.3.4",
+    "write-excel-file": "^4.1.1"
   },
   "devDependencies": {
     "@types/node": "^20",

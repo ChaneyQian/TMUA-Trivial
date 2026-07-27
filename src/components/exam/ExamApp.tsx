@@ -6,6 +6,20 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import MathText from '@/components/MathText';
 import { buildExam, fetchIndex, ExamQuestion, IndexEntry } from '@/lib/exam';
+import {
+  addSession,
+  availableCountForMode,
+  clearRecords,
+  createEmptyRecords,
+  exportRecordsWorkbook,
+  importRecordsWorkbook,
+  loadRecords,
+  overview,
+  pickQidsForMode,
+  saveRecords,
+  type PickMode,
+  type Records,
+} from '@/lib/records';
 import styles from './Exam.module.css';
 
 type Phase = 'setup' | 'loading' | 'exam' | 'result';
@@ -47,6 +61,15 @@ export default function ExamApp() {
       .catch((e) => setIndexError(e instanceof Error ? e.message : '题库索引加载失败'));
   }, []);
 
+  const [records, setRecords] = useState<Records>(() => createEmptyRecords());
+  const [recordMessage, setRecordMessage] = useState('');
+  const [recordBusy, setRecordBusy] = useState(false);
+  const importInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    setRecords(loadRecords());
+  }, []);
+
   const poolCounts: Record<string, number> = { TMUA: 0, MAT: 0, SMC: 0 };
   for (const e of index || []) {
     if (poolCounts[e.db] !== undefined) poolCounts[e.db]++;
@@ -56,6 +79,7 @@ export default function ExamApp() {
   const [phase, setPhase] = useState<Phase>('setup');
   const [db, setDb] = useState<Db>('TMUA');
   const [mode, setMode] = useState<Mode>('practice');
+  const [pickMode, setPickMode] = useState<PickMode>('random');
   const [count, setCount] = useState(10);
   const [minutes, setMinutes] = useState(defaultMinutes(10));
   const [minutesTouched, setMinutesTouched] = useState(false);
@@ -72,6 +96,8 @@ export default function ExamApp() {
   const [confirmEnd, setConfirmEnd] = useState(false);
   const [secondsLeft, setSecondsLeft] = useState(0);
   const [elapsed, setElapsed] = useState(0);
+  const [resultActionError, setResultActionError] = useState('');
+  const savedResultRef = useRef<Records | null>(null);
   // 主题只在 exam 阶段渲染(无 SSR 标记),惰性初始化读 dataset 不会造成水合不匹配
   const [scheme, setScheme] = useState(() =>
     typeof document === 'undefined' ? 'light' : document.documentElement.dataset.theme || 'light'
@@ -82,7 +108,57 @@ export default function ExamApp() {
     if (!minutesTouched) setMinutes(defaultMinutes(n));
   };
 
-  const totalPool = db === 'ALL' ? Object.values(poolCounts).reduce((a, b) => a + b, 0) : poolCounts[db] || 0;
+  const totalPool = index ? availableCountForMode(index, db, pickMode, records) : 0;
+  const recordOverview = overview(records);
+
+  const downloadWorkbook = async (data: Records) => {
+    const blob = await exportRecordsWorkbook(data);
+    const date = new Date().toISOString().slice(0, 10);
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `MCQ-Test-records-${date}.xlsx`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  };
+
+  const exportCurrentRecords = async () => {
+    setRecordBusy(true);
+    setRecordMessage('');
+    try {
+      await downloadWorkbook(records);
+      setRecordMessage(`已导出 ${recordOverview.seen} 道题的记录`);
+    } catch (e) {
+      setRecordMessage(e instanceof Error ? e.message : '导出失败');
+    } finally {
+      setRecordBusy(false);
+    }
+  };
+
+  const importWorkbook = async (file: File) => {
+    if (recordOverview.seen > 0 && !window.confirm('导入会替换当前做题记录，是否继续？')) return;
+    setRecordBusy(true);
+    setRecordMessage('');
+    try {
+      const imported = await importRecordsWorkbook(file);
+      saveRecords(imported);
+      setRecords(imported);
+      setRecordMessage(`已导入 ${overview(imported).seen} 道题的记录`);
+    } catch (e) {
+      setRecordMessage(e instanceof Error ? e.message : '导入失败');
+    } finally {
+      setRecordBusy(false);
+      if (importInputRef.current) importInputRef.current.value = '';
+    }
+  };
+
+  const removeRecords = () => {
+    if (recordOverview.seen > 0 && !window.confirm('确定清空全部做题和错题记录？')) return;
+    setRecords(clearRecords());
+    setRecordMessage('记录已清空');
+  };
 
   // ---- 开始考试 ----
   const start = async () => {
@@ -92,7 +168,10 @@ export default function ExamApp() {
     // 全屏须在用户手势同步调用链里发起(失败静默降级)
     document.documentElement.requestFullscreen?.().catch(() => {});
     try {
-      const qs = await buildExam(index, db, count);
+      const qids = pickQidsForMode(index, db, count, pickMode, records);
+      if (qids.length === 0) throw new Error('当前抽题范围内没有可用题目');
+      const selected = new Set(qids);
+      const qs = await buildExam(index.filter((entry) => selected.has(entry.qid)), 'ALL', qids.length);
       setQuestions(qs);
       setIdx(0);
       setAnswers(new Array(qs.length).fill(null));
@@ -101,6 +180,8 @@ export default function ExamApp() {
       setSolShown(new Set());
       setSecondsLeft(minutes * 60);
       setElapsed(0);
+      setResultActionError('');
+      savedResultRef.current = null;
       setPhase('exam');
     } catch (e) {
       if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
@@ -115,6 +196,51 @@ export default function ExamApp() {
     setPhase('result');
     if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
   }, []);
+
+  const saveCurrentResult = (): Records => {
+    if (savedResultRef.current) return savedResultRef.current;
+    const right = questions.filter((question, i) => sameLabel(answers[i], question.answer)).length;
+    const answered = answers.filter(Boolean).length;
+    const next = addSession(
+      records,
+      questions.map((question, i) => ({
+        qid: question.qid,
+        selected: answers[i],
+        answer: question.answer,
+        correct: sameLabel(answers[i], question.answer),
+        answered: answers[i] !== null,
+      })),
+      { db, mode, n: questions.length, right, answered, sec: elapsed },
+    );
+    saveRecords(next);
+    setRecords(next);
+    savedResultRef.current = next;
+    return next;
+  };
+
+  const leaveResult = (message: string) => {
+    setRecordMessage(message);
+    setQuestions([]);
+    setPhase('setup');
+  };
+
+  const saveAndRetry = () => {
+    saveCurrentResult();
+    leaveResult('本场已计入统计');
+  };
+
+  const saveExportAndExit = async () => {
+    setRecordBusy(true);
+    setResultActionError('');
+    try {
+      await downloadWorkbook(saveCurrentResult());
+      leaveResult('本场已计入统计并导出');
+    } catch (e) {
+      setResultActionError(e instanceof Error ? e.message : '导出失败');
+    } finally {
+      setRecordBusy(false);
+    }
+  };
 
   // ---- 计时 ----
   useEffect(() => {
@@ -301,6 +427,31 @@ export default function ExamApp() {
             </button>
           </div>
 
+          <div className={styles.fieldLabel}>抽题范围</div>
+          <div className={styles.segRow}>
+            <button
+              className={`${styles.segBtn} ${pickMode === 'random' ? styles.segActive : ''}`}
+              onClick={() => setPickMode('random')}
+            >
+              纯随机
+              <span className={styles.segHint}>全部题目</span>
+            </button>
+            <button
+              className={`${styles.segBtn} ${pickMode === 'wrong-and-new' ? styles.segActive : ''}`}
+              onClick={() => setPickMode('wrong-and-new')}
+            >
+              新题 + 错题
+              <span className={styles.segHint}>排除最近做对</span>
+            </button>
+            <button
+              className={`${styles.segBtn} ${pickMode === 'new-only' ? styles.segActive : ''}`}
+              onClick={() => setPickMode('new-only')}
+            >
+              仅新题
+              <span className={styles.segHint}>排除全部已做</span>
+            </button>
+          </div>
+
           <div className={styles.fieldLabel}>题目数量(题库可用 {totalPool} 题)</div>
           <div className={styles.segRow}>
             {[5, 10, 20].map((n) => (
@@ -341,6 +492,55 @@ export default function ExamApp() {
             </>
           )}
 
+          <div className={styles.recordSection}>
+            <div className={styles.fieldLabel}>做题记录（可选）</div>
+            <div className={styles.recordSummary}>
+              <span>
+                <strong>{recordOverview.seen}</strong> 已做
+              </span>
+              <span>
+                <strong>{recordOverview.wrongNow}</strong> 当前错题
+              </span>
+              <span>
+                <strong>{recordOverview.attempts}</strong> 次作答
+              </span>
+            </div>
+            <div className={styles.recordActions}>
+              <button
+                className={styles.btnGhost}
+                onClick={() => importInputRef.current?.click()}
+                disabled={recordBusy}
+              >
+                导入 XLSX
+              </button>
+              <button
+                className={styles.btnGhost}
+                onClick={exportCurrentRecords}
+                disabled={recordBusy || recordOverview.seen === 0}
+              >
+                导出 XLSX
+              </button>
+              <button
+                className={styles.btnGhost}
+                onClick={removeRecords}
+                disabled={recordBusy || recordOverview.seen === 0}
+              >
+                清空
+              </button>
+              <input
+                ref={importInputRef}
+                className={styles.fileInput}
+                type="file"
+                accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                onChange={(event) => {
+                  const file = event.target.files?.[0];
+                  if (file) void importWorkbook(file);
+                }}
+              />
+            </div>
+            {recordMessage && <div className={styles.recordMessage}>{recordMessage}</div>}
+          </div>
+
           <button
             className={styles.startBtn}
             onClick={start}
@@ -378,11 +578,22 @@ export default function ExamApp() {
               已作答 {answered} 题 · 用时 {fmtClock(elapsed)}
             </div>
             <div className={styles.scoreBtns}>
-              <button className={styles.btnPrimary} onClick={() => setPhase('setup')}>
-                再来一组
+              <button
+                className={styles.btnGhost}
+                onClick={() => leaveResult('本场未计入统计')}
+                disabled={recordBusy}
+              >
+                跳过本场统计
+              </button>
+              <button className={styles.btnGhost} onClick={saveExportAndExit} disabled={recordBusy}>
+                {recordBusy ? '正在导出…' : '统计并导出后退出'}
+              </button>
+              <button className={styles.btnPrimary} onClick={saveAndRetry} disabled={recordBusy}>
+                统计后再来一次
               </button>
             </div>
           </div>
+          {resultActionError && <div className={styles.errMsg}>{resultActionError}</div>}
 
           {questions.map((qq, i) => {
             const ok = sameLabel(answers[i], qq.answer);
