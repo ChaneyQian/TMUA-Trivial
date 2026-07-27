@@ -1,0 +1,159 @@
+@import 'computer-modern/cmu-serif.css';
+@import '@fontsource/noto-sans-sc';
+
+:root {
+  /* design.md §1.2 字体双轨：内容=书感衬线，界面=无衬线 */
+  --font-content: "CMU Serif", "Noto Serif SC", "Source Han Serif SC", "SimSun", serif;
+  --font-ui: "Noto Sans SC", "PingFang SC", "Segoe UI", "Microsoft YaHei", sans-serif;
+  --font-mono: "CMU Typewriter Text", ui-monospace, "Cascadia Mono", monospace;
+  --measure: 72ch; /* design.md §1.3 内容区最大行宽 */
+  /* 显示设置（DisplaySettings 组件可覆盖，存 localStorage） */
+  --content-font: var(--font-content);
+  --content-size: 16px;
+  --katex-scale: 1.08; /* KaTeX 默认 1.21em 相对 CMU 正文偏大，默认略降 */
+  --bg: #f5f6f8;
+  --surface: #ffffff;
+  --surface-alt: #f8f9fb;
+  --border: #e1e4e8;
+  --text: #1a1a2e;
+  --text-muted: #6b7280;
+  --accent: #4a6cf7;
+  --accent-light: #eef1ff;
+  --warning: #f0c000;
+  --warning-bg: #fffbe6;
+  --note-bg: #f3f4f6;
+  --note-border: #9ca3af;
+  --row-stripe: #fafbfc;
+  --row-hover: #f4f6fb;
+  --detail-border: #4a90d9;
+  --detail-bg: #fafbff;
+  --katex-color: #222;
+}
+
+:root[data-theme="dark"] {
+  --bg: #121212;
+  --surface: #1e1e2e;
+  --surface-alt: #252540;
+  --border: #333355;
+  --text: #e4e4ec;
+  --text-muted: #9999bb;
+  --accent: #7b93ff;
+  --accent-light: #1e2040;
+  --warning: #e6b800;
+  --warning-bg: #2a2818;
+  --note-bg: #232338;
+  --note-border: #555577;
+  --row-stripe: #1a1a2e;
+  --row-hover: #262644;
+  --detail-border: #5566cc;
+  --detail-bg: #1a1a30;
+  --katex-color: #e4e4ec;
+}
+
+/* design.md §1.1 sepia 纸黄阅读主题 */
+:root[data-theme="sepia"] {
+  --bg: #f4ecd8;
+  --surface: #faf4e4;
+  --surface-alt: #f0e8d0;
+  --border: #d8ccae;
+  --text: #3d3226;
+  --text-muted: #8a7a5f;
+  --accent: #8b5e2f;
+  --accent-light: #ede0c8;
+  --warning: #9a7b00;
+  --warning-bg: #f3e8c0;
+  --note-bg: #efe6cd;
+  --note-border: #b3a077;
+  --row-stripe: #f7efdc;
+  --row-hover: #efe5cc;
+  --detail-border: #a5793f;
+  --detail-bg: #faf5e6;
+  --katex-color: #2e2418;
+}
+
+* {
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+}
+
+html {
+  height: 100%;
+}
+
+body {
+  min-height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--content-font);
+  font-size: var(--content-size);
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.6;
+}
+
+/* 公式与正文的大小协调：覆盖 KaTeX 默认 1.21em */
+.mathtext .katex {
+  font-size: calc(var(--katex-scale) * 1em);
+}
+
+/* 题面/解析内容里的列表缩进（* 重置清掉了 UA 默认 padding，这里补回） */
+ul,
+ol {
+  padding-left: 2em;
+  margin: 0.4em 0;
+}
+
+li {
+  margin: 0.15em 0;
+}
+
+/* design.md §0：操作层 chrome 一律无衬线 */
+button,
+select,
+input,
+textarea,
+thead th {
+  font-family: var(--font-ui);
+}
+
+/* B2d sticky 表头 */
+thead th {
+  position: sticky;
+  top: 0;
+  background: var(--surface);
+  z-index: 5;
+  box-shadow: 0 1px 0 var(--border);
+}
+
+/* MathText 渲染区：区分「段落间距」与「行内软换行」的视觉层级 */
+.mathtext {
+  line-height: 1.75;
+  max-width: var(--measure); /* design.md §2.3 内容列宽 */
+}
+
+/* 段落之间留明显间距；同段内单换行 (<br>) 只占一个行高，形成层级 */
+.mathtext p {
+  margin: 0 0 0.75em;
+}
+
+.mathtext p:last-child {
+  margin-bottom: 0;
+}
+
+/* 行间公式块上下留白，避免与正文粘连 */
+.mathtext .katex-display {
+  margin: 0.7em 0;
+}
+
+/* 定理框（design.md §2.4，amsthm 风格） */
+.mathtext p.thmbox {
+  border-left: 3px solid var(--accent);
+  background: var(--accent-light);
+  padding: 0.55em 0.9em;
+  border-radius: 0 8px 8px 0;
+}
+
+/* 选项等连续单换行行块行距略收紧，读起来成组 */
+.mathtext br {
+  line-height: 1.5;
+}

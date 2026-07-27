@@ -1,0 +1,8 @@
+node_modules/
+.next/
+out/
+# 构建期生成，不入库：由 scripts\build-data.mjs 从 data\ 重新产出
+public/exam/
+*.tsbuildinfo
+.env.local
+npm-debug.log*

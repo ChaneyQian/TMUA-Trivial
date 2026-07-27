@@ -1,0 +1,633 @@
+/* design.md §2.6 Test 模式(CBT 模拟)
+   CBT 蓝为模拟真机的固定色;题区/设置页/成绩页用 tokens 随主题 */
+
+.wrap {
+  min-height: 100vh;
+  background: var(--bg);
+  font-family: var(--font-ui);
+  display: flex;
+  flex-direction: column;
+}
+
+/* ============ 设置页 / 成绩页外壳 ============ */
+
+.setupCard {
+  margin: 8vh auto 2rem;
+  width: min(560px, 92vw);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 2rem 2.2rem;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+}
+
+.setupTitle {
+  font-family: var(--font-content);
+  font-size: 1.6rem;
+  margin-bottom: 0.3rem;
+}
+
+.setupSub {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  margin-bottom: 1.4rem;
+}
+
+.fieldLabel {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin: 1.1rem 0 0.45rem;
+  letter-spacing: 0.05em;
+}
+
+.segRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.segBtn {
+  font-family: var(--font-ui);
+  font-size: 0.9rem;
+  padding: 0.45rem 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-alt);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.segBtn:hover {
+  border-color: var(--accent);
+}
+
+.segActive {
+  background: var(--accent-light);
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.segHint {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 400;
+  color: var(--text-muted);
+}
+
+.numInput {
+  width: 5.5rem;
+  font-family: var(--font-ui);
+  font-size: 0.9rem;
+  padding: 0.42rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+}
+
+.startBtn {
+  margin-top: 1.6rem;
+  width: 100%;
+  font-family: var(--font-ui);
+  font-size: 1rem;
+  font-weight: 600;
+  padding: 0.7rem;
+  border: none;
+  border-radius: 8px;
+  background: var(--accent);
+  color: #fff;
+  cursor: pointer;
+}
+
+.startBtn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.backLink {
+  display: inline-block;
+  margin-top: 1rem;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  text-decoration: none;
+}
+
+.backLink:hover {
+  color: var(--accent);
+}
+
+.errMsg {
+  margin-top: 0.9rem;
+  color: #c62828;
+  font-size: 0.85rem;
+}
+
+/* ============ CBT 考试界面 ============ */
+
+.exam {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+}
+
+.cbtHeader {
+  background: #3c5c9e;
+  color: #fff;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 0.45rem 0.9rem 0.35rem;
+  flex-shrink: 0;
+}
+
+.cbtTitle {
+  font-size: 1.15rem;
+  font-weight: 600;
+}
+
+.cbtHeaderRight {
+  text-align: right;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  white-space: nowrap;
+}
+
+.timeWarn {
+  color: #ffd54d;
+  font-weight: 700;
+}
+
+.cbtSubbar {
+  background: #647fb8;
+  color: #fff;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.25rem 0.9rem;
+  font-size: 0.82rem;
+  flex-shrink: 0;
+}
+
+.subbarBtn {
+  font-family: var(--font-ui);
+  font-size: 0.82rem;
+  color: #fff;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  padding: 0.18rem 0.5rem;
+  cursor: pointer;
+}
+
+.subbarBtn:hover {
+  border-color: rgba(255, 255, 255, 0.6);
+}
+
+.flagOn {
+  background: rgba(255, 255, 255, 0.22);
+  border-color: #fff;
+}
+
+.schemeSelect {
+  font-family: var(--font-ui);
+  font-size: 0.8rem;
+  padding: 0.15rem 0.3rem;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  background: #fff;
+  color: #222;
+}
+
+.cbtBody {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.4rem 2rem 3rem;
+  color: var(--text);
+}
+
+.stem {
+  max-width: var(--measure);
+  font-family: var(--content-font);
+  font-size: var(--content-size);
+}
+
+/* 练习模式:左题面右解析的分栏 */
+.bodySplit {
+  display: flex;
+  gap: 1.8rem;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.colMain {
+  flex: 1 1 55%;
+  min-width: min(28rem, 100%);
+}
+
+.solPanel {
+  flex: 1 1 36%;
+  min-width: min(20rem, 100%);
+  border-left: 3px solid var(--border);
+  padding: 0.2rem 0 0.6rem 1.4rem;
+  font-family: var(--content-font);
+  position: sticky;
+  top: 0;
+}
+
+.solPanelTitle {
+  font-family: var(--font-ui);
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  margin-bottom: 0.8rem;
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+}
+
+.solClickable {
+  cursor: pointer;
+}
+
+.solClickable:hover {
+  border-left-color: var(--accent);
+}
+
+.solBlur {
+  filter: blur(7px);
+  user-select: none;
+  pointer-events: none;
+}
+
+.qMeta {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  font-family: var(--font-ui);
+  margin-bottom: 0.8rem;
+}
+
+.choiceList {
+  margin-top: 1.3rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  max-width: var(--measure);
+}
+
+.choiceRow {
+  display: flex;
+  align-items: baseline;
+  gap: 0.7rem;
+  width: 100%;
+  text-align: left;
+  padding: 0.45rem 0.7rem;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text);
+  font-family: var(--content-font);
+  font-size: var(--content-size);
+  cursor: pointer;
+}
+
+.choiceRow:hover {
+  background: var(--row-hover);
+}
+
+.radio {
+  flex-shrink: 0;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid var(--text-muted);
+  position: relative;
+  top: 1px;
+}
+
+.optSelected {
+  background: var(--accent-light);
+  border-color: var(--accent);
+}
+
+.optSelected .radio {
+  border-color: var(--accent);
+  background: radial-gradient(var(--accent) 45%, transparent 50%);
+}
+
+.optCorrect {
+  background: rgba(46, 125, 50, 0.12);
+  border-color: #2e7d32;
+}
+
+.optCorrect .radio {
+  border-color: #2e7d32;
+}
+
+.optWrong {
+  background: rgba(198, 40, 40, 0.1);
+  border-color: #c62828;
+}
+
+.optWrong .radio {
+  border-color: #c62828;
+  background: radial-gradient(#c62828 45%, transparent 50%);
+}
+
+.choiceLabel {
+  font-weight: 700;
+  min-width: 1.2em;
+}
+
+.choiceText :global(.mathtext) {
+  display: inline;
+}
+
+.choiceText :global(.mathtext p) {
+  display: inline;
+  margin: 0;
+}
+
+/* 练习模式批改反馈条 */
+.feedback {
+  max-width: var(--measure);
+  margin-top: 1.1rem;
+  padding: 0.6rem 0.9rem;
+  border-radius: 6px;
+  font-family: var(--font-ui);
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+}
+
+.fbOk {
+  background: rgba(46, 125, 50, 0.12);
+  color: #2e7d32;
+  border: 1px solid rgba(46, 125, 50, 0.4);
+}
+
+.fbBad {
+  background: rgba(198, 40, 40, 0.1);
+  color: #c62828;
+  border: 1px solid rgba(198, 40, 40, 0.4);
+}
+
+.fbHint {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  margin-left: auto;
+}
+
+.solBtn {
+  font-family: var(--font-ui);
+  font-size: 0.8rem;
+  padding: 0.2rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.solBox {
+  max-width: var(--measure);
+  margin-top: 0.9rem;
+  padding: 0.9rem 1rem;
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-family: var(--content-font);
+}
+
+.enterHint {
+  max-width: var(--measure);
+  margin-top: 1rem;
+  color: var(--text-muted);
+  font-family: var(--font-ui);
+  font-size: 0.8rem;
+}
+
+.cbtFooter {
+  background: #3c5c9e;
+  color: #fff;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.35rem 0.9rem;
+  flex-shrink: 0;
+}
+
+.footBtn {
+  font-family: var(--font-ui);
+  font-size: 0.88rem;
+  color: #fff;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  padding: 0.25rem 0.7rem;
+  cursor: pointer;
+}
+
+.footBtn:hover {
+  border-color: rgba(255, 255, 255, 0.6);
+}
+
+.footRight {
+  display: flex;
+  gap: 0.4rem;
+}
+
+/* Navigator 浮层 */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+}
+
+.navPanel {
+  background: var(--surface);
+  color: var(--text);
+  border-radius: 10px;
+  padding: 1.2rem 1.4rem;
+  width: min(520px, 92vw);
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.navTitle {
+  font-family: var(--font-ui);
+  font-weight: 600;
+  margin-bottom: 0.9rem;
+}
+
+.navGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(46px, 1fr));
+  gap: 0.45rem;
+}
+
+.navCell {
+  position: relative;
+  font-family: var(--font-ui);
+  font-size: 0.85rem;
+  padding: 0.5rem 0;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface-alt);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.navAnswered {
+  background: var(--accent-light);
+  border-color: var(--accent);
+}
+
+.navRight {
+  background: rgba(46, 125, 50, 0.15);
+  border-color: #2e7d32;
+}
+
+.navWrongCell {
+  background: rgba(198, 40, 40, 0.12);
+  border-color: #c62828;
+}
+
+.navCurrent {
+  outline: 2px solid var(--accent);
+}
+
+.navFlag {
+  position: absolute;
+  top: -1px;
+  right: 2px;
+  font-size: 0.6rem;
+}
+
+.navLegend {
+  margin-top: 0.9rem;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+/* 确认交卷 */
+.confirmBox {
+  background: var(--surface);
+  color: var(--text);
+  border-radius: 10px;
+  padding: 1.4rem 1.6rem;
+  width: min(380px, 90vw);
+  font-family: var(--font-ui);
+}
+
+.confirmBtns {
+  margin-top: 1.2rem;
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.6rem;
+}
+
+.btnPrimary {
+  font-family: var(--font-ui);
+  padding: 0.4rem 1rem;
+  border: none;
+  border-radius: 6px;
+  background: var(--accent);
+  color: #fff;
+  cursor: pointer;
+}
+
+.btnGhost {
+  font-family: var(--font-ui);
+  padding: 0.4rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+}
+
+/* ============ 成绩页 ============ */
+
+.resultWrap {
+  width: min(860px, 94vw);
+  margin: 3rem auto;
+}
+
+.scoreCard {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.6rem 2rem;
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  flex-wrap: wrap;
+}
+
+.scoreBig {
+  font-family: var(--font-content);
+  font-size: 2.6rem;
+  font-weight: 700;
+}
+
+.scoreMeta {
+  color: var(--text-muted);
+  font-size: 0.88rem;
+  line-height: 1.6;
+}
+
+.scoreBtns {
+  margin-left: auto;
+  display: flex;
+  gap: 0.6rem;
+}
+
+.reviewCard {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1.2rem 1.5rem;
+  margin-top: 1rem;
+}
+
+.reviewHead {
+  display: flex;
+  align-items: baseline;
+  gap: 0.8rem;
+  font-family: var(--font-ui);
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-bottom: 0.7rem;
+}
+
+.verdictOk {
+  color: #2e7d32;
+  font-weight: 700;
+}
+
+.verdictBad {
+  color: #c62828;
+  font-weight: 700;
+}
+
+.reviewSol {
+  margin-top: 0.8rem;
+  font-family: var(--font-ui);
+  font-size: 0.85rem;
+}
+
+.reviewSol summary {
+  cursor: pointer;
+  color: var(--accent);
+}

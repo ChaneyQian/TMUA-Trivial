@@ -1,0 +1,5 @@
+[X] 依赖下载失败。常见原因：没联网，或访问 npm 官方源太慢。
+
+    可以在这个窗口里执行下面这行，换成国内镜像后重新双击启动文件：
+
+        npm config set registry https://registry.npmmirror.com

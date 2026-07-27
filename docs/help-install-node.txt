@@ -1,0 +1,6 @@
+[X] 没有检测到 Node.js，本程序需要它才能运行。
+
+    已经帮你打开下载页面：https://nodejs.org/zh-cn
+    请下载 LTS 版本，一路点“下一步”装完即可。
+
+    装完后请【关掉这个窗口】，重新双击 "Click here to start.bat"。
