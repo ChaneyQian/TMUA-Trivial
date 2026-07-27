@@ -36,11 +36,10 @@ jobs:
           NEXT_PUBLIC_BASE_PATH: /${{ github.event.repository.name }}
         run: npm run build
 
-      # enablement: 首次运行时自动把仓库的 Pages 来源设为 GitHub Actions，
-      # 省掉手动去 Settings → Pages 选 Source 这一步
+      # 注意：不要加 enablement: true。创建 Pages 站点的 API 不接受默认的
+      # GITHUB_TOKEN，会以 "Resource not accessible by integration" 硬失败。
+      # Pages 必须先在 Settings → Pages → Source 里手动选成 GitHub Actions。
       - uses: actions/configure-pages@v5
-        with:
-          enablement: true
 
       - uses: actions/upload-pages-artifact@v3
         with:
