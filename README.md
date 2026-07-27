@@ -37,14 +37,14 @@ TMUA / MAT / SMC 选择题机考练习。随机抽题，仿 TMUA 官方 CBT 界�
 
 ## 部署到 GitHub Pages
 
-仓库里已经带了 `.github\workflows\deploy.yml`：
+本仓库：<https://github.com/ChaneyQian/TMUA-Trivial>
+线上地址：<https://chaneyqian.github.io/TMUA-Trivial/>
 
-1. 把本项目推到 GitHub（`data\` 要一起提交，它是题源）
-2. 仓库 Settings → Pages → Source 选 **GitHub Actions**
-3. 推到 `main` 分支即自动构建部署，地址是 `https://<用户名>.github.io/<仓库名>/`
+`.github\workflows\deploy.yml` 已配好，推到 `main` 就会自动构建并发布，
+Pages 也会在首次运行时由 workflow 自动启用（`configure-pages` 的 `enablement: true`）。
 
-路径前缀由 workflow 按仓库名自动注入（`NEXT_PUBLIC_BASE_PATH`）。
-如果用的是 `<用户名>.github.io` 主页仓库或自定义域名，把 workflow 里那个 env 删掉即可。
+路径前缀由 workflow 按仓库名自动注入（`NEXT_PUBLIC_BASE_PATH=/TMUA-Trivial`）。
+如果以后改用 `<用户名>.github.io` 主页仓库或自定义域名，把 workflow 里那个 env 删掉即可。
 
 > ⚠️ **注意**：GitHub Pages 站点是公开的，任何人都能访问。TMUA / MAT / SMC 真题的版权分别
 > 属于 Cambridge Assessment、牛津大学和 UKMT，公开托管前请自行确认是否合适。
