@@ -410,6 +410,62 @@
   font-size: 0.8rem;
 }
 
+/* 主操作按钮（批改 / 下一题 / 交卷）——触屏没有物理 Enter，这里是唯一入口 */
+.enterBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  max-width: var(--measure);
+  width: 100%;
+  margin-top: 0.9rem;
+  padding: 0.75rem 1rem;
+  font-family: var(--font-ui);
+  font-size: 1rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 8px;
+  background: var(--accent);
+  color: #fff;
+  cursor: pointer;
+  /* 触屏：去掉点击高亮与双击缩放延迟 */
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  transition: filter 120ms;
+}
+
+.enterBtn:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+.enterBtn:active:not(:disabled) {
+  filter: brightness(0.92);
+}
+
+.enterBtn:disabled {
+  background: var(--surface-alt);
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  cursor: default;
+  font-weight: 400;
+}
+
+/* 键盘提示角标，窄屏隐藏 */
+.enterBtnKey {
+  font-size: 0.72rem;
+  font-weight: 500;
+  opacity: 0.75;
+  padding: 0.1rem 0.4rem;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 4px;
+}
+
+@media (hover: none), (max-width: 640px) {
+  .enterBtnKey {
+    display: none;
+  }
+}
+
 .cbtFooter {
   background: #3c5c9e;
   color: #fff;

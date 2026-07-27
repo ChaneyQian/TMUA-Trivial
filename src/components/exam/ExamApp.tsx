@@ -159,6 +159,29 @@ export default function ExamApp() {
     setNavOpen(false);
   };
 
+  /**
+   * Enter 的全部行为。键盘和屏幕上的主操作按钮共用这一条路径，
+   * 免得两边逻辑各写一份、日后改一处漏一处。
+   * 触屏设备没有物理 Enter，按钮是唯一入口。
+   */
+  const pressEnter = () => {
+    if (mode === 'practice') {
+      if (!graded[idx]) gradeCurrent();
+      else if (idx < questions.length - 1) goto(idx + 1);
+      else setConfirmEnd(true);
+    } else if (idx < questions.length - 1) {
+      goto(idx + 1);
+    } else {
+      setConfirmEnd(true);
+    }
+  };
+
+  /** 主操作按钮的文案；null=当前不可操作（练习模式还没选答案） */
+  const enterLabel = (): string | null => {
+    if (mode === 'practice' && !graded[idx]) return answers[idx] ? '批改' : null;
+    return idx < questions.length - 1 ? '下一题' : '交卷';
+  };
+
   const toggleFlag = () => setFlagged((f) => f.map((v, i) => (i === idx ? !v : v)));
 
   const toggleSol = () =>
@@ -193,13 +216,7 @@ export default function ExamApp() {
     const k = e.key;
     if (k === 'Enter') {
       e.preventDefault();
-      if (mode === 'practice') {
-        if (!graded[idx]) gradeCurrent();
-        else if (idx < questions.length - 1) goto(idx + 1);
-        else setConfirmEnd(true);
-      } else if (idx < questions.length - 1) {
-        goto(idx + 1);
-      }
+      pressEnter();
       return;
     }
     if (k === 'ArrowRight') return goto(idx + 1);
@@ -501,7 +518,7 @@ export default function ExamApp() {
         </div>
 
         {mode === 'practice' && !isGraded && answers[idx] && (
-          <div className={styles.enterHint}>已选 {answers[idx]?.toUpperCase()} —— 按 Enter 批改</div>
+          <div className={styles.enterHint}>已选 {answers[idx]?.toUpperCase()}</div>
         )}
 
         {isGraded && (
@@ -509,11 +526,24 @@ export default function ExamApp() {
             <span>
               {isRight ? '✓ 回答正确' : `✗ 回答错误,正确答案 ${q.answer.toUpperCase()}`}
             </span>
-            <span className={styles.fbHint}>
-              Enter {idx < questions.length - 1 ? '下一题' : '交卷'}
-            </span>
           </div>
         )}
+
+        {/* 主操作按钮:触屏没有物理 Enter,这里是唯一入口;键盘用户按 Enter 等效 */}
+        <button
+          className={styles.enterBtn}
+          // 点完立刻失焦:否则按钮保持 focus,下一次按 Enter 会同时触发
+          // 全局键盘处理和浏览器对焦点按钮的默认激活,一次按键跳两题
+          onClick={(e) => {
+            e.currentTarget.blur();
+            pressEnter();
+          }}
+          disabled={!enterLabel()}
+          aria-keyshortcuts="Enter"
+        >
+          {enterLabel() ?? '请先选择一个选项'}
+          {enterLabel() && <span className={styles.enterBtnKey}>Enter</span>}
+        </button>
         </div>
 
         {/* 练习模式:右半页答案/解析遮罩区,批改后才可点击揭示 */}
