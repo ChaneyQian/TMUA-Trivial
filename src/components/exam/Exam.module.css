@@ -13,7 +13,8 @@
 
 .setupCard {
   margin: max(1rem, 3vh) auto 2rem;
-  width: min(560px, 92vw);
+  box-sizing: border-box;
+  width: min(640px, calc(100vw - 2rem));
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 12px;
@@ -38,6 +39,58 @@
   color: var(--text-muted);
   margin: 0.8rem 0 0.4rem;
   letter-spacing: 0.05em;
+}
+
+.libraryHead {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.librarySignal {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.42rem;
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+  padding-bottom: 0.32rem;
+}
+
+.breathingLight,
+.modeLight {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  flex: 0 0 7px;
+  border-radius: 50%;
+  background: #7b8791;
+  box-shadow: 0 0 0 0 rgba(123, 135, 145, 0.42);
+  animation: breatheLocked 2.8s ease-in-out infinite;
+}
+
+.librarySignalOpen {
+  color: #008c91;
+}
+
+.librarySignalOpen .breathingLight,
+.modeLight {
+  background: #00a8ad;
+  box-shadow: 0 0 9px rgba(0, 168, 173, 0.72);
+  animation-name: breatheOpen;
+  animation-duration: 1.8s;
+}
+
+.hiddenModeBtn {
+  display: grid;
+  grid-template-columns: 8px auto;
+  align-items: center;
+  column-gap: 0.45rem;
+}
+
+.hiddenModeBtn .segHint {
+  grid-column: 2;
 }
 
 .segRow {
@@ -167,6 +220,160 @@
   margin-top: 0.9rem;
   color: #c62828;
   font-size: 0.85rem;
+}
+
+/* ============ 365 题隐藏模式解锁 ============ */
+
+/* 解锁过渡层。
+   背景刻意用「虚化的页面本身」而不是不透明色块——这样它读起来是浮在设置页
+   之上的一层过渡，而不是切换到了另一个画面。配色一律走本体的设计变量，
+   避免出现与考试界面互不相干的第二套视觉语言。 */
+.unlockOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, var(--bg) 82%, transparent);
+  /* 不要手写 -webkit- 前缀：lightningcss 会据此认定只需前缀版而删掉标准属性，
+     而现代 Chrome 只认标准属性，结果虚化整个失效。前缀交给构建工具加。 */
+  backdrop-filter: blur(14px) saturate(0.9);
+  color: var(--text);
+  cursor: pointer;
+  animation: unlockIn 420ms ease-out both;
+}
+
+.unlockClosing {
+  animation: unlockOut 400ms ease-in both;
+}
+
+.unlockPanel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0 1.5rem;
+  text-align: center;
+  animation: unlockPanelRise 620ms 120ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+/* 上下两条细线由中间向两侧展开，充当过渡的「开幕 / 落幕」 */
+.unlockRule {
+  display: block;
+  width: 0;
+  height: 1px;
+  background: var(--accent);
+  opacity: 0.55;
+  animation: unlockRuleOpen 700ms 260ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+.unlockNumber {
+  font-family: var(--font-content);
+  font-size: clamp(4.2rem, 17vw, 8.5rem);
+  font-weight: 700;
+  line-height: 1.05;
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent);
+  animation: unlockNumberIn 900ms 300ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.unlockName {
+  font-family: var(--font-content);
+  font-size: clamp(1.5rem, 6vw, 2.2rem);
+  font-style: italic;
+  letter-spacing: 0.14em;
+  color: var(--text);
+  animation: unlockFadeUp 620ms 900ms ease-out both;
+}
+
+.unlockLine {
+  margin: 0.5rem 0 0.2rem;
+  font-family: var(--font-ui);
+  font-size: clamp(0.95rem, 3.6vw, 1.15rem);
+  color: var(--text-muted);
+  animation: unlockFadeUp 620ms 1150ms ease-out both;
+}
+
+.unlockTapHint {
+  position: absolute;
+  bottom: max(2rem, env(safe-area-inset-bottom));
+  font-family: var(--font-ui);
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  opacity: 0;
+  animation: unlockFadeUp 620ms 1700ms ease-out forwards;
+}
+
+@keyframes breatheLocked {
+  0%, 100% { opacity: 0.42; transform: scale(0.82); }
+  50% { opacity: 1; transform: scale(1); box-shadow: 0 0 8px rgba(123, 135, 145, 0.48); }
+}
+
+@keyframes breatheOpen {
+  0%, 100% { opacity: 0.55; transform: scale(0.82); box-shadow: 0 0 4px rgba(0, 168, 173, 0.4); }
+  50% { opacity: 1; transform: scale(1.1); box-shadow: 0 0 13px rgba(0, 168, 173, 0.88); }
+}
+
+@keyframes unlockIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes unlockOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@keyframes unlockPanelRise {
+  from { opacity: 0; transform: translateY(14px) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes unlockRuleOpen {
+  from { width: 0; }
+  to { width: min(64vw, 340px); }
+}
+
+/* 数字从虚化中「聚焦」出来，收在略微回弹处 */
+@keyframes unlockNumberIn {
+  0% { opacity: 0; transform: scale(1.28); filter: blur(16px); }
+  60% { opacity: 1; filter: blur(0); }
+  100% { opacity: 1; transform: scale(1); filter: blur(0); }
+}
+
+@keyframes unlockFadeUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .breathingLight,
+  .modeLight,
+  .unlockOverlay,
+  .unlockClosing,
+  .unlockPanel,
+  .unlockNumber,
+  .unlockName,
+  .unlockLine,
+  .unlockTapHint,
+  .unlockRule {
+    animation: none;
+  }
+
+  /* 动画关掉后这些元素靠 animation 的 both 拿到的终态也没了，手动补上 */
+  .unlockPanel,
+  .unlockNumber,
+  .unlockName,
+  .unlockLine,
+  .unlockTapHint {
+    opacity: 1;
+    transform: none;
+  }
+
+  .unlockRule {
+    width: min(64vw, 340px);
+  }
 }
 
 /* ============ CBT 考试界面 ============ */

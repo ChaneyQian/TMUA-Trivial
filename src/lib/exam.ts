@@ -31,6 +31,7 @@ export type ExamDb = (typeof EXAM_DATABASES)[number] | 'ALL';
 export interface IndexEntry {
   qid: number;
   db: string;
+  hidden?: true;
 }
 
 export async function fetchIndex(): Promise<IndexEntry[]> {

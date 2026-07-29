@@ -13,10 +13,15 @@ import {
   createEmptyRecords,
   exportRecordsWorkbook,
   importRecordsWorkbook,
+  indexForLibraryMode,
+  isHiddenModeUnlocked,
   loadRecords,
   overview,
   pickQidsForMode,
   saveRecords,
+  validCompletedCount,
+  HIDDEN_UNLOCK_COUNT,
+  type LibraryMode,
   type PickMode,
   type Records,
 } from '@/lib/records';
@@ -25,6 +30,8 @@ import styles from './Exam.module.css';
 type Phase = 'setup' | 'loading' | 'exam' | 'result';
 type Mode = 'practice' | 'mock';
 type Db = 'TMUA' | 'MAT' | 'SMC' | 'ECAA' | 'ALL';
+
+const UNLOCK_SEEN_KEY = 'mcq-test:hidden-unlock-seen:v1';
 
 const DB_TITLES: Record<Db, string> = {
   TMUA: 'Test of Mathematics for University Admission',
@@ -62,6 +69,42 @@ function defaultMinutes(count: number): number {
   return Math.max(1, Math.ceil(count * 3.75));
 }
 
+/** 解锁过渡层：盖在设置页之上（背景是虚化的页面本身，不是另开一屏），放完自行淡出 */
+function UnlockOverlay({ onDismiss }: { onDismiss: () => void }) {
+  const [closing, setClosing] = useState(false);
+
+  const close = useCallback(() => {
+    setClosing(true);
+    window.setTimeout(onDismiss, 420); // 等淡出动画走完再卸载
+  }, [onDismiss]);
+
+  useEffect(() => {
+    const t = window.setTimeout(close, 4000);
+    return () => window.clearTimeout(t);
+  }, [close]);
+
+  return (
+    <div
+      className={`${styles.unlockOverlay} ${closing ? styles.unlockClosing : ''}`}
+      role="dialog"
+      aria-modal="true"
+      aria-label="9.0 Trivial 已解锁"
+      onClick={close}
+    >
+      <div className={styles.unlockPanel}>
+        <span className={styles.unlockRule} aria-hidden="true" />
+        <div className={styles.unlockNumber} aria-hidden="true">
+          9.0
+        </div>
+        <div className={styles.unlockName}>Trivial</div>
+        <p className={styles.unlockLine}>你已窥见更多的可能性</p>
+        <span className={styles.unlockRule} aria-hidden="true" />
+      </div>
+      <span className={styles.unlockTapHint}>点击任意处继续</span>
+    </div>
+  );
+}
+
 export default function ExamApp() {
   // ---- 题库索引（构建期生成，只含能自动判分的题）----
   const [index, setIndex] = useState<IndexEntry[] | null>(null);
@@ -76,14 +119,34 @@ export default function ExamApp() {
   const [records, setRecords] = useState<Records>(() => createEmptyRecords());
   const [recordMessage, setRecordMessage] = useState('');
   const [recordBusy, setRecordBusy] = useState(false);
+  const [libraryMode, setLibraryMode] = useState<LibraryMode>('classic');
+  const [showUnlock, setShowUnlock] = useState(false);
   const importInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setRecords(loadRecords());
   }, []);
 
+  const completedCount = index ? validCompletedCount(index, records) : 0;
+  const hiddenUnlocked = index ? isHiddenModeUnlocked(index, records) : false;
+  const activeIndex = indexForLibraryMode(index || [], hiddenUnlocked ? libraryMode : 'classic');
+
+  useEffect(() => {
+    if (!hiddenUnlocked) {
+      setLibraryMode('classic');
+      return;
+    }
+
+    try {
+      if (localStorage.getItem(UNLOCK_SEEN_KEY)) return;
+      localStorage.setItem(UNLOCK_SEEN_KEY, '1');
+    } catch {}
+
+    setShowUnlock(true); // 自动收起由 UnlockOverlay 自己管，好带上淡出动画
+  }, [hiddenUnlocked]);
+
   const poolCounts: Record<string, number> = { TMUA: 0, MAT: 0, SMC: 0, ECAA: 0 };
-  for (const e of index || []) {
+  for (const e of activeIndex) {
     if (poolCounts[e.db] !== undefined) poolCounts[e.db]++;
   }
 
@@ -120,7 +183,7 @@ export default function ExamApp() {
     if (!minutesTouched) setMinutes(defaultMinutes(n));
   };
 
-  const totalPool = index ? availableCountForMode(index, db, pickMode, records) : 0;
+  const totalPool = index ? availableCountForMode(activeIndex, db, pickMode, records) : 0;
   const recordOverview = overview(records);
 
   const downloadWorkbook = async (data: Records) => {
@@ -154,7 +217,8 @@ export default function ExamApp() {
     setRecordBusy(true);
     setRecordMessage('');
     try {
-      const imported = await importRecordsWorkbook(file);
+      if (!index) throw new Error('题库索引尚未加载完成');
+      const imported = await importRecordsWorkbook(file, new Set(index.map((entry) => entry.qid)));
       saveRecords(imported);
       setRecords(imported);
       setRecordMessage(`已导入 ${overview(imported).seen} 道题的记录`);
@@ -180,10 +244,10 @@ export default function ExamApp() {
     // 全屏须在用户手势同步调用链里发起(失败静默降级)
     document.documentElement.requestFullscreen?.().catch(() => {});
     try {
-      const qids = pickQidsForMode(index, db, count, pickMode, records);
+      const qids = pickQidsForMode(activeIndex, db, count, pickMode, records);
       if (qids.length === 0) throw new Error('当前抽题范围内没有可用题目');
       const selected = new Set(qids);
-      const qs = await buildExam(index.filter((entry) => selected.has(entry.qid)), 'ALL', qids.length);
+      const qs = await buildExam(activeIndex.filter((entry) => selected.has(entry.qid)), 'ALL', qids.length);
       setQuestions(qs);
       setIdx(0);
       setAnswers(new Array(qs.length).fill(null));
@@ -403,6 +467,31 @@ export default function ExamApp() {
           <div className={styles.setupTitle}>MCQ Test</div>
           <div className={styles.setupSub}>TMUA / MAT / SMC / ECAA 随机抽题 · CBT 机考界面 · 开始后自动全屏</div>
 
+          <div className={styles.libraryHead}>
+            <div className={styles.fieldLabel}>题库范围</div>
+            <div className={`${styles.librarySignal} ${hiddenUnlocked ? styles.librarySignalOpen : ''}`}>
+              <span className={styles.breathingLight} aria-hidden="true" />
+              <span>{Math.min(completedCount, HIDDEN_UNLOCK_COUNT)} / {HIDDEN_UNLOCK_COUNT}</span>
+            </div>
+          </div>
+          <div className={styles.segRow}>
+            <button
+              className={`${styles.segBtn} ${libraryMode === 'classic' ? styles.segActive : ''}`}
+              onClick={() => setLibraryMode('classic')}
+            >
+              经典
+            </button>
+            {hiddenUnlocked && (
+              <button
+                className={`${styles.segBtn} ${libraryMode === 'hidden' ? styles.segActive : ''} ${styles.hiddenModeBtn}`}
+                onClick={() => setLibraryMode('hidden')}
+              >
+                <span className={styles.modeLight} aria-hidden="true" />
+                9.0 Trivial
+              </button>
+            )}
+          </div>
+
           <div className={styles.fieldLabel}>题库</div>
           <div className={styles.segRow}>
             {(['TMUA', 'MAT', 'SMC', 'ECAA', 'ALL'] as Db[]).map((d) => (
@@ -521,7 +610,7 @@ export default function ExamApp() {
               <button
                 className={styles.btnGhost}
                 onClick={() => importInputRef.current?.click()}
-                disabled={recordBusy}
+                disabled={recordBusy || !index}
               >
                 导入 XLSX
               </button>
@@ -569,6 +658,7 @@ export default function ExamApp() {
             键盘：A–H / 1–9 选项 · Enter 批改或下一题 · ←→ 切题 · F 旗标
           </div>
         </div>
+        {showUnlock && <UnlockOverlay onDismiss={() => setShowUnlock(false)} />}
       </div>
     );
   }

@@ -314,6 +314,19 @@ function referencedImages(text) {
   return names;
 }
 
+function isHiddenQuestion(database, data) {
+  const year = Number(data.year) || 0;
+  const id = String(data.id || '');
+
+  if (database === 'TMUA') {
+    const isSpecimen = id.startsWith('Spec-');
+    return !isSpecimen && !(year >= 2016 && year <= 2023);
+  }
+
+  if (database === 'MAT') return !(year >= 2007 && year <= 2023);
+  return false;
+}
+
 // ---------------- 主流程 ----------------
 
 function main() {
@@ -393,7 +406,9 @@ function main() {
           solution,
         })
       );
-      index.push({ qid, db });
+      const indexEntry = { qid, db };
+      if (isHiddenQuestion(db, data)) indexEntry.hidden = true;
+      index.push(indexEntry);
     }
   }
 

@@ -5,6 +5,7 @@ import type { IndexEntry, ExamDb } from './exam';
 const KEY = 'mcq-test:records:v1';
 const MAX_SESSIONS = 200;
 const MAX_IMPORT_BYTES = 5 * 1024 * 1024;
+export const HIDDEN_UNLOCK_COUNT = 365;
 
 export interface QuestionStat {
   a: number;
@@ -142,6 +143,22 @@ export interface PickOptions {
 }
 
 export type PickMode = 'random' | 'wrong-and-new' | 'new-only';
+export type LibraryMode = 'classic' | 'hidden';
+
+export function validCompletedCount(index: IndexEntry[], records: Records): number {
+  const validQids = new Set(index.map((entry) => entry.qid));
+  return Object.entries(records.q).filter(
+    ([qid, stat]) => validQids.has(Number(qid)) && stat.a >= 1,
+  ).length;
+}
+
+export function isHiddenModeUnlocked(index: IndexEntry[], records: Records): boolean {
+  return validCompletedCount(index, records) >= HIDDEN_UNLOCK_COUNT;
+}
+
+export function indexForLibraryMode(index: IndexEntry[], mode: LibraryMode): IndexEntry[] {
+  return mode === 'hidden' ? index : index.filter((entry) => !entry.hidden);
+}
 
 export function optionsForPickMode(mode: PickMode): PickOptions {
   if (mode === 'wrong-and-new') return { excludeSeen: true, mixWrong: true };
@@ -279,7 +296,10 @@ function timeValue(value: ImportedCell): number {
   throw new Error('记录文件格式错误：最后作答时间无效');
 }
 
-export async function importRecordsWorkbook(input: Blob | ArrayBuffer): Promise<Records> {
+export async function importRecordsWorkbook(
+  input: Blob | ArrayBuffer,
+  validQids: ReadonlySet<number>,
+): Promise<Records> {
   const size = input instanceof ArrayBuffer ? input.byteLength : input.size;
   if (size > MAX_IMPORT_BYTES) throw new Error('记录文件过大，最大支持 5 MB');
 
@@ -306,6 +326,9 @@ export async function importRecordsWorkbook(input: Blob | ArrayBuffer): Promise<
     const line = index + 2;
     const qid = integerValue(row[0], `第 ${line} 行 QID`);
     if (qid === 0) throw new Error(`记录文件格式错误：第 ${line} 行 QID 无效`);
+    if (!validQids.has(qid)) {
+      throw new Error(`记录文件包含无效 QID ${qid}：该题不在当前题库`);
+    }
     if (q[String(qid)]) throw new Error(`记录文件格式错误：QID ${qid} 重复`);
     const result = row[2];
     if (result !== '正确' && result !== '错误') {

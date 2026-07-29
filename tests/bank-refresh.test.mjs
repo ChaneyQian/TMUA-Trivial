@@ -35,6 +35,16 @@ test('static bank includes refreshed TMUA and ECAA pools', () => {
   assert.equal(qids.has(20132101100101), true, 'refreshed Specimen P1 Q1 qid should exist');
   assert.equal(qids.has(20150210100), false, 'obsolete Specimen P1 Q1 qid should be gone');
   assert.equal(qids.has(62016023), true, 'ECAA 2016 Q23 should be gradeable');
+
+  const hidden = index.filter((entry) => entry.hidden);
+  assert.equal(hidden.length, 139);
+  assert.equal(hidden.filter((entry) => entry.db === 'TMUA').length, 40);
+  assert.equal(hidden.filter((entry) => entry.db === 'MAT').length, 99);
+  assert.equal(hidden.some((entry) => entry.db === 'SMC' || entry.db === 'ECAA'), false);
+  assert.equal(index.find((entry) => entry.qid === 20132101202101)?.hidden, true);
+  assert.equal(index.find((entry) => entry.qid === 20132101100101)?.hidden, undefined);
+  assert.equal(index.find((entry) => entry.qid === 20060300101)?.hidden, true);
+  assert.equal(index.find((entry) => entry.qid === 20070300101)?.hidden, undefined);
 });
 
 test('ECAA questions use the Multiple Choice section', () => {
