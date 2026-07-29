@@ -1,9 +1,9 @@
 ---
 database: TMUA
-qid: 20150221400
+qid: 20132101100214
 id: Spec-P2-Q14
 paper: TMUA P2
-year: 2015
+year:
 number: Q14
 section: Reasoning
 difficulty: 0

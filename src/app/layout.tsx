@@ -3,7 +3,7 @@ import "katex/dist/katex.min.css";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "MCQ Test — TMUA / MAT / SMC 选择题机考",
+  title: "MCQ Test — TMUA / MAT / SMC / ECAA 选择题机考",
 };
 
 // 首屏前同步套用上次选的配色，避免 light→dark 闪一下

@@ -1,9 +1,9 @@
 ---
 database: TMUA
-qid: 20150210400
+qid: 20132101100104
 id: Spec-P1-Q4
 paper: TMUA P1
-year: 2015
+year:
 number: Q4
 section: Applications
 difficulty: 0

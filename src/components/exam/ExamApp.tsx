@@ -24,16 +24,23 @@ import styles from './Exam.module.css';
 
 type Phase = 'setup' | 'loading' | 'exam' | 'result';
 type Mode = 'practice' | 'mock';
-type Db = 'TMUA' | 'MAT' | 'SMC' | 'ALL';
+type Db = 'TMUA' | 'MAT' | 'SMC' | 'ECAA' | 'ALL';
 
 const DB_TITLES: Record<Db, string> = {
   TMUA: 'Test of Mathematics for University Admission',
   MAT: 'Mathematics Admissions Test',
   SMC: 'Senior Mathematical Challenge',
+  ECAA: 'Engineering and Computer Science Admissions Assessment',
   ALL: 'MCQ Test — Mixed Paper',
 };
 
-const DB_NAMES: Record<Db, string> = { TMUA: 'TMUA', MAT: 'MAT', SMC: 'SMC', ALL: '混合' };
+const DB_NAMES: Record<Db, string> = {
+  TMUA: 'TMUA',
+  MAT: 'MAT',
+  SMC: 'SMC',
+  ECAA: 'ECAA',
+  ALL: '混合',
+};
 
 function sameLabel(a: string | null, b: string): boolean {
   return !!a && a.toLowerCase() === b.toLowerCase();
@@ -43,6 +50,11 @@ function fmtClock(totalSec: number): string {
   const m = Math.floor(totalSec / 60);
   const s = totalSec % 60;
   return `${m}:${String(s).padStart(2, '0')}`;
+}
+
+function sourceLabel(paper: string, year: number): string {
+  if (!year || paper.includes(String(year))) return paper;
+  return `${paper} ${year}`;
 }
 
 /** 默认限时 ≈ 题数 × 3.75 分钟(TMUA 20 题 75 分钟节奏) */
@@ -70,7 +82,7 @@ export default function ExamApp() {
     setRecords(loadRecords());
   }, []);
 
-  const poolCounts: Record<string, number> = { TMUA: 0, MAT: 0, SMC: 0 };
+  const poolCounts: Record<string, number> = { TMUA: 0, MAT: 0, SMC: 0, ECAA: 0 };
   for (const e of index || []) {
     if (poolCounts[e.db] !== undefined) poolCounts[e.db]++;
   }
@@ -389,11 +401,11 @@ export default function ExamApp() {
       <div className={styles.wrap}>
         <div className={styles.setupCard}>
           <div className={styles.setupTitle}>MCQ Test</div>
-          <div className={styles.setupSub}>TMUA / MAT / SMC 随机抽题 · CBT 机考界面 · 开始后自动全屏</div>
+          <div className={styles.setupSub}>TMUA / MAT / SMC / ECAA 随机抽题 · CBT 机考界面 · 开始后自动全屏</div>
 
           <div className={styles.fieldLabel}>题库</div>
           <div className={styles.segRow}>
-            {(['TMUA', 'MAT', 'SMC', 'ALL'] as Db[]).map((d) => (
+            {(['TMUA', 'MAT', 'SMC', 'ECAA', 'ALL'] as Db[]).map((d) => (
               <button
                 key={d}
                 className={`${styles.segBtn} ${db === d ? styles.segActive : ''}`}
@@ -604,8 +616,7 @@ export default function ExamApp() {
                     {ok ? '✓' : '✗'} 第 {i + 1} 题
                   </span>
                   <span>
-                    {qq.paper.includes(String(qq.year)) ? qq.paper : `${qq.paper} ${qq.year}`} ·{' '}
-                    {qq.number}
+                    {sourceLabel(qq.paper, qq.year)} · {qq.number}
                   </span>
                   <span>
                     你的答案:{answers[i]?.toUpperCase() || '—'} · 正确答案:{qq.answer.toUpperCase()}
@@ -697,7 +708,7 @@ export default function ExamApp() {
         {/* Mock 隐藏题目出处,避免年份/卷别提示 */}
         {mode === 'practice' && (
           <div className={styles.qMeta}>
-            {q.paper.includes(String(q.year)) ? q.paper : `${q.paper} ${q.year}`} · {q.number}
+            {sourceLabel(q.paper, q.year)} · {q.number}
           </div>
         )}
         <div className={styles.stem}>

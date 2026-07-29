@@ -24,7 +24,7 @@ export interface ExamQuestion {
   solution: string;
 }
 
-export const EXAM_DATABASES = ['TMUA', 'MAT', 'SMC'] as const;
+export const EXAM_DATABASES = ['TMUA', 'MAT', 'SMC', 'ECAA'] as const;
 export type ExamDb = (typeof EXAM_DATABASES)[number] | 'ALL';
 
 /** 索引条目：只有能自动判分的题才会出现在索引里 */

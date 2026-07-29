@@ -7,7 +7,7 @@
     "data": "node scripts/build-data.mjs",
     "dev": "npm run data && next dev -p 3210",
     "build": "npm run data && next build",
-    "test": "node --experimental-strip-types --test tests/*.test.ts",
+    "test": "node --experimental-strip-types --test tests/*.test.ts tests/*.test.mjs",
     "serve": "node scripts/serve.mjs",
     "start": "node scripts/serve.mjs"
   },

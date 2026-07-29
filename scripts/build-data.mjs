@@ -16,7 +16,7 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const BANK = process.env.BANK_PATH ? path.resolve(process.env.BANK_PATH) : path.join(ROOT, 'data');
 const OUT = path.join(ROOT, 'public', 'exam');
 
-const DATABASES = ['TMUA', 'MAT', 'SMC'];
+const DATABASES = ['TMUA', 'MAT', 'SMC', 'ECAA'];
 const ROMANS = ['i', 'ii', 'iii', 'iv', 'v', 'vi'];
 const LETTERS = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
 const IMAGE_DIR_NAMES = new Set(['image', 'images']);
@@ -255,7 +255,8 @@ function detectCorruption(parsed, database) {
   const lens = choices.map((c) => contentLen(c.text));
   const sorted = [...lens].sort((a, b) => b - a);
   const [max, second] = sorted;
-  if (max >= 40 && second > 0 && max / second >= 5) {
+  // ECAA 经常把最后一个干扰项写成整句文字，不能用旧 OCR 题库的长度比规则判断。
+  if (database !== 'ECAA' && max >= 40 && second > 0 && max / second >= 5) {
     const who = choices[lens.indexOf(max)].label;
     return `选项 ${who} 畸长（${max} 字符，第二长仅 ${second}），疑似吞掉了题干`;
   }
@@ -276,11 +277,11 @@ function detectCorruption(parsed, database) {
 
 function parseChoicesFor(database, statement, answer) {
   let parsed = null;
-  if (database === 'TMUA') parsed = parseTmuaChoices(statement);
+  if (database === 'TMUA' || database === 'ECAA') parsed = parseTmuaChoices(statement);
   else if (database === 'MAT') parsed = parseParenChoices(statement, LETTERS) ?? parseParenChoices(statement, ROMANS);
   else if (database === 'SMC') parsed = parseSmcChoices(statement) ?? parseParenChoices(statement, LETTERS);
   if (parsed) return { ...parsed, optionsInline: false };
-  const fallback = inlineFallback(statement, answer, database === 'TMUA' ? 8 : 5);
+  const fallback = inlineFallback(statement, answer, database === 'TMUA' || database === 'ECAA' ? 8 : 5);
   return fallback ? { ...fallback, optionsInline: true } : null;
 }
 
