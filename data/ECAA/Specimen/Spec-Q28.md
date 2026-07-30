@@ -1,11 +1,12 @@
 ---
 database: ECAA
-qid: 62015028
+qid: 90010602800
 id: Spec-Q28
 paper: ECAA Spec Section 1 Part B
 year: 2015
 number: Q28
 section: Multiple Choice
+solution_source: 官方
 difficulty: 0
 topics: []
 subtopics: []

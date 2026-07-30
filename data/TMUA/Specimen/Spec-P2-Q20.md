@@ -1,6 +1,6 @@
 ---
 database: TMUA
-qid: 20132101100220
+qid: 90010222000
 id: Spec-P2-Q20
 paper: TMUA P2
 year:

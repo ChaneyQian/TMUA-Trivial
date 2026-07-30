@@ -1,13 +1,14 @@
 # TMUA-Trivial
 
-TMUA / MAT / SMC / ECAA 选择题机考练习。随机抽题，仿 TMUA 官方 CBT 界面，题目、判分、渲染全在浏览器完成。
+TMUA / TMUA Mock / MAT / SMC / ECAA / AMC 选择题机考练习。随机抽题，仿 TMUA 官方 CBT 界面，题目、判分、渲染全在浏览器完成。
 
 **在线使用 → <https://chaneyqian.github.io/TMUA-Trivial/>**
 
 ## 特性
 
 - **两种模式** — 练习模式选完按 Enter 即时批改，右半屏揭示答案与解析；Mock 模式限时作答，交卷后统一批改并逐题回看
-- **1506 道可判分选择题** — TMUA 400（含 40 道非官方 Mock 增补题）、MAT 309、SMC 674、ECAA 123，均在构建期逐题解析验证，不是估算
+- **1706 道可判分选择题** — TMUA 360、TMUA Mock 240、MAT 309、SMC 674、ECAA 123，均在构建期逐题解析验证，不是估算；AMC 题源已接入，待答案补齐后进入可判分池
+- **9.0 Trivial 扩展题库** — 完成 365 道有效 QID 后解锁 TMUA Mock、AMC 与扩展年份题；支持用本站 XLSX 做题记录导入/导出
 - **CBT 机考界面** — 全屏、倒计时、Flag for Review、Navigator 题号跳转、Light / Dark / Sepia 三套配色
 - **纯静态** — 没有后端。索引约 47 KB，抽中哪几题就取哪几题
 - **键盘流** — `A`–`H` / `1`–`9` 选项，`Enter` 批改或下一题，`←` `→` 切题，`F` 旗标

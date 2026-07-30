@@ -29,23 +29,27 @@ import styles from './Exam.module.css';
 
 type Phase = 'setup' | 'loading' | 'exam' | 'result';
 type Mode = 'practice' | 'mock';
-type Db = 'TMUA' | 'MAT' | 'SMC' | 'ECAA' | 'ALL';
+type Db = 'TMUA' | 'TMUA_MOCK' | 'MAT' | 'SMC' | 'ECAA' | 'AMC' | 'ALL';
 
 const UNLOCK_SEEN_KEY = 'mcq-test:hidden-unlock-seen:v1';
 
 const DB_TITLES: Record<Db, string> = {
   TMUA: 'Test of Mathematics for University Admission',
+  TMUA_MOCK: 'TMUA Mock Papers',
   MAT: 'Mathematics Admissions Test',
   SMC: 'Senior Mathematical Challenge',
   ECAA: 'Engineering and Computer Science Admissions Assessment',
+  AMC: 'American Mathematics Competitions',
   ALL: 'MCQ Test — Mixed Paper',
 };
 
 const DB_NAMES: Record<Db, string> = {
   TMUA: 'TMUA',
+  TMUA_MOCK: 'TMUA Mock',
   MAT: 'MAT',
   SMC: 'SMC',
   ECAA: 'ECAA',
+  AMC: 'AMC',
   ALL: '混合',
 };
 
@@ -145,7 +149,7 @@ export default function ExamApp() {
     setShowUnlock(true); // 自动收起由 UnlockOverlay 自己管，好带上淡出动画
   }, [hiddenUnlocked]);
 
-  const poolCounts: Record<string, number> = { TMUA: 0, MAT: 0, SMC: 0, ECAA: 0 };
+  const poolCounts: Record<string, number> = { TMUA: 0, TMUA_MOCK: 0, MAT: 0, SMC: 0, ECAA: 0, AMC: 0 };
   for (const e of activeIndex) {
     if (poolCounts[e.db] !== undefined) poolCounts[e.db]++;
   }
@@ -159,6 +163,10 @@ export default function ExamApp() {
   const [minutes, setMinutes] = useState(defaultMinutes(10));
   const [minutesTouched, setMinutesTouched] = useState(false);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (libraryMode === 'classic' && (db === 'TMUA_MOCK' || db === 'AMC')) setDb('TMUA');
+  }, [db, libraryMode]);
 
   // ---- 考试 ----
   const [questions, setQuestions] = useState<ExamQuestion[]>([]);
@@ -465,7 +473,7 @@ export default function ExamApp() {
       <div className={styles.wrap}>
         <div className={styles.setupCard}>
           <div className={styles.setupTitle}>MCQ Test</div>
-          <div className={styles.setupSub}>TMUA / MAT / SMC / ECAA 随机抽题 · CBT 机考界面 · 开始后自动全屏</div>
+          <div className={styles.setupSub}>TMUA / MAT / SMC / ECAA 随机抽题 · 9.0 Trivial 解锁扩展题库 · CBT 机考界面</div>
 
           <div className={styles.libraryHead}>
             <div className={styles.fieldLabel}>题库范围</div>
@@ -494,17 +502,23 @@ export default function ExamApp() {
 
           <div className={styles.fieldLabel}>题库</div>
           <div className={styles.segRow}>
-            {(['TMUA', 'MAT', 'SMC', 'ECAA', 'ALL'] as Db[]).map((d) => (
+            {(hiddenUnlocked && libraryMode === 'hidden'
+              ? (['TMUA', 'TMUA_MOCK', 'MAT', 'SMC', 'ECAA', 'AMC', 'ALL'] as Db[])
+              : (['TMUA', 'MAT', 'SMC', 'ECAA', 'ALL'] as Db[])
+            ).map((d) => (
               <button
                 key={d}
                 className={`${styles.segBtn} ${db === d ? styles.segActive : ''}`}
                 onClick={() => setDb(d)}
+                disabled={d !== 'ALL' && poolCounts[d] === 0}
               >
                 {DB_NAMES[d]}
                 <span className={styles.segHint}>
                   {d === 'ALL'
                     ? `${Object.values(poolCounts).reduce((a, b) => a + b, 0)} 题`
-                    : `${poolCounts[d] || 0} 题`}
+                    : d === 'AMC' && poolCounts[d] === 0
+                      ? '待补答案'
+                      : `${poolCounts[d] || 0} 题`}
                 </span>
               </button>
             ))}

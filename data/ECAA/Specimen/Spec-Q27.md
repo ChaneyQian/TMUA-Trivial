@@ -1,14 +1,17 @@
 ---
 database: ECAA
-qid: 62015027
+qid: 90010602700
 id: Spec-Q27
 paper: ECAA Spec Section 1 Part B
 year: 2015
 number: Q27
 section: Multiple Choice
+solution_source: 官方
 difficulty: 0
-topics: []
-subtopics: []
+topics:
+  - Logic and Proof
+subtopics:
+  - Logic
 tags: []
 status: 已入库
 ---

@@ -114,6 +114,12 @@
   border-color: var(--accent);
 }
 
+.segBtn:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+  border-color: var(--border);
+}
+
 .segActive {
   background: var(--accent-light);
   border-color: var(--accent);

@@ -16,7 +16,7 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const BANK = process.env.BANK_PATH ? path.resolve(process.env.BANK_PATH) : path.join(ROOT, 'data');
 const OUT = path.join(ROOT, 'public', 'exam');
 
-const DATABASES = ['TMUA', 'MAT', 'SMC', 'ECAA'];
+const DATABASES = ['TMUA', 'MAT', 'SMC', 'ECAA', 'AMC'];
 const ROMANS = ['i', 'ii', 'iii', 'iv', 'v', 'vi'];
 const LETTERS = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
 const IMAGE_DIR_NAMES = new Set(['image', 'images']);
@@ -318,6 +318,8 @@ function isHiddenQuestion(database, data) {
   const year = Number(data.year) || 0;
   const id = String(data.id || '');
 
+  if (database === 'TMUA_MOCK' || database === 'AMC') return true;
+
   if (database === 'TMUA') {
     const isSpecimen = id.startsWith('Spec-');
     return !isSpecimen && !(year >= 2016 && year <= 2023);
@@ -325,6 +327,14 @@ function isHiddenQuestion(database, data) {
 
   if (database === 'MAT') return !(year >= 2007 && year <= 2023);
   return false;
+}
+
+function indexDatabase(sourceDatabase, filePath, data) {
+  if (sourceDatabase !== 'TMUA') return sourceDatabase;
+
+  const relativeParts = path.relative(path.join(BANK, 'TMUA'), filePath).split(path.sep);
+  const isMock = relativeParts[0] === 'Mock' || String(data.paper || '') === 'TMUA Mock';
+  return isMock ? 'TMUA_MOCK' : 'TMUA';
 }
 
 // ---------------- 主流程 ----------------
@@ -346,12 +356,13 @@ function main() {
   let inlineCount = 0;
   const skipped = { noQid: 0, noStatement: 0, badAnswer: 0, noChoices: 0, answerMismatch: 0, corrupted: 0 };
 
-  for (const db of DATABASES) {
-    for (const filePath of listQuestionFiles(path.join(BANK, db))) {
+  for (const sourceDb of DATABASES) {
+    for (const filePath of listQuestionFiles(path.join(BANK, sourceDb))) {
       let raw;
       try { raw = fs.readFileSync(filePath, 'utf-8'); } catch { continue; }
       const { data, body } = parseFrontmatter(raw);
       if (!data.qid) { skipped.noQid++; continue; }
+      const db = indexDatabase(sourceDb, filePath, data);
 
       const sections = parseSections(body);
       const statement = sections['题目'];
@@ -360,7 +371,7 @@ function main() {
       const answer = normalizeAnswer(sections['答案']);
       if (!answer) { skipped.badAnswer++; continue; }
 
-      let parsed = parseChoicesFor(db, statement, answer);
+      let parsed = parseChoicesFor(sourceDb, statement, answer);
       if (!parsed) { skipped.noChoices++; continue; }
       if (!parsed.choices.some((c) => c.label.toLowerCase() === answer.toLowerCase())) {
         skipped.answerMismatch++;
@@ -369,7 +380,7 @@ function main() {
 
       // 拦截源数据损坏的题（只拦不改；修是人工去改 data\ 下的 md 源文件）
       if (!parsed.optionsInline) {
-        const corruption = detectCorruption(parsed, db);
+        const corruption = detectCorruption(parsed, sourceDb);
         if (corruption) {
           corrupted.push({ db, id: String(data.id || ''), file: path.relative(ROOT, filePath), reason: corruption });
           skipped.corrupted++;

@@ -138,11 +138,12 @@ test('classic mode excludes hidden index entries until the expanded pool is sele
   // 标注类型：数组字面量里 hidden: true 会被推断成 boolean，与 IndexEntry 的 hidden?: true 不符
   const index: IndexEntry[] = [
     { qid: 1, db: 'TMUA' },
-    { qid: 2, db: 'TMUA', hidden: true },
+    { qid: 2, db: 'TMUA_MOCK', hidden: true },
     { qid: 3, db: 'MAT', hidden: true },
     { qid: 4, db: 'ECAA' },
+    { qid: 5, db: 'AMC', hidden: true },
   ];
 
   assert.deepEqual(recordsModule.indexForLibraryMode(index, 'classic').map((entry) => entry.qid), [1, 4]);
-  assert.deepEqual(recordsModule.indexForLibraryMode(index, 'hidden').map((entry) => entry.qid), [1, 2, 3, 4]);
+  assert.deepEqual(recordsModule.indexForLibraryMode(index, 'hidden').map((entry) => entry.qid), [1, 2, 3, 4, 5]);
 });

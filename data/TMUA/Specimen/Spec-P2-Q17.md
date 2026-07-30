@@ -1,14 +1,16 @@
 ---
 database: TMUA
-qid: 20132101100217
+qid: 90010221700
 id: Spec-P2-Q17
 paper: TMUA P2
 year:
 number: Q17
 section: Reasoning
 difficulty: 0
-topics: []
-subtopics: []
+topics:
+  - Logic and Proof
+subtopics:
+  - Logic
 tags:
   - specimen
 status: 已入库
