@@ -54,24 +54,13 @@
   display: block;
   width: 192px;
   height: 208px;
+  background-image: var(--pet-sheet);
   background-repeat: no-repeat;
   background-size: 1536px 1872px;
   background-position: var(--sprite-x) var(--sprite-y);
   image-rendering: pixelated;
   image-rendering: crisp-edges;
   filter: drop-shadow(0 10px 8px rgba(56, 29, 22, 0.2));
-}
-
-.clawdLaptop .sprite {
-  background-image: url('/pets/clawd-laptop/spritesheet.webp');
-}
-
-.guga .sprite {
-  background-image: url('/pets/guga/spritesheet.webp');
-}
-
-.frieren .sprite {
-  background-image: url('/pets/frieren/spritesheet.webp');
 }
 
 .guga .scaleLayer,

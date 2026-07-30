@@ -29,13 +29,24 @@ test('the color scheme selects a packaged Codex pet rig in the bottom-right corn
   assert.match(component, /dark:\s*'frieren'/);
   assert.match(component, /sepia:\s*'clawd-laptop'/);
   assert.match(component, /MutationObserver/);
+  assert.match(component, /NEXT_PUBLIC_BASE_PATH/);
+  assert.match(component, /clawd-laptop\/spritesheet\.webp/);
+  assert.match(component, /guga\/spritesheet\.webp/);
+  assert.match(component, /frieren\/spritesheet\.webp/);
   assert.match(component, /onClick=/);
   assert.match(component, /role="status"/);
   assert.match(component, /running-right/);
   assert.match(component, /running-left/);
   assert.match(component, /waving/);
   assert.match(component, /jumping/);
+  assert.match(component, /failed/);
+  assert.match(component, /waiting/);
+  assert.match(component, /running/);
+  assert.match(component, /review/);
   assert.match(component, /IDLE_DURATIONS/);
+  assert.match(component, /mcq-test:pet-command/);
+  assert.match(component, /\[data-pet-target="grade"\]/);
+  assert.match(component, /requestAnimationFrame/);
   assert.match(component, /onPointerDown=/);
   assert.match(component, /onPointerMove=/);
   assert.match(component, /onPointerUp=/);
@@ -44,10 +55,18 @@ test('the color scheme selects a packaged Codex pet rig in the bottom-right corn
   assert.match(css, /position:\s*fixed/);
   assert.match(css, /right:\s*max\(/);
   assert.match(css, /bottom:\s*max\(/);
-  assert.match(css, /clawd-laptop\/spritesheet\.webp/);
-  assert.match(css, /guga\/spritesheet\.webp/);
-  assert.match(css, /frieren\/spritesheet\.webp/);
+  assert.match(css, /background-image:\s*var\(--pet-sheet\)/);
   assert.match(css, /image-rendering:\s*pixelated/);
   assert.match(css, /background-position/);
   assert.match(css, /prefers-reduced-motion:\s*reduce/);
+});
+
+test('practice grading drives the pet reaction and grade-button travel', () => {
+  const exam = fs.readFileSync('src/components/exam/ExamApp.tsx', 'utf8');
+
+  assert.match(exam, /data-pet-target="grade"/);
+  assert.match(exam, /mcq-test:pet-command/);
+  assert.match(exam, /state:\s*'failed'/);
+  assert.match(exam, /state:\s*'review'/);
+  assert.match(exam, /moveTo:\s*'grade'/);
 });

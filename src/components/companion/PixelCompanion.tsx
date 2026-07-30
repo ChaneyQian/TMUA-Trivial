@@ -1,6 +1,7 @@
 'use client';
 
 import {
+  useCallback,
   useEffect,
   useRef,
   useState,
@@ -10,7 +11,16 @@ import {
 import styles from './PixelCompanion.module.css';
 
 type Point = { x: number; y: number };
-type SpriteState = 'idle' | 'running-right' | 'running-left' | 'waving' | 'jumping';
+type SpriteState =
+  | 'idle'
+  | 'running-right'
+  | 'running-left'
+  | 'waving'
+  | 'jumping'
+  | 'failed'
+  | 'waiting'
+  | 'running'
+  | 'review';
 type ThemeName = 'light' | 'dark' | 'sepia';
 type PetId = 'guga' | 'frieren' | 'clawd-laptop';
 
@@ -25,10 +35,25 @@ interface AnimationState {
   state: SpriteState;
   frame: number;
   run: number;
+  after: SpriteState;
+}
+
+interface PetCommandDetail {
+  state?: SpriteState;
+  after?: SpriteState;
+  moveTo?: 'grade' | 'home';
 }
 
 const CELL_WIDTH = 192;
 const CELL_HEIGHT = 208;
+const PET_EVENT = 'mcq-test:pet-command';
+const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH || '';
+
+const PET_SPRITES: Record<PetId, string> = {
+  guga: `${BASE_PATH}/pets/guga/spritesheet.webp`,
+  frieren: `${BASE_PATH}/pets/frieren/spritesheet.webp`,
+  'clawd-laptop': `${BASE_PATH}/pets/clawd-laptop/spritesheet.webp`,
+};
 
 const PET_BY_THEME: Record<ThemeName, PetId> = {
   light: 'guga',
@@ -42,11 +67,15 @@ const PET_NAMES: Record<PetId, string> = {
   'clawd-laptop': 'Clawd Laptop',
 };
 
-// Codex pet atlas: 8 columns × 9 rows. Clawd Laptop uses the same timing contract.
+// Codex pet atlas: 8 columns × 9 rows, with the app's native frame timing.
 const IDLE_DURATIONS = [280, 110, 110, 140, 140, 320];
 const RUN_DURATIONS = [120, 120, 120, 120, 120, 120, 120, 220];
 const WAVE_DURATIONS = [140, 140, 140, 280];
 const JUMP_DURATIONS = [140, 140, 140, 140, 280];
+const FAILED_DURATIONS = [140, 140, 140, 140, 140, 140, 140, 240];
+const WAITING_DURATIONS = [150, 150, 150, 150, 150, 260];
+const ACTIVE_DURATIONS = [120, 120, 120, 120, 120, 220];
+const REVIEW_DURATIONS = [150, 150, 150, 150, 150, 280];
 
 const ANIMATIONS: Record<
   SpriteState,
@@ -57,36 +86,150 @@ const ANIMATIONS: Record<
   'running-left': { row: 2, durations: RUN_DURATIONS, loop: true },
   waving: { row: 3, durations: WAVE_DURATIONS, loop: false },
   jumping: { row: 4, durations: JUMP_DURATIONS, loop: false },
+  failed: { row: 5, durations: FAILED_DURATIONS, loop: false },
+  waiting: { row: 6, durations: WAITING_DURATIONS, loop: true },
+  running: { row: 7, durations: ACTIVE_DURATIONS, loop: true },
+  review: { row: 8, durations: REVIEW_DURATIONS, loop: true },
 };
 
 const STATE_LABELS: Record<SpriteState, string> = {
   idle: '正在待机',
   'running-right': '向右移动',
   'running-left': '向左移动',
-  waving: '向你挥手',
+  waving: '正在庆祝',
   jumping: '跳了一下',
+  failed: '发现这题答错了',
+  waiting: '正在等你选择答案',
+  running: '正在陪你解题',
+  review: '正在和你复盘',
+};
+
+const BUBBLE_TEXT: Record<SpriteState, string> = {
+  idle: '',
+  'running-right': '→',
+  'running-left': '←',
+  waving: 'Nice!',
+  jumping: '♪',
+  failed: '×',
+  waiting: '…',
+  running: '···',
+  review: '?',
 };
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
 }
 
+function easeInOut(progress: number): number {
+  return progress < 0.5 ? 2 * progress * progress : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+}
+
 export default function PixelCompanion() {
+  const companionRef = useRef<HTMLElement | null>(null);
   const dragRef = useRef<DragState | null>(null);
+  const offsetRef = useRef<Point>({ x: 0, y: 0 });
+  const travelFrameRef = useRef<number | null>(null);
+  const reducedMotionRef = useRef(false);
   const suppressClickRef = useRef(false);
   const tapReactionRef = useRef<'waving' | 'jumping'>('waving');
   const [offset, setOffset] = useState<Point>({ x: 0, y: 0 });
   const [reducedMotion, setReducedMotion] = useState(false);
   const [theme, setTheme] = useState<ThemeName>('light');
-  const [animation, setAnimation] = useState<AnimationState>({ state: 'idle', frame: 0, run: 0 });
+  const [animation, setAnimation] = useState<AnimationState>({
+    state: 'idle',
+    frame: 0,
+    run: 0,
+    after: 'idle',
+  });
 
-  const play = (state: SpriteState) => {
-    setAnimation((current) => ({ state, frame: 0, run: current.run + 1 }));
-  };
+  const commitOffset = useCallback((next: Point) => {
+    offsetRef.current = next;
+    setOffset(next);
+  }, []);
+
+  const play = useCallback((state: SpriteState, after: SpriteState = 'idle') => {
+    setAnimation((current) => ({ state, frame: 0, run: current.run + 1, after }));
+  }, []);
+
+  const cancelTravel = useCallback(() => {
+    if (travelFrameRef.current !== null) cancelAnimationFrame(travelFrameRef.current);
+    travelFrameRef.current = null;
+  }, []);
+
+  const animateTo = useCallback(
+    (target: Point, finalState: SpriteState) => {
+      cancelTravel();
+      const start = offsetRef.current;
+      const dx = target.x - start.x;
+      const dy = target.y - start.y;
+      const distance = Math.hypot(dx, dy);
+
+      if (reducedMotionRef.current || distance < 4) {
+        commitOffset(target);
+        play(finalState);
+        return;
+      }
+
+      play(dx < 0 ? 'running-left' : 'running-right');
+      const startedAt = performance.now();
+      const duration = clamp(distance * 1.45, 480, 1450);
+
+      const step = (now: number) => {
+        const progress = clamp((now - startedAt) / duration, 0, 1);
+        const eased = easeInOut(progress);
+        commitOffset({ x: start.x + dx * eased, y: start.y + dy * eased });
+        if (progress < 1) {
+          travelFrameRef.current = requestAnimationFrame(step);
+        } else {
+          travelFrameRef.current = null;
+          play(finalState);
+        }
+      };
+
+      travelFrameRef.current = requestAnimationFrame(step);
+    },
+    [cancelTravel, commitOffset, play],
+  );
+
+  const moveToGrade = useCallback(
+    (finalState: SpriteState, attempt = 0) => {
+      const pet = companionRef.current;
+      const target = document.querySelector<HTMLElement>('[data-pet-target="grade"]');
+      if ((!pet || !target) && attempt < 18) {
+        travelFrameRef.current = requestAnimationFrame(() => moveToGrade(finalState, attempt + 1));
+        return;
+      }
+      if (!pet || !target) {
+        play(finalState);
+        return;
+      }
+
+      const petRect = pet.getBoundingClientRect();
+      const targetRect = target.getBoundingClientRect();
+      const gap = 10;
+      const roomOnRight = targetRect.right + gap + petRect.width <= window.innerWidth - 8;
+      const desiredLeft = roomOnRight
+        ? targetRect.right + gap
+        : clamp(targetRect.right - petRect.width, 8, window.innerWidth - petRect.width - 8);
+      const desiredTop = roomOnRight
+        ? clamp(targetRect.bottom - petRect.height, 8, window.innerHeight - petRect.height - 8)
+        : clamp(targetRect.top - petRect.height + 12, 8, window.innerHeight - petRect.height - 8);
+      const current = offsetRef.current;
+      const next = {
+        x: clamp(current.x + desiredLeft - petRect.left, -Math.max(0, window.innerWidth - petRect.width), 0),
+        y: clamp(current.y + desiredTop - petRect.top, -Math.max(0, window.innerHeight - petRect.height), 0),
+      };
+      animateTo(next, finalState);
+    },
+    [animateTo, play],
+  );
 
   useEffect(() => {
     const media = window.matchMedia('(prefers-reduced-motion: reduce)');
-    const update = () => setReducedMotion(media.matches);
+    const update = () => {
+      reducedMotionRef.current = media.matches;
+      setReducedMotion(media.matches);
+    };
     update();
     media.addEventListener('change', update);
     return () => media.removeEventListener('change', update);
@@ -105,14 +248,24 @@ export default function PixelCompanion() {
   }, []);
 
   useEffect(() => {
+    const receiveCommand = (event: Event) => {
+      const detail = (event as CustomEvent<PetCommandDetail>).detail || {};
+      const state = detail.state || 'idle';
+      if (detail.moveTo === 'grade') moveToGrade(state);
+      else if (detail.moveTo === 'home') animateTo({ x: 0, y: 0 }, state);
+      else play(state, detail.after || (state === 'failed' ? 'review' : 'idle'));
+    };
+    window.addEventListener(PET_EVENT, receiveCommand);
+    return () => window.removeEventListener(PET_EVENT, receiveCommand);
+  }, [animateTo, moveToGrade, play]);
+
+  useEffect(() => {
     const finishOutside = () => {
       const drag = dragRef.current;
       if (!drag) return;
       suppressClickRef.current = drag.moved;
       dragRef.current = null;
-      if (drag.moved) {
-        setAnimation((current) => ({ state: 'jumping', frame: 0, run: current.run + 1 }));
-      }
+      if (drag.moved) play('jumping');
     };
 
     window.addEventListener('pointerup', finishOutside);
@@ -121,19 +274,30 @@ export default function PixelCompanion() {
       window.removeEventListener('pointerup', finishOutside);
       window.removeEventListener('pointercancel', finishOutside);
     };
-  }, []);
+  }, [play]);
+
+  useEffect(() => () => cancelTravel(), [cancelTravel]);
 
   useEffect(() => {
-    if (reducedMotion) return;
-
     const config = ANIMATIONS[animation.state];
+    if (reducedMotion) {
+      if (!config.loop) {
+        const timer = window.setTimeout(
+          () => setAnimation((current) => ({ ...current, state: current.after, frame: 0 })),
+          0,
+        );
+        return () => window.clearTimeout(timer);
+      }
+      return;
+    }
+
     const timer = window.setTimeout(() => {
       setAnimation((current) => {
         if (current.state !== animation.state || current.run !== animation.run) return current;
         const nextFrame = current.frame + 1;
         if (nextFrame < config.durations.length) return { ...current, frame: nextFrame };
         if (config.loop) return { ...current, frame: 0 };
-        return { state: 'idle', frame: 0, run: current.run };
+        return { ...current, state: current.after, frame: 0 };
       });
     }, config.durations[animation.frame]);
 
@@ -148,11 +312,12 @@ export default function PixelCompanion() {
 
   const onPointerDown = (event: ReactPointerEvent<HTMLButtonElement>) => {
     if (event.button !== 0) return;
+    cancelTravel();
     event.currentTarget.setPointerCapture(event.pointerId);
     dragRef.current = {
       pointerId: event.pointerId,
       startPointer: { x: event.clientX, y: event.clientY },
-      startOffset: offset,
+      startOffset: offsetRef.current,
       moved: false,
     };
   };
@@ -170,11 +335,11 @@ export default function PixelCompanion() {
     const nextY = clamp(drag.startOffset.y + dy, -Math.max(0, window.innerHeight - 146), 0);
     const nextState: SpriteState = dx < 0 ? 'running-left' : 'running-right';
 
-    setOffset({ x: nextX, y: nextY });
+    commitOffset({ x: nextX, y: nextY });
     setAnimation((current) =>
       current.state === nextState
         ? current
-        : { state: nextState, frame: 0, run: current.run + 1 },
+        : { state: nextState, frame: 0, run: current.run + 1, after: 'idle' },
     );
   };
 
@@ -210,26 +375,20 @@ export default function PixelCompanion() {
   const spriteStyle = {
     '--sprite-x': `${-animation.frame * CELL_WIDTH}px`,
     '--sprite-y': `${-config.row * CELL_HEIGHT}px`,
+    '--pet-sheet': `url("${PET_SPRITES[petId]}")`,
   } as CSSProperties;
 
   return (
     <aside
-      className={`${styles.companion} ${petClass} ${animation.state.startsWith('running-') ? styles.isDragging : ''}`}
+      ref={companionRef}
+      className={`${styles.companion} ${petClass}`}
       style={{ transform: `translate3d(${offset.x}px, ${offset.y}px, 0)` }}
       aria-label={`${petName} 动态小助手`}
       data-pet={petId}
     >
       <div className={styles.scaleLayer}>
         <div className={`${styles.statusBubble} ${animation.state !== 'idle' ? styles.statusBubbleVisible : ''}`}>
-          {animation.state === 'idle'
-            ? ''
-            : animation.state === 'waving'
-            ? 'Hi!'
-            : animation.state === 'jumping'
-              ? '♪'
-              : animation.state === 'running-left'
-                ? '←'
-                : '→'}
+          {BUBBLE_TEXT[animation.state]}
         </div>
         <button
           type="button"

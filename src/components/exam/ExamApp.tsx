@@ -74,6 +74,16 @@ function defaultMinutes(count: number): number {
   return Math.max(1, Math.ceil(count * 3.75));
 }
 
+type PetCommandState = 'idle' | 'waving' | 'failed' | 'waiting' | 'running' | 'review';
+
+function commandPet(detail: {
+  state: PetCommandState;
+  after?: PetCommandState;
+  moveTo?: 'grade' | 'home';
+}) {
+  window.dispatchEvent(new CustomEvent('mcq-test:pet-command', { detail }));
+}
+
 /** 解锁过渡层：盖在设置页之上（背景是虚化的页面本身，不是另开一屏），放完自行淡出 */
 function UnlockOverlay({ onDismiss }: { onDismiss: () => void }) {
   const [closing, setClosing] = useState(false);
@@ -187,6 +197,12 @@ export default function ExamApp() {
   const [scheme, setScheme] = useState(() =>
     typeof document === 'undefined' ? 'light' : document.documentElement.dataset.theme || 'light'
   );
+
+  useEffect(() => {
+    if (phase === 'exam') commandPet({ state: 'waiting', moveTo: 'grade' });
+    else if (phase === 'result') commandPet({ state: 'review', moveTo: 'home' });
+    else if (phase === 'setup') commandPet({ state: 'idle', moveTo: 'home' });
+  }, [phase]);
 
   const setCountAnd = (n: number) => {
     setCount(n);
@@ -358,17 +374,21 @@ export default function ExamApp() {
   const selectChoice = (label: string) => {
     if (mode === 'practice' && graded[idx]) return;
     setAnswers((a) => a.map((v, i) => (i === idx ? label : v)));
+    commandPet({ state: 'running' });
   };
 
   const gradeCurrent = () => {
     if (!answers[idx]) return;
     setGraded((g) => g.map((v, i) => (i === idx ? true : v)));
+    if (sameLabel(answers[idx], q.answer)) commandPet({ state: 'waving', after: 'review' });
+    else commandPet({ state: 'failed', after: 'review' });
   };
 
   const goto = (i: number) => {
     if (i < 0 || i >= questions.length) return;
     setIdx(i);
     setNavOpen(false);
+    commandPet({ state: 'waiting', moveTo: 'grade' });
   };
 
   /**
@@ -400,7 +420,10 @@ export default function ExamApp() {
     setSolShown((s) => {
       const n = new Set(s);
       if (n.has(idx)) n.delete(idx);
-      else n.add(idx);
+      else {
+        n.add(idx);
+        commandPet({ state: 'review' });
+      }
       return n;
     });
 
@@ -870,6 +893,7 @@ export default function ExamApp() {
         {/* 主操作按钮:触屏没有物理 Enter,这里是唯一入口;键盘用户按 Enter 等效 */}
         <button
           className={styles.enterBtn}
+          data-pet-target="grade"
           // 点完立刻失焦:否则按钮保持 focus,下一次按 Enter 会同时触发
           // 全局键盘处理和浏览器对焦点按钮的默认激活,一次按键跳两题
           onClick={(e) => {
