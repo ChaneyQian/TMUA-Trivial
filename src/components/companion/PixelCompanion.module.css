@@ -54,13 +54,29 @@
   display: block;
   width: 192px;
   height: 208px;
-  background-image: url('/pets/clawd-laptop/spritesheet.webp');
   background-repeat: no-repeat;
   background-size: 1536px 1872px;
   background-position: var(--sprite-x) var(--sprite-y);
   image-rendering: pixelated;
   image-rendering: crisp-edges;
   filter: drop-shadow(0 10px 8px rgba(56, 29, 22, 0.2));
+}
+
+.clawdLaptop .sprite {
+  background-image: url('/pets/clawd-laptop/spritesheet.webp');
+}
+
+.guga .sprite {
+  background-image: url('/pets/guga/spritesheet.webp');
+}
+
+.frieren .sprite {
+  background-image: url('/pets/frieren/spritesheet.webp');
+}
+
+.guga .scaleLayer,
+.frieren .scaleLayer {
+  transform: scale(0.64);
 }
 
 .statusBubble {
@@ -110,6 +126,11 @@
 
   .scaleLayer {
     transform: scale(0.58);
+  }
+
+  .guga .scaleLayer,
+  .frieren .scaleLayer {
+    transform: scale(0.54);
   }
 }
 

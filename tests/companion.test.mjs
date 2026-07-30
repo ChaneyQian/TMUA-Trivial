@@ -5,7 +5,7 @@ import test from 'node:test';
 const componentPath = 'src/components/companion/PixelCompanion.tsx';
 const cssPath = 'src/components/companion/PixelCompanion.module.css';
 
-test('the Clawd Laptop sprite rig lives in the bottom-right corner', () => {
+test('the color scheme selects a packaged Codex pet rig in the bottom-right corner', () => {
   assert.equal(fs.existsSync(componentPath), true, 'missing PixelCompanion component');
   assert.equal(fs.existsSync(cssPath), true, 'missing PixelCompanion styles');
   assert.equal(
@@ -14,6 +14,10 @@ test('the Clawd Laptop sprite rig lives in the bottom-right corner', () => {
     'missing Clawd Laptop spritesheet',
   );
   assert.equal(fs.existsSync('public/pets/clawd-laptop/pet.json'), true, 'missing pet metadata');
+  assert.equal(fs.existsSync('public/pets/guga/spritesheet.webp'), true, 'missing Guga spritesheet');
+  assert.equal(fs.existsSync('public/pets/guga/pet.json'), true, 'missing Guga metadata');
+  assert.equal(fs.existsSync('public/pets/frieren/spritesheet.webp'), true, 'missing Frieren spritesheet');
+  assert.equal(fs.existsSync('public/pets/frieren/pet.json'), true, 'missing Frieren metadata');
 
   const component = fs.readFileSync(componentPath, 'utf8');
   const css = fs.readFileSync(cssPath, 'utf8');
@@ -21,6 +25,10 @@ test('the Clawd Laptop sprite rig lives in the bottom-right corner', () => {
 
   assert.match(page, /<PixelCompanion\s*\/>/);
   assert.match(component, /aria-label="和 Trivial 小助手互动"/);
+  assert.match(component, /light:\s*'guga'/);
+  assert.match(component, /dark:\s*'frieren'/);
+  assert.match(component, /sepia:\s*'clawd-laptop'/);
+  assert.match(component, /MutationObserver/);
   assert.match(component, /onClick=/);
   assert.match(component, /role="status"/);
   assert.match(component, /running-right/);
@@ -37,6 +45,8 @@ test('the Clawd Laptop sprite rig lives in the bottom-right corner', () => {
   assert.match(css, /right:\s*max\(/);
   assert.match(css, /bottom:\s*max\(/);
   assert.match(css, /clawd-laptop\/spritesheet\.webp/);
+  assert.match(css, /guga\/spritesheet\.webp/);
+  assert.match(css, /frieren\/spritesheet\.webp/);
   assert.match(css, /image-rendering:\s*pixelated/);
   assert.match(css, /background-position/);
   assert.match(css, /prefers-reduced-motion:\s*reduce/);

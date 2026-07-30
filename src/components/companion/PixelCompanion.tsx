@@ -11,6 +11,8 @@ import styles from './PixelCompanion.module.css';
 
 type Point = { x: number; y: number };
 type SpriteState = 'idle' | 'running-right' | 'running-left' | 'waving' | 'jumping';
+type ThemeName = 'light' | 'dark' | 'sepia';
+type PetId = 'guga' | 'frieren' | 'clawd-laptop';
 
 interface DragState {
   pointerId: number;
@@ -27,6 +29,18 @@ interface AnimationState {
 
 const CELL_WIDTH = 192;
 const CELL_HEIGHT = 208;
+
+const PET_BY_THEME: Record<ThemeName, PetId> = {
+  light: 'guga',
+  dark: 'frieren',
+  sepia: 'clawd-laptop',
+};
+
+const PET_NAMES: Record<PetId, string> = {
+  guga: 'Guga',
+  frieren: 'Frieren',
+  'clawd-laptop': 'Clawd Laptop',
+};
 
 // Codex pet atlas: 8 columns × 9 rows. Clawd Laptop uses the same timing contract.
 const IDLE_DURATIONS = [280, 110, 110, 140, 140, 320];
@@ -45,12 +59,12 @@ const ANIMATIONS: Record<
   jumping: { row: 4, durations: JUMP_DURATIONS, loop: false },
 };
 
-const LABELS: Record<SpriteState, string> = {
-  idle: 'Clawd Laptop 正在待机',
-  'running-right': 'Clawd Laptop 向右移动',
-  'running-left': 'Clawd Laptop 向左移动',
-  waving: 'Clawd Laptop 向你挥手',
-  jumping: 'Clawd Laptop 跳了一下',
+const STATE_LABELS: Record<SpriteState, string> = {
+  idle: '正在待机',
+  'running-right': '向右移动',
+  'running-left': '向左移动',
+  waving: '向你挥手',
+  jumping: '跳了一下',
 };
 
 function clamp(value: number, min: number, max: number): number {
@@ -63,6 +77,7 @@ export default function PixelCompanion() {
   const tapReactionRef = useRef<'waving' | 'jumping'>('waving');
   const [offset, setOffset] = useState<Point>({ x: 0, y: 0 });
   const [reducedMotion, setReducedMotion] = useState(false);
+  const [theme, setTheme] = useState<ThemeName>('light');
   const [animation, setAnimation] = useState<AnimationState>({ state: 'idle', frame: 0, run: 0 });
 
   const play = (state: SpriteState) => {
@@ -75,6 +90,18 @@ export default function PixelCompanion() {
     update();
     media.addEventListener('change', update);
     return () => media.removeEventListener('change', update);
+  }, []);
+
+  useEffect(() => {
+    const root = document.documentElement;
+    const updateTheme = () => {
+      const value = root.dataset.theme;
+      setTheme(value === 'dark' || value === 'sepia' ? value : 'light');
+    };
+    const observer = new MutationObserver(updateTheme);
+    updateTheme();
+    observer.observe(root, { attributes: true, attributeFilter: ['data-theme'] });
+    return () => observer.disconnect();
   }, []);
 
   useEffect(() => {
@@ -172,6 +199,14 @@ export default function PixelCompanion() {
   };
 
   const config = ANIMATIONS[animation.state];
+  const petId = PET_BY_THEME[theme];
+  const petName = PET_NAMES[petId];
+  const petClass =
+    petId === 'clawd-laptop'
+      ? styles.clawdLaptop
+      : petId === 'frieren'
+        ? styles.frieren
+        : styles.guga;
   const spriteStyle = {
     '--sprite-x': `${-animation.frame * CELL_WIDTH}px`,
     '--sprite-y': `${-config.row * CELL_HEIGHT}px`,
@@ -179,9 +214,10 @@ export default function PixelCompanion() {
 
   return (
     <aside
-      className={`${styles.companion} ${animation.state.startsWith('running-') ? styles.isDragging : ''}`}
+      className={`${styles.companion} ${petClass} ${animation.state.startsWith('running-') ? styles.isDragging : ''}`}
       style={{ transform: `translate3d(${offset.x}px, ${offset.y}px, 0)` }}
-      aria-label="Clawd Laptop 动态小助手"
+      aria-label={`${petName} 动态小助手`}
+      data-pet={petId}
     >
       <div className={styles.scaleLayer}>
         <div className={`${styles.statusBubble} ${animation.state !== 'idle' ? styles.statusBubbleVisible : ''}`}>
@@ -215,7 +251,7 @@ export default function PixelCompanion() {
           />
         </button>
         <span className={styles.srOnly} role="status" aria-live="polite">
-          {LABELS[animation.state]}
+          {petName} {STATE_LABELS[animation.state]}
         </span>
       </div>
     </aside>
