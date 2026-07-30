@@ -12,6 +12,7 @@ import {
   clearRecords,
   createEmptyRecords,
   exportRecordsWorkbook,
+  hiddenUnlockProgress,
   importRecordsWorkbook,
   indexForLibraryMode,
   isHiddenModeUnlocked,
@@ -132,6 +133,7 @@ export default function ExamApp() {
   }, []);
 
   const completedCount = index ? validCompletedCount(index, records) : 0;
+  const unlockProgress = index ? hiddenUnlockProgress(index, records) : 0;
   const hiddenUnlocked = index ? isHiddenModeUnlocked(index, records) : false;
   const activeIndex = indexForLibraryMode(index || [], hiddenUnlocked ? libraryMode : 'classic');
 
@@ -477,27 +479,37 @@ export default function ExamApp() {
 
           <div className={styles.libraryHead}>
             <div className={styles.fieldLabel}>题库范围</div>
-            <div className={`${styles.librarySignal} ${hiddenUnlocked ? styles.librarySignalOpen : ''}`}>
-              <span className={styles.breathingLight} aria-hidden="true" />
-              <span>{Math.min(completedCount, HIDDEN_UNLOCK_COUNT)} / {HIDDEN_UNLOCK_COUNT}</span>
+            <div className={styles.libraryCurrent}>
+              当前：{libraryMode === 'hidden' && hiddenUnlocked ? '9.0 Trivial' : '经典'}
             </div>
           </div>
-          <div className={styles.segRow}>
+          <div className={styles.libraryChargeRow}>
             <button
-              className={`${styles.segBtn} ${libraryMode === 'classic' ? styles.segActive : ''}`}
-              onClick={() => setLibraryMode('classic')}
+              type="button"
+              className={`${styles.libraryCharge} ${hiddenUnlocked ? styles.libraryChargeReady : ''} ${libraryMode === 'hidden' ? styles.libraryChargeActive : ''}`}
+              onClick={() => hiddenUnlocked && setLibraryMode(libraryMode === 'hidden' ? 'classic' : 'hidden')}
+              disabled={!hiddenUnlocked}
+              aria-pressed={hiddenUnlocked ? libraryMode === 'hidden' : undefined}
+              aria-label={hiddenUnlocked ? '切换 9.0 Trivial 扩展题库' : '经典题库，解锁充电中'}
             >
-              经典
-            </button>
-            {hiddenUnlocked && (
-              <button
-                className={`${styles.segBtn} ${libraryMode === 'hidden' ? styles.segActive : ''} ${styles.hiddenModeBtn}`}
-                onClick={() => setLibraryMode('hidden')}
+              <span className={styles.libraryChargeLabel}>
+                <span className={styles.chargeLight} aria-hidden="true" />
+                {hiddenUnlocked ? '9.0 Trivial' : '经典'}
+              </span>
+              <span
+                className={styles.libraryChargeTrack}
+                role="progressbar"
+                aria-label="9.0 Trivial 解锁进度"
+                aria-valuemin={0}
+                aria-valuemax={HIDDEN_UNLOCK_COUNT}
+                aria-valuenow={Math.min(completedCount, HIDDEN_UNLOCK_COUNT)}
               >
-                <span className={styles.modeLight} aria-hidden="true" />
-                9.0 Trivial
-              </button>
-            )}
+                <span
+                  className={styles.libraryChargeFill}
+                  style={{ width: `${unlockProgress * 100}%` }}
+                />
+              </span>
+            </button>
           </div>
 
           <div className={styles.fieldLabel}>题库</div>

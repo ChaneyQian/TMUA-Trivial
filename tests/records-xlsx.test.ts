@@ -116,6 +116,7 @@ test('three pick modes use the imported QID status without relaxing exclusions',
 test('hidden mode unlocks only after 365 valid unique QIDs have been answered', () => {
   assert.equal(typeof recordsModule.validCompletedCount, 'function');
   assert.equal(typeof recordsModule.isHiddenModeUnlocked, 'function');
+  assert.equal(typeof recordsModule.hiddenUnlockProgress, 'function');
 
   const index = Array.from({ length: 366 }, (_, i) => ({ qid: i + 1, db: 'TMUA' }));
   const records = createEmptyRecords();
@@ -126,10 +127,12 @@ test('hidden mode unlocks only after 365 valid unique QIDs have been answered', 
   records.q['365'] = { a: 0, w: 0, t: 365, c: 1 };
 
   assert.equal(recordsModule.validCompletedCount(index, records), 364);
+  assert.equal(recordsModule.hiddenUnlockProgress(index, records), 364 / 365);
   assert.equal(recordsModule.isHiddenModeUnlocked(index, records), false);
 
   records.q['365'].a = 1;
   assert.equal(recordsModule.validCompletedCount(index, records), 365);
+  assert.equal(recordsModule.hiddenUnlockProgress(index, records), 1);
   assert.equal(recordsModule.isHiddenModeUnlocked(index, records), true);
 });
 

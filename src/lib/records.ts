@@ -156,6 +156,10 @@ export function isHiddenModeUnlocked(index: IndexEntry[], records: Records): boo
   return validCompletedCount(index, records) >= HIDDEN_UNLOCK_COUNT;
 }
 
+export function hiddenUnlockProgress(index: IndexEntry[], records: Records): number {
+  return Math.min(1, validCompletedCount(index, records) / HIDDEN_UNLOCK_COUNT);
+}
+
 export function indexForLibraryMode(index: IndexEntry[], mode: LibraryMode): IndexEntry[] {
   return mode === 'hidden' ? index : index.filter((entry) => !entry.hidden);
 }
