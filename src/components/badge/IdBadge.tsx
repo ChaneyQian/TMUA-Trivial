@@ -15,6 +15,7 @@ const IDENTITY = {
   name: 'Chaney Qian',
   title: '数学爱好者',
   team: 'COMPETITION COACH',
+  location: 'Zhejiang',
   // 构建期注入（见 next.config.ts），每次部署自动更新
   serial: `Last Update ${process.env.NEXT_PUBLIC_BUILD_DATE || ''}`.trim(),
 };
@@ -221,6 +222,7 @@ export default function IdBadge() {
                         <span className={styles.title}>{IDENTITY.title}</span>
                         <span className={styles.rule} aria-hidden="true" />
                         <span className={styles.team}>{IDENTITY.team}</span>
+                        <span className={styles.location}>{IDENTITY.location}</span>
                         <span className={styles.serial}>{IDENTITY.serial}</span>
                         <span className={styles.barcode} aria-hidden="true" />
                       </button>
