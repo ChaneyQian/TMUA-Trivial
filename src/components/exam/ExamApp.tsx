@@ -504,7 +504,7 @@ export default function ExamApp() {
         <div className={styles.setupCard}>
           <IdBadge />
           <div className={styles.setupTitle}>MCQ Test</div>
-          <div className={styles.setupSub}>TMUA / MAT / SMC / ECAA 随机抽题 · 9.0 Trivial 解锁扩展题库 · CBT 机考界面</div>
+          <div className={styles.setupSub}>TMUA 公益 · 练习进度解锁扩展题库 · 全量真题 Mock</div>
 
           <div className={styles.libraryHead}>
             <div className={styles.fieldLabel}>题库范围</div>

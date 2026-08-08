@@ -15,7 +15,8 @@ const IDENTITY = {
   name: 'Chaney Qian',
   title: '数学爱好者',
   team: 'COMPETITION COACH',
-  serial: 'NO. 2024-0001',
+  // 构建期注入（见 next.config.ts），每次部署自动更新
+  serial: `Last Update ${process.env.NEXT_PUBLIC_BUILD_DATE || ''}`.trim(),
 };
 
 const ASSETS = {
