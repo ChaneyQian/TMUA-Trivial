@@ -8,8 +8,11 @@ number: Q19
 section: Multiple Choice
 difficulty: 8.5
 topics: []
-subtopics: []
-tags: [Integration, Sequences and Series]
+subtopics:
+  - Floor, Ceiling and Fractional Part Functions
+tags:
+  - Integration
+  - Sequences and Series
 status: 已入库
 ---
 

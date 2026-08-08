@@ -5,7 +5,7 @@ id: Spec-Q28
 paper: ECAA Spec Section 1 Part B
 year: 2015
 number: Q28
-section: Multiple Choice
+section: Advanced Mathematics
 solution_source: 官方
 difficulty: 0
 topics: []

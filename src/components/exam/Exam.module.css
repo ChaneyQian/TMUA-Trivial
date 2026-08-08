@@ -12,6 +12,8 @@
 /* ============ 设置页 / 成绩页外壳 ============ */
 
 .setupCard {
+  /* 工牌收起后的丝带靠这个定位吊在左上角，故意越过卡片上边缘（不能裁掉溢出） */
+  position: relative;
   margin: max(1rem, 3vh) auto 2rem;
   box-sizing: border-box;
   width: min(640px, calc(100vw - 2rem));
@@ -157,9 +159,41 @@
   animation-duration: 1.8s;
 }
 
+/* 充满即流光：一条比自身宽的渐变横向循环推移，读作「已就绪」而不是「停住了」 */
 .libraryChargeReady .libraryChargeFill {
-  background: linear-gradient(90deg, #00a8ad, #54e5df 70%, #d6ffff);
+  background: linear-gradient(
+    90deg,
+    #00a8ad 0%,
+    #54e5df 22%,
+    #d6ffff 38%,
+    #54e5df 54%,
+    #00a8ad 76%,
+    #54e5df 100%
+  );
+  background-size: 260% 100%;
   box-shadow: 0 0 11px rgb(0 211 208 / 55%);
+  animation: chargeFlow 2.6s linear infinite;
+}
+
+.libraryChargeActive .libraryChargeLabel {
+  background: linear-gradient(90deg, #007f85, #00c8c2 30%, #9af5f0 50%, #00c8c2 70%, #007f85);
+  background-size: 240% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: chargeFlow 3.4s linear infinite;
+}
+
+@keyframes chargeFlow {
+  from { background-position: 0% 50%; }
+  to { background-position: -260% 50%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .libraryChargeReady .libraryChargeFill,
+  .libraryChargeActive .libraryChargeLabel {
+    animation: none;
+  }
 }
 
 .libraryChargeReady:hover {

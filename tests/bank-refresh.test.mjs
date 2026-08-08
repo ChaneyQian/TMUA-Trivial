@@ -65,11 +65,14 @@ test('AMC source is synchronized even while its unanswered questions remain ungr
   }
 });
 
-test('ECAA questions use the Multiple Choice section', () => {
+// 题库侧把 ECAA 的 section 统一改成了 Advanced Mathematics。
+// 这个字段只是题库自己的分类，build-data 不拿它过滤（它读的是正文的
+// ## 题目 / ## 答案），所以改名不影响产物，这里跟着新约定断言即可。
+test('ECAA questions use the Advanced Mathematics section', () => {
   const files = walkMarkdown(path.join(dataDir, 'ECAA'));
   assert.equal(files.length, 123);
   for (const file of files) {
     const raw = fs.readFileSync(file, 'utf8');
-    assert.match(raw, /^section: Multiple Choice$/m, path.relative(root, file));
+    assert.match(raw, /^section: Advanced Mathematics$/m, path.relative(root, file));
   }
 });

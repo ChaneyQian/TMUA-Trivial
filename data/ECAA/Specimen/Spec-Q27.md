@@ -5,7 +5,7 @@ id: Spec-Q27
 paper: ECAA Spec Section 1 Part B
 year: 2015
 number: Q27
-section: Multiple Choice
+section: Advanced Mathematics
 solution_source: 官方
 difficulty: 0
 topics:
@@ -48,6 +48,10 @@ $$\mathbf{H} \quad \text{1, 2 and 3}$$
 
 ### AI备注
 
+**同背景题组 · 不等式保序性三命题**
+几乎互为镜像：同为 a、b 大小关系下判断三条不等式，陷阱都在乘以 c。
+
+相关题：[[ECAA/2016/16-Q34|16-Q34]]
 
 ## 答案
 E

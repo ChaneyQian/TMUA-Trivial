@@ -4,6 +4,7 @@
 // 练习=点选项后 Enter 批改;Mock=倒计时交卷统一批改
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import IdBadge from '@/components/badge/IdBadge';
 import MathText from '@/components/MathText';
 import { buildExam, fetchIndex, ExamQuestion, IndexEntry } from '@/lib/exam';
 import {
@@ -152,6 +153,10 @@ export default function ExamApp() {
       setLibraryMode('classic');
       return;
     }
+
+    // 进度满了就直接切到 9.0 Trivial：解锁本身就是结果，不该再要用户手点一下。
+    // 这个 effect 只在 hiddenUnlocked 翻转时跑，所以之后用户自己切回经典不会被覆盖。
+    setLibraryMode('hidden');
 
     try {
       if (localStorage.getItem(UNLOCK_SEEN_KEY)) return;
@@ -497,6 +502,7 @@ export default function ExamApp() {
     return (
       <div className={styles.wrap}>
         <div className={styles.setupCard}>
+          <IdBadge />
           <div className={styles.setupTitle}>MCQ Test</div>
           <div className={styles.setupSub}>TMUA / MAT / SMC / ECAA 随机抽题 · 9.0 Trivial 解锁扩展题库 · CBT 机考界面</div>
 
