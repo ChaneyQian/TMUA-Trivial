@@ -574,16 +574,28 @@
 }
 
 .cbtBody {
+  /* 题面/选项的可读行宽上限。分栏时栏宽通常小于它，于是按栏宽铺满； */
+  /* 不分栏（Mock）时由它兜住，避免整屏一行 */
+  --exam-measure: 96ch;
+
   flex: 1;
   overflow-y: auto;
   padding: 1.4rem 2rem 3rem;
   color: var(--text);
 }
 
+/* 题面宽度：先填满所在栏，再由一个可读上限兜住。
+   原先固定 72ch，练习模式左栏比它宽，于是右侧总空一条；
+   而 Mock 模式不分栏、整行铺满时又需要上限，否则一行会长到难读。
+   内层 .mathtext 全局也带 72ch，必须一并解除，否则外层放宽了也没用。 */
 .stem {
-  max-width: var(--measure);
+  max-width: min(100%, var(--exam-measure, 96ch));
   font-family: var(--content-font);
   font-size: var(--content-size);
+}
+
+.stem :global(.mathtext) {
+  max-width: none;
 }
 
 /* 练习模式:左题面右解析的分栏 */
@@ -645,7 +657,12 @@
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
-  max-width: var(--measure);
+  /* 与题面同宽，选项和题干左右对齐 */
+  max-width: min(100%, var(--exam-measure, 96ch));
+}
+
+.choiceText :global(.mathtext) {
+  max-width: none;
 }
 
 .choiceRow {
