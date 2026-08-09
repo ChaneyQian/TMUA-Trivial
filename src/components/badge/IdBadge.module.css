@@ -152,9 +152,21 @@
   pointer-events: none;
 }
 
+/*
+ * 页宽按视口算，不用 transform: scale 缩放。
+ *
+ * 早先窄屏靠 .fitOpen { transform: scale(.6) } 收缩，有两个连带问题：
+ *   1. 绕中心缩放会把卡片顶边往下推，而挂绳锚在未缩放的 .stage 顶部，
+ *      两者之间裂开一道缝（375 视口实测 46px），看着就是「绳断了」；
+ *   2. transform 不改变布局盒子，.stage 仍是 464px 宽、超出 375px 视口，
+ *      溢出后被推向右侧，整体偏离屏幕中心约 44px。
+ * 直接让页宽跟着视口收，两个问题一起消失。
+ */
 .stage {
-  --page-w: 300px;
-  --page-h: 424px;
+  /* 合上时布局盒子仍是「两页宽」（左翼绕右边缘翻折、盖在右页上），
+     所以两种状态都得按两页算，否则窄屏合上时会溢出并被推离屏幕中心。 */
+  --page-w: min(300px, calc((100vw - 2rem) / 2));
+  --page-h: calc(var(--page-w) * 424 / 300);
 
   position: relative;
   display: flex;
@@ -255,8 +267,7 @@
 
 /* 尺寸自适应单独一层：和「翻页 translateX」「飞走 transform」互不打架 */
 .fit {
-  transform: scale(1);
-  transform-origin: center center;
+  /* 不再做 scale 适配（见 .stage 注释）；保留一层便于将来单独做过渡 */
   transition: transform 640ms cubic-bezier(0.2, 0.7, 0.2, 1);
 }
 
@@ -645,20 +656,6 @@
 /* ============ 自适应 ============ */
 
 /* 合上时卡片只有一页宽，桌面尺寸就能放下；翻开是两页宽，窄屏整体缩放 */
-@media (max-width: 680px) {
-  .fitOpen { transform: scale(0.7); }
-}
-
-@media (max-width: 500px) {
-  .stage { --page-w: 264px; --page-h: 373px; }
-  .fitOpen { transform: scale(0.62); }
-}
-
-@media (max-width: 380px) {
-  .stage { --page-w: 232px; --page-h: 328px; }
-  .fitOpen { transform: scale(0.6); }
-}
-
 @media (prefers-reduced-motion: reduce) {
   .overlay,
   .overlayLeaving,

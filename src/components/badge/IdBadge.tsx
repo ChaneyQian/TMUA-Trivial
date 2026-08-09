@@ -160,7 +160,10 @@ export default function IdBadge() {
           aria-label="作者工牌"
           onClick={stow}
         >
-          <div className={styles.stage} onClick={(e) => e.stopPropagation()}>
+          <div
+            className={styles.stage}
+            onClick={(e) => e.stopPropagation()}
+          >
             <span className={styles.lanyard} aria-hidden="true">
               {/* 两股带子从上方分开、向下收进扣子：绕颈挂绳本来就是一个环，
                   画成一根竖条会像电线 */}
