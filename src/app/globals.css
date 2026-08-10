@@ -104,6 +104,15 @@ body {
   white-space: normal;
 }
 
+/* KaTeX 把每个 base 渲染成 inline-block。inline-block 用的是「收缩到合适」
+   宽度，在弹性布局里可用宽算不出来时会一路缩到 min-content——于是整句话被
+   压成「一个单词一行」的窄柱（375–460px 窄屏尤其明显）。
+   含文本的 base 改回 inline，让它按普通行盒折行；纯公式的 base 保持
+   inline-block，基线对齐与分数/根式的堆叠都不受影响。 */
+.mathtext .katex-html > .base:has(.mord.text) {
+  display: inline;
+}
+
 /* 题面/解析内容里的列表缩进（* 重置清掉了 UA 默认 padding，这里补回） */
 ul,
 ol {
