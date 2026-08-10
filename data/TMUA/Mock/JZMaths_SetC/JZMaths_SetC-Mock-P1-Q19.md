@@ -7,8 +7,8 @@ year:
 number: Q19
 section: Multiple Choice
 difficulty: 7.5
-topics: []
-subtopics: []
+topics: [Trigonometry, Geometry]
+subtopics: [Sine and Cosine Rule, Euclid Geometry]
 tags: [General Trigonometry, Geometry]
 status: 已入库
 ---
@@ -48,3 +48,21 @@ $$ B = 180^{\circ} - 30^{\circ} - (180^{\circ} - \theta) = \theta - 30^{\circ} >
 
 Since $\sin \theta = \frac{x}{4}$, this gives
 $$ \frac{x}{4} > \frac{1}{2} \quad \Rightarrow \quad x > 2. $$
+
+Therefore, together $2 < x < 4$.
+
+Now impose the condition that $\angle ABC$ is acute in both triangles.
+
+If $C = 180^{\circ} - \theta$, then $B = \theta - 30^{\circ}$, which is automatically acute when $30^{\circ} < \theta < 90^{\circ}$.
+
+If $C = \theta$, then
+$$ B = 180^{\circ} - 30^{\circ} - \theta = 150^{\circ} - \theta. $$
+
+For this to be acute, we need
+$$ 150^{\circ} - \theta < 90^{\circ}, $$
+
+so $\theta > 60^{\circ}$. Since $\sin \theta = \frac{x}{4}$, this gives
+$$ \frac{x}{4} > \frac{\sqrt{3}}{2} \quad \Rightarrow \quad x > 2\sqrt{3}. $$
+
+Combining this with previous conditions on $x$, we obtain
+$$ 2\sqrt{3} < x < 4. $$

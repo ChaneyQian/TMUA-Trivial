@@ -7,8 +7,8 @@ year:
 number: Q6
 section: Multiple Choice
 difficulty: 6.5
-topics: []
-subtopics: []
+topics: [Probability, Sequences and Series]
+subtopics: [Elementary Probability, AP GP]
 tags: [Polynomial Expansions]
 status: 已入库
 ---

@@ -7,8 +7,8 @@ year:
 number: Q2
 section: Multiple Choice
 difficulty: 5.5
-topics: []
-subtopics: []
+topics: [Calculus, Logic and Proof]
+subtopics: [Integration, Graphical Arguments]
 tags: [Area Integration]
 status: 已入库
 ---

@@ -7,8 +7,8 @@ year:
 number: Q10
 section: Multiple Choice
 difficulty: 7.5
-topics: []
-subtopics: []
+topics: [Calculus, Function, Algebra (Basic)]
+subtopics: [Differentiation Application, Algebraic Functions, Algebra Manipulation]
 tags: [Differentiation]
 status: 已入库
 ---

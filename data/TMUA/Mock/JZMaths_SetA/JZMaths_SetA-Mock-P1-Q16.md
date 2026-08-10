@@ -7,8 +7,8 @@ year:
 number: Q16
 section: Multiple Choice
 difficulty: 7.5
-topics: []
-subtopics: []
+topics: [Function, Algebra (Basic)]
+subtopics: [Exponentials and Logarithms, Algebra Manipulation]
 tags: [Exponentials and Logarithms]
 status: 已入库
 ---

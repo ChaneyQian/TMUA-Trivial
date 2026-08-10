@@ -7,8 +7,8 @@ year:
 number: Q15
 section: Multiple Choice
 difficulty: 7.5
-topics: []
-subtopics: []
+topics: [Logic and Proof]
+subtopics: [Logic]
 tags: [Logic Negation]
 status: 已入库
 ---

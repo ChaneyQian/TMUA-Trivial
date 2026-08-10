@@ -7,8 +7,8 @@ year:
 number: Q6
 section: Multiple Choice
 difficulty: 6.5
-topics: []
-subtopics: []
+topics: [Miscellaneous Pure, Logic and Proof, Function]
+subtopics: [Inequalities, Graphical Arguments, Algebraic Functions]
 tags: [Inequalities]
 status: 已入库
 ---

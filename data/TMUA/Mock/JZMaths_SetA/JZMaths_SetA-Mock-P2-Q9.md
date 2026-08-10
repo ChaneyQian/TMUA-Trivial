@@ -7,8 +7,8 @@ year:
 number: Q9
 section: Multiple Choice
 difficulty: 7
-topics: []
-subtopics: []
+topics: [Miscellaneous Pure, Function]
+subtopics: [Inequalities, Absolute Value Functions]
 tags: [Inequalities]
 status: 已入库
 ---

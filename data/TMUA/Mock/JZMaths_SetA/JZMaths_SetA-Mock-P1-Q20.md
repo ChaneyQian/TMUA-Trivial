@@ -7,8 +7,8 @@ year:
 number: Q20
 section: Multiple Choice
 difficulty: 8
-topics: []
-subtopics: []
+topics: [Sequences and Series, Algebra (Basic)]
+subtopics: [Recurrence Relations, AP GP, Algebra Manipulation]
 tags: [Sequences and Series, General Algebra]
 status: 已入库
 ---

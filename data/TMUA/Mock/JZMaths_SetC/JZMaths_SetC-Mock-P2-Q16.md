@@ -7,8 +7,8 @@ year:
 number: Q16
 section: Multiple Choice
 difficulty: 7.5
-topics: []
-subtopics: []
+topics: [Function]
+subtopics: [Functions]
 tags: [Logic Equivalence, Transformation of Graphs]
 status: 已入库
 ---

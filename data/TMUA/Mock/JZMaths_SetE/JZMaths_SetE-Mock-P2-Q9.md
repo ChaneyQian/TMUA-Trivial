@@ -7,8 +7,8 @@ year:
 number: Q9
 section: Multiple Choice
 difficulty: 7
-topics: []
-subtopics: []
+topics: [Calculus, Function]
+subtopics: [Integration, Optimization, Absolute Value Functions]
 tags: [Integration, Differentiation]
 status: 已入库
 ---

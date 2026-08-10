@@ -7,8 +7,8 @@ year:
 number: Q10
 section: Multiple Choice
 difficulty: 6.5
-topics: []
-subtopics: []
+topics: [Calculus, Function]
+subtopics: [Integration, Absolute Value Functions]
 tags: [Graphs of Functions, Integration]
 status: 已入库
 ---

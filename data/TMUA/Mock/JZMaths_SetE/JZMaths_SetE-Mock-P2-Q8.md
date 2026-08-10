@@ -7,8 +7,8 @@ year:
 number: Q8
 section: Multiple Choice
 difficulty: 6.5
-topics: []
-subtopics: []
+topics: [Trigonometry, Geometry]
+subtopics: [Sine and Cosine Rule, Euclid Geometry]
 tags: [Logic Deduction, General Trigonometry]
 status: 已入库
 ---

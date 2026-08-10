@@ -7,8 +7,8 @@ year:
 number: Q13
 section: Multiple Choice
 difficulty: 7
-topics: []
-subtopics: []
+topics: [Logic and Proof, Algebra (Basic)]
+subtopics: [Logic, Surds and indices]
 tags: [Logic Sufficiency, Logic Equivalence, Logic Deduction]
 status: 已入库
 ---

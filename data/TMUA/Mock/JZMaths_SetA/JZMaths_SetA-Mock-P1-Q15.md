@@ -7,8 +7,8 @@ year:
 number: Q15
 section: Multiple Choice
 difficulty: 7.5
-topics: []
-subtopics: []
+topics: [Trigonometry, Function]
+subtopics: [Trigonometric Equations, Algebraic Functions]
 tags: [General Trigonometry]
 status: 已入库
 ---

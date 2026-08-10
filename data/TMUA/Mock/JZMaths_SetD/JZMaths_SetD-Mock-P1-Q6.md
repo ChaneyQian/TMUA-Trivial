@@ -7,8 +7,8 @@ year:
 number: Q6
 section: Multiple Choice
 difficulty: 6
-topics: []
-subtopics: []
+topics: [Sequences and Series]
+subtopics: [AP GP]
 tags: [Sequences and Series]
 status: 已入库
 ---

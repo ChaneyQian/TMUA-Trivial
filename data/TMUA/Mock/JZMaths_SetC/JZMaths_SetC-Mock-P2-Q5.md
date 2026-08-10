@@ -7,8 +7,8 @@ year:
 number: Q5
 section: Multiple Choice
 difficulty: 6
-topics: []
-subtopics: []
+topics: [Logic and Proof, Calculus]
+subtopics: [Logic, Differentiation Application]
 tags: [Logic Sufficiency, Differentiation, Logic Deduction]
 status: 已入库
 ---

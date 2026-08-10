@@ -7,8 +7,8 @@ year:
 number: Q2
 section: Multiple Choice
 difficulty: 5.5
-topics: []
-subtopics: []
+topics: [Calculus, Algebra (Basic)]
+subtopics: [Differentiation, Algebra Manipulation]
 tags: [Differentiation]
 status: 已入库
 ---

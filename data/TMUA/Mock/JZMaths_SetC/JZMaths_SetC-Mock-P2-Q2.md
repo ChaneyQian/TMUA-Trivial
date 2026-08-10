@@ -7,8 +7,8 @@ year:
 number: Q2
 section: Multiple Choice
 difficulty: 5.5
-topics: []
-subtopics: []
+topics: [Logic and Proof, Miscellaneous Pure]
+subtopics: [Logic, Inequalities]
 tags: [Inequalities]
 status: 已入库
 ---
@@ -46,3 +46,9 @@ F
 **Statement 1:** $x^3 \geq y^3$. The function $t \mapsto t^3$ is strictly increasing on all of $\mathbb{R}$, so $x \geq y \Rightarrow x^3 \geq y^3$. **True**.
 
 **Statement 2:** $x^2 \geq y^2$. Squaring is **not** monotonic on $\mathbb{R}$. Counterexample: $x = 1$, $y = -2$. Then $x \geq y$ but $x^2 = 1 < 4 = y^2$. **False**.
+
+**Statement 3:** $xz \geq yz$. Multiplying an inequality by $z$ preserves its direction only when $z \geq 0$. Counterexample: $x = 1$, $y = 0$, $z = -1$. Then $xz = -1 < 0 = yz$. **False**.
+
+**Statement 4:** $xz^2 \geq yz^2$. Here the multiplier is $z^2 \geq 0$, therefore $x \geq y \Rightarrow xz^2 \geq yz^2$. **True**.
+
+Only statements 1 and 4 must hold.

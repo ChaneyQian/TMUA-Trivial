@@ -7,8 +7,8 @@ year:
 number: Q15
 section: Multiple Choice
 difficulty: 7.5
-topics: []
-subtopics: []
+topics: [Number Theory, Sequences and Series]
+subtopics: [Modular Arithmetic and Congruences, Fibonacci Numbers]
 tags: [General Algebra, Logic Deduction]
 status: 已入库
 ---

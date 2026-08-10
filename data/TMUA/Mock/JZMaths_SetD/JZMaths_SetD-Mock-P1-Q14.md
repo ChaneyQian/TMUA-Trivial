@@ -7,8 +7,8 @@ year:
 number: Q14
 section: Multiple Choice
 difficulty: 7
-topics: []
-subtopics: []
+topics: [Trigonometry, Sequences and Series]
+subtopics: [Trigonometric Equations, Trigonometry, AP GP]
 tags: [Sequences and Series, Trig Equation Number of Solutions]
 status: 已入库
 ---

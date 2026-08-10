@@ -7,8 +7,8 @@ year:
 number: Q15
 section: Multiple Choice
 difficulty: 7.5
-topics: []
-subtopics: []
+topics: [Function]
+subtopics: ["Floor, Ceiling and Fractional Part Functions", Iterated Functions]
 tags: [General Functions]
 status: 已入库
 ---

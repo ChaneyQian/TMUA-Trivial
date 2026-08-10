@@ -7,8 +7,8 @@ year:
 number: Q18
 section: Multiple Choice
 difficulty: 8
-topics: []
-subtopics: []
+topics: [Calculus, Geometry]
+subtopics: [Differentiation, Optimization, Euclid Geometry]
 tags: [Differentiation]
 status: 已入库
 ---

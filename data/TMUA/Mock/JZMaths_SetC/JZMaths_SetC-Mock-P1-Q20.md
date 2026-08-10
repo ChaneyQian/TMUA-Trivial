@@ -7,8 +7,8 @@ year:
 number: Q20
 section: Multiple Choice
 difficulty: 8.5
-topics: []
-subtopics: []
+topics: [Function]
+subtopics: [Exponentials and Logarithms, Functional Equations]
 tags: [Exponentials and Logarithms, Polynomial Expansions]
 status: 已入库
 ---

@@ -7,8 +7,8 @@ year:
 number: Q16
 section: Multiple Choice
 difficulty: 7.5
-topics: []
-subtopics: []
+topics: [Function, Polynomial, Algebra (Basic)]
+subtopics: [Algebraic Functions, Solution of Equations, Algebra Manipulation]
 tags: [General Functions, General Algebra]
 status: 已入库
 ---

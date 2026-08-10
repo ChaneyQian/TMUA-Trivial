@@ -7,8 +7,8 @@ year:
 number: Q17
 section: Multiple Choice
 difficulty: 8
-topics: []
-subtopics: []
+topics: [Logic and Proof, Number Theory]
+subtopics: [Proof, Divisibility]
 tags: [Logic Deduction]
 status: 已入库
 ---

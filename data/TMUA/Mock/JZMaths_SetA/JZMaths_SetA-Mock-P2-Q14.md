@@ -7,8 +7,8 @@ year:
 number: Q14
 section: Multiple Choice
 difficulty: 7
-topics: []
-subtopics: []
+topics: [Calculus, Function]
+subtopics: [Differentiation Application, Algebraic Functions]
 tags: [Logic Sufficiency, Differentiation]
 status: 已入库
 ---

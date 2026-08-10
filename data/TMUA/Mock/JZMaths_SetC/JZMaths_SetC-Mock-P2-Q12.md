@@ -7,8 +7,8 @@ year:
 number: Q12
 section: Multiple Choice
 difficulty: 7
-topics: []
-subtopics: []
+topics: [Logic and Proof, Function]
+subtopics: [Logic, Functional Equations]
 tags: [Logic Counterexample, Graphs of Functions]
 status: 已入库
 ---

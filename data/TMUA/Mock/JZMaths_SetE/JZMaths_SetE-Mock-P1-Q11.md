@@ -7,8 +7,8 @@ year:
 number: Q11
 section: Multiple Choice
 difficulty: 6.5
-topics: []
-subtopics: []
+topics: [Sequences and Series, Geometry]
+subtopics: [AP GP, Sequences and Series, Euclid Geometry]
 tags: [Ratio and Proportion, Sequences and Series]
 status: 已入库
 ---

@@ -7,8 +7,8 @@ year:
 number: Q11
 section: Multiple Choice
 difficulty: 7
-topics: []
-subtopics: []
+topics: [Logic and Proof, Calculus]
+subtopics: [Logic, Graphical Arguments, Integration, Integral Identity]
 tags: [Integration, Logic Equivalence]
 status: 已入库
 ---

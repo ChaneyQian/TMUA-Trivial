@@ -7,8 +7,8 @@ year:
 number: Q13
 section: Multiple Choice
 difficulty: 7.5
-topics: []
-subtopics: []
+topics: [Function, Polynomial]
+subtopics: [Exponentials and Logarithms, Symmetric and Cyclic Polynomials]
 tags: [Exponentials and Logarithms]
 status: 已入库
 ---

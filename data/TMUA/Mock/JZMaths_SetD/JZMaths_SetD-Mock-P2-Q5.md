@@ -7,8 +7,8 @@ year:
 number: Q5
 section: Multiple Choice
 difficulty: 6
-topics: []
-subtopics: []
+topics: [Geometry]
+subtopics: [Euclid Geometry]
 tags: [Geometry]
 status: 已入库
 ---

@@ -7,8 +7,8 @@ year:
 number: Q9
 section: Multiple Choice
 difficulty: 6.5
-topics: []
-subtopics: []
+topics: [Sequences and Series]
+subtopics: [Sequences and Series, AP GP]
 tags: [Sequences and Series]
 status: 已入库
 ---

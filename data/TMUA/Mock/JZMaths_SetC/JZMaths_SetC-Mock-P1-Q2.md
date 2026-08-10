@@ -7,8 +7,8 @@ year:
 number: Q2
 section: Multiple Choice
 difficulty: 5.5
-topics: []
-subtopics: []
+topics: [Function, Logic and Proof]
+subtopics: [Exponentials and Logarithms, Absolute Value Functions, Graphical Arguments]
 tags: [Exponentials and Logarithms, Graphs of Functions]
 status: 已入库
 ---

@@ -7,8 +7,8 @@ year:
 number: Q2
 section: Multiple Choice
 difficulty: 5.5
-topics: []
-subtopics: []
+topics: [Function]
+subtopics: [Exponentials and Logarithms]
 tags: [Exponentials and Logarithms]
 status: 已入库
 ---

@@ -7,8 +7,8 @@ year:
 number: Q8
 section: Multiple Choice
 difficulty: 6
-topics: []
-subtopics: []
+topics: [Number Theory]
+subtopics: [Divisibility]
 tags: [General Algebra]
 status: 已入库
 ---

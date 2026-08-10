@@ -7,8 +7,8 @@ year:
 number: Q7
 section: Multiple Choice
 difficulty: 6.5
-topics: []
-subtopics: []
+topics: [Logic and Proof, Miscellaneous Pure]
+subtopics: [Logic, Inequalities]
 tags: [Logic Deduction, Inequalities]
 status: 已入库
 ---

@@ -7,8 +7,8 @@ year:
 number: Q11
 section: Multiple Choice
 difficulty: 7
-topics: []
-subtopics: []
+topics: [Logic and Proof, Number Theory]
+subtopics: [Logic, Divisibility]
 tags: [Logic Equivalence]
 status: 已入库
 ---

@@ -7,8 +7,8 @@ year:
 number: Q19
 section: Multiple Choice
 difficulty: 8
-topics: []
-subtopics: []
+topics: [Function, Logic and Proof, Calculus]
+subtopics: [Iterated Functions, Graphical Arguments, Absolute Value Functions, Integration]
 tags: [Integration, General Functions]
 status: 已入库
 ---

@@ -7,8 +7,8 @@ year:
 number: Q3
 section: Multiple Choice
 difficulty: 6
-topics: []
-subtopics: []
+topics: [Geometry]
+subtopics: [Coordinate Geometry]
 tags: [Linear Equations]
 status: 已入库
 ---

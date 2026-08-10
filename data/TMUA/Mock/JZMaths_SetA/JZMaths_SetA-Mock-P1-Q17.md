@@ -7,8 +7,8 @@ year:
 number: Q17
 section: Multiple Choice
 difficulty: 7.5
-topics: []
-subtopics: []
+topics: [Trigonometry, Logic and Proof]
+subtopics: [Trigonometric Equations, Graphical Arguments]
 tags: [General Trigonometry, Inequalities]
 status: 已入库
 ---

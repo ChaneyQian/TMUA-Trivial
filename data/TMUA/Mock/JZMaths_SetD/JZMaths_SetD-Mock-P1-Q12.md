@@ -7,8 +7,8 @@ year:
 number: Q12
 section: Multiple Choice
 difficulty: 7
-topics: []
-subtopics: []
+topics: [Geometry, Function, Algebra (Basic)]
+subtopics: [Coordinate Geometry, Functions, Algebra Manipulation]
 tags: [Transformation of Graphs]
 status: 已入库
 ---

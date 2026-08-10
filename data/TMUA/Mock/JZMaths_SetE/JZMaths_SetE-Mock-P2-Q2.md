@@ -7,8 +7,8 @@ year:
 number: Q2
 section: Multiple Choice
 difficulty: 5.5
-topics: []
-subtopics: []
+topics: [Logic and Proof, Algebra (Basic)]
+subtopics: [Logic, Algebra Manipulation]
 tags: [Logic Deduction, General Algebra]
 status: 已入库
 ---
@@ -47,10 +47,8 @@ C
 ## 解析
 The factorisation in passing from (I) to (II) is correct, since $x^2 - 5x + 6 = (x - 2)(x - 3)$.
 
-The first error occurs in passing from (II) to (III). Dividing both sides by $x - 2$ assumes that $x 
-e 2$, but $x = 2$ satisfies the original equation, since both sides are 0. This solution is therefore lost.
+The first error occurs in passing from (II) to (III). Dividing both sides by $x - 2$ assumes that $x \ne 2$, but $x = 2$ satisfies the original equation, since both sides are 0. This solution is therefore lost.
 
-For $x 
-e 2$, equation (III) is $\sqrt{x + 3} = x - 3$. Since the left-hand side is non-negative, any solution must satisfy $x \ge 3$. Squaring gives $(x - 1)(x - 6) = 0$, so the only possible value satisfying $x \ge 3$ is $x = 6$.
+For $x \ne 2$, equation (III) is $\sqrt{x + 3} = x - 3$. Since the left-hand side is non-negative, any solution must satisfy $x \ge 3$. Squaring gives $(x - 1)(x - 6) = 0$, so the only possible value satisfying $x \ge 3$ is $x = 6$.
 
 Thus the solutions of the original equation are $x = 2$ and $x = 6$. The stated conclusion $x = 1$ and $x = 6$ is not entirely correct, and the first error occurs in passing from (II) to (III).

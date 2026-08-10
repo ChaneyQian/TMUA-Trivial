@@ -7,8 +7,8 @@ year:
 number: Q20
 section: Multiple Choice
 difficulty: 9
-topics: []
-subtopics: []
+topics: [Logic and Proof, Geometry]
+subtopics: [Logic, Euclid Geometry]
 tags: [Logic Deduction]
 status: 已入库
 ---

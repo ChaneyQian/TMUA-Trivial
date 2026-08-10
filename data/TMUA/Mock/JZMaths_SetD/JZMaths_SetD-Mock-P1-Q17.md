@@ -7,8 +7,8 @@ year:
 number: Q17
 section: Multiple Choice
 difficulty: 8
-topics: []
-subtopics: []
+topics: [Sequences and Series, Polynomial]
+subtopics: [Recurrence Relations, Symmetric and Cyclic Polynomials]
 tags: [General Algebra, Polynomial Expansions]
 status: 已入库
 ---

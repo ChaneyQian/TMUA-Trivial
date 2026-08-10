@@ -7,8 +7,8 @@ year:
 number: Q6
 section: Multiple Choice
 difficulty: 6
-topics: []
-subtopics: []
+topics: [Miscellaneous Pure, Function]
+subtopics: [Inequalities, Algebraic Functions]
 tags: [Inequalities]
 status: 已入库
 ---

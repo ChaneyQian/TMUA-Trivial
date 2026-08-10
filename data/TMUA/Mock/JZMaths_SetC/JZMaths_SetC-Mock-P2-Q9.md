@@ -7,8 +7,8 @@ year:
 number: Q9
 section: Multiple Choice
 difficulty: 6.5
-topics: []
-subtopics: []
+topics: [Polynomial, Number Theory, Algebra (Basic)]
+subtopics: [Polynomials, Diophantine Equations, Algebra Manipulation]
 tags: [Graphs of Functions, Polynomial Expansions]
 status: 已入库
 ---

@@ -7,8 +7,8 @@ year:
 number: Q5
 section: Multiple Choice
 difficulty: 6
-topics: []
-subtopics: []
+topics: [Miscellaneous Pure, Polynomial, Algebra (Basic)]
+subtopics: [Inequalities, Polynomials, Algebra Manipulation]
 tags: [Inequalities, Logic Equivalence]
 status: 已入库
 ---

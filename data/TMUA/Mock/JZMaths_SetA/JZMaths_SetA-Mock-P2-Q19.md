@@ -7,9 +7,8 @@ year:
 number: Q19
 section: Multiple Choice
 difficulty: 8.5
-topics: []
-subtopics:
-  - Floor, Ceiling and Fractional Part Functions
+topics: [Sequences and Series, Function]
+subtopics: [Sequences and Series, "Floor, Ceiling and Fractional Part Functions"]
 tags:
   - Integration
   - Sequences and Series

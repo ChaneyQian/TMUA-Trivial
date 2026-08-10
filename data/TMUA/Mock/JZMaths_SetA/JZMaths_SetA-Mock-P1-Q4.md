@@ -7,8 +7,8 @@ year:
 number: Q4
 section: Multiple Choice
 difficulty: 6
-topics: []
-subtopics: []
+topics: [Function, Algebra (Basic)]
+subtopics: [Exponentials and Logarithms, Simultaneous Equations]
 tags: [Exponentials and Logarithms]
 status: 已入库
 ---

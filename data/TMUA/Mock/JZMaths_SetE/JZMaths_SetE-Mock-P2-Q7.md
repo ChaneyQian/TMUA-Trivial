@@ -7,8 +7,8 @@ year:
 number: Q7
 section: Multiple Choice
 difficulty: 6.5
-topics: []
-subtopics: []
+topics: [Sequences and Series, Function]
+subtopics: [AP GP, Exponentials and Logarithms]
 tags: [Exponentials and Logarithms, Sequences and Series]
 status: 已入库
 ---

@@ -7,8 +7,8 @@ year:
 number: Q16
 section: Multiple Choice
 difficulty: 7.5
-topics: []
-subtopics: []
+topics: [Trigonometry, Geometry]
+subtopics: [Trigonometric Equations, Coordinate Geometry]
 tags: [General Trigonometry, Graphs of Functions]
 status: 已入库
 ---
@@ -51,3 +51,17 @@ $$ n + \frac{1}{4} < k. $$
 
 If $k$ is a positive integer, then this means
 $$ n = 0, 1, 2, \dots, k - 1. $$
+
+So there are $k$ circles. The area enclosed by each circle is $\pi r^2$, so the sum of the areas is
+$$ \pi \sum_{n=0}^{k-1} \left( \frac{\pi}{4} + n\pi \right). $$
+
+This is the sum of an arithmetic sequence, therefore it is
+$$ \pi^2 \left( \frac{k}{4} + \frac{k(k - 1)}{2} \right). $$
+
+Equate to $30\pi^2$, so
+$$ \frac{k}{4} + \frac{k(k - 1)}{2} = 30 \quad \Longleftrightarrow \quad (2k + 15)(k - 8) = 0. $$
+
+Since $k$ is positive,
+$$ k = 8. $$
+
+The smallest integer value of $k$ is 8.

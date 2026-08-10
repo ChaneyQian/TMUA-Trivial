@@ -7,8 +7,8 @@ year:
 number: Q9
 section: Multiple Choice
 difficulty: 7.5
-topics: []
-subtopics: []
+topics: [Geometry]
+subtopics: [Coordinate Geometry, Euclid Geometry]
 tags: [Circle Geometry]
 status: 已入库
 ---

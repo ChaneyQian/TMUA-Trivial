@@ -7,8 +7,8 @@ year:
 number: Q15
 section: Multiple Choice
 difficulty: 7
-topics: []
-subtopics: []
+topics: [Sequences and Series]
+subtopics: [Sequences and Series, AP GP, Recurrence Relations]
 tags: [Sequences and Series, General Algebra]
 status: 已入库
 ---

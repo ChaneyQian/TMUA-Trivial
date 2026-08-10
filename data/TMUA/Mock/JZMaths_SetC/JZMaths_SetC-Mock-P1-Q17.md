@@ -7,8 +7,8 @@ year:
 number: Q17
 section: Multiple Choice
 difficulty: 7.5
-topics: []
-subtopics: []
+topics: [Calculus, Function]
+subtopics: [Differentiation, Optimization, Absolute Value Functions]
 tags: [Differentiation, General Functions, General Algebra]
 status: 已入库
 ---

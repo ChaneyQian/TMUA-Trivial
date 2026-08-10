@@ -7,8 +7,8 @@ year:
 number: Q14
 section: Multiple Choice
 difficulty: 7.5
-topics: []
-subtopics: []
+topics: [Function]
+subtopics: [Functions]
 tags: [Transformation of Graphs]
 status: 已入库
 ---

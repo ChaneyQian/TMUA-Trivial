@@ -7,8 +7,8 @@ year:
 number: Q7
 section: Multiple Choice
 difficulty: 6.5
-topics: []
-subtopics: []
+topics: [Logic and Proof]
+subtopics: [Logic]
 tags: [Logic Deduction]
 status: 已入库
 ---
@@ -52,4 +52,15 @@ C
 ## 解析
 This question is inspired by a similar style of question from past exams. It is a good example of a situation where a truth table is useful.
 
-Let $n$ be the number of balls in each bag. We simply check which labels would be true for each
+Let $n$ be the number of balls in each bag. We simply check which labels would be true for each possible value of $n$.
+
+| $n$ | True labels |
+|---|---|
+| 3 | $P$, $R$, $S$ |
+| 4 | $Q$, $S$, $U$ |
+| 5 | $R$ |
+| 6 | $P$, $Q$ |
+| 7 | $R$, $T$ |
+| 8 | $Q$, $T$ |
+
+Only $n = 5$ gives exactly one true statement, where $R$ is true, so the answer is $R$.

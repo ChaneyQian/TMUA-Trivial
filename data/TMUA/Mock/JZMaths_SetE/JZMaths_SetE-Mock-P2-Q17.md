@@ -7,8 +7,8 @@ year:
 number: Q17
 section: Multiple Choice
 difficulty: 8
-topics: []
-subtopics: []
+topics: [Geometry, Sequences and Series]
+subtopics: [Euclid Geometry, AP GP]
 tags: [Geometry, Sequences and Series]
 status: 已入库
 ---

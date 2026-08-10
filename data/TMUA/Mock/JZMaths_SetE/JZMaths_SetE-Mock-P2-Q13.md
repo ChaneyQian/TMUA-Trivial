@@ -7,8 +7,8 @@ year:
 number: Q13
 section: Multiple Choice
 difficulty: 7
-topics: []
-subtopics: []
+topics: [Sequences and Series]
+subtopics: [Binomial Coefficients, Binomial Theorem]
 tags: [Polynomial Expansions]
 status: 已入库
 ---

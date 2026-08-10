@@ -7,8 +7,8 @@ year:
 number: Q9
 section: Multiple Choice
 difficulty: 6.5
-topics: []
-subtopics: []
+topics: [Probability, Sequences and Series]
+subtopics: [Elementary Probability, AP GP]
 tags: [Sequences and Series, Ratio and Proportion]
 status: 已入库
 ---
@@ -49,3 +49,15 @@ $$ P(B \text{ wins in round } 1) = \frac{5}{6} \cdot \frac{2}{6} = \frac{5}{18}.
 The probability that no one wins in a round is
 
 $$ P(\text{no winner in a round}) = \frac{5}{6} \cdot \frac{4}{6} \cdot \frac{3}{6} = \frac{60}{216} = \frac{5}{18}. $$
+
+If no one wins in a round, the situation resets identically. So
+
+$$ P(B \text{ wins}) = P(B \text{ win in round } 1) + P(B \text{ win in round } 2) + P(B \text{ win in round } 3) + \cdots, $$
+
+therefore
+
+$$ P(B \text{ wins}) = \frac{5}{18} + \left(\frac{5}{18}\right)^1 \cdot \frac{5}{18} + \left(\frac{5}{18}\right)^2 \cdot \frac{5}{18} + \cdots $$
+
+This is a geometric series with first term $\frac{5}{18}$ and common ratio $\frac{5}{18}$:
+
+$$ P(B \text{ wins}) = \frac{\frac{5}{18}}{1 - \frac{5}{18}} = \frac{\frac{5}{18}}{\frac{13}{18}} = \frac{5}{13}. $$

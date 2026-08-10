@@ -7,8 +7,8 @@ year:
 number: Q19
 section: Multiple Choice
 difficulty: 8.5
-topics: []
-subtopics: []
+topics: [Geometry, Polynomial]
+subtopics: [Coordinate Geometry, Vieta's Formulas]
 tags: [Geometry, General Algebra]
 status: 已入库
 ---

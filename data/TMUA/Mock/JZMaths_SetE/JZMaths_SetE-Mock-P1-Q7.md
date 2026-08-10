@@ -7,8 +7,8 @@ year:
 number: Q7
 section: Multiple Choice
 difficulty: 6
-topics: []
-subtopics: []
+topics: [Calculus, Function]
+subtopics: [Differentiation Application, Inverse Functions, Algebraic Functions]
 tags: [Differentiation]
 status: 已入库
 ---

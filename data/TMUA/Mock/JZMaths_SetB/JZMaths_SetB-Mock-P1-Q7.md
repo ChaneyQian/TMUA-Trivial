@@ -7,8 +7,8 @@ year:
 number: Q7
 section: Multiple Choice
 difficulty: 6.5
-topics: []
-subtopics: []
+topics: [Miscellaneous Pure, Function, Logic and Proof]
+subtopics: [Inequalities, Absolute Value Functions, Graphical Arguments]
 tags: [Inequalities]
 status: 已入库
 ---

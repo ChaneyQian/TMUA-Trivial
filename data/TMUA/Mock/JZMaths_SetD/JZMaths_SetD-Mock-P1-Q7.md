@@ -7,8 +7,8 @@ year:
 number: Q7
 section: Multiple Choice
 difficulty: 6
-topics: []
-subtopics: []
+topics: [Sequences and Series, Algebra (Basic)]
+subtopics: [Sequences and Series, Surds and indices]
 tags: [General Algebra, Sequences and Series]
 status: 已入库
 ---

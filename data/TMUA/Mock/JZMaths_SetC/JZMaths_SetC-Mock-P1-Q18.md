@@ -7,8 +7,8 @@ year:
 number: Q18
 section: Multiple Choice
 difficulty: 7.5
-topics: []
-subtopics: []
+topics: [Sequences and Series, Probability]
+subtopics: [Binomial Theorem, AP GP, Elementary Probability]
 tags: [Sequences and Series, Polynomial Expansions]
 status: 已入库
 ---

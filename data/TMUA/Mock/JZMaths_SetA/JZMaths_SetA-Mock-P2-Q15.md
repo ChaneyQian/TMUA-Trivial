@@ -7,8 +7,8 @@ year:
 number: Q15
 section: Multiple Choice
 difficulty: 7
-topics: []
-subtopics: []
+topics: [Geometry, Trigonometry]
+subtopics: [Euclid Geometry, Sine and Cosine Rule]
 tags: [Geometry]
 status: 已入库
 ---

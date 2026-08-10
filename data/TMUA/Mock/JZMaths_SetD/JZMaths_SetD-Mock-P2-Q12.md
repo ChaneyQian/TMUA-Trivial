@@ -7,8 +7,8 @@ year:
 number: Q12
 section: Multiple Choice
 difficulty: 7
-topics: []
-subtopics: []
+topics: [Function, Miscellaneous Pure]
+subtopics: [Iterated Functions, Combinatorics]
 tags: [Logic Deduction, Inequalities]
 status: 已入库
 ---

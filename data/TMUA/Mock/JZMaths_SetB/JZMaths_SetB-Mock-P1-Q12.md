@@ -7,8 +7,8 @@ year:
 number: Q12
 section: Multiple Choice
 difficulty: 7.5
-topics: []
-subtopics: []
+topics: [Sequences and Series]
+subtopics: [Binomial Theorem]
 tags: [Polynomial Expansions]
 status: 已入库
 ---

@@ -7,8 +7,8 @@ year:
 number: Q1
 section: Multiple Choice
 difficulty: 5
-topics: []
-subtopics: []
+topics: [Calculus]
+subtopics: [Integration, Integral Identity]
 tags: [Integration]
 status: 已入库
 ---

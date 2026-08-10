@@ -7,8 +7,8 @@ year:
 number: Q19
 section: Multiple Choice
 difficulty: 8.5
-topics: []
-subtopics: []
+topics: [Logic and Proof]
+subtopics: [Logic]
 tags: [Logic Deduction]
 status: 已入库
 ---

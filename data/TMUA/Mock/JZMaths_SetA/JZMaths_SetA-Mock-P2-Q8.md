@@ -7,8 +7,8 @@ year:
 number: Q8
 section: Multiple Choice
 difficulty: 7
-topics: []
-subtopics: []
+topics: [Sequences and Series, Algebra (Basic)]
+subtopics: [Recurrence Relations, Sequences and Series, Algebra Manipulation]
 tags: [Sequences and Series]
 status: 已入库
 ---

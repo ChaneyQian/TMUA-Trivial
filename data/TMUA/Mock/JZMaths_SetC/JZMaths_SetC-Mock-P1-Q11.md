@@ -7,8 +7,8 @@ year:
 number: Q11
 section: Multiple Choice
 difficulty: 7
-topics: []
-subtopics: []
+topics: [Trigonometry]
+subtopics: [Trigonometric Equations]
 tags: [General Trigonometry, Sequences and Series]
 status: 已入库
 ---
@@ -56,3 +56,27 @@ $$ 5x = 4x + 360^\circ n $$
 or
 
 $$ 5x = -4x + 360^\circ n. $$
+
+From the first equation,
+
+$$ x = 360^\circ n. $$
+
+For $0 \le x \le 360^\circ$, this gives $x = 0^\circ$ and $x = 360^\circ$.
+
+From the second equation,
+
+$$ 9x = 360^\circ n, $$
+
+so
+
+$$ x = 40^\circ n. $$
+
+For $0 \le x \le 360^\circ$, this gives
+
+$$ x = 0^\circ, 40^\circ, 80^\circ, \dots, 360^\circ. $$
+
+This already includes the solutions from the first equation.
+
+These solutions form an arithmetic sequence with first term $0^\circ$, last term $360^\circ$, and 10 terms. Hence their sum is
+
+$$ \frac{10}{2}(0^\circ + 360^\circ) = 1800^\circ. $$

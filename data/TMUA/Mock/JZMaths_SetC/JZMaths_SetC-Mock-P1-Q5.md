@@ -7,8 +7,8 @@ year:
 number: Q5
 section: Multiple Choice
 difficulty: 6
-topics: []
-subtopics: []
+topics: [Function, Logic and Proof]
+subtopics: [Exponentials and Logarithms, Graphical Arguments]
 tags: [General Algebra, Exponentials and Logarithms]
 status: 已入库
 ---

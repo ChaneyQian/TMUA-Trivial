@@ -7,8 +7,8 @@ year:
 number: Q11
 section: Multiple Choice
 difficulty: 7
-topics: []
-subtopics: []
+topics: [Calculus, Function, Polynomial]
+subtopics: [Differentiation Application, Functions, Algebraic Functions, Solution of Equations]
 tags: [General Number of Solutions, Graphs of Functions]
 status: 已入库
 ---

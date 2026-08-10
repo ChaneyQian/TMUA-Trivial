@@ -7,8 +7,8 @@ year:
 number: Q3
 section: Multiple Choice
 difficulty: 5.5
-topics: []
-subtopics: []
+topics: [Function, Sequences and Series]
+subtopics: [Exponentials and Logarithms, Sequences and Series]
 tags: [Exponentials and Logarithms, Sequences and Series]
 status: 已入库
 ---

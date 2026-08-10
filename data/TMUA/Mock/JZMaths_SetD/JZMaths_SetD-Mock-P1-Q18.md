@@ -7,8 +7,8 @@ year:
 number: Q18
 section: Multiple Choice
 difficulty: 8
-topics: []
-subtopics: []
+topics: [Calculus, Function, Sequences and Series]
+subtopics: [Integration, "Floor, Ceiling and Fractional Part Functions", Exponentials and Logarithms, Sequences and Series]
 tags: [Exponentials and Logarithms, Integration]
 status: 已入库
 ---

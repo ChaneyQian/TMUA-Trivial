@@ -7,8 +7,8 @@ year:
 number: Q7
 section: Multiple Choice
 difficulty: 6.5
-topics: []
-subtopics: []
+topics: [Logic and Proof, Polynomial]
+subtopics: [Logic, Solution of Equations]
 tags: [Differentiation, Logic Deduction]
 status: 已入库
 ---

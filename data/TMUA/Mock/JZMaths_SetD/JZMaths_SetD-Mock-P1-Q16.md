@@ -7,8 +7,8 @@ year:
 number: Q16
 section: Multiple Choice
 difficulty: 7.5
-topics: []
-subtopics: []
+topics: [Calculus, Sequences and Series]
+subtopics: [Integration, Integral Identity, Sequences and Series]
 tags: [Integration, Sequences and Series]
 status: 已入库
 ---

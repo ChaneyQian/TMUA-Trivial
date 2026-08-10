@@ -7,8 +7,8 @@ year:
 number: Q19
 section: Multiple Choice
 difficulty: 8
-topics: []
-subtopics: []
+topics: [Trigonometry, Geometry]
+subtopics: [Sine and Cosine Rule, Euclid Geometry]
 tags: [General Trigonometry, Geometry]
 status: 已入库
 ---

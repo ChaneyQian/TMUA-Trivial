@@ -7,8 +7,8 @@ year:
 number: Q2
 section: Multiple Choice
 difficulty: 5.5
-topics: []
-subtopics: []
+topics: [Logic and Proof, Algebra (Basic)]
+subtopics: [Logic, Algebra Manipulation]
 tags: [Logic Deduction, General Algebra]
 status: 已入库
 ---
@@ -53,35 +53,34 @@ $$ \mathbf{G} \quad \text{The final answers for } x \text{ are correct, and ther
 ### 我的备注
 
 ### AI备注
-
+**源书勘误（2026-08-09 修正，已核对原卷）**：原卷 `jz_mock_b_p2_solution.pdf` 第 5 页印答案 **C**，并写「Step (2) is also valid」。实际 Step (2) 把 $-2$ 移入了根号内（$\sqrt{A} - 2 \neq \sqrt{A-2}$），这才是第一处错误，故答案应为 **B**。原卷其后对 $x = 0, 1$ 的检验用的是 Step (2) 产生的错误方程 $\sqrt{x^3+x^2-x} = x$；代回**原**方程可见 $x = 0$ 给出 $\frac{\sqrt{2}}{2} \neq 1$、$x = 1$ 给出 $\frac{\sqrt{3}}{3} \neq 1$，两者都不是解。原方程真解为 $x = 1 \pm \sqrt{2}$。本库已按正确数学修改答案与解析，与原卷不同。
 
 ## 答案
-C
+B
 
 ## 解析
-The original equation has denominator $x + 2$, so $x \neq -2$. Therefore multiplying both sides by $x + 2$ in Step (1) is valid.
+The original equation has denominator $x + 2$, so $x \neq -2$. Therefore multiplying both sides by $x + 2$ in Step (1) is valid, giving
 
-Step (2) is also valid, giving
-$$ \sqrt{x^3 + x^2 - x} = x. $$
+$$ \sqrt{x^3 + x^2 - x + 2} = x + 2. $$
 
-However, this equation also tells us that $x \geq 0$, since the left hand side is a square root.
+**Step (2) is where the first error occurs.** Subtracting 2 from both sides gives
 
-In Step (3), squaring both sides gives
+$$ \sqrt{x^3 + x^2 - x + 2} - 2 = x, $$
 
-$$ x^3 + x^2 - x = x^2, $$
+and the 2 cannot be moved inside the square root: in general $\sqrt{A} - 2 \neq \sqrt{A - 2}$. The step as written therefore replaces the equation by a different one, and everything after it solves the wrong equation.
 
-which simplifies to
+Solving correctly from Step (1): squaring both sides gives
 
-$$ x^3 - x = 0. $$
+$$ x^3 + x^2 - x + 2 = (x + 2)^2 = x^2 + 4x + 4, $$
 
-But this squaring step can introduce extra solutions, because there may be values of $x$ for which one side is say $-k$ and the other side is $k$, so that when squared, they appear to equal, but $-k \neq k$. So any values found later must be checked in the original equation.
+so
 
-Solving the cubic gives
+$$ x^3 - 5x - 2 = 0. $$
 
-$$ x(x - 1)(x + 1) = 0, $$
+Since $x = -2$ is a root of this cubic, it factorises as
 
-so $x = -1, 0, 1$.
+$$ (x + 2)(x^2 - 2x - 1) = 0. $$
 
-Check these in $\sqrt{x^3 + x^2 - x} = x$. When $x = -1$, we get $1 = -1$, which is false. When $x = 0$, we get $0 = 0$, which is true. When $x = 1$, we get $1 = 1$, which is true.
+The root $x = -2$ is excluded by the denominator, so $x = 1 \pm \sqrt{2}$. Both satisfy $x + 2 > 0$, and substituting back confirms both are genuine solutions of the original equation.
 
-So the final answers are wrong, and the first error appears in Step (3).
+The student's answers $x = -1, 0, 1$ are therefore all wrong — for instance $x = 0$ gives $\frac{\sqrt{2}}{2} \neq 1$ — and the first error appears in Step (2).

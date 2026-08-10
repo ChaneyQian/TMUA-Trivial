@@ -7,8 +7,8 @@ year:
 number: Q17
 section: Multiple Choice
 difficulty: 8
-topics: []
-subtopics: []
+topics: [Number Theory]
+subtopics: [Modular Arithmetic and Congruences]
 tags: [Logic Deduction]
 status: 已入库
 ---

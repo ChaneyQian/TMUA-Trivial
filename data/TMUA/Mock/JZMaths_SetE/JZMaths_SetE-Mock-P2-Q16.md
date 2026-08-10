@@ -7,8 +7,8 @@ year:
 number: Q16
 section: Multiple Choice
 difficulty: 7.5
-topics: []
-subtopics: []
+topics: [Logic and Proof, Miscellaneous Pure, Calculus]
+subtopics: [Logic, Numerical Methods, Differentiation Application, Integral Identity]
 tags: [Logic Deduction, Integration, Differentiation]
 status: 已入库
 ---

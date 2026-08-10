@@ -7,8 +7,8 @@ year:
 number: Q7
 section: Multiple Choice
 difficulty: 6.5
-topics: []
-subtopics: []
+topics: [Geometry, Trigonometry]
+subtopics: [Coordinate Geometry, Trigonometry]
 tags: [Circle Geometry, Geometry]
 status: 已入库
 ---

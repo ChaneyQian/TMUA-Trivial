@@ -7,8 +7,8 @@ year:
 number: Q18
 section: Multiple Choice
 difficulty: 8.5
-topics: []
-subtopics: []
+topics: [Logic and Proof, Calculus]
+subtopics: [Logic, Integration]
 tags: [Logic Deduction, Integration]
 status: 已入库
 ---

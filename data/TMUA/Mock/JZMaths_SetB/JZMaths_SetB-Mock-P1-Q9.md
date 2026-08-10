@@ -7,8 +7,8 @@ year:
 number: Q9
 section: Multiple Choice
 difficulty: 7
-topics: []
-subtopics: []
+topics: [Algebra (Basic)]
+subtopics: [Surds and indices]
 tags: [Exponentials and Logarithms, General Algebra, Logic Equivalence]
 status: 已入库
 ---

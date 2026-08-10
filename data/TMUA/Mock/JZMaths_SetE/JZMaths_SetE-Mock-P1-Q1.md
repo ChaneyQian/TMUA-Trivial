@@ -7,8 +7,8 @@ year:
 number: Q1
 section: Multiple Choice
 difficulty: 5.5
-topics: []
-subtopics: []
+topics: [Miscellaneous Pure, Polynomial]
+subtopics: [Inequalities, Solution of Equations]
 tags: [Inequalities]
 status: 已入库
 ---

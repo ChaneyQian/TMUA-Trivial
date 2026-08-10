@@ -7,8 +7,8 @@ year:
 number: Q2
 section: Multiple Choice
 difficulty: 5.5
-topics: []
-subtopics: []
+topics: [Polynomial]
+subtopics: [Vieta's Formulas]
 tags: [General Algebra]
 status: 已入库
 ---

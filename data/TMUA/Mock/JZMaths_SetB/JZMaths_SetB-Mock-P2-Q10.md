@@ -7,8 +7,8 @@ year:
 number: Q10
 section: Multiple Choice
 difficulty: 7
-topics: []
-subtopics: []
+topics: [Logic and Proof, Trigonometry]
+subtopics: [Logic, Trigonometric Equations]
 tags: [General Trigonometry, Logic Sufficiency]
 status: 已入库
 ---

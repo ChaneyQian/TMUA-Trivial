@@ -7,8 +7,8 @@ year:
 number: Q1
 section: Multiple Choice
 difficulty: 5.5
-topics: []
-subtopics: []
+topics: [Logic and Proof, Number Theory]
+subtopics: [Logic, Divisibility]
 tags: [Logic Deduction]
 status: 已入库
 ---

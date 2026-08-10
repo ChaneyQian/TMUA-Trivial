@@ -7,8 +7,8 @@ year:
 number: Q4
 section: Multiple Choice
 difficulty: 6
-topics: []
-subtopics: []
+topics: [Logic and Proof, Calculus]
+subtopics: [Logic, Differentiation Application, Integration]
 tags: [Logic Deduction, Differentiation]
 status: 已入库
 ---

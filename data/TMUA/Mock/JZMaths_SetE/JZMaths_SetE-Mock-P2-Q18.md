@@ -7,8 +7,8 @@ year:
 number: Q18
 section: Multiple Choice
 difficulty: 8
-topics: []
-subtopics: []
+topics: [Sequences and Series, Algebra (Basic)]
+subtopics: [AP GP, Surds and indices]
 tags: [Sequences and Series]
 status: 已入库
 ---

@@ -7,8 +7,8 @@ year:
 number: Q13
 section: Multiple Choice
 difficulty: 7
-topics: []
-subtopics: []
+topics: [Trigonometry, Function]
+subtopics: [Trigonometry, Functions]
 tags: [Transformation of Graphs, General Trigonometry]
 status: 已入库
 ---

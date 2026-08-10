@@ -7,8 +7,8 @@ year:
 number: Q8
 section: Multiple Choice
 difficulty: 6.5
-topics: []
-subtopics: []
+topics: [Geometry]
+subtopics: [Coordinate Geometry]
 tags: [Circle Geometry, General Algebra]
 status: 已入库
 ---

@@ -7,8 +7,8 @@ year:
 number: Q18
 section: Multiple Choice
 difficulty: 8
-topics: []
-subtopics: []
+topics: [Calculus, Algebra (Basic)]
+subtopics: [Integration, Integral Identity, Simultaneous Equations]
 tags: [Integration]
 status: 已入库
 ---

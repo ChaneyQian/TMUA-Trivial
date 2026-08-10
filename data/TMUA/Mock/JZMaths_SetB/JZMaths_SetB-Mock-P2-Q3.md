@@ -7,8 +7,8 @@ year:
 number: Q3
 section: Multiple Choice
 difficulty: 6
-topics: []
-subtopics: []
+topics: [Logic and Proof]
+subtopics: [Logic]
 tags: [Logic Deduction]
 status: 已入库
 ---

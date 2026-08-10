@@ -7,8 +7,8 @@ year:
 number: Q14
 section: Multiple Choice
 difficulty: 7
-topics: []
-subtopics: []
+topics: [Logic and Proof, Geometry]
+subtopics: [Logic, Euclid Geometry, Vectors]
 tags: [Logic Deduction, Geometry]
 status: 已入库
 ---

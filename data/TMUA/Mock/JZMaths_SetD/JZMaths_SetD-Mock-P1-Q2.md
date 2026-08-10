@@ -7,8 +7,8 @@ year:
 number: Q2
 section: Multiple Choice
 difficulty: 6
-topics: []
-subtopics: []
+topics: [Trigonometry, Function]
+subtopics: [Trigonometric Equations, Absolute Value Functions]
 tags: [General Trigonometry, General Number of Solutions]
 status: 已入库
 ---

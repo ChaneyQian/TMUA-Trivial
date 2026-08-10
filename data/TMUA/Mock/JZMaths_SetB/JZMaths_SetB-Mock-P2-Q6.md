@@ -7,8 +7,8 @@ year:
 number: Q6
 section: Multiple Choice
 difficulty: 6
-topics: []
-subtopics: []
+topics: [Polynomial, Function, Logic and Proof]
+subtopics: [Solution of Equations, Absolute Value Functions, Graphical Arguments]
 tags: [General Number of Solutions, Graphs of Functions]
 status: 已入库
 ---

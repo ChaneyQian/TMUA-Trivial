@@ -7,8 +7,8 @@ year:
 number: Q17
 section: Multiple Choice
 difficulty: 8
-topics: []
-subtopics: []
+topics: [Calculus]
+subtopics: [Integration, Integral Identity]
 tags: [Integration, Transformation of Graphs]
 status: 已入库
 ---

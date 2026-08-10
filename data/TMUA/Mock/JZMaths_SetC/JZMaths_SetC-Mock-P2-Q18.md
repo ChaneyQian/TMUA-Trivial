@@ -7,8 +7,8 @@ year:
 number: Q18
 section: Multiple Choice
 difficulty: 8
-topics: []
-subtopics: []
+topics: [Miscellaneous Pure, Logic and Proof, Geometry]
+subtopics: [Inequalities, Graphical Arguments, Coordinate Geometry]
 tags: [Inequalities, General Algebra]
 status: 已入库
 ---

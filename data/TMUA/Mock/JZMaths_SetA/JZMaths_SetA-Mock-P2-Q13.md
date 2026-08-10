@@ -7,8 +7,8 @@ year:
 number: Q13
 section: Multiple Choice
 difficulty: 7
-topics: []
-subtopics: []
+topics: [Trigonometry, Algebra (Basic), Function]
+subtopics: [Trigonometric Identities, Algebra Manipulation, Algebraic Functions]
 tags: [General Trigonometry, General Algebra]
 status: 已入库
 ---

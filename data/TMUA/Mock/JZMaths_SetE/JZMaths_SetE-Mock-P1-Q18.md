@@ -7,8 +7,8 @@ year:
 number: Q18
 section: Multiple Choice
 difficulty: 7.5
-topics: []
-subtopics: []
+topics: [Miscellaneous Pure, Trigonometry]
+subtopics: [Inequalities, Trigonometric Equations, Graph Sketching]
 tags: [General Trigonometry, Inequalities]
 status: 已入库
 ---

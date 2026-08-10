@@ -7,8 +7,8 @@ year:
 number: Q5
 section: Multiple Choice
 difficulty: 6
-topics: []
-subtopics: []
+topics: [Logic and Proof, Miscellaneous Pure, Function]
+subtopics: [Logic, Inequalities, Absolute Value Functions]
 tags: [Logic Deduction]
 status: 已入库
 ---

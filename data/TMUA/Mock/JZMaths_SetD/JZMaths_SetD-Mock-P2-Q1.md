@@ -7,8 +7,8 @@ year:
 number: Q1
 section: Multiple Choice
 difficulty: 5.5
-topics: []
-subtopics: []
+topics: [Polynomial, Algebra (Basic)]
+subtopics: [Solution of Equations, Algebra Manipulation]
 tags: [General Number of Solutions]
 status: 已入库
 ---

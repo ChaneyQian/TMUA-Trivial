@@ -36,11 +36,11 @@ $$
 Which one of the following statements is true?
 
 $$
-\mathbf {A} \quad \text{Both −4 and −1 are solutions of the equation.}
+\mathbf {A} \quad \text{Both } -4 \text{ and } -1 \text{ are solutions of the equation.}
 $$
 
 $$
-\mathbf {B} \quad \text{Neither −4 nor −1 are solutions of the equation.}
+\mathbf {B} \quad \text{Neither } -4 \text{ nor } -1 \text{ are solutions of the equation.}
 $$
 
 $$
@@ -81,7 +81,7 @@ Likewise, $x + 5 = x ^ { 2 } + 6 x + 9$ is algebraically equivalent to these, ob
 
 Therefore the extra solution was introduced at step (1), when we squared the equation: on the first line, x = −4 gives the incorrect −1 = 1, while squaring this gives the correct 1 = 1. Hence the correct answer is C.
 
-We can go further, though, and ask how we could correct the solution. If we introduce implication symbols between pairs of lines, it will be clearer what is happening. The symbol $^ 6 \Longleftrightarrow ^ { \prime }$ indicates that this line is equivalent to the previous line, while ‘ =⇒ ’ indicates that this line follows from the previous line, but not vice versa.
+We can go further, though, and ask how we could correct the solution. If we introduce implication symbols between pairs of lines, it will be clearer what is happening. The symbol ‘$\Longleftrightarrow$’ indicates that this line is equivalent to the previous line, while ‘$\Longrightarrow$’ indicates that this line follows from the previous line, but not vice versa.
 
 The argument now reads as follows:
 

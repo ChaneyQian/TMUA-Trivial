@@ -7,8 +7,8 @@ year:
 number: Q12
 section: Multiple Choice
 difficulty: 7
-topics: []
-subtopics: []
+topics: [Logic and Proof]
+subtopics: [Logic]
 tags: [Logic Deduction, Logic Sufficiency, Logic Equivalence]
 status: 已入库
 ---
@@ -38,28 +38,19 @@ Write $P$ for "$f(x) > 0$ for all $x > a$" and $Q$ for "$f(a) < 0$". The stateme
 
 A. $P \Rightarrow Q$
 
-B. $Q \Rightarrow 
-eg P$
+B. $Q \Rightarrow \neg P$
 
 C. $Q \Rightarrow P$
 
-D. $
-eg Q \Rightarrow 
-eg P$, the contrapositive of $P \Rightarrow Q$
+D. $\neg Q \Rightarrow \neg P$, the contrapositive of $P \Rightarrow Q$
 
-E. $P \Rightarrow 
-eg Q$, the contrapositive of $Q \Rightarrow 
-eg P$
+E. $P \Rightarrow \neg Q$, the contrapositive of $Q \Rightarrow \neg P$
 
-F. $
-eg Q \Leftrightarrow 
-eg P$, which is equivalent to $P \Leftrightarrow Q$
+F. $\neg Q \Leftrightarrow \neg P$, which is equivalent to $P \Leftrightarrow Q$
 
-G. $Q \Rightarrow 
-eg P$
+G. $Q \Rightarrow \neg P$
 
-Therefore, $P \Rightarrow Q$ appears twice, in A and D, while $Q \Rightarrow 
-eg P$ appears three times, in B, E and G.
+Therefore, $P \Rightarrow Q$ appears twice, in A and D, while $Q \Rightarrow \neg P$ appears three times, in B, E and G.
 
 Statement F implies $P \Rightarrow Q$, so F cannot be the only true statement.
 

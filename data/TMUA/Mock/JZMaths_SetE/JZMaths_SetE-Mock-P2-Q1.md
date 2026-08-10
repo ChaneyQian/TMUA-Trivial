@@ -7,8 +7,8 @@ year:
 number: Q1
 section: Multiple Choice
 difficulty: 5.5
-topics: []
-subtopics: []
+topics: [Logic and Proof, Calculus, Function]
+subtopics: [Logic, Differentiation Application, Algebraic Functions]
 tags: [Differentiation, Logic Deduction]
 status: 已入库
 ---

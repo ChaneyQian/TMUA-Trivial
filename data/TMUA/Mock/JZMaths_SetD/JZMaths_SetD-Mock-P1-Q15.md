@@ -7,8 +7,8 @@ year:
 number: Q15
 section: Multiple Choice
 difficulty: 7.5
-topics: []
-subtopics: []
+topics: [Trigonometry, Geometry]
+subtopics: [Trigonometry, Coordinate Geometry]
 tags: [Circle Geometry, Geometry]
 status: 已入库
 ---

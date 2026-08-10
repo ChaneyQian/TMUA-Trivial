@@ -7,8 +7,8 @@ year:
 number: Q8
 section: Multiple Choice
 difficulty: 6.5
-topics: []
-subtopics: []
+topics: [Calculus, Function, Sequences and Series]
+subtopics: [Integration, Absolute Value Functions, AP GP]
 tags: [Integration, Sequences and Series]
 status: 已入库
 ---

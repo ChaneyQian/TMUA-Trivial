@@ -7,8 +7,8 @@ year:
 number: Q7
 section: Multiple Choice
 difficulty: 7
-topics: []
-subtopics: []
+topics: [Polynomial]
+subtopics: [Solution of Equations]
 tags: [General Number of Solutions, General Algebra]
 status: 已入库
 ---

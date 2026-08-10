@@ -7,8 +7,8 @@ year:
 number: Q10
 section: Multiple Choice
 difficulty: 6.5
-topics: []
-subtopics: []
+topics: [Polynomial, Algebra (Basic)]
+subtopics: [Factor and Remainder Theorem, Polynomials, Algebra Manipulation]
 tags: [Remainder Theorem, Polynomial Expansions]
 status: 已入库
 ---

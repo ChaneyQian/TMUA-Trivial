@@ -7,8 +7,8 @@ year:
 number: Q18
 section: Multiple Choice
 difficulty: 8
-topics: []
-subtopics: []
+topics: [Function, Polynomial]
+subtopics: [Exponentials and Logarithms, Symmetric and Cyclic Polynomials]
 tags: [Logic Deduction, Exponentials and Logarithms]
 status: 已入库
 ---

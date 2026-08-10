@@ -7,8 +7,8 @@ year:
 number: Q10
 section: Multiple Choice
 difficulty: 7
-topics: []
-subtopics: []
+topics: [Calculus, Miscellaneous Pure]
+subtopics: [Integration, Integral Identity, Estimation and Bounds]
 tags: [General Trigonometry, Area Integration]
 status: 已入库
 ---

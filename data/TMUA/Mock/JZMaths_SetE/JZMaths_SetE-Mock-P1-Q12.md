@@ -7,8 +7,8 @@ year:
 number: Q12
 section: Multiple Choice
 difficulty: 6.5
-topics: []
-subtopics: []
+topics: [Calculus, Function, Logic and Proof]
+subtopics: [Integration, Absolute Value Functions, Graphical Arguments]
 tags: [Geometry, Area Integration]
 status: 已入库
 ---

@@ -33,6 +33,11 @@ npm start          # http://localhost:3210
 解析器识别 TMUA/ECAA 的 `$$\mathbf{A} \quad …$$` 公式块、MAT 的 `(a)`／`(i)` 标号、SMC 的 `$\qquad$` 单行排列，
 以及选项本身是图片的图形选择题。只有能自动判分的题会进抽题池，损坏的题由质量闸门拦下并记入 `public/exam/corrupted.json`。
 
+题源仓库改动后，用 `npm run sync` 全量同步到 `data/`（镜像语义，源里删掉的这边也删）。
+它按「frontmatter 有没有 `qid`」过滤：没有 `qid` 的 md 是工作笔记而非题目，不会同步进来——
+那些笔记常含本机绝对路径与 Obsidian 双链，不适合进公开仓库。源目录默认
+`D:\Obsidian\repo\题库`，可用 `BANK_SRC` 覆盖。
+
 想接自己的题库，设环境变量 `BANK_PATH` 指到同结构的目录再构建即可。
 
 ## 技术栈

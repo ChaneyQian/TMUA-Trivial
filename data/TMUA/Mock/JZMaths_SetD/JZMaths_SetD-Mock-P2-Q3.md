@@ -7,8 +7,8 @@ year:
 number: Q3
 section: Multiple Choice
 difficulty: 5.5
-topics: []
-subtopics: []
+topics: [Trigonometry]
+subtopics: [Trigonometry]
 tags: [General Trigonometry]
 status: 已入库
 ---

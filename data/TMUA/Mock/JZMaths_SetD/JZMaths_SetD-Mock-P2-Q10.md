@@ -7,8 +7,8 @@ year:
 number: Q10
 section: Multiple Choice
 difficulty: 7
-topics: []
-subtopics: []
+topics: [Logic and Proof, Function]
+subtopics: [Logic, Exponentials and Logarithms]
 tags: [Logic Deduction, Exponentials and Logarithms]
 status: 已入库
 ---

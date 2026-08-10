@@ -7,8 +7,8 @@ year:
 number: Q17
 section: Multiple Choice
 difficulty: 7.5
-topics: []
-subtopics: []
+topics: [Number Theory, Algebra (Basic)]
+subtopics: [Diophantine Equations, Algebra Manipulation]
 tags: [Logic Deduction, General Algebra]
 status: 已入库
 ---

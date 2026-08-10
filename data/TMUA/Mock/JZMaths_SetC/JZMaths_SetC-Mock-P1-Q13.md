@@ -7,8 +7,8 @@ year:
 number: Q13
 section: Multiple Choice
 difficulty: 7
-topics: []
-subtopics: []
+topics: [Number Theory]
+subtopics: [Modular Arithmetic and Congruences]
 tags: [General Algebra]
 status: 已入库
 ---

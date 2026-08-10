@@ -7,8 +7,8 @@ year:
 number: Q16
 section: Multiple Choice
 difficulty: 7.5
-topics: []
-subtopics: []
+topics: [Calculus, Function]
+subtopics: [Integration, Integral Identity, Exponentials and Logarithms]
 tags: [Integration, Inequalities]
 status: 已入库
 ---

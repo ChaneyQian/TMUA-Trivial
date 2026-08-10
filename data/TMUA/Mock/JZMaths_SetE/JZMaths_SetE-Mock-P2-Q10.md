@@ -7,8 +7,8 @@ year:
 number: Q10
 section: Multiple Choice
 difficulty: 7
-topics: []
-subtopics: []
+topics: [Polynomial]
+subtopics: [Factor and Remainder Theorem, Polynomials]
 tags: [Polynomial Expansions, General Number of Solutions]
 status: 已入库
 ---

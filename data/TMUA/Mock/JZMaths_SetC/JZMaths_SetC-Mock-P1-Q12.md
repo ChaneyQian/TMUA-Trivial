@@ -7,8 +7,8 @@ year:
 number: Q12
 section: Multiple Choice
 difficulty: 7
-topics: []
-subtopics: []
+topics: [Trigonometry]
+subtopics: [Trigonometry]
 tags: [Trig Equation Number of Solutions, General Trigonometry]
 status: 已入库
 ---

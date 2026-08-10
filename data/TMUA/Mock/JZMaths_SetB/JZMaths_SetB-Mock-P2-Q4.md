@@ -7,8 +7,8 @@ year:
 number: Q4
 section: Multiple Choice
 difficulty: 6
-topics: []
-subtopics: []
+topics: [Trigonometry]
+subtopics: [Trigonometric Identities, Trigonometry]
 tags: [General Trigonometry]
 status: 已入库
 ---

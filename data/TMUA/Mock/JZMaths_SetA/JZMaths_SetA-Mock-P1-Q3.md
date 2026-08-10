@@ -7,8 +7,8 @@ year:
 number: Q3
 section: Multiple Choice
 difficulty: 6
-topics: []
-subtopics: []
+topics: [Function]
+subtopics: [Absolute Value Functions]
 tags: [General Functions, Graphs of Functions]
 status: 已入库
 ---

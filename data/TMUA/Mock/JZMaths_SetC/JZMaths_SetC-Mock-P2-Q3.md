@@ -7,8 +7,8 @@ year:
 number: Q3
 section: Multiple Choice
 difficulty: 6
-topics: []
-subtopics: []
+topics: [Trigonometry, Algebra (Basic)]
+subtopics: [Trigonometric Identities, Algebra Manipulation]
 tags: [General Trigonometry]
 status: 已入库
 ---

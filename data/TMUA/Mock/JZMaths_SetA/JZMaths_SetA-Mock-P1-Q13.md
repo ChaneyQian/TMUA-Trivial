@@ -7,8 +7,8 @@ year:
 number: Q13
 section: Multiple Choice
 difficulty: 7.5
-topics: []
-subtopics: []
+topics: [Polynomial, Logic and Proof, Algebra (Basic)]
+subtopics: [Solution of Equations, Graphical Arguments, Algebra Manipulation]
 tags: [Differentiation, General Number of Solutions]
 status: 已入库
 ---

@@ -7,8 +7,8 @@ year:
 number: Q8
 section: Multiple Choice
 difficulty: 7
-topics: []
-subtopics: []
+topics: [Algebra (Basic)]
+subtopics: [Surds and indices]
 tags: [Exponentials and Logarithms]
 status: 已入库
 ---

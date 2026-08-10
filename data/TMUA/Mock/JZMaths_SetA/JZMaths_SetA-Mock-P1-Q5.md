@@ -7,8 +7,8 @@ year:
 number: Q5
 section: Multiple Choice
 difficulty: 6
-topics: []
-subtopics: []
+topics: [Function, Logic and Proof]
+subtopics: [Absolute Value Functions, Graphical Arguments]
 tags: [Geometry, Linear Equations]
 status: 已入库
 ---

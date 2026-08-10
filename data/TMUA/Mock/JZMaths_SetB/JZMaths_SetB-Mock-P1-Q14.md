@@ -7,8 +7,8 @@ year:
 number: Q14
 section: Multiple Choice
 difficulty: 7.5
-topics: []
-subtopics: []
+topics: [Trigonometry, Logic and Proof]
+subtopics: [Trigonometric Equations, Trigonometry, Graphical Arguments]
 tags: [General Trigonometry, Trig Equation Number of Solutions]
 status: 已入库
 ---

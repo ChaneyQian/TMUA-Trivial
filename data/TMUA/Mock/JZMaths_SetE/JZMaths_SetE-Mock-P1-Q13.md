@@ -7,8 +7,8 @@ year:
 number: Q13
 section: Multiple Choice
 difficulty: 7
-topics: []
-subtopics: []
+topics: [Trigonometry]
+subtopics: [Trigonometric Equations, Trigonometry]
 tags: [General Trigonometry]
 status: 已入库
 ---

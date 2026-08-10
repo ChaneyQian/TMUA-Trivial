@@ -7,8 +7,8 @@ year:
 number: Q9
 section: Multiple Choice
 difficulty: 7
-topics: []
-subtopics: []
+topics: [Algebra (Basic), Function]
+subtopics: [Systems Of Linear Equations, Exponentials and Logarithms]
 tags: [Exponentials and Logarithms, Linear Equations]
 status: 已入库
 ---

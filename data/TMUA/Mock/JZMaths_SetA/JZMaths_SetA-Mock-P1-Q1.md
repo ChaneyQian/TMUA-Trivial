@@ -7,8 +7,8 @@ year:
 number: Q1
 section: Multiple Choice
 difficulty: 5.5
-topics: []
-subtopics: []
+topics: [Calculus, Function]
+subtopics: [Integration, Absolute Value Functions]
 tags: [Area Integration]
 status: 已入库
 ---

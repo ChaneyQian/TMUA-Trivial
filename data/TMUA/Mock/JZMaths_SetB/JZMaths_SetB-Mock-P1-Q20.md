@@ -7,8 +7,8 @@ year:
 number: Q20
 section: Multiple Choice
 difficulty: 8
-topics: []
-subtopics: []
+topics: [Function, Miscellaneous Pure, Algebra (Basic)]
+subtopics: [Exponentials and Logarithms, Inequalities, Algebra Manipulation]
 tags: [General Trigonometry, Inequalities]
 status: 已入库
 ---
