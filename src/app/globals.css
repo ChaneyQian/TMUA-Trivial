@@ -96,6 +96,14 @@ body {
   font-size: calc(var(--katex-scale) * 1em);
 }
 
+/* \text{} 里的整句话要能折行。KaTeX 默认给文本模式加 nowrap，配合它把空格
+   渲染成 &nbsp;（那半边在 MathText 的 softenTextSpaces 里换回普通空格），
+   两者缺一都会让长选项被压成单行、只能横向滚动。
+   只放开文本模式：数学原子仍然不许在中间断开。 */
+.mathtext .katex .text {
+  white-space: normal;
+}
+
 /* 题面/解析内容里的列表缩进（* 重置清掉了 UA 默认 padding，这里补回） */
 ul,
 ol {

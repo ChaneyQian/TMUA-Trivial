@@ -40,6 +40,25 @@ interface MathSlot {
   displayMode: boolean;
 }
 
+/**
+ * 让 \text{} 里的整句话能正常折行。
+ *
+ * TMUA/ECAA 有大量「整句英文包在 \text{} 里当行内公式」的选项，KaTeX 会把
+ * 文本模式的空格渲染成 &nbsp;，于是一整句话变成一个不可断的长盒子，选项框只能
+ * 横向滚动。光加 white-space: normal 不管用——不间断空格本身就不产生断行机会，
+ * 必须把它换回普通空格（配套的 CSS 在 globals.css 的 .mathtext .katex .text）。
+ *
+ * 只动 mord 系 span 里的纯文本节点：数学原子（mathnormal 等）内是字母数字，
+ * 不含 &nbsp;，替换对它们是空操作；\text{} 之外的间距由 mspace 的 margin 控制，
+ * 不受影响。代价是文本模式里显式写的 ~ 会失去不间断语义，本题库无此用法。
+ */
+function softenTextSpaces(html: string): string {
+  return html.replace(
+    /(<span class="mord[^"]*">)([^<]*)/g,
+    (_m, open: string, body: string) => open + body.replace(/ /g, ' ')
+  );
+}
+
 /** 渲染含图片、Markdown、数学公式的文本 */
 function renderContent(text: string): string {
   // 1. 替换图片
@@ -113,7 +132,7 @@ function renderContent(text: string): string {
           '\\artanh': '\\operatorname{artanh}',
         },
       });
-      text = text.replace(`${MATH_PLACEHOLDER}${i}__`, html);
+      text = text.replace(`${MATH_PLACEHOLDER}${i}__`, softenTextSpaces(html));
     } catch {
       text = text.replace(`${MATH_PLACEHOLDER}${i}__`, slot.formula);
     }
