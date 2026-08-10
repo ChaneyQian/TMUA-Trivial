@@ -5,6 +5,8 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import IdBadge from '@/components/badge/IdBadge';
+import CardDeck from '@/components/deck/CardDeck';
+import { ZONES, zoneById, type ZoneId } from '@/components/deck/zones';
 import MathText from '@/components/MathText';
 import { buildExam, fetchIndex, ExamQuestion, IndexEntry } from '@/lib/exam';
 import {
@@ -34,6 +36,9 @@ type Mode = 'practice' | 'mock';
 type Db = 'TMUA' | 'TMUA_MOCK' | 'MAT' | 'SMC' | 'ECAA' | 'AMC' | 'ALL';
 
 const UNLOCK_SEEN_KEY = 'mcq-test:hidden-unlock-seen:v1';
+const ZONE_KEY = 'mcq-test:zone:v1';
+/** deck 淡出与面板淡入交叠的窗口，和 Exam.module.css / Deck.module.css 的 280ms 对齐 */
+const ZONE_SWAP_MS = 280;
 
 const DB_TITLES: Record<Db, string> = {
   TMUA: 'Test of Mathematics for University Admission',
@@ -135,9 +140,19 @@ export default function ExamApp() {
   const [records, setRecords] = useState<Records>(() => createEmptyRecords());
   const [recordMessage, setRecordMessage] = useState('');
   const [recordBusy, setRecordBusy] = useState(false);
-  const [libraryMode, setLibraryMode] = useState<LibraryMode>('classic');
   const [showUnlock, setShowUnlock] = useState(false);
   const importInputRef = useRef<HTMLInputElement>(null);
+
+  // ---- 堆叠卡片：setup 相的两个子态（选区 deck ↔ 展开的配置面板）----
+  // phase 仍是四相；deck/panel 只是 setup 相内部的分支，exam 运行时完全不受影响。
+  const [frontZone, setFrontZone] = useState<ZoneId>('classic');
+  const [zoneOpen, setZoneOpen] = useState(false);
+  const [deckLive, setDeckLive] = useState(true); // deck 是否还挂着（过渡窗口内与面板共存）
+  const [deckFocus, setDeckFocus] = useState(false);
+  const [deckHint, setDeckHint] = useState('');
+  const pendingZoneRef = useRef<ZoneId | null>(null);
+  const deckTimerRef = useRef<number | null>(null);
+  const panelRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     setRecords(loadRecords());
@@ -146,25 +161,125 @@ export default function ExamApp() {
   const completedCount = index ? validCompletedCount(index, records) : 0;
   const unlockProgress = index ? hiddenUnlockProgress(index, records) : 0;
   const hiddenUnlocked = index ? isHiddenModeUnlocked(index, records) : false;
+  // 题库范围不再是独立 state：前位卡就是唯一真源
+  const libraryMode: LibraryMode = frontZone === 'trivial' && hiddenUnlocked ? 'hidden' : 'classic';
   const activeIndex = indexForLibraryMode(index || [], hiddenUnlocked ? libraryMode : 'classic');
 
+  /** 转牌并落盘。写在 setter 里而不是 effect 里，免得首帧把回读结果覆盖掉 */
+  const chooseZone = useCallback((id: ZoneId) => {
+    setFrontZone(id);
+    try {
+      localStorage.setItem(ZONE_KEY, id);
+    } catch {}
+  }, []);
+
+  // 回读上次的选区。'grill'（P1 未开放）不接受，直接落回 classic；
+  // 'trivial' 要等索引到位才知道解不解得开，所以先挂起、下一个 effect 再定。
   useEffect(() => {
-    if (!hiddenUnlocked) {
-      setLibraryMode('classic');
+    try {
+      const saved = localStorage.getItem(ZONE_KEY);
+      if (saved === 'trivial' || saved === 'classic') pendingZoneRef.current = saved;
+    } catch {}
+  }, []);
+
+  useEffect(() => {
+    if (!index || !pendingZoneRef.current) return;
+    const want = pendingZoneRef.current;
+    pendingZoneRef.current = null;
+    setFrontZone(want === 'trivial' && !hiddenUnlocked ? 'classic' : want);
+  }, [index, hiddenUnlocked]);
+
+  useEffect(() => {
+    if (!hiddenUnlocked) return;
+
+    // 进度满了就直接把 9.0 转到前位：解锁本身就是结果，不该再要用户手点一下。
+    // 只在「第一次」解锁时抢方向盘，之后一律尊重用户存下来的选区。
+    let firstTime = false;
+    try {
+      firstTime = !localStorage.getItem(UNLOCK_SEEN_KEY);
+      if (firstTime) localStorage.setItem(UNLOCK_SEEN_KEY, '1');
+    } catch {
+      firstTime = true;
+    }
+    if (!firstTime) return;
+
+    pendingZoneRef.current = null;
+    chooseZone('trivial');
+    setShowUnlock(true); // 自动收起由 UnlockOverlay 自己管，好带上淡出动画
+  }, [hiddenUnlocked, chooseZone]);
+
+  useEffect(() => {
+    return () => {
+      if (deckTimerRef.current) window.clearTimeout(deckTimerRef.current);
+    };
+  }, []);
+
+  const reducedMotion = () =>
+    typeof window !== 'undefined' &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /** 为什么这张卡展不开；返回空串表示可以展开 */
+  const zoneBlockReason = (id: ZoneId): string => {
+    const zone = zoneById(id);
+    if (zone.comingSoon) return `${zone.title}即将开放`;
+    if (zone.unlockPath === 'progress' && !hiddenUnlocked) {
+      return `再做 ${Math.max(0, HIDDEN_UNLOCK_COUNT - completedCount)} 题即可解锁 ${zone.title}`;
+    }
+    return '';
+  };
+
+  const openZone = (id: ZoneId) => {
+    const blocked = zoneBlockReason(id);
+    if (blocked) {
+      setDeckHint(blocked);
       return;
     }
+    setDeckHint('');
+    setDeckFocus(false);
+    setZoneOpen(true);
+    if (deckTimerRef.current) window.clearTimeout(deckTimerRef.current);
+    deckTimerRef.current = window.setTimeout(
+      () => setDeckLive(false),
+      reducedMotion() ? 0 : ZONE_SWAP_MS,
+    );
+  };
 
-    // 进度满了就直接切到 9.0 Trivial：解锁本身就是结果，不该再要用户手点一下。
-    // 这个 effect 只在 hiddenUnlocked 翻转时跑，所以之后用户自己切回经典不会被覆盖。
-    setLibraryMode('hidden');
+  const backToDeck = () => {
+    if (deckTimerRef.current) window.clearTimeout(deckTimerRef.current);
+    setDeckLive(true);
+    setZoneOpen(false);
+    setDeckFocus(true);
+  };
 
-    try {
-      if (localStorage.getItem(UNLOCK_SEEN_KEY)) return;
-      localStorage.setItem(UNLOCK_SEEN_KEY, '1');
-    } catch {}
+  /**
+   * 转牌。展不开的区只挪前位、不落盘——存进去也只会在下次回读时被判非法，
+   * localStorage 里不该留一个永远走不通的值。
+   */
+  const turnToZone = (id: ZoneId) => {
+    setDeckHint('');
+    if (zoneBlockReason(id)) setFrontZone(id);
+    else chooseZone(id);
+  };
 
-    setShowUnlock(true); // 自动收起由 UnlockOverlay 自己管，好带上淡出动画
-  }, [hiddenUnlocked]);
+  /** 顶部小页签换区：换到展不开的区就退回 deck，并说明原因 */
+  const selectZoneFromTab = (id: ZoneId) => {
+    const blocked = zoneBlockReason(id);
+    if (!blocked) {
+      chooseZone(id);
+      return;
+    }
+    setFrontZone(id);
+    backToDeck();
+    setDeckHint(blocked);
+  };
+
+  useEffect(() => {
+    if (zoneOpen) panelRef.current?.focus();
+  }, [zoneOpen]);
+
+  // 卡面徽章要的是各区自己的题量，跟当前前位无关，所以两边都单独算一次
+  const classicCount = index ? indexForLibraryMode(index, 'classic').length : 0;
+  const expandedCount = index ? indexForLibraryMode(index, 'hidden').length : 0;
 
   const poolCounts: Record<string, number> = { TMUA: 0, TMUA_MOCK: 0, MAT: 0, SMC: 0, ECAA: 0, AMC: 0 };
   for (const e of activeIndex) {
@@ -292,7 +407,10 @@ export default function ExamApp() {
       setPhase('exam');
     } catch (e) {
       if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
-      setError(e instanceof Error ? e.message : '抽题失败');
+      const message = e instanceof Error ? e.message : '抽题失败';
+      setError(message);
+      // 从 deck 快速开始时面板没挂载，errMsg 没人渲染；提示行是这条路径唯一的出口
+      setDeckHint(message);
       setPhase('setup');
     }
   };
@@ -501,45 +619,73 @@ export default function ExamApp() {
   if (phase === 'setup' || phase === 'loading') {
     return (
       <div className={styles.wrap}>
-        <div className={styles.setupCard}>
+        <div
+          className={styles.stage}
+          onKeyDown={(e) => {
+            // Escape 从配置面板退回选区。工牌浮层开着时它先吃这一下，别抢。
+            if (e.key !== 'Escape' || !zoneOpen) return;
+            const target = e.target as HTMLElement | null;
+            // 焦点在题数输入框 / 配色下拉里时，Escape 归表单控件（撤销输入、收起下拉）
+            if (target && ['INPUT', 'SELECT', 'TEXTAREA'].includes(target.tagName)) return;
+            if (document.querySelector('[aria-modal="true"]')) return;
+            backToDeck();
+          }}
+        >
           <IdBadge />
-          <div className={styles.setupTitle}>MCQ Test</div>
-          <div className={styles.setupSub}>TMUA 公益 · 练习进度解锁扩展题库 · 全量真题 Mock</div>
 
-          <div className={styles.libraryHead}>
-            <div className={styles.fieldLabel}>题库范围</div>
-            <div className={styles.libraryCurrent}>
-              当前：{libraryMode === 'hidden' && hiddenUnlocked ? '9.0 Trivial' : '经典'}
-            </div>
-          </div>
-          <div className={styles.libraryChargeRow}>
-            <button
-              type="button"
-              className={`${styles.libraryCharge} ${hiddenUnlocked ? styles.libraryChargeReady : ''} ${libraryMode === 'hidden' ? styles.libraryChargeActive : ''}`}
-              onClick={() => hiddenUnlocked && setLibraryMode(libraryMode === 'hidden' ? 'classic' : 'hidden')}
-              disabled={!hiddenUnlocked}
-              aria-pressed={hiddenUnlocked ? libraryMode === 'hidden' : undefined}
-              aria-label={hiddenUnlocked ? '切换 9.0 Trivial 扩展题库' : '经典题库，解锁充电中'}
-            >
-              <span className={styles.libraryChargeLabel}>
-                <span className={styles.chargeLight} aria-hidden="true" />
-                {hiddenUnlocked ? '9.0 Trivial' : '经典'}
-              </span>
-              <span
-                className={styles.libraryChargeTrack}
-                role="progressbar"
-                aria-label="9.0 Trivial 解锁进度"
-                aria-valuemin={0}
-                aria-valuemax={HIDDEN_UNLOCK_COUNT}
-                aria-valuenow={Math.min(completedCount, HIDDEN_UNLOCK_COUNT)}
-              >
-                <span
-                  className={styles.libraryChargeFill}
-                  style={{ width: `${unlockProgress * 100}%` }}
-                />
-              </span>
+          {deckLive && (
+            <CardDeck
+              front={frontZone}
+              onFront={turnToZone}
+              onOpen={openZone}
+              badges={{
+                classic: `${classicCount} 题`,
+                grill: '即将开放',
+                trivial: hiddenUnlocked ? `🔥 ${expandedCount} 题` : '🔒 充能中',
+              }}
+              locked={{ classic: false, grill: true, trivial: !hiddenUnlocked }}
+              charge={{
+                unlocked: hiddenUnlocked,
+                progress: unlockProgress,
+                value: completedCount,
+                max: HIDDEN_UNLOCK_COUNT,
+              }}
+              leaving={zoneOpen}
+              autoFocus={deckFocus}
+              hint={deckHint}
+              quickStart={{
+                label: phase === 'loading' ? '抽题中…' : '⚡ 快速开始',
+                summary: `${DB_NAMES[db]} · ${mode === 'mock' ? 'Mock 限时' : '练习'} · ${count} 题`,
+                disabled: phase === 'loading' || !index || totalPool === 0,
+                // 同一条 start 路径。必须直传，不能包 setTimeout：
+                // requestFullscreen 只在用户手势的同步调用链里才批准
+                onStart: start,
+              }}
+            />
+          )}
+
+          {zoneOpen && (
+        <div className={styles.panelLayer} ref={panelRef} tabIndex={-1}>
+          <div className={styles.zoneTabs}>
+            <button type="button" className={styles.zoneBack} onClick={backToDeck}>
+              ‹ 选区
             </button>
+            {ZONES.map((zone) => (
+              <button
+                key={zone.id}
+                type="button"
+                className={`${styles.zoneTab} ${zone.id === frontZone ? styles.zoneTabOn : ''}`}
+                onClick={() => selectZoneFromTab(zone.id)}
+                aria-current={zone.id === frontZone ? 'true' : undefined}
+              >
+                <span className={styles.zoneTabNo}>{zone.no}</span>
+                {zone.title}
+              </button>
+            ))}
           </div>
+        <div className={styles.setupCard}>
+          <div className={styles.setupTitle}>{zoneById(frontZone).title}</div>
+          <div className={styles.setupSub}>TMUA 公益 · 练习进度解锁扩展题库 · 全量真题 Mock</div>
 
           <div className={styles.fieldLabel}>题库</div>
           <div className={styles.segRow}>
@@ -648,6 +794,23 @@ export default function ExamApp() {
             </>
           )}
 
+          {/* 主操作在前、可选功能在后：做题记录是次级功能，不该压在「开始」上面 */}
+          <button
+            className={styles.startBtn}
+            onClick={start}
+            disabled={phase === 'loading' || !index || totalPool === 0}
+          >
+            {phase === 'loading' ? '抽题中…' : !index && !indexError ? '题库加载中…' : '开始 Test'}
+          </button>
+          {error && <div className={styles.errMsg}>{error}</div>}
+          {indexError && <div className={styles.errMsg}>{indexError}</div>}
+          {index && totalPool === 0 && (
+            <div className={styles.errMsg}>该题库没有可用题目。</div>
+          )}
+          <div className={styles.backLink}>
+            键盘：A–H / 1–9 选项 · Enter 批改或下一题 · ←→ 切题 · F 旗标
+          </div>
+
           <div className={styles.recordSection}>
             <div className={styles.fieldLabel}>做题记录（可选）</div>
             <div className={styles.recordSummary}>
@@ -696,22 +859,9 @@ export default function ExamApp() {
             </div>
             {recordMessage && <div className={styles.recordMessage}>{recordMessage}</div>}
           </div>
-
-          <button
-            className={styles.startBtn}
-            onClick={start}
-            disabled={phase === 'loading' || !index || totalPool === 0}
-          >
-            {phase === 'loading' ? '抽题中…' : !index && !indexError ? '题库加载中…' : '开始 Test'}
-          </button>
-          {error && <div className={styles.errMsg}>{error}</div>}
-          {indexError && <div className={styles.errMsg}>{indexError}</div>}
-          {index && totalPool === 0 && (
-            <div className={styles.errMsg}>该题库没有可用题目。</div>
+        </div>
+        </div>
           )}
-          <div className={styles.backLink}>
-            键盘：A–H / 1–9 选项 · Enter 批改或下一题 · ←→ 切题 · F 旗标
-          </div>
         </div>
         {showUnlock && <UnlockOverlay onDismiss={() => setShowUnlock(false)} />}
       </div>

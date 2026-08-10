@@ -43,23 +43,6 @@
   letter-spacing: 0.05em;
 }
 
-.libraryHead {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-}
-
-.libraryCurrent {
-  color: var(--text-muted);
-  font-size: 0.72rem;
-}
-
-.libraryChargeRow {
-  display: flex;
-  margin-bottom: 0.15rem;
-}
-
 .libraryCharge {
   position: relative;
   width: 184px;
@@ -1136,5 +1119,109 @@
     align-items: flex-start;
     flex-direction: column;
     gap: 0.25rem;
+  }
+}
+
+/* ============ 堆叠卡片架构：选区(deck) ↔ 配置面板 的共用外壳 ============ */
+
+/* 丝带锚点。deck 一级页没有 .setupCard，定位参照上提到这一层，两态共用一个锚，
+   丝带的落位与改版前一致。禁止 overflow: hidden——丝带故意越过上边缘。 */
+.stage {
+  position: relative;
+  box-sizing: border-box;
+  display: grid;
+  width: min(640px, calc(100vw - 2rem));
+  margin: max(1rem, 3vh) auto 2rem;
+}
+
+/* deck 与配置面板占同一格，只在 280ms 过渡窗口内共存；之后 deck 卸载，
+   免得 deck 一级页的高度被面板撑出一大片空白 */
+.stage > * {
+  grid-area: 1 / 1;
+}
+
+.panelLayer {
+  animation: panelIn 280ms cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+.panelLayer:focus {
+  outline: none;
+}
+
+/* 宽度与外距已由 .stage 承担；.setupCard 的原规则一条没动，
+   这里只把它嵌进 stage 后该收的边收掉 */
+.panelLayer .setupCard {
+  width: 100%;
+  margin: 0;
+}
+
+@keyframes panelIn {
+  from {
+    transform: scale(0.96) translateY(8px);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
+}
+
+/* deck 收纳成的顶部小页签 */
+.zoneTabs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  /* 给丝带让出一条道，否则页签首字被压住 */
+  padding-left: 26px;
+  margin-bottom: 0.6rem;
+}
+
+.zoneBack {
+  padding: 0.32rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text-muted);
+  font-family: var(--font-ui);
+  font-size: 0.74rem;
+  cursor: pointer;
+}
+
+.zoneBack:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.zoneTab {
+  padding: 0.32rem 0.66rem;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: var(--surface-alt);
+  color: var(--text-muted);
+  font-family: var(--font-ui);
+  font-size: 0.74rem;
+  cursor: pointer;
+}
+
+.zoneTab:hover {
+  color: var(--text);
+}
+
+.zoneTabOn {
+  border-color: var(--accent);
+  background: var(--accent-light);
+  color: var(--accent);
+}
+
+.zoneTabNo {
+  margin-right: 0.3rem;
+  opacity: 0.65;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .panelLayer {
+    animation: none;
   }
 }

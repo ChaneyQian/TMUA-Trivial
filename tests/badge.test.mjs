@@ -57,13 +57,17 @@ test('the badge is a two-page fold: contact QR left, tip QR right', () => {
   assert.match(css, /object-fit:\s*contain/);
 });
 
-test('the stowed badge is a 3D ribbon anchored to the setup card corner', () => {
+test('the stowed badge is a 3D ribbon anchored to the setup stage corner', () => {
   const css = fs.readFileSync(cssPath, 'utf8');
   const examCss = fs.readFileSync('src/components/exam/Exam.module.css', 'utf8');
   const exam = fs.readFileSync('src/components/exam/ExamApp.tsx', 'utf8');
 
   assert.match(exam, /<IdBadge\s*\/>/);
-  // 丝带绝对定位吊在卡片左上角，靠 setupCard 的 relative 作参照
+  // 丝带绝对定位吊在左上角，需要一个 position: relative 的参照。
+  // 堆叠卡片改版后真正的锚点是 .stage（选区一级页没有 .setupCard，
+  // 两态得共用一个锚），几何与改版前一致；见 tests/deck.test.mjs。
+  // 下面这条留着是兼容性约定：.setupCard 仍是定位上下文，
+  // 丝带要挂回卡片本身时不必再改 CSS。
   assert.match(examCss, /\.setupCard\s*\{[\s\S]*?position:\s*relative/);
   assert.match(css, /\.ribbon\s*\{[\s\S]*?position:\s*absolute/);
   assert.match(css, /\.ribbon\s*\{[\s\S]*?perspective:/);
