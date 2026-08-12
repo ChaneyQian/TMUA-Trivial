@@ -254,10 +254,24 @@ export function availableCountForMode(
 
 type ImportedCell = string | number | boolean | Date | null;
 
-const SHEET_NAME = 'Records';
-const HEADERS = ['QID', 'Last Attempt', 'Last Result', 'Wrong Count', 'Attempt Count'] as const;
+export const SHEET_NAME = 'Records';
+export const HEADERS = ['QID', 'Last Attempt', 'Last Result', 'Wrong Count', 'Attempt Count'] as const;
 const RESULT_CORRECT = 'Correct';
 const RESULT_WRONG = 'Wrong';
+
+// ---- 只读的场次表 ----
+// 导出时附带，导入端不看它（仍然只认主表、仍然返回 s: []）。
+// 存在的意义是让用户手里的文件留一份趋势留档——localStorage 里只保 200 场。
+export const SESSIONS_SHEET_NAME = 'Sessions';
+export const SESSION_HEADERS = [
+  'Date',
+  'Bank',
+  'Mode',
+  'Questions',
+  'Correct',
+  'Answered',
+  'Seconds',
+] as const;
 
 // ---- 旧版（中文）导出文件的兼容层 ----
 // 导出一律用上面的英文表名/表头，但存量用户手里还有中文导出的 .xlsx，
@@ -299,12 +313,46 @@ export async function exportRecordsWorkbook(records: Records): Promise<Blob> {
       ]),
   ];
 
-  return writeExcelFile(rows, {
-    sheet: SHEET_NAME,
-    columns: [{ width: 18 }, { width: 22 }, { width: 12 }, { width: 12 }, { width: 12 }],
-    stickyRowsCount: 1,
-    dateFormat: 'yyyy-mm-dd hh:mm:ss',
-  }).toBlob();
+  // 场次表按时间正序（records.s 是新场次在前），读起来才像一条时间线
+  const sessionRows = [
+    SESSION_HEADERS.map(headerCell),
+    ...[...records.s].reverse().map((session) => [
+      new Date(session.ts),
+      session.db,
+      session.mode === 'mock' ? 'Mock' : 'Practice',
+      session.n,
+      session.right,
+      session.answered,
+      session.sec,
+    ]),
+  ];
+
+  return writeExcelFile(
+    [
+      {
+        data: rows,
+        sheet: SHEET_NAME,
+        columns: [{ width: 18 }, { width: 22 }, { width: 12 }, { width: 12 }, { width: 12 }],
+        stickyRowsCount: 1,
+        dateFormat: 'yyyy-mm-dd hh:mm:ss',
+      },
+      {
+        data: sessionRows,
+        sheet: SESSIONS_SHEET_NAME,
+        columns: [
+          { width: 22 },
+          { width: 14 },
+          { width: 12 },
+          { width: 12 },
+          { width: 10 },
+          { width: 12 },
+          { width: 10 },
+        ],
+        stickyRowsCount: 1,
+        dateFormat: 'yyyy-mm-dd hh:mm:ss',
+      },
+    ],
+  ).toBlob();
 }
 
 function integerValue(value: ImportedCell, field: string): number {

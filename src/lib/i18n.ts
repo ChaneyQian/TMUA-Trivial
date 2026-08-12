@@ -95,6 +95,41 @@ const zh = {
     sessionSaved: '本场已计入统计',
     sessionSavedExported: '本场已计入统计并导出',
     sessionSkipped: '本场未计入统计',
+    // 导入会把 s（场次历史）清空，而进度面板正是靠它画趋势的——必须先说清楚
+    importConfirmSessions: '注意：场次历史不随记录文件迁移，导入后趋势图会清空。',
+  },
+
+  progress: {
+    title: '练习进度',
+    open: '查看进度',
+    back: '‹ 返回',
+    strip: (seen: number, wrongNow: number) =>
+      `已做 ${seen} 题 · ${wrongNow} 道当前错题 · 查看进度 ›`,
+    stripEmpty: '还没有做题记录 · 查看进度 ›',
+
+    tileSeen: '已做题目',
+    tileAccuracy: '总体正确率',
+    tileWrong: '当前错题',
+    tileSessions: '场次记录',
+    // 口径写死：只统计做过的题，没做过的不算分母
+    accuracyNote: '正确率口径：已作答题目的累计正确率',
+
+    sessionsTitle: '最近场次',
+    sessionsSub: (shown: number, total: number) => `最近 ${shown} 场 / 共 ${total} 场`,
+    sessionsEmpty: '还没有场次记录 —— 完成一次 Test，这里就会出现趋势。',
+    sessionsAria: '最近场次的正确率趋势',
+    legendAccuracy: '正确率',
+    legendPace: '每题用时',
+    sessionDetail: (date: string, db: string, mode: string, right: number, n: number, clock: string) =>
+      `${date} · ${db} · ${mode} · ${right}/${n} · ${clock}`,
+    sessionPick: '点击图中任意一场查看详情',
+
+    missedTitle: '最常做错',
+    missedRetry: '重练这些',
+    missedEmpty: '还没有错题记录 —— 这里会列出最该回头看的题。',
+    missedRow: (wrong: number, attempts: number) => `错 ${wrong} 次 · 共 ${attempts} 次作答`,
+    missedFallback: (qid: number) => `题目 ${qid}`,
+    missedLoading: '正在读取题目信息…',
   },
 
   errors: {
@@ -209,6 +244,41 @@ const en: Strings = {
     sessionSaved: 'This session has been recorded',
     sessionSavedExported: 'This session has been recorded and exported',
     sessionSkipped: 'This session was not recorded',
+    importConfirmSessions:
+      'Note: session history is not carried in the record file — importing clears the trend chart.',
+  },
+
+  progress: {
+    title: 'Progress',
+    open: 'View progress',
+    back: '‹ Back',
+    strip: (seen: number, wrongNow: number) =>
+      `${seen} attempted · ${wrongNow} wrong now · View progress ›`,
+    stripEmpty: 'No practice records yet · View progress ›',
+
+    tileSeen: 'Questions seen',
+    tileAccuracy: 'Lifetime accuracy',
+    tileWrong: 'Currently wrong',
+    tileSessions: 'Sessions logged',
+    accuracyNote: 'Lifetime accuracy is measured on attempted questions only',
+
+    sessionsTitle: 'Recent sessions',
+    sessionsSub: (shown: number, total: number) => `Last ${shown} of ${total} sessions`,
+    sessionsEmpty: 'No sessions yet — finish a test and your trend will appear here.',
+    sessionsAria: 'Accuracy trend across recent sessions',
+    legendAccuracy: 'Accuracy',
+    legendPace: 'Time per question',
+    sessionDetail: (date: string, db: string, mode: string, right: number, n: number, clock: string) =>
+      `${date} · ${db} · ${mode} · ${right}/${n} · ${clock}`,
+    sessionPick: 'Tap any session in the chart for details',
+
+    missedTitle: 'Most missed',
+    missedRetry: 'Retry these',
+    missedEmpty: 'No wrong answers recorded yet — the questions worth revisiting will show up here.',
+    missedRow: (wrong: number, attempts: number) =>
+      `Missed ${wrong}× · ${attempts} attempt${attempts === 1 ? '' : 's'}`,
+    missedFallback: (qid: number) => `Question ${qid}`,
+    missedLoading: 'Loading question details…',
   },
 
   errors: {

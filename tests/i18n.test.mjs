@@ -149,13 +149,23 @@ test('the outer layer renders its copy from the dictionary, not from literals', 
     't.setup.fieldCount(totalPool)',
     't.setup.start',
     't.setup.keyboard',
+    't.cardBadge.comingSoon',
+  ]) {
+    assert.ok(exam.includes(key), `the setup panel must render ${key} from the dictionary`);
+  }
+
+  // 做题记录整块已经搬进进度面板，字典键跟着一起走
+  const progress = fs.readFileSync('src/components/progress/ProgressPanel.tsx', 'utf8');
+  assert.match(progress, /useLang\(\)/);
+  for (const key of [
     't.records.field',
     't.records.importBtn',
     't.records.exportBtn',
     't.records.clearBtn',
-    't.cardBadge.comingSoon',
+    't.progress.title',
+    't.progress.missedRetry',
   ]) {
-    assert.ok(exam.includes(key), `the setup panel must render ${key} from the dictionary`);
+    assert.ok(progress.includes(key), `the progress panel must render ${key} from the dictionary`);
   }
 });
 

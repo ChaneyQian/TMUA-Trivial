@@ -47,6 +47,11 @@ interface Props {
   /** 从配置面板返回时把焦点收回 deck；首次加载不抢焦点 */
   autoFocus: boolean;
   hint: string;
+  /** 提示行上方的进度入口：一条可点的统计条 */
+  progress: {
+    label: string;
+    onOpen: () => void;
+  };
   /** 前牌上的快速开始：不进面板，直接用当前配置起考 */
   quickStart: {
     label: string;
@@ -67,6 +72,7 @@ export default function CardDeck({
   leaving,
   autoFocus,
   hint,
+  progress,
   quickStart,
 }: Props) {
   const { t } = useLang();
@@ -301,6 +307,14 @@ export default function CardDeck({
             );
           })}
         </div>
+      </div>
+
+      {/* 进度入口。做题记录的统计与导入导出都在那后面，所以这条一直在，
+          没有任何解锁门槛 */}
+      <div className={styles.progressRow}>
+        <button type="button" className={styles.progressBtn} onClick={progress.onOpen}>
+          {progress.label}
+        </button>
       </div>
 
       <div className={styles.hintRow}>

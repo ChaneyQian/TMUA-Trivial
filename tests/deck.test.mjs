@@ -203,7 +203,10 @@ test('the primary action sits above the optional record tools, and the deck can 
   assert.match(deck, /const openable = !zone\.comingSoon && !locked\[zone\.id\]/);
   // requestFullscreen 只认同步手势链，onStart 不许被包进异步
   assert.doesNotMatch(deck, /setTimeout\([^)]*onStart/);
-  assert.match(exam, /onStart: start,/);
+  // start() 现在接可选的抽题覆盖参数（错题重练要用），所以不能再把它裸传给
+  // onClick / onStart —— 事件对象会被当成 override。包一层，但仍是同步调用链
+  assert.match(exam, /onStart: \(\) => void start\(\)/);
+  assert.doesNotMatch(exam, /onClick=\{start\}/);
 });
 
 test('the deck is a setup-phase sub-state that leaves the exam runtime alone', () => {
@@ -212,7 +215,9 @@ test('the deck is a setup-phase sub-state that leaves the exam runtime alone', (
 
   assert.match(exam, /<CardDeck/);
   assert.match(exam, /frontZone/);
-  assert.match(exam, /zoneOpen/);
+  // deck / zone / progress 三个子视图共用 .stage 的同一格，phase 仍是四相
+  assert.match(exam, /type StageView = 'deck' \| 'zone' \| 'progress'/);
+  assert.match(exam, /stageView/);
   // 选区落盘，未解锁 / 未开放的区回落经典
   assert.match(exam, /mcq-test:zone:v1/);
   assert.match(exam, /localStorage\.setItem\(ZONE_KEY, id\)/);

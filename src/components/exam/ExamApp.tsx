@@ -8,6 +8,8 @@ import IdBadge from '@/components/badge/IdBadge';
 import LangToggle from '@/components/LangToggle';
 import CardDeck from '@/components/deck/CardDeck';
 import { ZONES, zoneById, type ZoneId } from '@/components/deck/zones';
+import ProgressPanel from '@/components/progress/ProgressPanel';
+import { historyFor, practiceOverview, practiceQids } from '@/lib/progress';
 import MathText from '@/components/MathText';
 import { buildExam, fetchIndex, ExamQuestion, IndexEntry } from '@/lib/exam';
 import {
@@ -34,6 +36,8 @@ import { useLang } from '@/lib/LangContext';
 import styles from './Exam.module.css';
 
 type Phase = 'setup' | 'loading' | 'exam' | 'result';
+/** setup 相内部的三个子视图；phase 仍是四相，exam 运行时完全不受影响 */
+type StageView = 'deck' | 'zone' | 'progress';
 type Mode = 'practice' | 'mock';
 type Db = 'TMUA' | 'TMUA_MOCK' | 'MAT' | 'SMC' | 'ECAA' | 'AMC' | 'ALL';
 
@@ -148,12 +152,13 @@ export default function ExamApp() {
   const [recordMessage, setRecordMessage] = useState('');
   const [recordBusy, setRecordBusy] = useState(false);
   const [showUnlock, setShowUnlock] = useState(false);
-  const importInputRef = useRef<HTMLInputElement>(null);
 
   // ---- 堆叠卡片：setup 相的两个子态（选区 deck ↔ 展开的配置面板）----
   // phase 仍是四相；deck/panel 只是 setup 相内部的分支，exam 运行时完全不受影响。
   const [frontZone, setFrontZone] = useState<ZoneId>('classic');
-  const [zoneOpen, setZoneOpen] = useState(false);
+  // deck = 选区一级页；zone = 展开的配置面板；progress = 成绩回顾面板。
+  // 三者共用 .stage 的同一个 grid 格，只在 280ms 过渡窗口内和 deck 交叠。
+  const [stageView, setStageView] = useState<StageView>('deck');
   const [deckLive, setDeckLive] = useState(true); // deck 是否还挂着（过渡窗口内与面板共存）
   const [deckFocus, setDeckFocus] = useState(false);
   const [deckHint, setDeckHint] = useState('');
@@ -236,15 +241,12 @@ export default function ExamApp() {
     return '';
   };
 
-  const openZone = (id: ZoneId) => {
-    const blocked = zoneBlockReason(id);
-    if (blocked) {
-      setDeckHint(blocked);
-      return;
-    }
+  /** 离开 deck 去某个覆盖视图：deck 淡出，280ms 后卸载 */
+  const leaveDeckFor = (view: Exclude<StageView, 'deck'>) => {
     setDeckHint('');
+    setError(''); // 上一个视图留下的抽题错误不带过去
     setDeckFocus(false);
-    setZoneOpen(true);
+    setStageView(view);
     if (deckTimerRef.current) window.clearTimeout(deckTimerRef.current);
     deckTimerRef.current = window.setTimeout(
       () => setDeckLive(false),
@@ -252,10 +254,20 @@ export default function ExamApp() {
     );
   };
 
+  const openZone = (id: ZoneId) => {
+    const blocked = zoneBlockReason(id);
+    if (blocked) {
+      setDeckHint(blocked);
+      return;
+    }
+    leaveDeckFor('zone');
+  };
+
   const backToDeck = () => {
     if (deckTimerRef.current) window.clearTimeout(deckTimerRef.current);
     setDeckLive(true);
-    setZoneOpen(false);
+    setStageView('deck');
+    setError('');
     setDeckFocus(true);
   };
 
@@ -282,8 +294,8 @@ export default function ExamApp() {
   };
 
   useEffect(() => {
-    if (zoneOpen) panelRef.current?.focus();
-  }, [zoneOpen]);
+    if (stageView !== 'deck') panelRef.current?.focus();
+  }, [stageView]);
 
   // 卡面徽章要的是各区自己的题量，跟当前前位无关，所以两边都单独算一次
   const classicCount = index ? indexForLibraryMode(index, 'classic').length : 0;
@@ -321,6 +333,8 @@ export default function ExamApp() {
   const [elapsed, setElapsed] = useState(0);
   const [resultActionError, setResultActionError] = useState('');
   const savedResultRef = useRef<Records | null>(null);
+  /** 本场开考那一刻的 records 快照，成绩页逐题历史只读它 */
+  const historyAtStartRef = useRef<Records | null>(null);
   // 主题只在 exam 阶段渲染(无 SSR 标记),惰性初始化读 dataset 不会造成水合不匹配
   const [scheme, setScheme] = useState(() =>
     typeof document === 'undefined' ? 'light' : document.documentElement.dataset.theme || 'light'
@@ -339,6 +353,9 @@ export default function ExamApp() {
 
   const totalPool = index ? availableCountForMode(activeIndex, db, pickMode, records) : 0;
   const recordOverview = overview(records);
+  // deck 上那条统计条和进度面板里的数字必须同源，否则会出现
+  // 「14 道当前错题」而榜上只列得出 12 条
+  const practiceStats = practiceOverview(records, practiceQids(index));
 
   const downloadWorkbook = async (data: Records) => {
     const blob = await exportRecordsWorkbook(data);
@@ -367,7 +384,10 @@ export default function ExamApp() {
   };
 
   const importWorkbook = async (file: File) => {
-    if (recordOverview.seen > 0 && !window.confirm(t.records.importConfirm)) return;
+    // 导入会把场次历史清空（importRecordsWorkbook 一律返回 s: []），
+    // 而趋势图正是靠它画的——必须在确认框里先说清楚
+    const confirmText = `${t.records.importConfirm}\n${t.records.importConfirmSessions}`;
+    if ((recordOverview.seen > 0 || records.s.length > 0) && !window.confirm(confirmText)) return;
     setRecordBusy(true);
     setRecordMessage('');
     try {
@@ -380,7 +400,6 @@ export default function ExamApp() {
       setRecordMessage(e instanceof Error ? e.message : t.records.importFailed);
     } finally {
       setRecordBusy(false);
-      if (importInputRef.current) importInputRef.current.value = '';
     }
   };
 
@@ -391,17 +410,43 @@ export default function ExamApp() {
   };
 
   // ---- 开始考试 ----
-  const start = async () => {
+  /**
+   * override 是给「重练错题」用的：setState 要到下一次渲染才生效，
+   * 先 setDb 再 start() 会读到旧闭包里的值，所以本次抽题的参数直接传进来，
+   * 同时也把它们写回 state，好让配置面板显示的就是刚才用的那套。
+   *
+   * 带 qids 时跳过抽题，直接考这几道——错题榜上列的是哪几行，重练的就是哪几道，
+   * 不再由 pickQidsForMode 掺新题。池子仍显式排除 diag：调用方已经滤过一遍，
+   * 这里是第二道闸，诊断题不该有任何路径进入普通考试。
+   */
+  const start = async (override?: {
+    db?: Db;
+    pickMode?: PickMode;
+    count?: number;
+    qids?: number[];
+  }) => {
     if (!index) return;
+    const useDb = override?.db ?? db;
+    const usePick = override?.pickMode ?? pickMode;
+    const useCount = override?.count ?? count;
+    if (override?.db) setDb(override.db);
+    if (override?.pickMode) setPickMode(override.pickMode);
+    if (override?.count) setCountAnd(override.count);
     setError('');
     setPhase('loading');
     // 全屏须在用户手势同步调用链里发起(失败静默降级)
     document.documentElement.requestFullscreen?.().catch(() => {});
     try {
-      const qids = pickQidsForMode(activeIndex, db, count, pickMode, records);
+      const qids = override?.qids ?? pickQidsForMode(activeIndex, useDb, useCount, usePick, records);
       if (qids.length === 0) throw new Error(t.errors.emptySelection);
       const selected = new Set(qids);
-      const qs = await buildExam(activeIndex.filter((entry) => selected.has(entry.qid)), 'ALL', qids.length);
+      // 显式指定 qid 时按整份索引取（错题可能落在当前题库范围之外），
+      // 但 diag 永远排除
+      const pool = override?.qids
+        ? index.filter((entry) => !entry.diag && selected.has(entry.qid))
+        : activeIndex.filter((entry) => selected.has(entry.qid));
+      if (pool.length === 0) throw new Error(t.errors.emptySelection);
+      const qs = await buildExam(pool, 'ALL', pool.length);
       setQuestions(qs);
       setIdx(0);
       setAnswers(new Array(qs.length).fill(null));
@@ -412,6 +457,10 @@ export default function ExamApp() {
       setElapsed(0);
       setResultActionError('');
       savedResultRef.current = null;
+      // 成绩页逐题卡上的「做过 N 次」要的是本场之前的历史。
+      // 不能在渲染时读 records：saveExportAndExit 会先同步写入本场、再 await 导出，
+      // 那段 await 里成绩页带着新数据重渲染，数字会当着用户面跳一下。
+      historyAtStartRef.current = records;
       setPhase('exam');
     } catch (e) {
       if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
@@ -455,6 +504,30 @@ export default function ExamApp() {
     setRecordMessage(message);
     setQuestions([]);
     setPhase('setup');
+  };
+
+  /**
+   * 成绩页 → 进度面板。先落盘再走：点「查看进度」却把刚考完的这场丢了，
+   * 是没人想要的结果；saveCurrentResult 幂等，之后再点「统计后再来一次」不会重复计入。
+   * deckLive 直接置 false，免得中途闪一下选区。
+   */
+  const openProgressFromResult = () => {
+    saveCurrentResult();
+    setRecordMessage(t.records.sessionSaved);
+    setQuestions([]);
+    if (deckTimerRef.current) window.clearTimeout(deckTimerRef.current);
+    setDeckLive(false);
+    setStageView('progress');
+    setPhase('setup');
+  };
+
+  /**
+   * 错题榜的「重练这些」：练的就是榜上渲染出来的那几行，不掺新题。
+   * 传进来的 qid 已经过 practiceQids 滤掉 diag，start() 里还会再滤一次。
+   * db 记成 ALL——错题跨库，写成某一个库的场次记录是错的。
+   */
+  const retryMissed = (qids: number[]) => {
+    void start({ db: 'ALL', qids });
   };
 
   const saveAndRetry = () => {
@@ -631,7 +704,7 @@ export default function ExamApp() {
           className={styles.stage}
           onKeyDown={(e) => {
             // Escape 从配置面板退回选区。工牌浮层开着时它先吃这一下，别抢。
-            if (e.key !== 'Escape' || !zoneOpen) return;
+            if (e.key !== 'Escape' || stageView === 'deck') return;
             const target = e.target as HTMLElement | null;
             // 焦点在题数输入框 / 配色下拉里时，Escape 归表单控件（撤销输入、收起下拉）
             if (target && ['INPUT', 'SELECT', 'TEXTAREA'].includes(target.tagName)) return;
@@ -661,7 +734,7 @@ export default function ExamApp() {
                 value: completedCount,
                 max: HIDDEN_UNLOCK_COUNT,
               }}
-              leaving={zoneOpen}
+              leaving={stageView !== 'deck'}
               autoFocus={deckFocus}
               hint={deckHint}
               quickStart={{
@@ -672,14 +745,47 @@ export default function ExamApp() {
                   count,
                 ),
                 disabled: phase === 'loading' || !index || totalPool === 0,
-                // 同一条 start 路径。必须直传，不能包 setTimeout：
+                // 同一条 start 路径。不能包 setTimeout：
                 // requestFullscreen 只在用户手势的同步调用链里才批准
-                onStart: start,
+                onStart: () => void start(),
+              }}
+              progress={{
+                label:
+                  practiceStats.seen > 0
+                    ? t.progress.strip(practiceStats.seen, practiceStats.wrongNow)
+                    : t.progress.stripEmpty,
+                onOpen: () => leaveDeckFor('progress'),
               }}
             />
           )}
 
-          {zoneOpen && (
+          {stageView === 'progress' && (
+            <div className={styles.panelLayer} ref={panelRef} tabIndex={-1}>
+              <ProgressPanel
+                records={records}
+                index={index}
+                onBack={backToDeck}
+                onRetry={retryMissed}
+                retryDisabled={phase === 'loading' || !index}
+                // 进度视图下 errMsg / deckHint 都没挂载，抽题失败必须有自己的出口
+                error={error}
+                dbLabel={(d) => dbName(d as Db)}
+                tools={{
+                  busy: recordBusy,
+                  message: recordMessage,
+                  indexReady: !!index,
+                  // 导出/清空的可用性按整档记录算：P2 之后会有「只有诊断记录」的
+                  // 用户，用练习池口径会把他们的按钮错误地禁掉
+                  recordCount: recordOverview.seen,
+                  onFile: (file) => void importWorkbook(file),
+                  onExport: exportCurrentRecords,
+                  onClear: removeRecords,
+                }}
+              />
+            </div>
+          )}
+
+          {stageView === 'zone' && (
         <div className={styles.panelLayer} ref={panelRef} tabIndex={-1}>
           <div className={styles.zoneTabs}>
             <button type="button" className={styles.zoneBack} onClick={backToDeck}>
@@ -809,10 +915,10 @@ export default function ExamApp() {
             </>
           )}
 
-          {/* 主操作在前、可选功能在后：做题记录是次级功能，不该压在「开始」上面 */}
+          {/* 主操作收尾。做题记录整块已经搬进进度面板，配置面板只管「怎么考」 */}
           <button
             className={styles.startBtn}
-            onClick={start}
+            onClick={() => void start()}
             disabled={phase === 'loading' || !index || totalPool === 0}
           >
             {phase === 'loading'
@@ -828,54 +934,13 @@ export default function ExamApp() {
           )}
           <div className={styles.backLink}>{t.setup.keyboard}</div>
 
-          <div className={styles.recordSection}>
-            <div className={styles.fieldLabel}>{t.records.field}</div>
-            <div className={styles.recordSummary}>
-              <span>
-                <strong>{recordOverview.seen}</strong> {t.records.seen}
-              </span>
-              <span>
-                <strong>{recordOverview.wrongNow}</strong> {t.records.wrongNow}
-              </span>
-              <span>
-                <strong>{recordOverview.attempts}</strong> {t.records.attempts}
-              </span>
+          {/* 导入导出与统计都搬去进度面板了，这里只留一条回执，
+              好让「统计后再来一次」之后还看得见结果 */}
+          {recordMessage && (
+            <div className={styles.recordSection}>
+              <div className={styles.recordMessage}>{recordMessage}</div>
             </div>
-            <div className={styles.recordActions}>
-              <button
-                className={styles.btnGhost}
-                onClick={() => importInputRef.current?.click()}
-                disabled={recordBusy || !index}
-              >
-                {t.records.importBtn}
-              </button>
-              <button
-                className={styles.btnGhost}
-                onClick={exportCurrentRecords}
-                disabled={recordBusy || recordOverview.seen === 0}
-              >
-                {t.records.exportBtn}
-              </button>
-              <button
-                className={styles.btnGhost}
-                onClick={removeRecords}
-                disabled={recordBusy || recordOverview.seen === 0}
-              >
-                {t.records.clearBtn}
-              </button>
-              <input
-                ref={importInputRef}
-                className={styles.fileInput}
-                type="file"
-                accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                onChange={(event) => {
-                  const file = event.target.files?.[0];
-                  if (file) void importWorkbook(file);
-                }}
-              />
-            </div>
-            {recordMessage && <div className={styles.recordMessage}>{recordMessage}</div>}
-          </div>
+          )}
         </div>
         </div>
           )}
@@ -916,11 +981,23 @@ export default function ExamApp() {
                 统计后再来一次
               </button>
             </div>
+            {/* 进度面板属外层，名字跟着外层语言走；点它会先把本场计入统计 */}
+            <button
+              type="button"
+              className={styles.progressLink}
+              onClick={openProgressFromResult}
+              disabled={recordBusy}
+            >
+              {t.progress.open} ›
+            </button>
           </div>
           {resultActionError && <div className={styles.errMsg}>{resultActionError}</div>}
 
           {questions.map((qq, i) => {
             const ok = sameLabel(answers[i], qq.answer);
+            // 本场之前的历史。读快照而不是 records：导出那条路径会先写入本场再 await，
+            // 直接读 records 会让这行数字在导出转圈时跳一下
+            const past = historyFor(historyAtStartRef.current, qq.qid);
             return (
               <div key={qq.qid} className={styles.reviewCard}>
                 <div className={styles.reviewHead}>
@@ -932,6 +1009,9 @@ export default function ExamApp() {
                   </span>
                   <span>
                     你的答案:{answers[i]?.toUpperCase() || '—'} · 正确答案:{qq.answer.toUpperCase()}
+                  </span>
+                  <span className={styles.reviewHistory}>
+                    {past ? `做过 ${past.a} 次 · 错过 ${past.w} 次` : '首次作答'}
                   </span>
                 </div>
                 <div className={styles.stem}>

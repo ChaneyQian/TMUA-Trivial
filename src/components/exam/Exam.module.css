@@ -1225,3 +1225,40 @@
     animation: none;
   }
 }
+
+/* ============ 进度面板的入口与成绩页逐题历史 ============ */
+
+/* 成绩页里通往进度面板的次级链接。做成文字按钮而不是第四颗实心按钮：
+   它是「看一眼」，不该和三个收尾动作抢分量 */
+.progressLink {
+  align-self: center;
+  padding: 0.35rem 0.2rem;
+  border: 0;
+  background: none;
+  color: var(--accent);
+  font-family: var(--font-ui);
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: opacity 160ms ease;
+}
+
+.progressLink:hover:not(:disabled) {
+  opacity: 0.75;
+}
+
+.progressLink:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* 该题在本场之前的作答历史 */
+.reviewHistory {
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .progressLink {
+    transition: none;
+  }
+}
