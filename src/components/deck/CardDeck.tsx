@@ -6,6 +6,7 @@
 // 全部卡面数据来自 zones.ts，这里不写单卡分支。
 
 import { useEffect, useRef } from 'react';
+import { useLang } from '@/lib/LangContext';
 import examStyles from '../exam/Exam.module.css';
 import styles from './Deck.module.css';
 import { ZONES, ringOffset, stepZone, zoneById, type ZoneId } from './zones';
@@ -68,6 +69,7 @@ export default function CardDeck({
   hint,
   quickStart,
 }: Props) {
+  const { t } = useLang();
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const stackRef = useRef<HTMLDivElement | null>(null);
   const touchRef = useRef<{ x: number; y: number; t: number; axis: Axis } | null>(null);
@@ -168,14 +170,14 @@ export default function CardDeck({
     <div className={`${styles.deck} ${leaving ? styles.deckLeaving : ''}`}>
       <div className={styles.head}>
         <div className={styles.headTitle}>MCQ Test</div>
-        <div className={styles.headSub}>TMUA 公益 · 三个功能区，选一张卡开始</div>
+        <div className={styles.headSub}>{t.deck.headSub}</div>
       </div>
 
       <div
         ref={viewportRef}
         className={styles.viewport}
         role="group"
-        aria-label="功能区选择"
+        aria-label={t.deck.groupAria}
         aria-roledescription="carousel"
         tabIndex={0}
         onKeyDown={onKeyDown}
@@ -216,8 +218,8 @@ export default function CardDeck({
                 </div>
 
                 <div className={styles.body}>
-                  <div className={styles.title}>{zone.title}</div>
-                  <div className={styles.sub}>{zone.sub}</div>
+                  <div className={styles.title}>{t.zone.title[zone.id]}</div>
+                  <div className={styles.sub}>{t.zone.sub[zone.id]}</div>
                   <span className={styles.spacer} />
 
                   {zone.unlockPath === 'progress' && (
@@ -234,12 +236,14 @@ export default function CardDeck({
                       >
                         <span className={examStyles.libraryChargeLabel}>
                           <span className={examStyles.chargeLight} aria-hidden="true" />
-                          {charge.unlocked ? '9.0 Trivial' : `充能 ${charge.value} / ${charge.max}`}
+                          {charge.unlocked
+                            ? '9.0 Trivial'
+                            : t.deck.chargeLabel(charge.value, charge.max)}
                         </span>
                         <span
                           className={examStyles.libraryChargeTrack}
                           role="progressbar"
-                          aria-label="9.0 Trivial 解锁进度"
+                          aria-label={t.deck.chargeAria}
                           aria-valuemin={0}
                           aria-valuemax={charge.max}
                           aria-valuenow={Math.min(charge.value, charge.max)}
@@ -267,7 +271,7 @@ export default function CardDeck({
                         type="button"
                         className={styles.quickBtn}
                         disabled={quickStart.disabled}
-                        aria-label={`用当前配置快速开始：${quickStart.summary}`}
+                        aria-label={t.deck.quickAria(quickStart.summary)}
                         onClick={(e) => {
                           // 命中层是兄弟节点、不是祖先，本来也收不到这一下；
                           // 写出来是防止日后有人把按钮挪进 .hit 里
@@ -288,8 +292,8 @@ export default function CardDeck({
                   tabIndex={-1}
                   aria-label={
                     isFront
-                      ? `${zone.no} ${zone.title}，展开配置`
-                      : `${zone.no} ${zone.title}，转到前位`
+                      ? t.deck.openAria(zone.no, t.zone.title[zone.id])
+                      : t.deck.frontAria(zone.no, t.zone.title[zone.id])
                   }
                   onClick={() => (isFront ? onOpen(zone.id) : onFront(zone.id))}
                 />
@@ -310,11 +314,11 @@ export default function CardDeck({
         </div>
         <div className={styles.hint} role="status">
           <span className={styles.srOnly}>
-            {frontZone.no} {frontZone.title}
+            {frontZone.no} {t.zone.title[frontZone.id]}
           </span>
           {hint}
         </div>
-        <div className={styles.keys}>← → 切换功能区 · Enter 展开 · 也可左右滑动</div>
+        <div className={styles.keys}>{t.deck.keys}</div>
       </div>
     </div>
   );

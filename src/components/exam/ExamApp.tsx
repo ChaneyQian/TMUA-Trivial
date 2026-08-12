@@ -5,6 +5,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import IdBadge from '@/components/badge/IdBadge';
+import LangToggle from '@/components/LangToggle';
 import CardDeck from '@/components/deck/CardDeck';
 import { ZONES, zoneById, type ZoneId } from '@/components/deck/zones';
 import MathText from '@/components/MathText';
@@ -29,6 +30,7 @@ import {
   type PickMode,
   type Records,
 } from '@/lib/records';
+import { useLang } from '@/lib/LangContext';
 import styles from './Exam.module.css';
 
 type Phase = 'setup' | 'loading' | 'exam' | 'result';
@@ -57,6 +59,7 @@ const DB_NAMES: Record<Db, string> = {
   SMC: 'SMC',
   ECAA: 'ECAA',
   AMC: 'AMC',
+  // 成绩页（内层，保持中文）直接读这张表；外层的选区/面板走 dbName() 取双语
   ALL: '混合',
 };
 
@@ -127,6 +130,10 @@ function UnlockOverlay({ onDismiss }: { onDismiss: () => void }) {
 }
 
 export default function ExamApp() {
+  const { t } = useLang();
+  /** 题库名里只有「混合」需要翻译，其余是考试专名 */
+  const dbName = (d: Db) => (d === 'ALL' ? t.setup.mixed : DB_NAMES[d]);
+
   // ---- 题库索引（构建期生成，只含能自动判分的题）----
   const [index, setIndex] = useState<IndexEntry[] | null>(null);
   const [indexError, setIndexError] = useState('');
@@ -134,7 +141,7 @@ export default function ExamApp() {
   useEffect(() => {
     fetchIndex()
       .then(setIndex)
-      .catch((e) => setIndexError(e instanceof Error ? e.message : '题库索引加载失败'));
+      .catch((e) => setIndexError(e instanceof Error ? e.message : t.errors.indexLoad));
   }, []);
 
   const [records, setRecords] = useState<Records>(() => createEmptyRecords());
@@ -221,9 +228,10 @@ export default function ExamApp() {
   /** 为什么这张卡展不开；返回空串表示可以展开 */
   const zoneBlockReason = (id: ZoneId): string => {
     const zone = zoneById(id);
-    if (zone.comingSoon) return `${zone.title}即将开放`;
+    const title = t.zone.title[id];
+    if (zone.comingSoon) return t.block.comingSoon(title);
     if (zone.unlockPath === 'progress' && !hiddenUnlocked) {
-      return `再做 ${Math.max(0, HIDDEN_UNLOCK_COUNT - completedCount)} 题即可解锁 ${zone.title}`;
+      return t.block.unlockNeed(Math.max(0, HIDDEN_UNLOCK_COUNT - completedCount), title);
     }
     return '';
   };
@@ -350,26 +358,26 @@ export default function ExamApp() {
     setRecordMessage('');
     try {
       await downloadWorkbook(records);
-      setRecordMessage(`已导出 ${recordOverview.seen} 道题的记录`);
+      setRecordMessage(t.records.exported(recordOverview.seen));
     } catch (e) {
-      setRecordMessage(e instanceof Error ? e.message : '导出失败');
+      setRecordMessage(e instanceof Error ? e.message : t.records.exportFailed);
     } finally {
       setRecordBusy(false);
     }
   };
 
   const importWorkbook = async (file: File) => {
-    if (recordOverview.seen > 0 && !window.confirm('导入会替换当前做题记录，是否继续？')) return;
+    if (recordOverview.seen > 0 && !window.confirm(t.records.importConfirm)) return;
     setRecordBusy(true);
     setRecordMessage('');
     try {
-      if (!index) throw new Error('题库索引尚未加载完成');
+      if (!index) throw new Error(t.records.indexNotReady);
       const imported = await importRecordsWorkbook(file, new Set(index.map((entry) => entry.qid)));
       saveRecords(imported);
       setRecords(imported);
-      setRecordMessage(`已导入 ${overview(imported).seen} 道题的记录`);
+      setRecordMessage(t.records.imported(overview(imported).seen));
     } catch (e) {
-      setRecordMessage(e instanceof Error ? e.message : '导入失败');
+      setRecordMessage(e instanceof Error ? e.message : t.records.importFailed);
     } finally {
       setRecordBusy(false);
       if (importInputRef.current) importInputRef.current.value = '';
@@ -377,9 +385,9 @@ export default function ExamApp() {
   };
 
   const removeRecords = () => {
-    if (recordOverview.seen > 0 && !window.confirm('确定清空全部做题和错题记录？')) return;
+    if (recordOverview.seen > 0 && !window.confirm(t.records.clearConfirm)) return;
     setRecords(clearRecords());
-    setRecordMessage('记录已清空');
+    setRecordMessage(t.records.cleared);
   };
 
   // ---- 开始考试 ----
@@ -391,7 +399,7 @@ export default function ExamApp() {
     document.documentElement.requestFullscreen?.().catch(() => {});
     try {
       const qids = pickQidsForMode(activeIndex, db, count, pickMode, records);
-      if (qids.length === 0) throw new Error('当前抽题范围内没有可用题目');
+      if (qids.length === 0) throw new Error(t.errors.emptySelection);
       const selected = new Set(qids);
       const qs = await buildExam(activeIndex.filter((entry) => selected.has(entry.qid)), 'ALL', qids.length);
       setQuestions(qs);
@@ -407,7 +415,7 @@ export default function ExamApp() {
       setPhase('exam');
     } catch (e) {
       if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
-      const message = e instanceof Error ? e.message : '抽题失败';
+      const message = e instanceof Error ? e.message : t.errors.pickFailed;
       setError(message);
       // 从 deck 快速开始时面板没挂载，errMsg 没人渲染；提示行是这条路径唯一的出口
       setDeckHint(message);
@@ -451,7 +459,7 @@ export default function ExamApp() {
 
   const saveAndRetry = () => {
     saveCurrentResult();
-    leaveResult('本场已计入统计');
+    leaveResult(t.records.sessionSaved);
   };
 
   const saveExportAndExit = async () => {
@@ -459,7 +467,7 @@ export default function ExamApp() {
     setResultActionError('');
     try {
       await downloadWorkbook(saveCurrentResult());
-      leaveResult('本场已计入统计并导出');
+      leaveResult(t.records.sessionSavedExported);
     } catch (e) {
       setResultActionError(e instanceof Error ? e.message : '导出失败');
     } finally {
@@ -632,6 +640,7 @@ export default function ExamApp() {
           }}
         >
           <IdBadge />
+          <LangToggle />
 
           {deckLive && (
             <CardDeck
@@ -639,9 +648,11 @@ export default function ExamApp() {
               onFront={turnToZone}
               onOpen={openZone}
               badges={{
-                classic: `${classicCount} 题`,
-                grill: '即将开放',
-                trivial: hiddenUnlocked ? `🔥 ${expandedCount} 题` : '🔒 充能中',
+                classic: t.cardBadge.questions(classicCount),
+                grill: t.cardBadge.comingSoon,
+                trivial: hiddenUnlocked
+                  ? t.cardBadge.expanded(expandedCount)
+                  : t.cardBadge.charging,
               }}
               locked={{ classic: false, grill: true, trivial: !hiddenUnlocked }}
               charge={{
@@ -654,8 +665,12 @@ export default function ExamApp() {
               autoFocus={deckFocus}
               hint={deckHint}
               quickStart={{
-                label: phase === 'loading' ? '抽题中…' : '⚡ 快速开始',
-                summary: `${DB_NAMES[db]} · ${mode === 'mock' ? 'Mock 限时' : '练习'} · ${count} 题`,
+                label: phase === 'loading' ? t.setup.picking : t.setup.quickStart,
+                summary: t.setup.quickSummary(
+                  dbName(db),
+                  mode === 'mock' ? t.setup.mockShort : t.setup.practice,
+                  count,
+                ),
                 disabled: phase === 'loading' || !index || totalPool === 0,
                 // 同一条 start 路径。必须直传，不能包 setTimeout：
                 // requestFullscreen 只在用户手势的同步调用链里才批准
@@ -668,7 +683,7 @@ export default function ExamApp() {
         <div className={styles.panelLayer} ref={panelRef} tabIndex={-1}>
           <div className={styles.zoneTabs}>
             <button type="button" className={styles.zoneBack} onClick={backToDeck}>
-              ‹ 选区
+              {t.setup.back}
             </button>
             {ZONES.map((zone) => (
               <button
@@ -679,15 +694,15 @@ export default function ExamApp() {
                 aria-current={zone.id === frontZone ? 'true' : undefined}
               >
                 <span className={styles.zoneTabNo}>{zone.no}</span>
-                {zone.title}
+                {t.zone.title[zone.id]}
               </button>
             ))}
           </div>
         <div className={styles.setupCard}>
-          <div className={styles.setupTitle}>{zoneById(frontZone).title}</div>
-          <div className={styles.setupSub}>TMUA 公益 · 练习进度解锁扩展题库 · 全量真题 Mock</div>
+          <div className={styles.setupTitle}>{t.zone.title[frontZone]}</div>
+          <div className={styles.setupSub}>{t.setup.sub}</div>
 
-          <div className={styles.fieldLabel}>题库</div>
+          <div className={styles.fieldLabel}>{t.setup.fieldBank}</div>
           <div className={styles.segRow}>
             {(hiddenUnlocked && libraryMode === 'hidden'
               ? (['TMUA', 'TMUA_MOCK', 'MAT', 'SMC', 'ECAA', 'AMC', 'ALL'] as Db[])
@@ -699,62 +714,62 @@ export default function ExamApp() {
                 onClick={() => setDb(d)}
                 disabled={d !== 'ALL' && poolCounts[d] === 0}
               >
-                {DB_NAMES[d]}
+                {dbName(d)}
                 <span className={styles.segHint}>
                   {d === 'ALL'
-                    ? `${Object.values(poolCounts).reduce((a, b) => a + b, 0)} 题`
+                    ? t.setup.questions(Object.values(poolCounts).reduce((a, b) => a + b, 0))
                     : d === 'AMC' && poolCounts[d] === 0
-                      ? '待补答案'
-                      : `${poolCounts[d] || 0} 题`}
+                      ? t.setup.answersPending
+                      : t.setup.questions(poolCounts[d] || 0)}
                 </span>
               </button>
             ))}
           </div>
 
-          <div className={styles.fieldLabel}>模式</div>
+          <div className={styles.fieldLabel}>{t.setup.fieldMode}</div>
           <div className={styles.segRow}>
             <button
               className={`${styles.segBtn} ${mode === 'practice' ? styles.segActive : ''}`}
               onClick={() => setMode('practice')}
             >
-              练习(默认)
-              <span className={styles.segHint}>选完 Enter 即时批改</span>
+              {t.setup.practiceLabel}
+              <span className={styles.segHint}>{t.setup.practiceHint}</span>
             </button>
             <button
               className={`${styles.segBtn} ${mode === 'mock' ? styles.segActive : ''}`}
               onClick={() => setMode('mock')}
             >
-              Mock(限时)
-              <span className={styles.segHint}>倒计时,交卷统一批改</span>
+              {t.setup.mockLabel}
+              <span className={styles.segHint}>{t.setup.mockHint}</span>
             </button>
           </div>
 
-          <div className={styles.fieldLabel}>抽题范围</div>
+          <div className={styles.fieldLabel}>{t.setup.fieldPick}</div>
           <div className={styles.segRow}>
             <button
               className={`${styles.segBtn} ${pickMode === 'random' ? styles.segActive : ''}`}
               onClick={() => setPickMode('random')}
             >
-              纯随机
-              <span className={styles.segHint}>全部题目</span>
+              {t.setup.pickRandom}
+              <span className={styles.segHint}>{t.setup.pickRandomHint}</span>
             </button>
             <button
               className={`${styles.segBtn} ${pickMode === 'wrong-and-new' ? styles.segActive : ''}`}
               onClick={() => setPickMode('wrong-and-new')}
             >
-              新题 + 错题
-              <span className={styles.segHint}>排除最近做对</span>
+              {t.setup.pickWrongNew}
+              <span className={styles.segHint}>{t.setup.pickWrongNewHint}</span>
             </button>
             <button
               className={`${styles.segBtn} ${pickMode === 'new-only' ? styles.segActive : ''}`}
               onClick={() => setPickMode('new-only')}
             >
-              仅新题
-              <span className={styles.segHint}>排除全部已做</span>
+              {t.setup.pickNewOnly}
+              <span className={styles.segHint}>{t.setup.pickNewOnlyHint}</span>
             </button>
           </div>
 
-          <div className={styles.fieldLabel}>题目数量(题库可用 {totalPool} 题)</div>
+          <div className={styles.fieldLabel}>{t.setup.fieldCount(totalPool)}</div>
           <div className={styles.segRow}>
             {[5, 10, 20].map((n) => (
               <button
@@ -777,7 +792,7 @@ export default function ExamApp() {
 
           {mode === 'mock' && (
             <>
-              <div className={styles.fieldLabel}>限时(分钟)</div>
+              <div className={styles.fieldLabel}>{t.setup.fieldMinutes}</div>
               <div className={styles.segRow}>
                 <input
                   className={styles.numInput}
@@ -800,28 +815,30 @@ export default function ExamApp() {
             onClick={start}
             disabled={phase === 'loading' || !index || totalPool === 0}
           >
-            {phase === 'loading' ? '抽题中…' : !index && !indexError ? '题库加载中…' : '开始 Test'}
+            {phase === 'loading'
+              ? t.setup.picking
+              : !index && !indexError
+                ? t.setup.bankLoading
+                : t.setup.start}
           </button>
           {error && <div className={styles.errMsg}>{error}</div>}
           {indexError && <div className={styles.errMsg}>{indexError}</div>}
           {index && totalPool === 0 && (
-            <div className={styles.errMsg}>该题库没有可用题目。</div>
+            <div className={styles.errMsg}>{t.setup.emptyBank}</div>
           )}
-          <div className={styles.backLink}>
-            键盘：A–H / 1–9 选项 · Enter 批改或下一题 · ←→ 切题 · F 旗标
-          </div>
+          <div className={styles.backLink}>{t.setup.keyboard}</div>
 
           <div className={styles.recordSection}>
-            <div className={styles.fieldLabel}>做题记录（可选）</div>
+            <div className={styles.fieldLabel}>{t.records.field}</div>
             <div className={styles.recordSummary}>
               <span>
-                <strong>{recordOverview.seen}</strong> 已做
+                <strong>{recordOverview.seen}</strong> {t.records.seen}
               </span>
               <span>
-                <strong>{recordOverview.wrongNow}</strong> 当前错题
+                <strong>{recordOverview.wrongNow}</strong> {t.records.wrongNow}
               </span>
               <span>
-                <strong>{recordOverview.attempts}</strong> 次作答
+                <strong>{recordOverview.attempts}</strong> {t.records.attempts}
               </span>
             </div>
             <div className={styles.recordActions}>
@@ -830,21 +847,21 @@ export default function ExamApp() {
                 onClick={() => importInputRef.current?.click()}
                 disabled={recordBusy || !index}
               >
-                导入 XLSX
+                {t.records.importBtn}
               </button>
               <button
                 className={styles.btnGhost}
                 onClick={exportCurrentRecords}
                 disabled={recordBusy || recordOverview.seen === 0}
               >
-                导出 XLSX
+                {t.records.exportBtn}
               </button>
               <button
                 className={styles.btnGhost}
                 onClick={removeRecords}
                 disabled={recordBusy || recordOverview.seen === 0}
               >
-                清空
+                {t.records.clearBtn}
               </button>
               <input
                 ref={importInputRef}
@@ -887,7 +904,7 @@ export default function ExamApp() {
             <div className={styles.scoreBtns}>
               <button
                 className={styles.btnGhost}
-                onClick={() => leaveResult('本场未计入统计')}
+                onClick={() => leaveResult(t.records.sessionSkipped)}
                 disabled={recordBusy}
               >
                 跳过本场统计

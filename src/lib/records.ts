@@ -1,6 +1,7 @@
 'use client';
 
 import type { IndexEntry, ExamDb } from './exam';
+import { s as strings } from './i18n.ts';
 
 const KEY = 'mcq-test:records:v1';
 const MAX_SESSIONS = 200;
@@ -146,7 +147,9 @@ export type PickMode = 'random' | 'wrong-and-new' | 'new-only';
 export type LibraryMode = 'classic' | 'hidden';
 
 export function validCompletedCount(index: IndexEntry[], records: Records): number {
-  const validQids = new Set(index.map((entry) => entry.qid));
+  // 365 题解锁进度只认练习池的题；diag（诊断集）另有自己的解锁路径（Pass ≥90%），
+  // 两条路不互相漏水
+  const validQids = new Set(index.filter((entry) => !entry.diag).map((entry) => entry.qid));
   return Object.entries(records.q).filter(
     ([qid, stat]) => validQids.has(Number(qid)) && stat.a >= 1,
   ).length;
@@ -161,7 +164,9 @@ export function hiddenUnlockProgress(index: IndexEntry[], records: Records): num
 }
 
 export function indexForLibraryMode(index: IndexEntry[], mode: LibraryMode): IndexEntry[] {
-  return mode === 'hidden' ? index : index.filter((entry) => !entry.hidden);
+  // diag（GMAT 诊断集）永不进随机练习池：那批题只属于 Diagnostic Test，
+  // 设计上全程不给对错，混进 classic/9.0 会破坏「诊断不泄题」的前提
+  return index.filter((entry) => !entry.diag && (mode === 'hidden' || !entry.hidden));
 }
 
 export function optionsForPickMode(mode: PickMode): PickOptions {
@@ -249,7 +254,26 @@ export function availableCountForMode(
 
 type ImportedCell = string | number | boolean | Date | null;
 
-const HEADERS = ['QID', '最后作答时间', '最近结果', '错误次数', '作答次数'] as const;
+const SHEET_NAME = 'Records';
+const HEADERS = ['QID', 'Last Attempt', 'Last Result', 'Wrong Count', 'Attempt Count'] as const;
+const RESULT_CORRECT = 'Correct';
+const RESULT_WRONG = 'Wrong';
+
+// ---- 旧版（中文）导出文件的兼容层 ----
+// 导出一律用上面的英文表名/表头，但存量用户手里还有中文导出的 .xlsx，
+// 导入端必须两套都认。逐列别名而不是整行比对：混排的表头也能过。
+// 下面这些中文是历史文件的识别码，不是界面文案：它们跟着用户手里已经
+// 存在的 .xlsx 走，改一个字就读不了旧记录了。别跟着界面语言动。
+const LEGACY_SHEET_NAME = '做题记录';
+const HEADER_ALIASES: readonly (readonly string[])[] = [
+  ['QID'],
+  ['Last Attempt', '最后作答时间'],
+  ['Last Result', '最近结果'],
+  ['Wrong Count', '错误次数'],
+  ['Attempt Count', '作答次数'],
+];
+const CORRECT_LABELS: readonly string[] = [RESULT_CORRECT, '正确'];
+const WRONG_LABELS: readonly string[] = [RESULT_WRONG, '错误'];
 
 const headerCell = (value: string) => ({
   value,
@@ -269,14 +293,14 @@ export async function exportRecordsWorkbook(records: Records): Promise<Blob> {
       .map(([qid, stat]) => [
         Number(qid),
         new Date(stat.t),
-        stat.c ? '正确' : '错误',
+        stat.c ? RESULT_CORRECT : RESULT_WRONG,
         stat.w,
         stat.a,
       ]),
   ];
 
   return writeExcelFile(rows, {
-    sheet: '做题记录',
+    sheet: SHEET_NAME,
     columns: [{ width: 18 }, { width: 22 }, { width: 12 }, { width: 12 }, { width: 12 }],
     stickyRowsCount: 1,
     dateFormat: 'yyyy-mm-dd hh:mm:ss',
@@ -285,7 +309,7 @@ export async function exportRecordsWorkbook(records: Records): Promise<Blob> {
 
 function integerValue(value: ImportedCell, field: string): number {
   if (typeof value !== 'number' || !Number.isSafeInteger(value) || value < 0) {
-    throw new Error(`记录文件格式错误：${field} 不是有效整数`);
+    throw new Error(strings().errors.notInteger(field));
   }
   return value;
 }
@@ -297,7 +321,7 @@ function timeValue(value: ImportedCell): number {
     const parsed = Date.parse(value);
     if (Number.isFinite(parsed)) return parsed;
   }
-  throw new Error('记录文件格式错误：最后作答时间无效');
+  throw new Error(strings().errors.badTime);
 }
 
 export async function importRecordsWorkbook(
@@ -305,47 +329,51 @@ export async function importRecordsWorkbook(
   validQids: ReadonlySet<number>,
 ): Promise<Records> {
   const size = input instanceof ArrayBuffer ? input.byteLength : input.size;
-  if (size > MAX_IMPORT_BYTES) throw new Error('记录文件过大，最大支持 5 MB');
+  if (size > MAX_IMPORT_BYTES) throw new Error(strings().errors.fileTooLarge);
 
   const readExcelFile = (await import('read-excel-file/browser')).default;
   let sheets;
   try {
     sheets = await readExcelFile(input);
   } catch {
-    throw new Error('无法读取 Excel，请选择本站导出的 .xlsx 记录文件');
+    throw new Error(strings().errors.unreadable);
   }
 
-  const sheet = sheets.find((item) => item.sheet === '做题记录');
-  if (!sheet) throw new Error('这不是有效的 MCQ Test 记录文件：缺少“做题记录”工作表');
+  const sheet = sheets.find(
+    (item) => item.sheet === SHEET_NAME || item.sheet === LEGACY_SHEET_NAME,
+  );
+  if (!sheet) {
+    throw new Error(strings().errors.missingSheet(SHEET_NAME));
+  }
   // read-excel-file declares date cells as `typeof Date`, while its runtime API returns Date instances.
   const rows = sheet.data as unknown as ImportedCell[][];
   const header = rows[0] || [];
-  if (HEADERS.some((name, index) => header[index] !== name)) {
-    throw new Error('MCQ Test 记录文件格式错误：表头不匹配');
+  if (HEADER_ALIASES.some((names, index) => !names.includes(String(header[index] ?? '')))) {
+    throw new Error(strings().errors.headerMismatch);
   }
 
   const q: Record<string, QuestionStat> = {};
   for (const [index, row] of rows.slice(1).entries()) {
     if (row.every((value) => value === null)) continue;
     const line = index + 2;
-    const qid = integerValue(row[0], `第 ${line} 行 QID`);
-    if (qid === 0) throw new Error(`记录文件格式错误：第 ${line} 行 QID 无效`);
-    if (!validQids.has(qid)) {
-      throw new Error(`记录文件包含无效 QID ${qid}：该题不在当前题库`);
+    const t = strings().errors;
+    const qid = integerValue(row[0], t.fieldQid(line));
+    if (qid === 0) throw new Error(t.badQid(line));
+    if (!validQids.has(qid)) throw new Error(t.unknownQid(qid));
+    if (q[String(qid)]) throw new Error(t.duplicateQid(qid));
+    const result = String(row[2] ?? '');
+    const isCorrect = CORRECT_LABELS.includes(result);
+    if (!isCorrect && !WRONG_LABELS.includes(result)) {
+      throw new Error(t.badResult(line, RESULT_CORRECT, RESULT_WRONG));
     }
-    if (q[String(qid)]) throw new Error(`记录文件格式错误：QID ${qid} 重复`);
-    const result = row[2];
-    if (result !== '正确' && result !== '错误') {
-      throw new Error(`记录文件格式错误：第 ${line} 行最近结果只能是正确或错误`);
-    }
-    const wrong = integerValue(row[3], `第 ${line} 行错误次数`);
-    const attempts = integerValue(row[4], `第 ${line} 行作答次数`);
-    if (wrong > attempts) throw new Error(`记录文件格式错误：第 ${line} 行错误次数不能超过作答次数`);
+    const wrong = integerValue(row[3], t.fieldWrong(line));
+    const attempts = integerValue(row[4], t.fieldAttempts(line));
+    if (wrong > attempts) throw new Error(t.wrongExceedsAttempts(line));
     q[String(qid)] = {
       a: attempts,
       w: wrong,
       t: timeValue(row[1]),
-      c: result === '正确' ? 1 : 0,
+      c: isCorrect ? 1 : 0,
     };
   }
 

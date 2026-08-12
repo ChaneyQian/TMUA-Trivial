@@ -12,6 +12,7 @@ import {
   pickQidsForMode,
 } from '../src/lib/records.ts';
 import * as recordsModule from '../src/lib/records.ts';
+import { setActiveLang } from '../src/lib/i18n.ts';
 import type { IndexEntry } from '../src/lib/exam.ts';
 
 const SESSION = {
@@ -55,9 +56,18 @@ test('xlsx export contains one simple QID summary sheet', async () => {
   const sheets = await readExcelFile(await file.arrayBuffer());
 
   assert.equal(sheets.length, 1);
-  assert.equal(sheets[0].sheet, '做题记录');
-  assert.deepEqual(sheets[0].data[0], ['QID', '最后作答时间', '最近结果', '错误次数', '作答次数']);
+  assert.equal(sheets[0].sheet, 'Records');
+  assert.deepEqual(sheets[0].data[0], [
+    'QID',
+    'Last Attempt',
+    'Last Result',
+    'Wrong Count',
+    'Attempt Count',
+  ]);
   assert.equal(sheets[0].data.length, 3);
+  // 结果列也是英文了
+  assert.equal(sheets[0].data[1][2], 'Correct');
+  assert.equal(sheets[0].data[2][2], 'Wrong');
 });
 
 test('xlsx import restores QID stats and intentionally omits local session history', async () => {
@@ -75,25 +85,72 @@ test('xlsx import restores QID stats and intentionally omits local session histo
 test('xlsx import rejects a workbook that is not an MCQ Test record file', async () => {
   const file = await writeExcelFile([['unrelated workbook']], { sheet: 'Sheet1' }).toBlob();
 
-  await assert.rejects(
-    () => importRecordsWorkbook(file, new Set()),
-    /MCQ Test|记录文件|格式/,
-  );
+  await assert.rejects(() => importRecordsWorkbook(file, new Set()), /MCQ Test/);
 });
 
 test('xlsx import rejects a QID that is absent from the current static index', async () => {
   const file = await writeExcelFile(
     [
+      ['QID', 'Last Attempt', 'Last Result', 'Wrong Count', 'Attempt Count'],
+      [999_999_999, '2026-01-01T00:00:00Z', 'Correct', 0, 1],
+    ],
+    { sheet: 'Records' },
+  ).toBlob();
+
+  // 校验信息跟随界面语言：默认中文，切到英文就该是英文（线格式不受影响）
+  try {
+    await assert.rejects(
+      () => importRecordsWorkbook(file, new Set([101, 102, 103])),
+      /QID 999999999.*不在当前题库/,
+    );
+    setActiveLang('en');
+    await assert.rejects(
+      () => importRecordsWorkbook(file, new Set([101, 102, 103])),
+      /QID 999999999.*not in the current question bank/,
+    );
+  } finally {
+    setActiveLang('zh');
+  }
+});
+
+test('xlsx import still accepts the legacy Chinese sheet name, headers and result labels', async () => {
+  // 存量用户手里是旧版导出的文件：表名/表头/正误列全是中文，必须照样读得进来
+  const file = await writeExcelFile(
+    [
       ['QID', '最后作答时间', '最近结果', '错误次数', '作答次数'],
-      [999_999_999, '2026-01-01T00:00:00Z', '正确', 0, 1],
+      [101, '2026-01-01T00:00:00Z', '正确', 0, 2],
+      [102, '2026-01-02T00:00:00Z', '错误', 3, 4],
     ],
     { sheet: '做题记录' },
   ).toBlob();
 
-  await assert.rejects(
-    () => importRecordsWorkbook(file, new Set([101, 102, 103])),
-    /QID 999999999.*当前题库|无效 QID/,
+  const restored = await importRecordsWorkbook(file, new Set([101, 102, 103]));
+
+  assert.equal(restored.q['101'].c, 1);
+  assert.equal(restored.q['101'].a, 2);
+  assert.equal(restored.q['102'].c, 0);
+  assert.equal(restored.q['102'].w, 3);
+  // 导入刻意不带回会话历史，这一条语义没变
+  assert.deepEqual(restored.s, []);
+});
+
+test('a legacy workbook and a freshly exported one import to the same records', async () => {
+  const exported = await exportRecordsWorkbook(
+    addSession(createEmptyRecords(), RESULTS, SESSION, { now: 1_700_000_000_000 }),
   );
+  const fromNew = await importRecordsWorkbook(await exported.arrayBuffer(), new Set([101, 102]));
+
+  const legacy = await writeExcelFile(
+    [
+      ['QID', '最后作答时间', '最近结果', '错误次数', '作答次数'],
+      [101, new Date(1_700_000_000_000), '正确', 0, 1],
+      [102, new Date(1_700_000_000_000), '错误', 1, 1],
+    ],
+    { sheet: '做题记录', dateFormat: 'yyyy-mm-dd hh:mm:ss' },
+  ).toBlob();
+  const fromLegacy = await importRecordsWorkbook(await legacy.arrayBuffer(), new Set([101, 102]));
+
+  assert.deepEqual(fromLegacy.q, fromNew.q);
 });
 
 test('three pick modes use the imported QID status without relaxing exclusions', () => {
@@ -118,11 +175,16 @@ test('hidden mode unlocks only after 365 valid unique QIDs have been answered', 
   assert.equal(typeof recordsModule.isHiddenModeUnlocked, 'function');
   assert.equal(typeof recordsModule.hiddenUnlockProgress, 'function');
 
-  const index = Array.from({ length: 366 }, (_, i) => ({ qid: i + 1, db: 'TMUA' }));
+  const index: IndexEntry[] = [
+    ...Array.from({ length: 366 }, (_, i) => ({ qid: i + 1, db: 'TMUA' })),
+    // 诊断题答过也不计入 365 解锁进度（诊断另有 Pass 解锁路径）
+    { qid: 5001, db: 'GMAT', diag: true },
+  ];
   const records = createEmptyRecords();
   for (let qid = 1; qid <= 364; qid++) {
     records.q[String(qid)] = { a: 1, w: 0, t: qid, c: 1 };
   }
+  records.q['5001'] = { a: 3, w: 1, t: 5001, c: 0 };
   records.q['999999999'] = { a: 20, w: 0, t: 999, c: 1 };
   records.q['365'] = { a: 0, w: 0, t: 365, c: 1 };
 
@@ -145,8 +207,10 @@ test('classic mode excludes hidden index entries until the expanded pool is sele
     { qid: 3, db: 'MAT', hidden: true },
     { qid: 4, db: 'ECAA' },
     { qid: 5, db: 'AMC', hidden: true },
+    { qid: 6, db: 'GMAT', diag: true },
   ];
 
   assert.deepEqual(recordsModule.indexForLibraryMode(index, 'classic').map((entry) => entry.qid), [1, 4]);
+  // diag（GMAT 诊断集）连 9.0 扩展池也不进——它只属于 Diagnostic Test
   assert.deepEqual(recordsModule.indexForLibraryMode(index, 'hidden').map((entry) => entry.qid), [1, 2, 3, 4, 5]);
 });

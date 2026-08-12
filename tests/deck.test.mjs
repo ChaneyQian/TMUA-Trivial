@@ -22,12 +22,21 @@ test('the deck ships three zones as one data table plus their cover art', () => 
   // 三区、三个编号，卡面文案与解锁路径都从这张表来，组件里不写单卡分支
   for (const id of ["'classic'", "'grill'", "'trivial'"]) assert.match(zones, new RegExp(id));
   for (const no of ["'01'", "'02'", "'03'"]) assert.match(zones, new RegExp(no));
-  assert.match(zones, /title: '经典题库'/);
-  assert.match(zones, /title: '复烤区'/);
-  assert.match(zones, /title: '9\.0 Trivial'/);
-  assert.match(zones, /sub: 'TMUA · MAT · SMC · ECAA'/);
-  assert.match(zones, /sub: '即将开放'/);
-  assert.match(zones, /sub: '扩展题库'/);
+  // 卡面文案已搬进 lib/i18n.ts（外层双语），zones.ts 只留与语言无关的结构。
+  // 三区的标题/副文改由字典保证，两种语言各一份，见 tests/i18n.test.mjs。
+  assert.doesNotMatch(zones, /title:\s*'/);
+  assert.doesNotMatch(zones, /sub:\s*'/);
+  const i18n = fs.readFileSync('src/lib/i18n.ts', 'utf8');
+  assert.match(i18n, /classic: '经典题库'/);
+  assert.match(i18n, /grill: '复烤区'/);
+  assert.match(i18n, /classic: 'Classic Library'/);
+  assert.match(i18n, /grill: 'Grill'/);
+  assert.match(i18n, /trivial: '9\.0 Trivial'/);
+  assert.match(i18n, /classic: 'TMUA · MAT · SMC · ECAA'/);
+  assert.match(i18n, /grill: '即将开放'/);
+  assert.match(i18n, /grill: 'Coming Soon'/);
+  assert.match(i18n, /trivial: '扩展题库'/);
+  assert.match(i18n, /trivial: 'Extended Library'/);
 
   // P2/P3 的留位：展开给哪套面板、解锁走哪条路
   assert.match(zones, /panel: 'full'/);

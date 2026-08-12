@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "sync": "node scripts/sync-bank.mjs",
+    "sync": "node scripts/sync-bank.mjs && node scripts/convert-gmat.mjs",
     "data": "node scripts/build-data.mjs",
     "dev": "npm run data && next dev -p 3210",
     "build": "npm run data && next build",

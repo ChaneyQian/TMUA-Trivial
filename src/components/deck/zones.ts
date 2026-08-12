@@ -1,6 +1,9 @@
-// 堆叠卡片的三个功能区。这里是唯一的数据源：卡面文案、封面、
+// 堆叠卡片的三个功能区。这里是唯一的数据源：封面、
 // 展开后开哪套配置、以及解锁走哪条路，全部由这张表驱动，
 // CardDeck 里不写任何「如果是某张卡就……」的分支。
+//
+// 卡面文案（标题/副文）是双语的，按 id 存在 lib/i18n.ts 的 zone.title / zone.sub 里，
+// 组件用 t.zone.title[zone.id] 取；这张表只留与语言无关的结构。
 //
 // P2/P3 接入点：
 //   - Grill 开放时把 comingSoon 翻成 false、panel 改 'countOnly'
@@ -18,8 +21,6 @@ export interface ZoneDef {
   id: ZoneId;
   /** 卡面编号 01/02/03 */
   no: string;
-  title: string;
-  sub: string;
   /** public/cards/ 下的文件名；缺图时卡片露出 grad 兜底，不需要任何 JS */
   cover: string;
   /** CSS 渐变占位，垫在封面 <img> 底下 */
@@ -33,8 +34,6 @@ export const ZONES: ZoneDef[] = [
   {
     id: 'classic',
     no: '01',
-    title: '经典题库',
-    sub: 'TMUA · MAT · SMC · ECAA',
     cover: 'classic.jpg',
     grad:
       'radial-gradient(120% 92% at 18% 10%, #f2f5ff 0%, #dde5ff 46%, #b8c8f6 100%)',
@@ -45,8 +44,6 @@ export const ZONES: ZoneDef[] = [
   {
     id: 'grill',
     no: '02',
-    title: '复烤区',
-    sub: '即将开放',
     cover: 'grill.jpg',
     grad:
       'radial-gradient(120% 100% at 50% 116%, #ffc46b 0%, #f2762e 38%, #6f2a12 100%)',
@@ -57,8 +54,6 @@ export const ZONES: ZoneDef[] = [
   {
     id: 'trivial',
     no: '03',
-    title: '9.0 Trivial',
-    sub: '扩展题库',
     cover: 'trivial.jpg',
     grad:
       'radial-gradient(130% 100% at 74% 18%, #33459c 0%, #1a2354 46%, #0a0f28 100%)',

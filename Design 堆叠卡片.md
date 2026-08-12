@@ -128,3 +128,31 @@ exam 运行时（选项/批改/键盘流）、build-data 解析器、工牌、9.
 > one luminous teal-to-cyan aurora ribbon flowing diagonally like silk,
 > tiny star glints, a barely-visible keyhole silhouette formed by negative space
 > at the golden-ratio point, mysterious and premium mood
+
+## 9. P0 成绩回顾面板（Progress）——裁决记录（2026-08-12）
+
+双 Opus 方案交叉互审后定稿。上线范围：
+- stageView: 'deck'|'zone'|'progress'（先做零视觉变化的重构，跑通全测试再接功能）
+- 入口 2 处：deck 统计条（N seen · M wrong now · View progress ›）+ 成绩页链接
+- 内容：stat tiles / Recent sessions 折线（同 viewBox 底部用时细柱、透明 rect 命中、
+  点击出详情行、x 轴序号等距只标首末日期）/ Most missed（wrongRanking(10) 懒取
+  单题 JSON、Retry these 同步直调 start()）/ recordSection 迁入
+- 成绩页逐题卡：Seen N× · missed M×，读 start() 时的 records 快照
+  （async 导出窗口内 live records 会当面跳数，快照免疫）
+- XLSX：追加只读 Sessions 表（表头引用常量）；导入确认框加
+  "Session history is not transferred."
+- diag（GMAT 诊断题）从 wrongRanking 与重练池中过滤
+
+**推迟：Weak topics 弱项图与整条 topics 数据管线**（用户决定，2026-08-12）。
+打标覆盖 1007/1706=59% 且按库极度倾斜（SMC 100% / Mock 83% / TMUA 29% /
+MAT 5% / ECAA 9%），知识点未结清前不上站。已留档待启用的图纸：
+- 双格式 YAML 解析（块状 + 行内 topics: [A, B]，行内 200 条全在 TMUA Mock）
+- alias 归并 12 词表：Algebra 337 / Geometry 271 / Logic and Proof 235 /
+  Number Theory 174 / Function 79 / Combinatorics 64 / Misc Pure 62 /
+  Calculus 41 / Trigonometry 33 / Sequences and Series 33 / Polynomial 31 /
+  Probability 3（Algebra (Basic)→Algebra、Algebra (Function)→Function、
+  Algebra (Polynomial)→Polynomial、Mis Pure+Miscellaneous Pure→Misc Pure）
+- 数据通道：独立倒排 public/exam/topics.json {vocab, byTopic, coverage(含按库)}，
+  ≈16KB/4-5KB gzip，仅 Progress 打开时懒取；index 与单题 JSON 形状冻结
+- UI：n≥5 门槛 + 按库覆盖披露 + 覆盖不足换引导文案；口径写死
+  "Lifetime accuracy on attempted questions"

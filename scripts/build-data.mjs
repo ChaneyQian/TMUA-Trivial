@@ -14,9 +14,11 @@ import { fileURLToPath } from 'url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const BANK = process.env.BANK_PATH ? path.resolve(process.env.BANK_PATH) : path.join(ROOT, 'data');
-const OUT = path.join(ROOT, 'public', 'exam');
+// EXAM_OUT 只给测试用：node --test 并行跑多个测试文件，若它们都往 public\exam
+// 里 rm -rf + 重建，就会互相把对方读到一半的产物删掉。
+const OUT = process.env.EXAM_OUT ? path.resolve(process.env.EXAM_OUT) : path.join(ROOT, 'public', 'exam');
 
-const DATABASES = ['TMUA', 'MAT', 'SMC', 'ECAA', 'AMC'];
+const DATABASES = ['TMUA', 'MAT', 'SMC', 'ECAA', 'AMC', 'GMAT'];
 const ROMANS = ['i', 'ii', 'iii', 'iv', 'v', 'vi'];
 const LETTERS = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
 const IMAGE_DIR_NAMES = new Set(['image', 'images']);
@@ -277,7 +279,8 @@ function detectCorruption(parsed, database) {
 
 function parseChoicesFor(database, statement, answer) {
   let parsed = null;
-  if (database === 'TMUA' || database === 'ECAA') parsed = parseTmuaChoices(statement);
+  // GMAT 由 scripts\convert-gmat.mjs 生成，选项统一写成 TMUA 的 $$\mathbf{X} \quad …$$ 块
+  if (database === 'TMUA' || database === 'ECAA' || database === 'GMAT') parsed = parseTmuaChoices(statement);
   else if (database === 'MAT') parsed = parseParenChoices(statement, LETTERS) ?? parseParenChoices(statement, ROMANS);
   else if (database === 'SMC') parsed = parseSmcChoices(statement) ?? parseParenChoices(statement, LETTERS);
   if (parsed) return { ...parsed, optionsInline: false };
@@ -327,6 +330,11 @@ function isHiddenQuestion(database, data) {
 
   if (database === 'MAT') return !(year >= 2007 && year <= 2023);
   return false;
+}
+
+/** 诊断集（GMAT）：入 index 但另作一池，体例同 hidden */
+function isDiagnosticQuestion(database) {
+  return database === 'GMAT';
 }
 
 function indexDatabase(sourceDatabase, filePath, data) {
@@ -419,6 +427,8 @@ function main() {
       );
       const indexEntry = { qid, db };
       if (isHiddenQuestion(db, data)) indexEntry.hidden = true;
+      // 诊断集：只给「Diagnostic Test 压力测试」用，不参与 classic / 9.0 随机抽题池
+      if (isDiagnosticQuestion(db)) indexEntry.diag = true;
       index.push(indexEntry);
     }
   }

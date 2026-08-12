@@ -4,6 +4,7 @@
 // 这里只负责「从索引里随机挑 N 个 → 取回这 N 份 JSON」。
 
 import { EXAM_DATA } from './config';
+import { s as strings } from './i18n.ts';
 
 export interface ExamChoice {
   label: string; // A–H / a–e / i–iv
@@ -32,11 +33,13 @@ export interface IndexEntry {
   qid: number;
   db: string;
   hidden?: true;
+  /** 诊断集（GMAT）：只给 Diagnostic Test 压力测试用，不进 classic / 9.0 随机池 */
+  diag?: true;
 }
 
 export async function fetchIndex(): Promise<IndexEntry[]> {
   const res = await fetch(`${EXAM_DATA}/index.json`);
-  if (!res.ok) throw new Error(`题库索引加载失败（HTTP ${res.status}）`);
+  if (!res.ok) throw new Error(strings().errors.indexLoadHttp(res.status));
   return res.json();
 }
 
@@ -55,13 +58,13 @@ export async function buildExam(
   count: number
 ): Promise<ExamQuestion[]> {
   const pool = index.filter((e) => db === 'ALL' || e.db === db);
-  if (pool.length === 0) throw new Error('该题库没有可用题目');
+  if (pool.length === 0) throw new Error(strings().errors.emptyBank);
 
   const picked = shuffle([...pool]).slice(0, count);
   const questions = await Promise.all(
     picked.map(async (e) => {
       const res = await fetch(`${EXAM_DATA}/q/${e.qid}.json`);
-      if (!res.ok) throw new Error(`第 ${e.qid} 题加载失败（HTTP ${res.status}）`);
+      if (!res.ok) throw new Error(strings().errors.questionLoadHttp(e.qid, res.status));
       return (await res.json()) as ExamQuestion;
     })
   );
