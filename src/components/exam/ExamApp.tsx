@@ -9,9 +9,20 @@ import LangToggle from '@/components/LangToggle';
 import CardDeck from '@/components/deck/CardDeck';
 import { ZONES, zoneById, type ZoneId } from '@/components/deck/zones';
 import ProgressPanel from '@/components/progress/ProgressPanel';
+import DiagnosticIntro from '@/components/diagnostic/DiagnosticIntro';
+import DiagnosticRunner from '@/components/diagnostic/DiagnosticRunner';
+import DiagnosticResult from '@/components/diagnostic/DiagnosticResult';
 import { historyFor, practiceOverview, practiceQids } from '@/lib/progress';
+import {
+  attemptsLeft,
+  canAttempt,
+  fetchDiagnosticSets,
+  isPass,
+  setIndexForAttempt,
+  type DiagnosticSets,
+} from '@/lib/diagnostic';
 import MathText from '@/components/MathText';
-import { buildExam, fetchIndex, ExamQuestion, IndexEntry } from '@/lib/exam';
+import { buildExam, fetchIndex, fetchQuestions, ExamQuestion, IndexEntry } from '@/lib/exam';
 import {
   addSession,
   availableCountForMode,
@@ -27,6 +38,8 @@ import {
   pickQidsForMode,
   saveRecords,
   validCompletedCount,
+  grillCount,
+  recordDiagnostic,
   HIDDEN_UNLOCK_COUNT,
   type LibraryMode,
   type PickMode,
@@ -35,7 +48,13 @@ import {
 import { useLang } from '@/lib/LangContext';
 import styles from './Exam.module.css';
 
-type Phase = 'setup' | 'loading' | 'exam' | 'result';
+/**
+ * diagnostic / diagResult 是独立的两相，不塞进 exam。
+ * 诊断是单向、无批改、逐题倒计时的另一套规则，挂进 exam 相就得在
+ * 已经稳定的运行时里到处加分支；分开之后 practice / mock 一行没动，
+ * 全局键盘那句 `if (phase !== 'exam' || !q) return;` 也天然把诊断挡在外面。
+ */
+type Phase = 'setup' | 'loading' | 'exam' | 'result' | 'diagnostic' | 'diagResult';
 /** setup 相内部的三个子视图；phase 仍是四相，exam 运行时完全不受影响 */
 type StageView = 'deck' | 'zone' | 'progress';
 type Mode = 'practice' | 'mock';
@@ -230,14 +249,14 @@ export default function ExamApp() {
     typeof window !== 'undefined' &&
     window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  /** 为什么这张卡展不开；返回空串表示可以展开 */
+  /**
+   * 为什么这张卡展不开；返回空串表示可以展开。
+   * 9.0 锁定态不再算「展不开」：展开动作变成 Diagnostic Test 的介绍页，
+   * 那正是它的第二条解锁路（见 Design §3）。
+   */
   const zoneBlockReason = (id: ZoneId): string => {
     const zone = zoneById(id);
-    const title = t.zone.title[id];
-    if (zone.comingSoon) return t.block.comingSoon(title);
-    if (zone.unlockPath === 'progress' && !hiddenUnlocked) {
-      return t.block.unlockNeed(Math.max(0, HIDDEN_UNLOCK_COUNT - completedCount), title);
-    }
+    if (zone.comingSoon) return t.block.comingSoon(t.zone.title[id]);
     return '';
   };
 
@@ -341,9 +360,10 @@ export default function ExamApp() {
   );
 
   useEffect(() => {
-    if (phase === 'exam') commandPet({ state: 'waiting', moveTo: 'grade' });
-    else if (phase === 'result') commandPet({ state: 'review', moveTo: 'home' });
-    else if (phase === 'setup') commandPet({ state: 'idle', moveTo: 'home' });
+    if (phase === 'exam' || phase === 'diagnostic') commandPet({ state: 'waiting', moveTo: 'grade' });
+    else if (phase === 'result' || phase === 'diagResult') {
+      commandPet({ state: 'review', moveTo: 'home' });
+    } else if (phase === 'setup') commandPet({ state: 'idle', moveTo: 'home' });
   }, [phase]);
 
   const setCountAnd = (n: number) => {
@@ -393,8 +413,11 @@ export default function ExamApp() {
     try {
       if (!index) throw new Error(t.records.indexNotReady);
       const imported = await importRecordsWorkbook(file, new Set(index.map((entry) => entry.qid)));
-      saveRecords(imported);
-      setRecords(imported);
+      // 记录文件里不含 grill / diag（诊断战绩不随文件走），导入时原样留在本机——
+      // 换台机器导入练习记录不该把已经拿到的解锁弄丢
+      const merged: Records = { ...imported, grill: records.grill, diag: records.diag };
+      saveRecords(merged);
+      setRecords(merged);
       setRecordMessage(t.records.imported(overview(imported).seen));
     } catch (e) {
       setRecordMessage(e instanceof Error ? e.message : t.records.importFailed);
@@ -404,8 +427,10 @@ export default function ExamApp() {
   };
 
   const removeRecords = () => {
-    if (recordOverview.seen > 0 && !window.confirm(t.records.clearConfirm)) return;
-    setRecords(clearRecords());
+    // 清空只清练习记录；9.0 解锁与 Grill 绑定留着，确认框里也说清楚
+    const confirmText = `${t.records.clearConfirm}\n${t.records.clearKeepsUnlock}`;
+    if (recordOverview.seen > 0 && !window.confirm(confirmText)) return;
+    setRecords(clearRecords(records));
     setRecordMessage(t.records.cleared);
   };
 
@@ -519,6 +544,89 @@ export default function ExamApp() {
     setDeckLive(false);
     setStageView('progress');
     setPhase('setup');
+  };
+
+  // ---- Diagnostic Test ----
+  const [diagPapers, setDiagPapers] = useState<ExamQuestion[][]>([]);
+  const [diagPassed, setDiagPassed] = useState(false);
+  const [diagBound, setDiagBound] = useState(0);
+  const [diagSets, setDiagSets] = useState<DiagnosticSets | null>(null);
+
+  // 固定卷定义只在 9.0 还锁着（也就是真有可能要考）时才取，不占冷启动
+  useEffect(() => {
+    if (hiddenUnlocked || diagSets) return;
+    let alive = true;
+    fetchDiagnosticSets()
+      .then((sets) => {
+        if (alive) setDiagSets(sets);
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [hiddenUnlocked, diagSets]);
+
+  /** 介绍页的 Start。和 start() 一样必须是同步手势链，全屏才批准 */
+  const startDiagnostic = async () => {
+    // 机会闸的第二道：介绍页只是不渲染按钮（展示层），真正的拦截在这里。
+    // 「仅两次机会」是本功能最重的规则，不能只押在一个三元表达式上。
+    if (!index || !canAttempt(records.diag)) return;
+    setError('');
+    setPhase('loading');
+    document.documentElement.requestFullscreen?.().catch(() => {});
+    try {
+      const sets = diagSets || (await fetchDiagnosticSets());
+      if (!diagSets) setDiagSets(sets);
+      // 第 N 次机会固定用第 N 套卷，零随机；越界时 setIndexForAttempt 返回 -1，
+      // 落到下面的 !chosen 硬失败，不会静默重发套二
+      const chosen = sets.sets[setIndexForAttempt(records.diag)];
+      if (!chosen || chosen.p1.length === 0 || chosen.p2.length === 0) {
+        throw new Error(t.errors.emptySelection);
+      }
+      // 卷内顺序就是难度升序，必须原样取回，不能走会洗牌的 buildExam
+      const [p1, p2] = await Promise.all([
+        fetchQuestions(chosen.p1),
+        fetchQuestions(chosen.p2),
+      ]);
+      setDiagPapers([p1, p2]);
+      setPhase('diagnostic');
+    } catch (e) {
+      if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+      setError(e instanceof Error ? e.message : t.errors.pickFailed);
+      setPhase('setup');
+    }
+  };
+
+  /**
+   * 诊断交卷。只落三件事：Grill 绑定集、attempts、passed。
+   * q 和 s 一个都不写——写了对错就会经错题榜 / Sessions 导出表泄出去。
+   */
+  const finishDiagnostic = ({ right, qids }: { right: number; qids: number[] }) => {
+    const passed = isPass(right, qids.length);
+    const next = recordDiagnostic(records, qids, passed);
+    saveRecords(next);
+    setRecords(next);
+    setDiagPassed(next.diag?.passed === true);
+    setDiagBound(qids.length);
+    setDiagPapers([]);
+    setPhase('diagResult');
+    if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+  };
+
+  const leaveDiagnostic = () => {
+    setPhase('setup');
+    setStageView('zone');
+    setDeckLive(false);
+  };
+
+  /**
+   * 放弃本次诊断。语义与「刷新页面」完全一致：一个字都不落盘——
+   * attempts 不 +1、qid 不进 Grill、passed 不动。
+   */
+  const abandonDiagnostic = () => {
+    setDiagPapers([]);
+    if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+    leaveDiagnostic();
   };
 
   /**
@@ -728,6 +836,13 @@ export default function ExamApp() {
                   : t.cardBadge.charging,
               }}
               locked={{ classic: false, grill: true, trivial: !hiddenUnlocked }}
+              // Grill 本期仍是 comingSoon，但绑定集非空时先让用户看见
+              // 「诊断确实留下了东西」
+              subs={
+                grillCount(records) > 0
+                  ? { grill: t.diagnostic.grillBound(grillCount(records)) }
+                  : undefined
+              }
               charge={{
                 unlocked: hiddenUnlocked,
                 progress: unlockProgress,
@@ -804,6 +919,24 @@ export default function ExamApp() {
               </button>
             ))}
           </div>
+
+          {/* 9.0 还没解锁时，展开动作给的是 Diagnostic 介绍页而不是抽题配置 */}
+          {frontZone === 'trivial' && !hiddenUnlocked ? (
+            <>
+              <DiagnosticIntro
+                ready={!!diagSets && diagSets.sets.length > 0}
+                diag={records.diag}
+                busy={phase === 'loading' || !index}
+                onStart={() => void startDiagnostic()}
+                charge={{
+                  progress: unlockProgress,
+                  value: completedCount,
+                  max: HIDDEN_UNLOCK_COUNT,
+                }}
+              />
+              {error && <div className={styles.errMsg}>{error}</div>}
+            </>
+          ) : (
         <div className={styles.setupCard}>
           <div className={styles.setupTitle}>{t.zone.title[frontZone]}</div>
           <div className={styles.setupSub}>{t.setup.sub}</div>
@@ -942,11 +1075,34 @@ export default function ExamApp() {
             </div>
           )}
         </div>
+          )}
         </div>
           )}
         </div>
         {showUnlock && <UnlockOverlay onDismiss={() => setShowUnlock(false)} />}
       </div>
+    );
+  }
+
+  // ================= Diagnostic Test =================
+  if (phase === 'diagnostic') {
+    return (
+      <DiagnosticRunner
+        papers={diagPapers}
+        onFinish={finishDiagnostic}
+        onAbandon={abandonDiagnostic}
+      />
+    );
+  }
+
+  if (phase === 'diagResult') {
+    return (
+      <DiagnosticResult
+        passed={diagPassed}
+        bound={diagBound}
+        attemptsLeft={attemptsLeft(records.diag)}
+        onBack={leaveDiagnostic}
+      />
     );
   }
 

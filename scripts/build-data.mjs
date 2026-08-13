@@ -332,6 +332,28 @@ function isHiddenQuestion(database, data) {
   return false;
 }
 
+// ---------------- Diagnostic 固定卷 ----------------
+// Diagnostic Test 是两卷制、零随机：Paper 1 取 algebra-ps，Paper 2 取 algebra-ds。
+// 每个 40 题的文件按难度（level 为主键）升序排好后奇偶交错拆成两套 20 题——
+// 套一取第 1,3,5… 名，套二取第 2,4,6… 名。两套各自天然升序，难度分布对等，
+// 两次机会各用一套，互不重题。word-problems 两套仍在 diag 池里，但本引擎不碰。
+const DIAG_PAPER_DIRS = { p1: 'algebra-ps', p2: 'algebra-ds' };
+const DIAG_SET_COUNT = 2;
+
+function levelRank(data) {
+  // 'LEVEL 7' → 7；缺失或不认识的一律排到最后，但不至于让排序崩掉
+  const match = String(data.level || '').match(/(\d+)/);
+  return match ? Number(match[1]) : Number.MAX_SAFE_INTEGER;
+}
+
+/** 把一个 40 题目录拆成 DIAG_SET_COUNT 套等长、各自升序的卷 */
+function splitDiagnosticPaper(entries) {
+  const sorted = [...entries].sort((a, b) => a.rank - b.rank || a.qid - b.qid);
+  const sets = Array.from({ length: DIAG_SET_COUNT }, () => []);
+  sorted.forEach((entry, i) => sets[i % DIAG_SET_COUNT].push(entry.qid));
+  return sets;
+}
+
 /** 诊断集（GMAT）：入 index 但另作一池，体例同 hidden */
 function isDiagnosticQuestion(database) {
   return database === 'GMAT';
@@ -361,6 +383,7 @@ function main() {
   const seen = new Map();
   const wantedImages = new Set();
   const corrupted = [];
+  const diagCandidates = { p1: [], p2: [] };
   let inlineCount = 0;
   const skipped = { noQid: 0, noStatement: 0, badAnswer: 0, noChoices: 0, answerMismatch: 0, corrupted: 0 };
 
@@ -428,7 +451,14 @@ function main() {
       const indexEntry = { qid, db };
       if (isHiddenQuestion(db, data)) indexEntry.hidden = true;
       // 诊断集：只给「Diagnostic Test 压力测试」用，不参与 classic / 9.0 随机抽题池
-      if (isDiagnosticQuestion(db)) indexEntry.diag = true;
+      if (isDiagnosticQuestion(db)) {
+        indexEntry.diag = true;
+        // 固定卷只取 algebra 两套；用所在目录名认卷别
+        const folder = path.basename(path.dirname(filePath));
+        for (const [paper, dir] of Object.entries(DIAG_PAPER_DIRS)) {
+          if (folder === dir) diagCandidates[paper].push({ qid, rank: levelRank(data) });
+        }
+      }
       index.push(indexEntry);
     }
   }
@@ -455,6 +485,16 @@ function main() {
 
   index.sort((a, b) => b.qid - a.qid);
   fs.writeFileSync(path.join(OUT, 'index.json'), JSON.stringify(index));
+
+  // 固定卷定义单独落一个小文件，index 形状保持冻结；前端只在进 Diagnostic 时才取
+  const p1Sets = splitDiagnosticPaper(diagCandidates.p1);
+  const p2Sets = splitDiagnosticPaper(diagCandidates.p2);
+  const diagSets = p1Sets.map((p1, i) => ({ p1, p2: p2Sets[i] || [] }));
+  fs.writeFileSync(path.join(OUT, 'diag.json'), JSON.stringify({ sets: diagSets }));
+  console.log(
+    '[build-data] Diagnostic 固定卷：',
+    diagSets.map((s, i) => `套${i + 1} P1=${s.p1.length} P2=${s.p2.length}`).join('  '),
+  );
 
   const counts = {};
   for (const e of index) counts[e.db] = (counts[e.db] || 0) + 1;

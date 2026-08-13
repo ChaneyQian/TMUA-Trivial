@@ -30,6 +30,7 @@ const zh = {
     quickAria: (summary: string) => `用当前配置快速开始：${summary}`,
     openAria: (no: string, title: string) => `${no} ${title}，展开配置`,
     frontAria: (no: string, title: string) => `${no} ${title}，转到前位`,
+    diagnosticAria: (no: string, title: string) => `${no} ${title}，开始 Diagnostic Test`,
   },
 
   cardBadge: {
@@ -41,7 +42,6 @@ const zh = {
 
   block: {
     comingSoon: (title: string) => `${title}即将开放`,
-    unlockNeed: (n: number, title: string) => `再做 ${n} 题即可解锁 ${title}`,
   },
 
   setup: {
@@ -90,6 +90,7 @@ const zh = {
     importFailed: '导入失败',
     importConfirm: '导入会替换当前做题记录，是否继续？',
     clearConfirm: '确定清空全部做题和错题记录？',
+    clearKeepsUnlock: '9.0 解锁与 Grill 绑定不受影响。',
     cleared: '记录已清空',
     indexNotReady: '题库索引尚未加载完成',
     sessionSaved: '本场已计入统计',
@@ -130,6 +131,36 @@ const zh = {
     missedRow: (wrong: number, attempts: number) => `错 ${wrong} 次 · 共 ${attempts} 次作答`,
     missedFallback: (qid: number) => `题目 ${qid}`,
     missedLoading: '正在读取题目信息…',
+  },
+
+  diagnostic: {
+    title: 'Diagnostic Test',
+    lead: '一场限时测试。通过就解锁 9.0 Trivial —— 和做满 365 题并列的另一条路。',
+    rulesTitle: '怎么考',
+    rulePapers: '两卷，各 20 题，中间可以休息。',
+    ruleTime: '每题 2 分钟。提前答完，剩下的时间自动加给下一题。',
+    ruleTimeout: '时间用完自动跳下一题，不能回头改。',
+    ruleNoFeedback: '全程不告诉你对错。',
+    rulePass: (mark: number, total: number) => `答对 ${mark} 题（共 ${total} 题）算通过，考完只显示通过或未通过。`,
+    ruleChances: (n: number) => `一共 ${n} 次机会，每次用的是不同的题。`,
+    start: '开始 Diagnostic',
+    starting: '准备中…',
+    chance: (nth: number, total: number) => `第 ${nth} / ${total} 次机会`,
+    exhausted: '两次机会都用完了',
+    exhaustedHint: '不过 9.0 Trivial 还有另一条路：继续练习，做满 365 题同样解锁。',
+    unavailable: '诊断题库尚未就绪',
+    orPractice: '也可以继续练习，做满 365 题同样解锁',
+    grillBound: (n: number) => `${n} 道题已绑定`,
+    paper: (n: number) => `Paper ${n}`,
+    paperOf: (n: number, idx: number, total: number) => `Paper ${n} · 第 ${idx} / ${total} 题`,
+    breakTitle: 'Paper 1 完成 · 休息一下',
+    breakLine: '接下来是 Paper 2，同样 20 题。',
+    breakNote: '休息不限时。点开始后计时重新从每题 2 分钟算起，上一卷剩下的时间不带过来。',
+    breakStart: '开始 Paper 2',
+    abandon: '放弃',
+    abandonConfirm: '放弃本次诊断？本次不计入尝试次数。',
+    abandonNote: '倒计时不会暂停。',
+    abandonNo: '继续作答',
   },
 
   errors: {
@@ -179,6 +210,7 @@ const en: Strings = {
     quickAria: (summary: string) => `Quick start with the current setup: ${summary}`,
     openAria: (no: string, title: string) => `${no} ${title}, open settings`,
     frontAria: (no: string, title: string) => `${no} ${title}, bring to front`,
+    diagnosticAria: (no: string, title: string) => `${no} ${title}, start the Diagnostic Test`,
   },
 
   cardBadge: {
@@ -190,7 +222,6 @@ const en: Strings = {
 
   block: {
     comingSoon: (title: string) => `${title} is coming soon`,
-    unlockNeed: (n: number, title: string) => `Answer ${n} more questions to unlock ${title}`,
   },
 
   setup: {
@@ -239,6 +270,7 @@ const en: Strings = {
     importFailed: 'Import failed',
     importConfirm: 'Importing will replace your current practice records. Continue?',
     clearConfirm: 'Clear all practice and wrong-answer records?',
+    clearKeepsUnlock: 'Your 9.0 unlock and Grill bindings are kept.',
     cleared: 'Records cleared',
     indexNotReady: 'The question index has not finished loading',
     sessionSaved: 'This session has been recorded',
@@ -279,6 +311,39 @@ const en: Strings = {
       `Missed ${wrong}× · ${attempts} attempt${attempts === 1 ? '' : 's'}`,
     missedFallback: (qid: number) => `Question ${qid}`,
     missedLoading: 'Loading question details…',
+  },
+
+  diagnostic: {
+    title: 'Diagnostic Test',
+    lead: 'A timed test. Pass it to unlock 9.0 Trivial — the other route alongside answering 365 questions.',
+    rulesTitle: 'How it works',
+    rulePapers: 'Two papers, 20 questions each, with a break in between.',
+    ruleTime: '2 minutes per question. Finish early and the spare time is added to your next question.',
+    ruleTimeout: 'When time runs out you move on automatically, and you cannot go back.',
+    ruleNoFeedback: 'You are never told whether an answer was right.',
+    rulePass: (mark: number, total: number) =>
+      `Get ${mark} of ${total} right to pass. At the end you only see pass or fail.`,
+    ruleChances: (n: number) => `You get ${n} attempts, and each one uses different questions.`,
+    start: 'Start Diagnostic',
+    starting: 'Preparing…',
+    chance: (nth: number, total: number) => `Attempt ${nth} of ${total}`,
+    exhausted: 'You have used both attempts',
+    exhaustedHint:
+      'There is still the other route to 9.0 Trivial: keep practising and 365 questions unlocks it.',
+    unavailable: 'The diagnostic bank is not ready yet',
+    orPractice: 'You can also keep practising — 365 questions unlocks it too',
+    grillBound: (n: number) => `${n} questions bound`,
+    paper: (n: number) => `Paper ${n}`,
+    paperOf: (n: number, idx: number, total: number) => `Paper ${n} · ${idx} of ${total}`,
+    breakTitle: 'Paper 1 done — take a break',
+    breakLine: 'Paper 2 is next, another 20 questions.',
+    breakNote:
+      'The break is untimed. When you start, the clock resets to 2 minutes per question — spare time from Paper 1 does not carry over.',
+    breakStart: 'Start Paper 2',
+    abandon: 'Abandon',
+    abandonConfirm: 'Abandon this diagnostic? It will not count as an attempt.',
+    abandonNote: 'The clock keeps running.',
+    abandonNo: 'Keep going',
   },
 
   errors: {

@@ -43,6 +43,20 @@ export async function fetchIndex(): Promise<IndexEntry[]> {
   return res.json();
 }
 
+/**
+ * 按给定的 qid 顺序原样取回题目，一道不洗牌。
+ * Diagnostic 的固定卷靠它：卷内顺序就是难度升序，随机化会毁掉这个前提。
+ */
+export async function fetchQuestions(qids: number[]): Promise<ExamQuestion[]> {
+  return Promise.all(
+    qids.map(async (qid) => {
+      const res = await fetch(`${EXAM_DATA}/q/${qid}.json`);
+      if (!res.ok) throw new Error(strings().errors.questionLoadHttp(qid, res.status));
+      return (await res.json()) as ExamQuestion;
+    })
+  );
+}
+
 function shuffle<T>(arr: T[]): T[] {
   for (let i = arr.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));

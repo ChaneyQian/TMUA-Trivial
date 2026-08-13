@@ -9,6 +9,24 @@ import {
   trendPoints,
 } from '../src/lib/progress.ts';
 
+/**
+ * bank-refresh.test.mjs 会在同一次 npm test 里重跑 build-data 重写 index.json，
+ * 测试文件又是并发跑的——撞上那一瞬间会读到半个文件。重试一次，别让套件偶发飘红。
+ */
+function readIndex(attempts = 5) {
+  for (let i = 0; i < attempts; i++) {
+    try {
+      const parsed = JSON.parse(fs.readFileSync('public/exam/index.json', 'utf8'));
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    } catch {}
+    const until = Date.now() + 120;
+    while (Date.now() < until) {
+      /* wait */
+    }
+  }
+  throw new Error('could not read a complete public/exam/index.json');
+}
+
 const panelPath = 'src/components/progress/ProgressPanel.tsx';
 const cssPath = 'src/components/progress/Progress.module.css';
 const libPath = 'src/lib/progress.ts';
@@ -195,7 +213,7 @@ test('Escape means something different in each stage view', () => {
 test('diagnostic questions are filtered out of both the missed list and the retry pool', () => {
   const panel = fs.readFileSync(panelPath, 'utf8');
   const records = fs.readFileSync(recordsPath, 'utf8');
-  const index = JSON.parse(fs.readFileSync('public/exam/index.json', 'utf8'));
+  const index = readIndex();
 
   // 正：题库里确实存在 diag 条目，所以这层过滤是有负载的，不是空跑
   const diag = index.filter((entry) => entry.diag);

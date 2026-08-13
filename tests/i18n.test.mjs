@@ -70,7 +70,8 @@ test('no dictionary entry is blank, and the two languages actually differ', () =
   // 少数条目两语言天然相同（考试名缩写、纯符号），列成白名单，其余必须真的翻过
   assert.deepEqual(
     identical.sort(),
-    ['langToggle.title', 'zone.sub.classic', 'zone.title.trivial'],
+    // diagnostic.title 和 9.0 Trivial 一样是功能专名，两边都叫 Diagnostic Test
+    ['diagnostic.title', 'langToggle.title', 'zone.sub.classic', 'zone.title.trivial'],
     'these entries are identical in both languages — translate them or whitelist them here',
   );
 });
@@ -81,8 +82,11 @@ test('parameterised entries interpolate their arguments in both languages', () =
     assert.match(t.setup.fieldCount(42), /42/, `${lang} fieldCount must show the count`);
     assert.match(t.cardBadge.questions(7), /7/, `${lang} questions badge must show the count`);
     assert.match(t.deck.chargeLabel(3, 365), /3.*365/, `${lang} charge label must show both numbers`);
-    assert.match(t.block.unlockNeed(5, 'X'), /5/, `${lang} unlockNeed must show the remaining count`);
-    assert.match(t.block.unlockNeed(5, 'ZoneName'), /ZoneName/, `${lang} unlockNeed must name the zone`);
+    // block.unlockNeed 已随「锁定 9.0 改进 Diagnostic 介绍页」删掉，
+    // 换成诊断这边的参数化文案
+    assert.match(t.diagnostic.rulePass(36, 40), /36.*40/, `${lang} rulePass must show both numbers`);
+    assert.match(t.diagnostic.chance(1, 2), /1.*2/, `${lang} chance must show which attempt`);
+    assert.match(t.diagnostic.grillBound(12), /12/, `${lang} grillBound must show the count`);
     assert.match(
       t.setup.quickSummary('TMUA', 'Practice', 10),
       /TMUA.*Practice.*10/,

@@ -41,6 +41,8 @@ interface Props {
   badges: Record<ZoneId, string>;
   /** 哪些区当前是锁定态 */
   locked: Record<ZoneId, boolean>;
+  /** 覆盖卡面副文；给空/不传就用字典里的默认文案 */
+  subs?: Partial<Record<ZoneId, string>>;
   charge: DeckCharge;
   /** 展开动画期间 deck 退场（280ms 后由调用方卸载） */
   leaving: boolean;
@@ -68,6 +70,7 @@ export default function CardDeck({
   onOpen,
   badges,
   locked,
+  subs,
   charge,
   leaving,
   autoFocus,
@@ -225,7 +228,7 @@ export default function CardDeck({
 
                 <div className={styles.body}>
                   <div className={styles.title}>{t.zone.title[zone.id]}</div>
-                  <div className={styles.sub}>{t.zone.sub[zone.id]}</div>
+                  <div className={styles.sub}>{subs?.[zone.id] || t.zone.sub[zone.id]}</div>
                   <span className={styles.spacer} />
 
                   {zone.unlockPath === 'progress' && (
@@ -297,9 +300,13 @@ export default function CardDeck({
                   className={styles.hit}
                   tabIndex={-1}
                   aria-label={
-                    isFront
-                      ? t.deck.openAria(zone.no, t.zone.title[zone.id])
-                      : t.deck.frontAria(zone.no, t.zone.title[zone.id])
+                    !isFront
+                      ? t.deck.frontAria(zone.no, t.zone.title[zone.id])
+                      : // 锁定的 9.0 展开的是 Diagnostic 介绍页，不是配置面板，
+                        // 读屏念出来的就该是它真正会做的事
+                        zone.unlockPath === 'progress' && locked[zone.id]
+                        ? t.deck.diagnosticAria(zone.no, t.zone.title[zone.id])
+                        : t.deck.openAria(zone.no, t.zone.title[zone.id])
                   }
                   onClick={() => (isFront ? onOpen(zone.id) : onFront(zone.id))}
                 />

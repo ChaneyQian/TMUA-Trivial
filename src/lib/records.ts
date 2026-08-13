@@ -25,10 +25,20 @@ export interface SessionRecord {
   sec: number;
 }
 
+/** Diagnostic Test 的战绩。passed 一旦为真就不再翻回去——解锁不可撤销 */
+export interface DiagState {
+  passed: boolean;
+  attempts: number;
+  lastTs: number;
+}
+
 export interface Records {
   v: 1;
   q: Record<string, QuestionStat>;
   s: SessionRecord[];
+  /** Grill 绑定集：诊断里出现过的 qid，去重。P3 才会拿它组卷 */
+  grill?: number[];
+  diag?: DiagState;
 }
 
 export interface SessionResult {
@@ -52,6 +62,32 @@ export function createEmptyRecords(): Records {
   return { v: 1, q: {}, s: [] };
 }
 
+/**
+ * 存量档案没有 grill / diag 两个字段，读到就地补默认即可——
+ * 版本号仍是 1，不做迁移：加可选字段而已，旧版本读新档案也只是看不见它们。
+ */
+export function normalizeRecords(parsed: unknown): Records {
+  const raw = (parsed ?? {}) as Partial<Records> & { q?: unknown; s?: unknown };
+  const out: Records = {
+    v: 1,
+    q: (raw.q as Records['q']) || {},
+    s: Array.isArray(raw.s) ? (raw.s as SessionRecord[]) : [],
+  };
+  const grill = Array.isArray(raw.grill)
+    ? [...new Set(raw.grill.filter((qid): qid is number => Number.isSafeInteger(qid) && qid > 0))]
+    : [];
+  if (grill.length > 0) out.grill = grill;
+  const diag = raw.diag as Partial<DiagState> | undefined;
+  if (diag && typeof diag === 'object') {
+    out.diag = {
+      passed: diag.passed === true,
+      attempts: Number.isSafeInteger(diag.attempts) && diag.attempts! > 0 ? diag.attempts! : 0,
+      lastTs: Number.isFinite(diag.lastTs) ? Number(diag.lastTs) : 0,
+    };
+  }
+  return out;
+}
+
 export function loadRecords(): Records {
   if (typeof window === 'undefined') return createEmptyRecords();
   try {
@@ -59,7 +95,7 @@ export function loadRecords(): Records {
     if (!raw) return createEmptyRecords();
     const parsed = JSON.parse(raw);
     if (parsed?.v !== 1 || typeof parsed.q !== 'object') return createEmptyRecords();
-    return { v: 1, q: parsed.q || {}, s: Array.isArray(parsed.s) ? parsed.s : [] };
+    return normalizeRecords(parsed);
   } catch {
     return createEmptyRecords();
   }
@@ -102,11 +138,52 @@ export function recordSession(results: SessionResult[], session: SessionInput): 
   return records;
 }
 
-export function clearRecords(): Records {
+/**
+ * 诊断交卷。刻意**不碰** q 和 s：
+ *   - 写 q 会让这批题出现在错题榜、成绩页历史里，等于把对错泄出去；
+ *   - 写 s 会让 right 数经 Sessions 导出表泄出去。
+ * 「全程不给对错」得贯穿到落盘这一层，只留下「练过、通没通过」这两件事实。
+ */
+export function recordDiagnostic(
+  records: Records,
+  qids: number[],
+  passed: boolean,
+  identity: { now?: number } = {},
+): Records {
+  const now = identity.now ?? Date.now();
+  const grill = [...new Set([...(records.grill || []), ...qids])];
+  const previous = records.diag;
+  return {
+    ...records,
+    grill,
+    diag: {
+      // 通过一次就永久算通过：解锁不该因为后面考砸而被收回
+      passed: previous?.passed === true || passed,
+      attempts: (previous?.attempts || 0) + 1,
+      lastTs: now,
+    },
+  };
+}
+
+/** Grill 绑定集大小，卡面副文用它 */
+export function grillCount(records: Records): number {
+  return records.grill?.length || 0;
+}
+
+/**
+ * 清空做题记录。
+ * diag 与 grill 刻意留下并回写：Diagnostic 通过一次就永久解锁 9.0 是结构性承诺，
+ * 不该被「清空练习记录」这个按钮顺手撤销——导入那条路径也是同样的保底。
+ */
+export function clearRecords(previous?: Records): Records {
+  const kept = createEmptyRecords();
+  if (previous?.grill && previous.grill.length > 0) kept.grill = [...previous.grill];
+  if (previous?.diag) kept.diag = { ...previous.diag };
   try {
-    localStorage.removeItem(KEY);
+    if (kept.grill || kept.diag) localStorage.setItem(KEY, JSON.stringify(kept));
+    else localStorage.removeItem(KEY);
   } catch {}
-  return createEmptyRecords();
+  return kept;
 }
 
 export interface Overview {
@@ -155,7 +232,12 @@ export function validCompletedCount(index: IndexEntry[], records: Records): numb
   ).length;
 }
 
+/**
+ * 9.0 Trivial 的两条解锁路：练满 365 题，**或**通过一次 Diagnostic Test。
+ * 任一达成即可，互不依赖。
+ */
 export function isHiddenModeUnlocked(index: IndexEntry[], records: Records): boolean {
+  if (records.diag?.passed) return true;
   return validCompletedCount(index, records) >= HIDDEN_UNLOCK_COUNT;
 }
 
