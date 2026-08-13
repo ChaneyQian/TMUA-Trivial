@@ -1,13 +1,17 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const dataDir = path.join(root, 'data');
-const outputDir = path.join(root, 'public', 'exam');
+// 构建到临时目录（build-data 的 EXAM_OUT 通道），绝不碰共享的 public\exam：
+// node --test 并发执行各测试文件，progress/diagnostic/gmat 都在读
+// public\exam\index.json，这里若原地 rm -rf + 重建，撞上读窗口就偶发飘红。
+const outputDir = fs.mkdtempSync(path.join(os.tmpdir(), 'mcq-bank-refresh-'));
 
 function walkMarkdown(dir) {
   if (!fs.existsSync(dir)) return [];
@@ -18,10 +22,13 @@ function walkMarkdown(dir) {
   });
 }
 
-test('static bank separates refreshed TMUA Mock and keeps expanded pools behind 9.0 Trivial', () => {
+test('static bank separates refreshed TMUA Mock and keeps expanded pools behind 9.0 Trivial', (t) => {
+  t.after(() => fs.rmSync(outputDir, { recursive: true, force: true }));
+
   execFileSync(process.execPath, [path.join(root, 'scripts', 'build-data.mjs')], {
     cwd: root,
     stdio: 'pipe',
+    env: { ...process.env, EXAM_OUT: outputDir },
   });
 
   const index = JSON.parse(fs.readFileSync(path.join(outputDir, 'index.json'), 'utf8'));
