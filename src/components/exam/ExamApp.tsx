@@ -12,6 +12,8 @@ import ProgressPanel from '@/components/progress/ProgressPanel';
 import DiagnosticIntro from '@/components/diagnostic/DiagnosticIntro';
 import DiagnosticRunner from '@/components/diagnostic/DiagnosticRunner';
 import DiagnosticResult from '@/components/diagnostic/DiagnosticResult';
+import GrillPanel from '@/components/grill/GrillPanel';
+import { pickGrillQids } from '@/lib/grill';
 import { historyFor, practiceOverview, practiceQids } from '@/lib/progress';
 import {
   attemptsLeft,
@@ -39,6 +41,7 @@ import {
   saveRecords,
   validCompletedCount,
   grillCount,
+  mergeDiagnostic,
   recordDiagnostic,
   HIDDEN_UNLOCK_COUNT,
   type LibraryMode,
@@ -204,12 +207,15 @@ export default function ExamApp() {
     } catch {}
   }, []);
 
-  // 回读上次的选区。'grill'（P1 未开放）不接受，直接落回 classic；
-  // 'trivial' 要等索引到位才知道解不解得开，所以先挂起、下一个 effect 再定。
+  // 回读上次的选区。三个区现在都开放了，都接受；
+  // 'trivial' 要等索引到位才知道解不解得开（锁着也进得去，只是给 Diagnostic 介绍页），
+  // 所以先挂起、下一个 effect 再定。
   useEffect(() => {
     try {
       const saved = localStorage.getItem(ZONE_KEY);
-      if (saved === 'trivial' || saved === 'classic') pendingZoneRef.current = saved;
+      if (saved === 'trivial' || saved === 'classic' || saved === 'grill') {
+        pendingZoneRef.current = saved;
+      }
     } catch {}
   }, []);
 
@@ -413,9 +419,10 @@ export default function ExamApp() {
     try {
       if (!index) throw new Error(t.records.indexNotReady);
       const imported = await importRecordsWorkbook(file, new Set(index.map((entry) => entry.qid)));
-      // 记录文件里不含 grill / diag（诊断战绩不随文件走），导入时原样留在本机——
-      // 换台机器导入练习记录不该把已经拿到的解锁弄丢
-      const merged: Records = { ...imported, grill: records.grill, diag: records.diag };
+      // 记录文件现在带得动诊断战绩了（Diagnostic 表），但老文件没有。
+      // 一律与本机合并：并集 / OR / max，只会往前不会倒退——
+      // 换台机器导入既不该弄丢已有的解锁，也不该盖掉文件里带来的
+      const merged = mergeDiagnostic(records, imported);
       saveRecords(merged);
       setRecords(merged);
       setRecordMessage(t.records.imported(overview(imported).seen));
@@ -449,6 +456,8 @@ export default function ExamApp() {
     pickMode?: PickMode;
     count?: number;
     qids?: number[];
+    /** 只有 Grill 用：它的池子本来就是诊断题 */
+    allowDiag?: boolean;
   }) => {
     if (!index) return;
     const useDb = override?.db ?? db;
@@ -465,10 +474,13 @@ export default function ExamApp() {
       const qids = override?.qids ?? pickQidsForMode(activeIndex, useDb, useCount, usePick, records);
       if (qids.length === 0) throw new Error(t.errors.emptySelection);
       const selected = new Set(qids);
-      // 显式指定 qid 时按整份索引取（错题可能落在当前题库范围之外），
-      // 但 diag 永远排除
+      // 显式指定 qid 时按整份索引取：错题可能落在当前题库范围之外。
+      // diag 默认仍然排除（错题重练那条路不该混进诊断题），只有 Grill 例外——
+      // 复烤区的池子本来就是诊断题，事后把它们烤明白正是这个区的分工。
       const pool = override?.qids
-        ? index.filter((entry) => !entry.diag && selected.has(entry.qid))
+        ? index.filter(
+            (entry) => (override.allowDiag || !entry.diag) && selected.has(entry.qid),
+          )
         : activeIndex.filter((entry) => selected.has(entry.qid));
       if (pool.length === 0) throw new Error(t.errors.emptySelection);
       const qs = await buildExam(pool, 'ALL', pool.length);
@@ -627,6 +639,39 @@ export default function ExamApp() {
     setDiagPapers([]);
     if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
     leaveDiagnostic();
+  };
+
+  // ---- Grill（复烤区）----
+  const [grillPickMode, setGrillPickMode] = useState<PickMode>('random');
+  const [grillCountChoice, setGrillCountChoice] = useState(10);
+
+  /**
+   * 开一场复烤。池子是绑定集 ∩ 当前索引（悬空 qid 已在 grill.ts 里滤掉），
+   * 挑完直接走 start({ qids }) —— 和「重练错题」同一条通道，考试引擎零改动。
+   * mode 保持 practice：Grill 的分工就是给答案和解析。
+   */
+  const startGrill = () => {
+    const qids = pickGrillQids(index, records, grillCountChoice, grillPickMode);
+    if (qids.length === 0) {
+      setError(t.errors.emptySelection);
+      return;
+    }
+    // Grill 一律练习模式：这里的分工就是给批改与解析，Mock 的限时交卷没意义。
+    // setMode 与下面的 setPhase('loading') 同批渲染，等 phase 变 'exam' 时早已生效
+    setMode('practice');
+    void start({ db: 'ALL', qids, allowDiag: true });
+  };
+
+  /** 诊断成绩页 → 复烤区：把刚绑上的这批题直接摆到面前 */
+  const goToGrillFromResult = () => {
+    chooseZone('grill');
+    leaveDiagnostic();
+  };
+
+  /** 空态里的指路：转到 9.0 卡并展开（锁着就是 Diagnostic 介绍页） */
+  const goToDiagnostic = () => {
+    chooseZone('trivial');
+    setError('');
   };
 
   /**
@@ -830,19 +875,21 @@ export default function ExamApp() {
               onOpen={openZone}
               badges={{
                 classic: t.cardBadge.questions(classicCount),
-                grill: t.cardBadge.comingSoon,
+                grill: t.cardBadge.questions(grillCount(records)),
                 trivial: hiddenUnlocked
                   ? t.cardBadge.expanded(expandedCount)
                   : t.cardBadge.charging,
               }}
-              locked={{ classic: false, grill: true, trivial: !hiddenUnlocked }}
+              locked={{ classic: false, grill: false, trivial: !hiddenUnlocked }}
               // Grill 本期仍是 comingSoon，但绑定集非空时先让用户看见
               // 「诊断确实留下了东西」
-              subs={
-                grillCount(records) > 0
-                  ? { grill: t.diagnostic.grillBound(grillCount(records)) }
-                  : undefined
-              }
+              // Grill 卡面副文：绑了题就报数，没绑就说清楚要先考一次诊断
+              subs={{
+                grill:
+                  grillCount(records) > 0
+                    ? t.diagnostic.grillBound(grillCount(records))
+                    : t.grill.emptySub,
+              }}
               charge={{
                 unlocked: hiddenUnlocked,
                 progress: unlockProgress,
@@ -936,6 +983,20 @@ export default function ExamApp() {
               />
               {error && <div className={styles.errMsg}>{error}</div>}
             </>
+          ) : frontZone === 'grill' ? (
+            /* 复烤区：池子是 Diagnostic 留下的绑定集，其余走既有的练习通道 */
+            <GrillPanel
+              index={index}
+              records={records}
+              pickMode={grillPickMode}
+              onPickMode={setGrillPickMode}
+              count={grillCountChoice}
+              onCount={setGrillCountChoice}
+              busy={phase === 'loading' || !index}
+              onStart={startGrill}
+              onGoDiagnostic={goToDiagnostic}
+              error={error}
+            />
           ) : (
         <div className={styles.setupCard}>
           <div className={styles.setupTitle}>{t.zone.title[frontZone]}</div>
@@ -1102,6 +1163,7 @@ export default function ExamApp() {
         bound={diagBound}
         attemptsLeft={attemptsLeft(records.diag)}
         onBack={leaveDiagnostic}
+        onGoGrill={goToGrillFromResult}
       />
     );
   }

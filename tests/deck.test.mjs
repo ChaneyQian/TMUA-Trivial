@@ -43,7 +43,13 @@ test('the deck ships three zones as one data table plus their cover art', () => 
   assert.match(zones, /panel: 'countOnly'/);
   assert.match(zones, /unlockPath: 'progress'/);
   assert.match(zones, /'diagnostic'/, 'the diagnostic unlock path must stay reserved for P2');
-  assert.match(zones, /comingSoon: true/, 'Grill ships as a coming-soon skeleton in P1');
+  // P3 起三个区全部开放；这张表只保留结构，开放与否仍由 comingSoon 表达
+  assert.match(zones, /comingSoon: boolean;/, 'the structural flag must stay on the table');
+  assert.equal(
+    (zones.match(/comingSoon: false/g) || []).length,
+    3,
+    'all three zones are open from P3 on',
+  );
 
   // 图没就位时的兜底：每区一条 CSS 渐变，垫在封面 <img> 底下
   assert.match(zones, /grad: string;/);

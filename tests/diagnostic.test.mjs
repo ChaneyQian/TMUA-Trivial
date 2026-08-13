@@ -453,10 +453,17 @@ test('diagnostic is its own phase, so practice and mock are untouched', () => {
   assert.match(exam, /recordDiagnostic\(records, qids, passed\)/);
   assert.doesNotMatch(exam, /addSession\([^)]*diag/);
 
-  // 导入不该把诊断战绩冲掉：文件里本来就不含 grill / diag
-  assert.match(exam, /grill: records\.grill, diag: records\.diag/);
+  // 导入不该把诊断战绩冲掉。P3 起记录文件带得动它们了，
+  // 于是改成与本机合并（并集 / OR / max），而不是一律用本机的盖掉
+  assert.match(exam, /mergeDiagnostic\(records, imported\)/);
   const records = fs.readFileSync(recordsPath, 'utf8');
-  assert.doesNotMatch(records, /SESSION_HEADERS[\s\S]{0,600}grill/);
+  // 场次表本身仍只写场次；绑定集与战绩走 P3 新加的独立 Diagnostic 表
+  const sessionRowsBlock = records.slice(
+    records.indexOf('const sessionRows = ['),
+    records.indexOf('const diag = records.diag;'),
+  );
+  assert.ok(sessionRowsBlock.length > 0, 'the session rows block must exist');
+  assert.doesNotMatch(sessionRowsBlock, /grill|diag/);
 });
 
 test('diagnostic motion stays on the compositor', () => {

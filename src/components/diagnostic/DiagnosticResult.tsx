@@ -14,9 +14,17 @@ interface Props {
   /** 交卷后还剩几次机会（两次机会制），Fail 文案据此分叉 */
   attemptsLeft: number;
   onBack: () => void;
+  /** 直接去复烤区把这批题烤明白，别让用户自己找 */
+  onGoGrill: () => void;
 }
 
-export default function DiagnosticResult({ passed, bound, attemptsLeft, onBack }: Props) {
+export default function DiagnosticResult({
+  passed,
+  bound,
+  attemptsLeft,
+  onBack,
+  onGoGrill,
+}: Props) {
   return (
     <div className={examStyles.wrap}>
       <div className={examStyles.resultWrap}>
@@ -30,9 +38,14 @@ export default function DiagnosticResult({ passed, bound, attemptsLeft, onBack }
                 : '这次没有通过，两次机会已用完。做满 365 题仍然可以解锁 9.0 Trivial。'}
           </p>
           <p className={styles.verdictBound}>本场 {bound} 道题已加入 Grill 复烤区</p>
-          <button type="button" className={examStyles.btnPrimary} onClick={onBack}>
-            返回
-          </button>
+          <div className={styles.verdictBtns}>
+            <button type="button" className={examStyles.btnGhost} onClick={onGoGrill}>
+              去 Grill 看看
+            </button>
+            <button type="button" className={examStyles.btnPrimary} onClick={onBack}>
+              返回
+            </button>
+          </div>
         </div>
       </div>
     </div>

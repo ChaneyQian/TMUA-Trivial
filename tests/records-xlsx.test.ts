@@ -47,7 +47,7 @@ test('addSession updates answered questions and ignores unanswered questions', (
   });
 });
 
-test('xlsx export contains the QID summary sheet plus a read-only session log', async () => {
+test('xlsx export contains the QID summary sheet plus two read-only logs', async () => {
   const records = addSession(createEmptyRecords(), RESULTS, SESSION, {
     now: 1_700_000_000_000,
   });
@@ -56,7 +56,7 @@ test('xlsx export contains the QID summary sheet plus a read-only session log', 
   const sheets = await readExcelFile(await file.arrayBuffer());
 
   // 主表在前，形状与表头一个字都没动（线格式，改一个字就读不了旧记录）
-  assert.equal(sheets.length, 2);
+  assert.equal(sheets.length, 3);
   assert.equal(sheets[0].sheet, 'Records');
   assert.deepEqual(sheets[0].data[0], [
     'QID',
@@ -71,16 +71,16 @@ test('xlsx export contains the QID summary sheet plus a read-only session log', 
   assert.equal(sheets[0].data[2][2], 'Wrong');
 
   // 场次表：表名与表头都引用 records.ts 导出的常量，避免两处各写一份字面量漂移
-  assert.equal(sheets[1].sheet, recordsModule.SESSIONS_SHEET_NAME);
+  assert.equal(sheets[2].sheet, recordsModule.SESSIONS_SHEET_NAME);
   assert.equal(recordsModule.SESSIONS_SHEET_NAME, 'Sessions');
-  assert.deepEqual(sheets[1].data[0], [...recordsModule.SESSION_HEADERS]);
-  assert.equal(sheets[1].data.length, 2); // 表头 + 本场
-  assert.equal(sheets[1].data[1][1], 'TMUA');
-  assert.equal(sheets[1].data[1][2], 'Practice');
-  assert.equal(sheets[1].data[1][3], 3);
-  assert.equal(sheets[1].data[1][4], 1);
-  assert.equal(sheets[1].data[1][5], 2);
-  assert.equal(sheets[1].data[1][6], 95);
+  assert.deepEqual(sheets[2].data[0], [...recordsModule.SESSION_HEADERS]);
+  assert.equal(sheets[2].data.length, 2); // 表头 + 本场
+  assert.equal(sheets[2].data[1][1], 'TMUA');
+  assert.equal(sheets[2].data[1][2], 'Practice');
+  assert.equal(sheets[2].data[1][3], 3);
+  assert.equal(sheets[2].data[1][4], 1);
+  assert.equal(sheets[2].data[1][5], 2);
+  assert.equal(sheets[2].data[1][6], 95);
 });
 
 test('xlsx import restores QID stats and intentionally omits local session history', async () => {

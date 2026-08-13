@@ -35,7 +35,6 @@ const zh = {
 
   cardBadge: {
     questions: (n: number) => `${n} 题`,
-    comingSoon: '即将开放',
     expanded: (n: number) => `🔥 ${n} 题`,
     charging: '🔒 充能中',
   },
@@ -133,6 +132,21 @@ const zh = {
     missedLoading: '正在读取题目信息…',
   },
 
+  grill: {
+    title: '复烤区',
+    lead: '这里是你在 Diagnostic 里考过的题。可以正常做题、批改、看解析——诊断时不给的答案，在这儿一次烤明白。',
+    emptySub: '完成一次 Diagnostic 后出现',
+    emptyTitle: '还没有绑定的题',
+    emptyHint: '完成一次 Diagnostic 后，这里会出现你的题。',
+    goDiagnostic: '去看 Diagnostic',
+    bound: (n: number) => `已绑定 ${n} 道题`,
+    dangling: (n: number) => `其中 ${n} 道已随题库更新移除，不计入可用`,
+    fieldCount: (n: number) => `题目数量（可用 ${n} 题）`,
+    countAll: '全部',
+    start: '开始复烤',
+    empty: '当前策略下没有可练的题，换个策略试试。',
+  },
+
   diagnostic: {
     title: 'Diagnostic Test',
     lead: '一场限时测试。通过就解锁 9.0 Trivial —— 和做满 365 题并列的另一条路。',
@@ -215,7 +229,6 @@ const en: Strings = {
 
   cardBadge: {
     questions: (n: number) => `${n} Qs`,
-    comingSoon: 'Coming Soon',
     expanded: (n: number) => `🔥 ${n} Qs`,
     charging: '🔒 Charging',
   },
@@ -311,6 +324,21 @@ const en: Strings = {
       `Missed ${wrong}× · ${attempts} attempt${attempts === 1 ? '' : 's'}`,
     missedFallback: (qid: number) => `Question ${qid}`,
     missedLoading: 'Loading question details…',
+  },
+
+  grill: {
+    title: 'Grill',
+    lead: 'These are the questions you met in the Diagnostic. Practise them normally — marking and solutions included. The answers withheld during the test are all here.',
+    emptySub: 'Unlocked by a Diagnostic',
+    emptyTitle: 'Nothing bound yet',
+    emptyHint: 'Finish a Diagnostic and your questions will show up here.',
+    goDiagnostic: 'See the Diagnostic',
+    bound: (n: number) => `${n} questions bound`,
+    dangling: (n: number) => `${n} of them were dropped by a bank update and are not available`,
+    fieldCount: (n: number) => `Number of Questions (${n} available)`,
+    countAll: 'All',
+    start: 'Start Grill',
+    empty: 'Nothing to practise with this selection — try another one.',
   },
 
   diagnostic: {

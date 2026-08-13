@@ -129,7 +129,9 @@ export function addSession(
     };
   }
   const s = [{ ts: now, ...session }, ...records.s].slice(0, MAX_SESSIONS);
-  return { v: 1, q, s };
+  // 必须摊开 records：grill / diag 是后加的可选字段，重新构造对象会把它们丢掉——
+  // 那等于每做一场普通练习就撤销一次 9.0 解锁
+  return { ...records, v: 1, q, s };
 }
 
 export function recordSession(results: SessionResult[], session: SessionInput): Records {
@@ -344,6 +346,14 @@ const RESULT_WRONG = 'Wrong';
 // ---- 只读的场次表 ----
 // 导出时附带，导入端不看它（仍然只认主表、仍然返回 s: []）。
 // 存在的意义是让用户手里的文件留一份趋势留档——localStorage 里只保 200 场。
+// ---- 只读的诊断表 ----
+// 带上 Grill 绑定集与诊断战绩，好让记录文件换台机器也能续上。
+// 老文件没有这张表，导入时跳过即可（向后兼容）。
+export const DIAGNOSTIC_SHEET_NAME = 'Diagnostic';
+export const DIAGNOSTIC_HEADERS = ['QID', 'Passed', 'Attempts', 'Last Attempt'] as const;
+const DIAG_YES = 'Yes';
+const DIAG_NO = 'No';
+
 export const SESSIONS_SHEET_NAME = 'Sessions';
 export const SESSION_HEADERS = [
   'Date',
@@ -409,12 +419,34 @@ export async function exportRecordsWorkbook(records: Records): Promise<Blob> {
     ]),
   ];
 
+  // 诊断表：每行自带完整战绩，合并时逐行取 OR / max 即可，不依赖行序
+  const diag = records.diag;
+  const passedLabel = diag?.passed ? DIAG_YES : DIAG_NO;
+  const attempts = diag?.attempts || 0;
+  const lastTs = diag?.lastTs ? new Date(diag.lastTs) : null;
+  const boundQids = records.grill || [];
+  const diagBody =
+    boundQids.length > 0
+      ? boundQids.map((qid) => [qid, passedLabel, attempts, lastTs])
+      : // 有战绩但没绑定题（正常流程走不到，防守而已）：留一行只带状态
+        diag
+        ? [[null, passedLabel, attempts, lastTs]]
+        : [];
+  const diagRows = [DIAGNOSTIC_HEADERS.map(headerCell), ...diagBody];
+
   return writeExcelFile(
     [
       {
         data: rows,
         sheet: SHEET_NAME,
         columns: [{ width: 18 }, { width: 22 }, { width: 12 }, { width: 12 }, { width: 12 }],
+        stickyRowsCount: 1,
+        dateFormat: 'yyyy-mm-dd hh:mm:ss',
+      },
+      {
+        data: diagRows,
+        sheet: DIAGNOSTIC_SHEET_NAME,
+        columns: [{ width: 18 }, { width: 10 }, { width: 12 }, { width: 22 }],
         stickyRowsCount: 1,
         dateFormat: 'yyyy-mm-dd hh:mm:ss',
       },
@@ -507,5 +539,60 @@ export async function importRecordsWorkbook(
     };
   }
 
-  return { v: 1, q, s: [] };
+  const imported: Records = { v: 1, q, s: [] };
+
+  // 诊断表是后加的：老文件没有这张表，跳过即可，别因此判文件无效
+  const diagSheet = sheets.find((item) => item.sheet === DIAGNOSTIC_SHEET_NAME);
+  if (diagSheet) {
+    const diagRows = diagSheet.data as unknown as ImportedCell[][];
+    const grill: number[] = [];
+    let passed = false;
+    let attempts = 0;
+    let lastTs = 0;
+    for (const row of diagRows.slice(1)) {
+      if (!row || row.every((value) => value === null)) continue;
+      const qid = row[0];
+      if (typeof qid === 'number' && Number.isSafeInteger(qid) && qid > 0) grill.push(qid);
+      if (String(row[1] ?? '') === DIAG_YES) passed = true;
+      if (typeof row[2] === 'number' && Number.isSafeInteger(row[2])) {
+        attempts = Math.max(attempts, row[2]);
+      }
+      try {
+        lastTs = Math.max(lastTs, timeValue(row[3]));
+      } catch {
+        // 时间列坏了不至于让整份记录导不进来，它只是个展示字段
+      }
+    }
+    const unique = [...new Set(grill)];
+    if (unique.length > 0) imported.grill = unique;
+    if (passed || attempts > 0 || lastTs > 0) imported.diag = { passed, attempts, lastTs };
+  }
+
+  return imported;
+}
+
+/**
+ * 把导入的诊断战绩与本机现有的合并：绑定集取并集、passed 取 OR、
+ * attempts 取 max、lastTs 取新。
+ * 两边都是「做过就算数」的单调量，合并只会往前不会倒退——
+ * 换台机器导入不该把已经拿到的解锁弄丢，也不该把对方的成果盖掉。
+ */
+export function mergeDiagnostic(local: Records, imported: Records): Records {
+  const grill = [...new Set([...(local.grill || []), ...(imported.grill || [])])];
+  const a = local.diag;
+  const b = imported.diag;
+  const merged: Records = { ...imported };
+  if (grill.length > 0) merged.grill = grill;
+  else delete merged.grill;
+
+  if (a || b) {
+    merged.diag = {
+      passed: a?.passed === true || b?.passed === true,
+      attempts: Math.max(a?.attempts || 0, b?.attempts || 0),
+      lastTs: Math.max(a?.lastTs || 0, b?.lastTs || 0),
+    };
+  } else {
+    delete merged.diag;
+  }
+  return merged;
 }

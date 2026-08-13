@@ -201,7 +201,7 @@ export default function CardDeck({
             const slot =
               offset === 0 ? styles.slotFront : offset === 1 ? styles.slotRight : styles.slotLeft;
             const isFront = offset === 0;
-            const openable = !zone.comingSoon && !locked[zone.id];
+            const openable = !zone.comingSoon && !locked[zone.id] && zone.quickStart;
             return (
               <div key={zone.id} className={`${styles.card} ${slot}`}>
                 {/* 用 backgroundImage 而不是 background 简写：简写会把样式表里的

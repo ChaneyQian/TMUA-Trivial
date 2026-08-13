@@ -135,7 +135,7 @@ test('the outer layer renders its copy from the dictionary, not from literals', 
   // 卡面文案搬进字典后，zones.ts 只剩与语言无关的结构
   assert.doesNotMatch(zones, /title:\s*'/, 'zone titles must live in the dictionary');
   assert.doesNotMatch(zones, /sub:\s*'/, 'zone subtitles must live in the dictionary');
-  assert.match(zones, /comingSoon: true/, 'the structural table itself must stay');
+  assert.match(zones, /comingSoon: boolean;/, 'the structural table itself must stay');
 
   assert.match(deck, /useLang\(\)/);
   assert.match(deck, /t\.zone\.title\[zone\.id\]/);
@@ -153,7 +153,8 @@ test('the outer layer renders its copy from the dictionary, not from literals', 
     't.setup.fieldCount(totalPool)',
     't.setup.start',
     't.setup.keyboard',
-    't.cardBadge.comingSoon',
+    // cardBadge.comingSoon 随 P3「三区全开」一起删了；zone.sub 现在由 ExamApp 按状态覆盖
+    't.grill.emptySub',
   ]) {
     assert.ok(exam.includes(key), `the setup panel must render ${key} from the dictionary`);
   }

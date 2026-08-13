@@ -76,7 +76,10 @@ test('the missed list is ranked by wrongRanking and can start a retry run', () =
   assert.match(exam, /start\(\{ db: 'ALL', qids \}\)/);
   // start 支持显式 qid 列表，并在这一层再滤一次 diag（调用方已滤过，这是第二道闸）
   assert.match(exam, /override\?\.qids \?\? pickQidsForMode/);
-  assert.match(exam, /index\.filter\(\(entry\) => !entry\.diag && selected\.has\(entry\.qid\)\)/);
+  // diag 默认仍被这一层挡住；只有 Grill 显式传 allowDiag —— 它的池子本来就是诊断题
+  assert.match(exam, /override\.allowDiag \|\| !entry\.diag/);
+  assert.match(exam, /start\(\{ db: 'ALL', qids \}\)/, 'the retry path must not opt into diag');
+  assert.doesNotMatch(exam, /retryMissed[\s\S]{0,200}allowDiag/);
   // 按钮只在榜上有行时渲染：出现即字面为真，不需要再靠置灰兜底
   assert.match(panel, /\{missed\.length > 0 && \(\s*<button/);
   // 同步调用链（requestFullscreen 只认手势）
@@ -315,7 +318,9 @@ test('the workbook gains a read-only session sheet without touching the import c
 
   // 导入端一个字没动：仍只认主表、仍返回 s: []
   assert.match(records, /item\.sheet === SHEET_NAME \|\| item\.sheet === LEGACY_SHEET_NAME/);
-  assert.match(records, /return \{ v: 1, q, s: \[\] \};/);
+  // 主表仍然只还原 q，场次历史照旧不随文件走（s 永远是空的）
+  assert.match(records, /const imported: Records = \{ v: 1, q, s: \[\] \};/);
+  assert.doesNotMatch(records, /imported\.s = /);
   assert.doesNotMatch(records, /SESSIONS_SHEET_NAME[\s\S]{0,400}importRecordsWorkbook/);
 
   // 导入会清空场次历史，确认框必须先说清楚

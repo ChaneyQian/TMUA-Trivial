@@ -28,6 +28,8 @@ export interface ZoneDef {
   panel: ZonePanel;
   unlockPath: ZoneUnlockPath;
   comingSoon: boolean;
+  /** 卡面给不给「快速开始」。Grill 的池子是绑定集，跟外面那套配置不是一回事 */
+  quickStart: boolean;
 }
 
 export const ZONES: ZoneDef[] = [
@@ -40,6 +42,7 @@ export const ZONES: ZoneDef[] = [
     panel: 'full',
     unlockPath: 'free',
     comingSoon: false,
+    quickStart: true,
   },
   {
     id: 'grill',
@@ -49,7 +52,8 @@ export const ZONES: ZoneDef[] = [
       'radial-gradient(120% 100% at 50% 116%, #ffc46b 0%, #f2762e 38%, #6f2a12 100%)',
     panel: 'countOnly',
     unlockPath: 'free',
-    comingSoon: true,
+    comingSoon: false,
+    quickStart: false,
   },
   {
     id: 'trivial',
@@ -60,6 +64,7 @@ export const ZONES: ZoneDef[] = [
     panel: 'full',
     unlockPath: 'progress',
     comingSoon: false,
+    quickStart: true,
   },
 ];
 
