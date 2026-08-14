@@ -179,3 +179,27 @@ MAT 5% / ECAA 9%），知识点未结清前不上站。已留档待启用的图�
   消掉「显示 20 实抽 3」的错位，浏览器目检通过）；README 特性段刷到四期全量，
   版本抬 1.1.0，tag v1.1.0 已打，Release 文案已交用户贴 GitHub UI
 - 仍在用户侧：iOS 真机烟测诊断计时
+
+## 12. P4 逻辑推理开关（2026-08-14）
+
+用户口径裁定：**Logic Reasoning 绑定题库自己的 subtopic 打标，不是 TMUA Paper 2
+整卷**。实测立论：TMUA P1 的 180 题里有 15 道标了 Logic，P2 的 180 题里只有
+103 道是——卷别当代理精确率仅 57%，既错杀 77 道非逻辑题又漏掉 P1 那 15 道。
+
+- 判定 = `subtopics` 含 `Logic`（精确）**或** `topics` 含 `Logic and Proof`
+  （包含），并集。全站 236 道（TMUA 118 / Mock 69 / SMC 26 / MAT 13 / ECAA 10）
+- **取消勾选只排除已标注的题**，没打标的一律保留：证明不了是逻辑题就不能排除，
+  否则 MAT（打标 5%）会被清空
+- **覆盖率必须披露**，且随勾选状态换时态。打标覆盖极不均：SMC 100% / TMUA 90% /
+  Mock 83% / ECAA 9% / MAT 5%
+- 硬约束（均有行为测试）：365 计数、重练错题、Grill、Diagnostic、卡面徽章一律
+  走整份索引
+- index 新增 `logic?` / `tagged?` 两个标记，gzip +0.6KB。`tagged` 是覆盖率的分母，
+  实测省掉它只省 37 字节（压缩吃掉冗余），维持现状
+- 顺带修掉 build-data frontmatter 解析器丢块状列表的 bug（741/2067 文件受影响），
+  并容忍列表中的空行与注释行
+
+审查采纳 5 条 MINOR：解析器空行容忍、文案时态、「本题库」→「所选范围」、
+aria-describedby 关联、空池提示指向开关。未采纳：`Proof` 标签口径维持精确匹配
+（in-index 影响 0 题）。数据侧待清：JZMaths_SetB-Mock-P2-Q8 的 subtopics
+有重复项 `[Proof, Proof, Trigonometry]`（在 vault 侧，需你确认后清）
