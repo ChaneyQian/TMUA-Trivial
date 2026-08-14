@@ -3,6 +3,8 @@
 // Grill（复烤区）的配置面板。
 // 组卷走 P0 建好的 start({ qids }) 通道 + practice 模式，考试引擎一行没动。
 
+import { useEffect } from 'react';
+
 import { useLang } from '@/lib/LangContext';
 import type { IndexEntry } from '@/lib/exam';
 import { grillAvailable, grillCountOptions, boundCount, danglingCount } from '@/lib/grill';
@@ -42,6 +44,12 @@ export default function GrillPanel({
   const dangling = danglingCount(index, records);
   const available = grillAvailable(index, records, pickMode);
   const choices = grillCountOptions(available);
+
+  // 切到更窄的策略后，选中的题数可能超出新上限——pickGrillQids 会悄悄截断，
+  // 但界面上就成了「显示 20、实抽 3」。超限时直接落到「全部」档，显示与行为对齐
+  useEffect(() => {
+    if (available > 0 && count > available) onCount(available);
+  }, [available, count, onCount]);
 
   // 空态：一次诊断都没考过，这里本来就该是空的
   if (bound === 0) {

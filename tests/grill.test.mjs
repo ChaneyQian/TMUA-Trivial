@@ -220,6 +220,62 @@ test('the workbook carries the grill bindings, and old files still import', asyn
   assert.equal(Object.keys(fromLegacy.q).length, 1);
 });
 
+test('a Diagnostic sheet with a wrong header is skipped whole, not misread by column position', async () => {
+  // 导入端按列序硬读诊断表。列序对不上（比如被 Excel 挪过列）时，
+  // 宁可当这张表不存在，也不能把 Passed 列当 QID 吞进 grill
+  const shuffled = await writeExcelFile(
+    [
+      {
+        data: [['QID', 'Last Attempt', 'Last Result', 'Wrong Count', 'Attempt Count'], [901, new Date(1_700_000_000_000), 'Correct', 0, 1]],
+        sheet: 'Records',
+        dateFormat: 'yyyy-mm-dd hh:mm:ss',
+      },
+      {
+        data: [['Passed', 'QID', 'Last Attempt', 'Attempts'], ['Yes', 901, new Date(1_700_000_000_000), 1]],
+        sheet: 'Diagnostic',
+        dateFormat: 'yyyy-mm-dd hh:mm:ss',
+      },
+    ],
+  ).toBlob();
+
+  const imported = await importRecordsWorkbook(await shuffled.arrayBuffer(), new Set([901]));
+  assert.equal(imported.grill, undefined, 'a misaligned sheet must contribute nothing');
+  assert.equal(imported.diag, undefined);
+  assert.equal(Object.keys(imported.q).length, 1, 'the main sheet still imports as usual');
+
+  // 反向钉住：前四列匹配即可，之后追加的列不碍事——给未来的格式演进留缝
+  const extended = await writeExcelFile(
+    [
+      {
+        data: [['QID', 'Last Attempt', 'Last Result', 'Wrong Count', 'Attempt Count'], [901, new Date(1_700_000_000_000), 'Correct', 0, 1]],
+        sheet: 'Records',
+        dateFormat: 'yyyy-mm-dd hh:mm:ss',
+      },
+      {
+        data: [['QID', 'Passed', 'Attempts', 'Last Attempt', 'Future Column'], [901, 'Yes', 1, new Date(1_700_000_000_000), 'whatever']],
+        sheet: 'Diagnostic',
+        dateFormat: 'yyyy-mm-dd hh:mm:ss',
+      },
+    ],
+  ).toBlob();
+
+  const fromExtended = await importRecordsWorkbook(await extended.arrayBuffer(), new Set([901]));
+  assert.deepEqual(fromExtended.grill, [901]);
+  assert.equal(fromExtended.diag.passed, true);
+});
+
+test('the count choice follows the pool when a narrower strategy shrinks it', () => {
+  // pickGrillQids 对超额 count 会悄悄截断（显示 20、实抽 3 的错位），
+  // 面板必须把超限的选择压回「全部」档，让显示与行为对齐
+  const panel = fs.readFileSync(panelPath, 'utf8');
+  assert.match(panel, /if \(available > 0 && count > available\) onCount\(available\);/);
+  assert.match(panel, /useEffect/);
+
+  // 档位本身随可用量塌缩：可用 3 时只剩「全部 (3)」一档
+  assert.deepEqual(grillCountOptions(3), [3]);
+  assert.deepEqual(grillCountOptions(20), [5, 10, 20]);
+});
+
 test('importing merges diagnostic progress instead of overwriting it', () => {
   const local = {
     v: 1,

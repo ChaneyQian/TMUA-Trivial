@@ -543,7 +543,15 @@ export async function importRecordsWorkbook(
 
   // 诊断表是后加的：老文件没有这张表，跳过即可，别因此判文件无效
   const diagSheet = sheets.find((item) => item.sheet === DIAGNOSTIC_SHEET_NAME);
-  if (diagSheet) {
+  // 下面按列序硬读，所以表头对不上就整表跳过——宁可少读一张附表，
+  // 也别把陌生列吞进 grill/diag。文件身份已由主表校验，这里的跳过
+  // 与「老文件没有这张表」走同一语义。只查前四列，之后追加的列不管，
+  // 给未来的格式演进留缝
+  const diagHeaderOk = (rows: ImportedCell[][]): boolean => {
+    const header = rows[0] || [];
+    return DIAGNOSTIC_HEADERS.every((name, i) => String(header[i] ?? '') === name);
+  };
+  if (diagSheet && diagHeaderOk(diagSheet.data as unknown as ImportedCell[][])) {
     const diagRows = diagSheet.data as unknown as ImportedCell[][];
     const grill: number[] = [];
     let passed = false;
