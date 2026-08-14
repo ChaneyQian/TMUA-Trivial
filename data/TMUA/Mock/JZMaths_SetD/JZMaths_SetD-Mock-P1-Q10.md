@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 6.5
 topics: [Polynomial, Algebra (Basic)]
 subtopics: [Factor and Remainder Theorem, Polynomials, Algebra Manipulation]
-tags: [Remainder Theorem, Polynomial Expansions]
+tags: [Remainder-Theorem, Polynomial-Expansions]
 status: 已入库
 ---
 

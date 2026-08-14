@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 8
 topics: [Calculus, Function, Logic and Proof]
 subtopics: [Integration, Absolute Value Functions, Graphical Arguments]
-tags: [Integration, General Number of Solutions, Graphs of Functions]
+tags: [Integration, General-Number-of-Solutions, Graphs-of-Functions]
 status: 已入库
 ---
 

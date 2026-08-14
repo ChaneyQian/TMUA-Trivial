@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 6
 topics: [Geometry, Function, Algebra (Basic)]
 subtopics: [Coordinate Geometry, Algebraic Functions, Algebra Manipulation]
-tags: [Transformation of Graphs]
+tags: [Transformation-of-Graphs]
 status: 已入库
 ---
 

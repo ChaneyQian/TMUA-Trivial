@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 5.5
 topics: [Miscellaneous Pure, Algebra (Basic)]
 subtopics: [Inequalities, Surds and indices]
-tags: [Inequalities, General Algebra]
+tags: [Inequalities, General-Algebra]
 status: 已入库
 ---
 

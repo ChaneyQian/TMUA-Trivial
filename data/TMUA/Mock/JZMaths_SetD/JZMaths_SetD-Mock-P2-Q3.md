@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 5.5
 topics: [Trigonometry]
 subtopics: [Trigonometry]
-tags: [General Trigonometry]
+tags: [General-Trigonometry]
 status: 已入库
 ---
 

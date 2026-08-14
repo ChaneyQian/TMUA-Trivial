@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 7
 topics: [Calculus, Function]
 subtopics: [Differentiation Application, Algebraic Functions]
-tags: [Logic Sufficiency, Differentiation]
+tags: [Logic-Sufficiency, Differentiation]
 status: 已入库
 ---
 

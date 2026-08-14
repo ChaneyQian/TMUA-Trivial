@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 6
 topics: [Function, Algebra (Basic)]
 subtopics: [Exponentials and Logarithms, Simultaneous Equations]
-tags: [Exponentials and Logarithms]
+tags: [Exponentials-and-Logarithms]
 status: 已入库
 ---
 

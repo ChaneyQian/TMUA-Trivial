@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 7
 topics: [Logic and Proof, Function]
 subtopics: [Logic, Exponentials and Logarithms]
-tags: [Logic Deduction, Exponentials and Logarithms]
+tags: [Logic-Deduction, Exponentials-and-Logarithms]
 status: 已入库
 ---
 

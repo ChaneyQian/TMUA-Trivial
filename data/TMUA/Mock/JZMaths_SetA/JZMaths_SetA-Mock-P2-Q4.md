@@ -8,8 +8,8 @@ number: Q4
 section: Multiple Choice
 difficulty: 5.5
 topics: [Logic and Proof, Number Theory]
-subtopics: [Logic, Divisibility]
-tags: [Logic Counterexample]
+subtopics: [Proof, Divisibility]
+tags: [Logic-Counterexample]
 status: 已入库
 ---
 

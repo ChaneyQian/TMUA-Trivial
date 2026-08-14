@@ -126,11 +126,17 @@ test('the diagnostic ships two fixed papers, not a random draw', () => {
   assert.doesNotMatch(exam, /buildExam\([^)]*chosen/);
   const examLib = fs.readFileSync('src/lib/exam.ts', 'utf8');
   assert.match(examLib, /export async function fetchQuestions/);
-  // 固定卷定义单独一个文件，index 形状仍然冻结
+  // 固定卷定义单独一个文件，index 形状仍然冻结。
+  // logic / tagged（逻辑推理开关及其覆盖率提示）是后来加的两个可选标记，
+  // 和 hidden / diag 同体例：这张白名单要拦的是「把整份固定卷塞进 index」
+  // 那类膨胀，不是拦所有新字段
   const index = readJson('public/exam/index.json', (d) => Array.isArray(d) && d.length > 0);
   for (const entry of index) {
     for (const key of Object.keys(entry)) {
-      assert.ok(['qid', 'db', 'hidden', 'diag'].includes(key), `unexpected index key ${key}`);
+      assert.ok(
+        ['qid', 'db', 'hidden', 'diag', 'logic', 'tagged'].includes(key),
+        `unexpected index key ${key}`,
+      );
     }
   }
 });

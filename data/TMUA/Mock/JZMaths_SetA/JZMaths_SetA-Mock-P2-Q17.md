@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 8
 topics: [Logic and Proof, Number Theory]
 subtopics: [Proof, Divisibility]
-tags: [Logic Deduction]
+tags: [Logic-Deduction]
 status: 已入库
 ---
 

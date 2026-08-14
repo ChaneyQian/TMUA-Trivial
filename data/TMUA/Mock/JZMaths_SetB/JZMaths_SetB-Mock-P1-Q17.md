@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 8
 topics: [Calculus]
 subtopics: [Integration, Integral Identity]
-tags: [Integration, Transformation of Graphs]
+tags: [Integration, Transformation-of-Graphs]
 status: 已入库
 ---
 

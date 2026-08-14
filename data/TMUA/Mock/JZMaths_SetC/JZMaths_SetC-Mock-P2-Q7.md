@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 6.5
 topics: [Logic and Proof]
 subtopics: [Logic]
-tags: [Logic Deduction]
+tags: [Logic-Deduction]
 status: 已入库
 ---
 

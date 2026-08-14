@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 6
 topics: [Geometry, Function]
 subtopics: [Coordinate Geometry, Functions]
-tags: [Circle Geometry, Transformation of Graphs]
+tags: [Circle-Geometry, Transformation-of-Graphs]
 status: 已入库
 ---
 

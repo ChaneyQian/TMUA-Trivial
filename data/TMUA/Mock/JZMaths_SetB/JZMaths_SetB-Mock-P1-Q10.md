@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 7
 topics: [Calculus, Miscellaneous Pure]
 subtopics: [Integration, Integral Identity, Estimation and Bounds]
-tags: [General Trigonometry, Area Integration]
+tags: [General-Trigonometry, Area-Integration]
 status: 已入库
 ---
 

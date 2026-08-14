@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 6
 topics: [Trigonometry, Function]
 subtopics: [Trigonometric Equations, Absolute Value Functions]
-tags: [General Trigonometry, General Number of Solutions]
+tags: [General-Trigonometry, General-Number-of-Solutions]
 status: 已入库
 ---
 

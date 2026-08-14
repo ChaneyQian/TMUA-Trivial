@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 6
 topics: [Sequences and Series, Algebra (Basic)]
 subtopics: [Sequences and Series, Surds and indices]
-tags: [General Algebra, Sequences and Series]
+tags: [General-Algebra, Sequences-and-Series]
 status: 已入库
 ---
 

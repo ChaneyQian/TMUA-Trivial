@@ -11,7 +11,7 @@ topics: [Sequences and Series, Function]
 subtopics: [Sequences and Series, "Floor, Ceiling and Fractional Part Functions"]
 tags:
   - Integration
-  - Sequences and Series
+  - Sequences-and-Series
 status: 已入库
 ---
 

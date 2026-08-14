@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 7
 topics: [Calculus, Function, Polynomial]
 subtopics: [Differentiation Application, Functions, Algebraic Functions, Solution of Equations]
-tags: [General Number of Solutions, Graphs of Functions]
+tags: [General-Number-of-Solutions, Graphs-of-Functions]
 status: 已入库
 ---
 

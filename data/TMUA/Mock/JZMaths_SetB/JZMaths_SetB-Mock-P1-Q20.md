@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 8
 topics: [Function, Miscellaneous Pure, Algebra (Basic)]
 subtopics: [Exponentials and Logarithms, Inequalities, Algebra Manipulation]
-tags: [General Trigonometry, Inequalities]
+tags: [General-Trigonometry, Inequalities]
 status: 已入库
 ---
 

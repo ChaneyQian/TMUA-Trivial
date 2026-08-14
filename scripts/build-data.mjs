@@ -25,16 +25,80 @@ const IMAGE_DIR_NAMES = new Set(['image', 'images']);
 
 // ---------------- frontmatter / 分节 ----------------
 
-/** 只取需要的几个标量字段，避免为此引入 YAML 依赖 */
+const unquote = (text) => text.trim().replace(/^["']|["']$/g, '');
+
+/**
+ * 行内列表 `[a, "b, c"]` 拆条目。逗号在引号里时不算分隔符——
+ * 题库里确实有 `"Floor, Ceiling and Fractional Part Functions"` 这种带逗号的标签，
+ * 直接 split(',') 会把它劈成两个残条目
+ */
+function splitInlineList(body) {
+  const items = [];
+  let current = '';
+  let quote = null;
+  for (const ch of body) {
+    if (quote) {
+      if (ch === quote) quote = null;
+      else current += ch;
+    } else if ((ch === '"' || ch === "'") && current.trim() === '') {
+      // 引号只有出现在条目开头时才是引号：`Vieta's Formulas` 里那个撇号是名字的一部分
+      quote = ch;
+    } else if (ch === ',') {
+      items.push(current);
+      current = '';
+    } else {
+      current += ch;
+    }
+  }
+  items.push(current);
+  return items.map((item) => item.trim()).filter(Boolean);
+}
+
+/** 数组字段的读法：没标过的题这个键要么缺席、要么是空标量，一律当空列表 */
+function listField(data, key) {
+  const value = data[key];
+  return Array.isArray(value) ? value : [];
+}
+
+/**
+ * 只取需要的几个字段，避免为此引入 YAML 依赖。
+ *
+ * 标量一律留成字符串；topics / subtopics 这类列表两种写法都要认——题库里
+ * 行内 `topics: [A, B]` 与块状 `topics:` 换行 `  - A` 是并存的（各占一半），
+ * 只认行内那种会把块状的题当成没打标。
+ */
 function parseFrontmatter(raw) {
   const m = raw.match(/^﻿?---\r?\n([\s\S]*?)\r?\n---/);
   if (!m) return { data: {}, body: raw };
   const data = {};
+  let listKey = null; // 上一个「冒号后面空着」的键，块状列表的项挂到它名下
   for (const line of m[1].split(/\r?\n/)) {
+    const item = line.match(/^\s*-\s+(.+)$/);
+    if (item && listKey) {
+      const value = unquote(item[1]);
+      if (value) (data[listKey] ||= []).push(value);
+      continue;
+    }
     const kv = line.match(/^([A-Za-z_][\w-]*)\s*:\s*(.*)$/);
-    if (!kv) continue;
-    let v = kv[2].trim().replace(/^["']|["']$/g, '');
-    data[kv[1]] = v;
+    if (!kv) {
+      // 空行和注释行在 YAML 里不打断列表，这里也不能打断：题库是在 Obsidian 里
+      // 手编的，`topics:` 和第一个 `- x` 之间夹一个空行很常见，断了就等于
+      // 整条标签静默丢失（丢失方向是「变成未打标」，题会照常出现，不会被错杀）
+      if (line.trim() !== '' && !/^\s*#/.test(line)) listKey = null;
+      continue;
+    }
+    const rest = kv[2].trim();
+    const inline = rest.match(/^\[(.*)\]$/);
+    if (inline) {
+      data[kv[1]] = splitInlineList(inline[1]);
+      listKey = null;
+      continue;
+    }
+    // 冒号后面空着的键既可能是块状列表的开头，也可能只是个空标量。
+    // 先按空标量记下，真有 `- x` 跟上来时再就地改写成数组——这样所有
+    // 标量字段的读法都跟以前一字不差
+    data[kv[1]] = unquote(rest);
+    listKey = rest === '' ? kv[1] : null;
   }
   return { data, body: raw.slice(m[0].length) };
 }
@@ -367,6 +431,40 @@ function indexDatabase(sourceDatabase, filePath, data) {
   return isMock ? 'TMUA_MOCK' : 'TMUA';
 }
 
+// ---------------- 逻辑推理题的判定 ----------------
+//
+// 认的是题库自己的知识点打标，不是卷别。曾经拿 TMUA Paper 2 整卷当代理，
+// 实测下来精确率只有 57%：P2 的 180 题里只有 103 题真的标了逻辑，
+// 而 P1 里另有 15 道逻辑题会被漏掉——整卷和知识点根本不是一回事。
+
+const LOGIC_TOPIC = 'logic and proof';
+const LOGIC_SUBTOPIC = 'logic';
+
+/**
+ * 逻辑推理题 = topics 里有 `Logic and Proof`，**或** subtopics 里正好是 `Logic`。
+ *
+ * 两套词汇是打标历史留下的，覆盖的题并不重合（交集只占并集的一半），
+ * 所以取并集，两边都得认。topics 用包含匹配，好接住往后可能出现的
+ * `Logic and Proof (…)`；subtopics 用精确匹配，免得把 `Logical Puzzles`
+ * 这类尚未出现的标签一并吞掉——这个开关只该排除确定是逻辑题的题。
+ */
+function isLogicQuestion(data) {
+  if (listField(data, 'topics').some((topic) => topic.toLowerCase().includes(LOGIC_TOPIC))) {
+    return true;
+  }
+  return listField(data, 'subtopics').some((sub) => sub.toLowerCase() === LOGIC_SUBTOPIC);
+}
+
+/**
+ * 这道题整理过知识点没有。打标覆盖率在各库之间差得极远（SMC 全标完，
+ * 而 MAT 只有个位数百分比），面板上要如实交代这个开关能管到多少题，
+ * 所以「有没有标过」本身也得进索引——没标过的题只能算「不知道」，
+ * 不能当成「已确认不是逻辑题」。
+ */
+function hasTopicTags(data) {
+  return listField(data, 'topics').length > 0 || listField(data, 'subtopics').length > 0;
+}
+
 // ---------------- 主流程 ----------------
 
 function main() {
@@ -450,6 +548,10 @@ function main() {
       );
       const indexEntry = { qid, db };
       if (isHiddenQuestion(db, data)) indexEntry.hidden = true;
+      // 两个标记都只在为真时写，和 hidden / diag 同体例：index.json 是每次冷启动
+      // 都要下载的，给一千多条全都补一个 false 只是白白撑大它
+      if (isLogicQuestion(data)) indexEntry.logic = true;
+      if (hasTopicTags(data)) indexEntry.tagged = true;
       // 诊断集：只给「Diagnostic Test 压力测试」用，不参与 classic / 9.0 随机抽题池
       if (isDiagnosticQuestion(db)) {
         indexEntry.diag = true;
@@ -500,6 +602,26 @@ function main() {
   for (const e of index) counts[e.db] = (counts[e.db] || 0) + 1;
 
   console.log('[build-data] 可判分题目：', JSON.stringify(counts), '合计', index.length);
+
+  // 逐库报打标覆盖：面板上的覆盖率提示读的就是这两个数，构建时先亮出来，
+  // 哪个库的打标补上了 / 退化了当场就能看见
+  const logicCounts = {};
+  const taggedCounts = {};
+  for (const e of index) {
+    if (e.logic) logicCounts[e.db] = (logicCounts[e.db] || 0) + 1;
+    if (e.tagged) taggedCounts[e.db] = (taggedCounts[e.db] || 0) + 1;
+  }
+  console.log(
+    `[build-data] 逻辑推理题（按知识点标签）：合计 ${index.filter((e) => e.logic).length} 题`,
+  );
+  for (const db of Object.keys(counts).sort()) {
+    const tagged = taggedCounts[db] || 0;
+    const percent = counts[db] ? Math.round((tagged / counts[db]) * 100) : 0;
+    console.log(
+      `    ${db.padEnd(10)} 逻辑 ${String(logicCounts[db] || 0).padStart(4)}` +
+        `   已打标 ${String(tagged).padStart(4)}/${String(counts[db]).padEnd(4)} (${percent}%)`,
+    );
+  }
   console.log('[build-data] 跳过：', JSON.stringify(skipped));
   // 选项解析不出来、退化成「按钮只显字母」的题（选项仍在题面里可读，不影响作答）
   if (inlineCount) console.log(`[build-data] 选项内联（按钮只显字母）：${inlineCount} 题`);

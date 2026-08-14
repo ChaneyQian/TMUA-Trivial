@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 7.5
 topics: [Function]
 subtopics: [Functions]
-tags: [Logic Equivalence, Transformation of Graphs]
+tags: [Logic-Equivalence, Transformation-of-Graphs]
 status: 已入库
 ---
 

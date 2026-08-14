@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 5.5
 topics: [Function, Algebra (Basic)]
 subtopics: [Exponentials and Logarithms, Algebra Manipulation]
-tags: [Exponentials and Logarithms]
+tags: [Exponentials-and-Logarithms]
 status: 已入库
 ---
 

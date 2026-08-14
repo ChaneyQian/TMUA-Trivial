@@ -7,8 +7,8 @@ year:
 number: Q18
 section: Reasoning
 difficulty: 0
-topics: []
-subtopics: []
+topics: [Statistical Theory]
+subtopics: [Descriptive Statistics]
 tags:
   - specimen
 status: 已入库

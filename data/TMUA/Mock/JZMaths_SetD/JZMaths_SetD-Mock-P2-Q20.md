@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 8.5
 topics: [Calculus, Polynomial, Logic and Proof]
 subtopics: [Differentiation Application, Polynomials, Graphical Arguments]
-tags: [Graphs of Functions, Differentiation, General Number of Solutions]
+tags: [Graphs-of-Functions, Differentiation, General-Number-of-Solutions]
 status: 已入库
 ---
 

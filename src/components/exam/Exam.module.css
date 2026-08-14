@@ -230,6 +230,46 @@
   color: var(--text-muted);
 }
 
+/* 「含逻辑推理题」那一行。边框/圆角/内距/字号一律照抄 segBtn，选中态直接复用
+   .segActive；只有里面装的是真正的 checkbox 而不是按钮——它是个开关，
+   语义上不该混进 segRow 那几组单选按钮里 */
+.checkLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--font-ui);
+  font-size: 0.9rem;
+  padding: 0.45rem 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-alt);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.checkLabel:hover {
+  border-color: var(--accent);
+}
+
+.checkBox {
+  width: 0.95rem;
+  height: 0.95rem;
+  margin: 0;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+/* 覆盖率说明。flex-basis 撑满一整行，把它挤到勾选框下面而不是并排——
+   它是给这个开关兜底的实话，读起来该像一句话，不该像第二个按钮。
+   字号/颜色照 segHint，那已经是面板里「补充说明」的既定样式 */
+.checkNote {
+  flex-basis: 100%;
+  max-width: 46rem;
+  font-size: 0.72rem;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
 .recordSection {
   margin-top: 0.9rem;
   padding-top: 0.1rem;

@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 6
 topics: [Logic and Proof, Calculus]
 subtopics: [Logic, Differentiation Application]
-tags: [Logic Sufficiency, Differentiation, Logic Deduction]
+tags: [Logic-Sufficiency, Differentiation, Logic-Deduction]
 status: 已入库
 ---
 

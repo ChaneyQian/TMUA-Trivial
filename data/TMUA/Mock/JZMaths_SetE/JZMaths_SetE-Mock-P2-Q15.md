@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 7.5
 topics: [Function]
 subtopics: ["Floor, Ceiling and Fractional Part Functions", Iterated Functions]
-tags: [General Functions]
+tags: [General-Functions]
 status: 已入库
 ---
 

@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 7
 topics: [Logic and Proof, Number Theory]
 subtopics: [Logic, Divisibility]
-tags: [Logic Equivalence]
+tags: [Logic-Equivalence]
 status: 已入库
 ---
 

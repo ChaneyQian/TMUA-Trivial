@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 6.5
 topics: [Polynomial, Number Theory, Algebra (Basic)]
 subtopics: [Polynomials, Diophantine Equations, Algebra Manipulation]
-tags: [Graphs of Functions, Polynomial Expansions]
+tags: [Graphs-of-Functions, Polynomial-Expansions]
 status: 已入库
 ---
 

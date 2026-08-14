@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 7
 topics: [Logic and Proof, Algebra (Basic)]
 subtopics: [Logic, Surds and indices]
-tags: [Logic Sufficiency, Logic Equivalence, Logic Deduction]
+tags: [Logic-Sufficiency, Logic-Equivalence, Logic-Deduction]
 status: 已入库
 ---
 

@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 9
 topics: [Calculus, Logic and Proof, Function]
 subtopics: [Integral of Inverse function, Graphical Arguments, Integration, Exponentials and Logarithms]
-tags: [Integration, Exponentials and Logarithms, Graphs of Functions]
+tags: [Integration, Exponentials-and-Logarithms, Graphs-of-Functions]
 status: 已入库
 ---
 

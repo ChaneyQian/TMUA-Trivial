@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 6
 topics: [Function, Logic and Proof]
 subtopics: [Exponentials and Logarithms, Graphical Arguments]
-tags: [General Algebra, Exponentials and Logarithms]
+tags: [General-Algebra, Exponentials-and-Logarithms]
 status: 已入库
 ---
 

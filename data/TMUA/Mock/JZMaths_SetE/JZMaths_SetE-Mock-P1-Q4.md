@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 6
 topics: [Geometry]
 subtopics: [Coordinate Geometry]
-tags: [Circle Geometry, Linear Equations]
+tags: [Circle-Geometry, Linear-Equations]
 status: 已入库
 ---
 

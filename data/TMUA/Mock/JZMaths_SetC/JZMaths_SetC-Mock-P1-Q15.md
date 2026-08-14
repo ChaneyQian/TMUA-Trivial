@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 7
 topics: [Sequences and Series]
 subtopics: [Sequences and Series, AP GP, Recurrence Relations]
-tags: [Sequences and Series, General Algebra]
+tags: [Sequences-and-Series, General-Algebra]
 status: 已入库
 ---
 

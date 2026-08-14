@@ -8,8 +8,8 @@ number: Q6
 section: Multiple Choice
 difficulty: 6.5
 topics: [Logic and Proof, Calculus, Function]
-subtopics: [Logic, Differentiation Application, Algebraic Functions]
-tags: [Logic Deduction, Inequalities]
+subtopics: [Proof, Differentiation Application, Algebraic Functions]
+tags: [Logic-Deduction, Inequalities]
 status: 已入库
 ---
 

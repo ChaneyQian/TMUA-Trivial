@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 7.5
 topics: [Trigonometry, Geometry]
 subtopics: [Trigonometric Equations, Coordinate Geometry]
-tags: [General Trigonometry, Graphs of Functions]
+tags: [General-Trigonometry, Graphs-of-Functions]
 status: 已入库
 ---
 

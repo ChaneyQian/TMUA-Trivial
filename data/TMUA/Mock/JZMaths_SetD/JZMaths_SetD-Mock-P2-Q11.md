@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 7
 topics: [Trigonometry, Geometry]
 subtopics: [Sine and Cosine Rule, Euclid Geometry]
-tags: [Geometry, General Trigonometry]
+tags: [Geometry, General-Trigonometry]
 status: 已入库
 ---
 

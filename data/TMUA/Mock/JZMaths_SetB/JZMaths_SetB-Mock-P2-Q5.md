@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 6
 topics: [Miscellaneous Pure, Polynomial, Algebra (Basic)]
 subtopics: [Inequalities, Polynomials, Algebra Manipulation]
-tags: [Inequalities, Logic Equivalence]
+tags: [Inequalities, Logic-Equivalence]
 status: 已入库
 ---
 

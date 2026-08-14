@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 7
 topics: [Logic and Proof, Geometry]
 subtopics: [Logic, Euclid Geometry, Vectors]
-tags: [Logic Deduction, Geometry]
+tags: [Logic-Deduction, Geometry]
 status: 已入库
 ---
 

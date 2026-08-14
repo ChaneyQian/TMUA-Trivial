@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 7.5
 topics: [Geometry, Algebra (Basic)]
 subtopics: [Euclid Geometry, Simultaneous Equations]
-tags: [Geometry, General Algebra]
+tags: [Geometry, General-Algebra]
 status: 已入库
 ---
 

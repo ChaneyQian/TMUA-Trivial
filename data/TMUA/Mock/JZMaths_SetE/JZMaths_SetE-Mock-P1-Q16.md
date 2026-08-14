@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 7.5
 topics: [Function, Polynomial, Algebra (Basic)]
 subtopics: [Algebraic Functions, Solution of Equations, Algebra Manipulation]
-tags: [General Functions, General Algebra]
+tags: [General-Functions, General-Algebra]
 status: 已入库
 ---
 

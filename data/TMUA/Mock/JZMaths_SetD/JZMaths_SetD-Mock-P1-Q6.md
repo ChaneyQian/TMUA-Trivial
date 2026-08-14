@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 6
 topics: [Sequences and Series]
 subtopics: [AP GP]
-tags: [Sequences and Series]
+tags: [Sequences-and-Series]
 status: 已入库
 ---
 

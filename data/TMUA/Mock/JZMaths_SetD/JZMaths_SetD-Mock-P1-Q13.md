@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 7
 topics: [Trigonometry, Function]
 subtopics: [Trigonometry, Functions]
-tags: [Transformation of Graphs, General Trigonometry]
+tags: [Transformation-of-Graphs, General-Trigonometry]
 status: 已入库
 ---
 

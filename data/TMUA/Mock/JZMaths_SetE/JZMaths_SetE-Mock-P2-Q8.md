@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 6.5
 topics: [Trigonometry, Geometry]
 subtopics: [Sine and Cosine Rule, Euclid Geometry]
-tags: [Logic Deduction, General Trigonometry]
+tags: [Logic-Deduction, General-Trigonometry]
 status: 已入库
 ---
 

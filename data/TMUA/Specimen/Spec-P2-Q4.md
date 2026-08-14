@@ -7,10 +7,8 @@ year:
 number: Q4
 section: Reasoning
 difficulty: 0
-topics:
-  - Logic and Proof
-subtopics:
-  - Logic
+topics: [Logic and Proof]
+subtopics: [Proof]
 tags:
   - specimen
 status: 已入库

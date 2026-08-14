@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 7
 topics: [Function, Miscellaneous Pure]
 subtopics: [Iterated Functions, Combinatorics]
-tags: [Logic Deduction, Inequalities]
+tags: [Logic-Deduction, Inequalities]
 status: 已入库
 ---
 

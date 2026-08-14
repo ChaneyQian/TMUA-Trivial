@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 5.5
 topics: [Polynomial, Algebra (Basic)]
 subtopics: [Solution of Equations, Algebra Manipulation]
-tags: [General Number of Solutions]
+tags: [General-Number-of-Solutions]
 status: 已入库
 ---
 

@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 8
 topics: [Number Theory]
 subtopics: [Modular Arithmetic and Congruences]
-tags: [Logic Deduction]
+tags: [Logic-Deduction]
 status: 已入库
 ---
 

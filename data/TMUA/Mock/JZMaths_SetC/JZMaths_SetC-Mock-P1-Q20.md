@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 8.5
 topics: [Function]
 subtopics: [Exponentials and Logarithms, Functional Equations]
-tags: [Exponentials and Logarithms, Polynomial Expansions]
+tags: [Exponentials-and-Logarithms, Polynomial-Expansions]
 status: 已入库
 ---
 

@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 7.5
 topics: [Sequences and Series, Trigonometry]
 subtopics: [AP GP, Sequences and Series, Trigonometric Equations]
-tags: [General Trigonometry, Sequences and Series]
+tags: [General-Trigonometry, Sequences-and-Series]
 status: 已入库
 ---
 

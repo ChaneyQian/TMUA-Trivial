@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 7
 topics: [Calculus, Polynomial, Logic and Proof]
 subtopics: [Differentiation Application, Solution of Equations, Graphical Arguments, Differentiation]
-tags: [Differentiation, General Number of Solutions]
+tags: [Differentiation, General-Number-of-Solutions]
 status: 已入库
 ---
 

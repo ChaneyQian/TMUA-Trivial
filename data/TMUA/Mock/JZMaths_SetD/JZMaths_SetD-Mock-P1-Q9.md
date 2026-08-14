@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 6.5
 topics: [Algebra (Basic), Function, Trigonometry]
 subtopics: [Algebra Manipulation, Exponentials and Logarithms, Trigonometry]
-tags: [General Trigonometry, General Algebra]
+tags: [General-Trigonometry, General-Algebra]
 status: 已入库
 ---
 

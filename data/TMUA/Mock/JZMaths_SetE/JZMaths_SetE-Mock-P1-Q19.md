@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 7.5
 topics: [Polynomial, Number Theory]
 subtopics: [Vieta's Formulas, Diophantine Equations]
-tags: [General Algebra, Polynomial Expansions]
+tags: [General-Algebra, Polynomial-Expansions]
 status: 已入库
 ---
 

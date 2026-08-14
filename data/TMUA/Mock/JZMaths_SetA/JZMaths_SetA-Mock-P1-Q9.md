@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 7.5
 topics: [Geometry]
 subtopics: [Coordinate Geometry, Euclid Geometry]
-tags: [Circle Geometry]
+tags: [Circle-Geometry]
 status: 已入库
 ---
 

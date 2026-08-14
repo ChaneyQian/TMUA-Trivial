@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 8
 topics: [Geometry, Sequences and Series]
 subtopics: [Euclid Geometry, AP GP]
-tags: [Geometry, Sequences and Series]
+tags: [Geometry, Sequences-and-Series]
 status: 已入库
 ---
 

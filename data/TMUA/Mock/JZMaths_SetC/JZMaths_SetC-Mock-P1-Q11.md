@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 7
 topics: [Trigonometry]
 subtopics: [Trigonometric Equations]
-tags: [General Trigonometry, Sequences and Series]
+tags: [General-Trigonometry, Sequences-and-Series]
 status: 已入库
 ---
 

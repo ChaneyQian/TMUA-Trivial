@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 8
 topics: [Sequences and Series, Polynomial]
 subtopics: [Recurrence Relations, Symmetric and Cyclic Polynomials]
-tags: [General Algebra, Polynomial Expansions]
+tags: [General-Algebra, Polynomial-Expansions]
 status: 已入库
 ---
 

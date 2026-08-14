@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 7
 topics: [Number Theory]
 subtopics: [Modular Arithmetic and Congruences]
-tags: [General Algebra]
+tags: [General-Algebra]
 status: 已入库
 ---
 

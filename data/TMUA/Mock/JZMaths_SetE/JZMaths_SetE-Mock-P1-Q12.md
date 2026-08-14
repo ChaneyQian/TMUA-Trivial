@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 6.5
 topics: [Calculus, Function, Logic and Proof]
 subtopics: [Integration, Absolute Value Functions, Graphical Arguments]
-tags: [Geometry, Area Integration]
+tags: [Geometry, Area-Integration]
 status: 已入库
 ---
 

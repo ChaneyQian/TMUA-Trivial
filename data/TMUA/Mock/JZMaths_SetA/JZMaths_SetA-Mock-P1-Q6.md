@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 6.5
 topics: [Trigonometry, Function, Algebra (Basic)]
 subtopics: [Trigonometric Identities, Functions, Algebra Manipulation]
-tags: [Graphs of Functions, General Functions]
+tags: [Graphs-of-Functions, General-Functions]
 status: 已入库
 ---
 

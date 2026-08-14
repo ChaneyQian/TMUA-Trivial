@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 6
 topics: [Function, Algebra (Basic)]
 subtopics: [Absolute Value Functions, Functions, Algebra Manipulation]
-tags: [General Functions]
+tags: [General-Functions]
 status: 已入库
 ---
 

@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 7.5
 topics: [Polynomial, Logic and Proof, Algebra (Basic)]
 subtopics: [Solution of Equations, Graphical Arguments, Algebra Manipulation]
-tags: [Differentiation, General Number of Solutions]
+tags: [Differentiation, General-Number-of-Solutions]
 status: 已入库
 ---
 

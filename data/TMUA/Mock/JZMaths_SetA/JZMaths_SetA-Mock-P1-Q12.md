@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 7.5
 topics: [Sequences and Series, Algebra (Basic)]
 subtopics: [AP GP, Algebra Manipulation]
-tags: [Sequences and Series]
+tags: [Sequences-and-Series]
 status: 已入库
 ---
 

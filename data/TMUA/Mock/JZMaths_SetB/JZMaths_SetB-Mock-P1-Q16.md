@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 7.5
 topics: [Sequences and Series]
 subtopics: [AP GP, Sequences and Series]
-tags: [Sequences and Series, General Algebra]
+tags: [Sequences-and-Series, General-Algebra]
 status: 已入库
 ---
 

@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 7.5
 topics: [Function, Polynomial]
 subtopics: [Exponentials and Logarithms, Symmetric and Cyclic Polynomials]
-tags: [Exponentials and Logarithms]
+tags: [Exponentials-and-Logarithms]
 status: 已入库
 ---
 

@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 6
 topics: [Calculus, Function]
 subtopics: [Integration, Absolute Value Functions]
-tags: [Area Integration]
+tags: [Area-Integration]
 status: 已入库
 ---
 

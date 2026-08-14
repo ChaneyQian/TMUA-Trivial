@@ -8,8 +8,8 @@ number: Q3
 section: Multiple Choice
 difficulty: 5.5
 topics: [Logic and Proof, Miscellaneous Pure]
-subtopics: [Logic, Inequalities]
-tags: [Logic Deduction, Logic Equivalence]
+subtopics: [Proof, Inequalities]
+tags: [Logic-Deduction, Logic-Equivalence]
 status: 已入库
 ---
 

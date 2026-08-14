@@ -35,6 +35,13 @@ export interface IndexEntry {
   hidden?: true;
   /** 诊断集（GMAT）：只给 Diagnostic Test 压力测试用，不进 classic / 9.0 随机池 */
   diag?: true;
+  /** 题库把它标成了逻辑推理题（topics 含 Logic and Proof，或 subtopics 是 Logic） */
+  logic?: true;
+  /**
+   * 这道题整理过知识点。没有它就算不出「开关能管到多少题」——
+   * 面板上的覆盖率提示要靠这个数才能对用户说实话
+   */
+  tagged?: true;
 }
 
 export async function fetchIndex(): Promise<IndexEntry[]> {

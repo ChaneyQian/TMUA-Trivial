@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 6
 topics: [Trigonometry, Algebra (Basic)]
 subtopics: [Trigonometric Identities, Algebra Manipulation]
-tags: [General Trigonometry]
+tags: [General-Trigonometry]
 status: 已入库
 ---
 

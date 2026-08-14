@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 5.5
 topics: [Polynomial]
 subtopics: [Vieta's Formulas]
-tags: [General Algebra]
+tags: [General-Algebra]
 status: 已入库
 ---
 

@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 8
 topics: [Function, Logic and Proof, Calculus]
 subtopics: [Iterated Functions, Graphical Arguments, Absolute Value Functions, Integration]
-tags: [Integration, General Functions]
+tags: [Integration, General-Functions]
 status: 已入库
 ---
 

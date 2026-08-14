@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 9
 topics: [Logic and Proof, Miscellaneous Pure]
 subtopics: [Logic, Combinatorics]
-tags: [Logic Deduction]
+tags: [Logic-Deduction]
 status: 已入库
 ---
 

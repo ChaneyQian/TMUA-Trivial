@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 8
 topics: [Miscellaneous Pure, Logic and Proof, Geometry]
 subtopics: [Inequalities, Graphical Arguments, Coordinate Geometry]
-tags: [Inequalities, General Algebra]
+tags: [Inequalities, General-Algebra]
 status: 已入库
 ---
 

@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 6
 topics: [Number Theory]
 subtopics: [Divisibility]
-tags: [General Algebra]
+tags: [General-Algebra]
 status: 已入库
 ---
 

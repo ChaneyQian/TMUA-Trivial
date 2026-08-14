@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 8
 topics: [Logic and Proof]
 subtopics: [Logic]
-tags: [Logic Deduction, Logic Sufficiency, Logic Equivalence]
+tags: [Logic-Deduction, Logic-Sufficiency, Logic-Equivalence]
 status: 已入库
 ---
 

@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 7
 topics: [Logic and Proof]
 subtopics: [Logic]
-tags: [Logic Deduction, Logic Sufficiency]
+tags: [Logic-Deduction, Logic-Sufficiency]
 status: 已入库
 ---
 

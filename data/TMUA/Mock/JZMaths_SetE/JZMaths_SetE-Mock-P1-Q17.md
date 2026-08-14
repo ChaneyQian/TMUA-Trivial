@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 7.5
 topics: [Miscellaneous Pure]
 subtopics: [Inequalities]
-tags: [General Algebra]
+tags: [General-Algebra]
 status: 已入库
 ---
 

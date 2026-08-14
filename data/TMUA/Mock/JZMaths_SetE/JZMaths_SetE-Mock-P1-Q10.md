@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 6.5
 topics: [Calculus, Function]
 subtopics: [Integration, Absolute Value Functions]
-tags: [Graphs of Functions, Integration]
+tags: [Graphs-of-Functions, Integration]
 status: 已入库
 ---
 

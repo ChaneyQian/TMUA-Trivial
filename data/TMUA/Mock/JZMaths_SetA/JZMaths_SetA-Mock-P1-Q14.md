@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 7.5
 topics: [Function]
 subtopics: [Functions]
-tags: [Transformation of Graphs]
+tags: [Transformation-of-Graphs]
 status: 已入库
 ---
 

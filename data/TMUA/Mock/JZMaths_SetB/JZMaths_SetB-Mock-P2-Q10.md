@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 7
 topics: [Logic and Proof, Trigonometry]
 subtopics: [Logic, Trigonometric Equations]
-tags: [General Trigonometry, Logic Sufficiency]
+tags: [General-Trigonometry, Logic-Sufficiency]
 status: 已入库
 ---
 

@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 7.5
 topics: [Number Theory, Algebra (Basic)]
 subtopics: [Diophantine Equations, Algebra Manipulation]
-tags: [Logic Deduction, General Algebra]
+tags: [Logic-Deduction, General-Algebra]
 status: 已入库
 ---
 

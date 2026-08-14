@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 7.5
 topics: [Trigonometry, Function]
 subtopics: [Trigonometric Equations, Algebraic Functions]
-tags: [General Trigonometry]
+tags: [General-Trigonometry]
 status: 已入库
 ---
 

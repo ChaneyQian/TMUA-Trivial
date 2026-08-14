@@ -7,10 +7,8 @@ year:
 number: Q17
 section: Reasoning
 difficulty: 0
-topics:
-  - Logic and Proof
-subtopics:
-  - Logic
+topics: [Logic and Proof]
+subtopics: [Logic]
 tags:
   - specimen
 status: 已入库

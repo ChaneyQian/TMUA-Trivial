@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 7.5
 topics: [Calculus, Function, Sequences and Series]
 subtopics: [Integration, "Floor, Ceiling and Fractional Part Functions", Integral Identity, Sequences and Series]
-tags: [Integration, Logic Deduction]
+tags: [Integration, Logic-Deduction]
 status: 已入库
 ---
 

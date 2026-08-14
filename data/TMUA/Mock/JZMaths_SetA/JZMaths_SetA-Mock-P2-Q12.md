@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 7
 topics: [Function]
 subtopics: [Exponentials and Logarithms, Functions]
-tags: [Exponentials and Logarithms, Graphs of Functions]
+tags: [Exponentials-and-Logarithms, Graphs-of-Functions]
 status: 已入库
 ---
 

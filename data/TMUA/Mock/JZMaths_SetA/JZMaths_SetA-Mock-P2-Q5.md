@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 6
 topics: [Logic and Proof, Number Theory]
 subtopics: [Proof, Modular Arithmetic and Congruences]
-tags: [Logic Deduction]
+tags: [Logic-Deduction]
 status: 已入库
 ---
 

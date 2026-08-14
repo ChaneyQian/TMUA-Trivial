@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 6.5
 topics: [Miscellaneous Pure]
 subtopics: [Inclusion-Exclusion Principle, Combinatorics]
-tags: [Logic Deduction]
+tags: [Logic-Deduction]
 status: 已入库
 ---
 

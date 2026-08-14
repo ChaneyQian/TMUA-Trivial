@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 7
 topics: [Algebra (Basic), Function]
 subtopics: [Systems Of Linear Equations, Exponentials and Logarithms]
-tags: [Exponentials and Logarithms, Linear Equations]
+tags: [Exponentials-and-Logarithms, Linear-Equations]
 status: 已入库
 ---
 

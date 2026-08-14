@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 8.5
 topics: [Logic and Proof, Geometry]
 subtopics: [Logic, Proof, Euclid Geometry]
-tags: [Logic Sufficiency]
+tags: [Logic-Sufficiency]
 status: 已入库
 ---
 

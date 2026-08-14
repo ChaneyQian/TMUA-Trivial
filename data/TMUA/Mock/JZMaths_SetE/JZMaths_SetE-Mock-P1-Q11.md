@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 6.5
 topics: [Sequences and Series, Geometry]
 subtopics: [AP GP, Sequences and Series, Euclid Geometry]
-tags: [Ratio and Proportion, Sequences and Series]
+tags: [Ratio-and-Proportion, Sequences-and-Series]
 status: 已入库
 ---
 

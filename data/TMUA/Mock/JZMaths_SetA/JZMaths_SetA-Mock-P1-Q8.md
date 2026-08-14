@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 7
 topics: [Algebra (Basic)]
 subtopics: [Surds and indices]
-tags: [Exponentials and Logarithms]
+tags: [Exponentials-and-Logarithms]
 status: 已入库
 ---
 

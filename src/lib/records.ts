@@ -253,6 +253,71 @@ export function indexForLibraryMode(index: IndexEntry[], mode: LibraryMode): Ind
   return index.filter((entry) => !entry.diag && (mode === 'hidden' || !entry.hidden));
 }
 
+// ---- 逻辑推理题开关 ----
+//
+// 单独一层，接在 indexForLibraryMode 之后，而不是给它加个参数：题库范围
+// （classic / 9.0）和题型偏好是两件互不相干的事，揉进一个函数之后就再也说不清
+// 「classic 且不要逻辑题」是谁的责任了。
+//
+// 它只收窄抽题池。365 解锁进度数的是「做过的题」，关掉开关只是抽不到新的
+// 逻辑题，已经做过的照常计数——所以 validCompletedCount 拿的始终是整份索引。
+// 同理，Grill 的池子是诊断绑定集、Diagnostic 是固定卷，两者都不经过这层。
+
+export const LOGIC_REASONING_KEY = 'mcq-test:logic-reasoning:v1';
+
+/**
+ * 取消勾选时**只**排除已标注为逻辑推理的题。没打标的题一律留下：
+ * 打标覆盖率在各库之间差得极远（MAT 只有个位数百分比），把「没标过」
+ * 当成「可能是逻辑题」排掉会把整个库清空。宁可漏排，不可错排。
+ */
+export function indexForLogicReasoning(index: IndexEntry[], include: boolean): IndexEntry[] {
+  return include ? index : index.filter((entry) => !entry.logic);
+}
+
+/** 当前题库范围内，这个开关到底管得到多少题 */
+export interface LogicCoverage {
+  /** 已标注为逻辑推理的题数——取消勾选正好排除这些，一道不多 */
+  logic: number;
+  /** 整理过知识点的题数（含上面那些逻辑题），也就是这个开关「看得见」的范围 */
+  tagged: number;
+  /** 当前范围内的总题数 */
+  total: number;
+}
+
+/**
+ * 面板上那行覆盖率提示的数据源。刻意接收「过滤之前」的池子：
+ * 提示描述的是这个开关能做什么，不能自己随着勾选状态变来变去。
+ *
+ * 顺带也是勾选框的显示条件（logic > 0）。按标签口径每个库都可能有逻辑题，
+ * 不再像卷别口径那样能预先写死是哪几个库。
+ */
+export function logicCoverage(index: IndexEntry[], db: ExamDb): LogicCoverage {
+  const scope = index.filter((entry) => db === 'ALL' || entry.db === db);
+  return {
+    logic: scope.filter((entry) => entry.logic).length,
+    tagged: scope.filter((entry) => entry.tagged).length,
+    total: scope.length,
+  };
+}
+
+/** 默认含逻辑题：它是题库本来的一部分，只有明确关过的人才该拿到收窄的池子 */
+export function loadIncludeLogicReasoning(): boolean {
+  if (typeof window === 'undefined') return true;
+  try {
+    return localStorage.getItem(LOGIC_REASONING_KEY) !== '0';
+  } catch {
+    return true;
+  }
+}
+
+export function saveIncludeLogicReasoning(include: boolean): void {
+  try {
+    localStorage.setItem(LOGIC_REASONING_KEY, include ? '1' : '0');
+  } catch {
+    // 和 saveRecords 一样：无痕模式或配额满了不该拦住这次练习
+  }
+}
+
 export function optionsForPickMode(mode: PickMode): PickOptions {
   if (mode === 'wrong-and-new') return { excludeSeen: true, mixWrong: true };
   if (mode === 'new-only') return { excludeSeen: true, mixWrong: false };

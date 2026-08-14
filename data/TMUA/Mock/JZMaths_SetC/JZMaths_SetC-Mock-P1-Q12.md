@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 7
 topics: [Trigonometry]
 subtopics: [Trigonometry]
-tags: [Trig Equation Number of Solutions, General Trigonometry]
+tags: [Trig-Equation-Number-of-Solutions, General-Trigonometry]
 status: 已入库
 ---
 

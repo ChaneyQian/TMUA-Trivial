@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 7
 topics: [Miscellaneous Pure]
 subtopics: [Combinatorics, Inclusion-Exclusion Principle]
-tags: [Polynomial Expansions]
+tags: [Polynomial-Expansions]
 status: 已入库
 ---
 

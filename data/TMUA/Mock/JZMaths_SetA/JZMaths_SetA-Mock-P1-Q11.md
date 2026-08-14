@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 7.5
 topics: [Sequences and Series, Algebra (Basic)]
 subtopics: [Binomial Theorem, Algebra Manipulation]
-tags: [Polynomial Expansions]
+tags: [Polynomial-Expansions]
 status: 已入库
 ---
 

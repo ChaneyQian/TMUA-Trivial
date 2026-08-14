@@ -8,8 +8,8 @@ number: Q2
 section: Multiple Choice
 difficulty: 5.5
 topics: [Logic and Proof, Algebra (Basic)]
-subtopics: [Logic, Algebra Manipulation]
-tags: [Logic Deduction, General Algebra]
+subtopics: [Proof, Algebra Manipulation]
+tags: [Logic-Deduction, General-Algebra]
 status: 已入库
 ---
 

@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 7
 topics: [Function]
 subtopics: [Exponentials and Logarithms]
-tags: [Exponentials and Logarithms]
+tags: [Exponentials-and-Logarithms]
 status: 已入库
 ---
 

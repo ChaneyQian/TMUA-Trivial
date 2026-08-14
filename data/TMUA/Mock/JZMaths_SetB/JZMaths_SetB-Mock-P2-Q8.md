@@ -8,8 +8,8 @@ number: Q8
 section: Multiple Choice
 difficulty: 7
 topics: [Logic and Proof, Trigonometry]
-subtopics: [Proof, Logic, Trigonometry]
-tags: [Logic Deduction, General Trigonometry]
+subtopics: [Proof, Proof, Trigonometry]
+tags: [Logic-Deduction, General-Trigonometry]
 status: 已入库
 ---
 

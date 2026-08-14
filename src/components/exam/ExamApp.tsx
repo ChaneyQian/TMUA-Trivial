@@ -34,10 +34,14 @@ import {
   hiddenUnlockProgress,
   importRecordsWorkbook,
   indexForLibraryMode,
+  indexForLogicReasoning,
   isHiddenModeUnlocked,
+  loadIncludeLogicReasoning,
   loadRecords,
+  logicCoverage,
   overview,
   pickQidsForMode,
+  saveIncludeLogicReasoning,
   saveRecords,
   validCompletedCount,
   grillCount,
@@ -192,12 +196,32 @@ export default function ExamApp() {
     setRecords(loadRecords());
   }, []);
 
+  // 逻辑推理题开关。默认勾选；回读放 effect 里，
+  // 静态导出的首帧按默认值预渲染，同步读 localStorage 会水合不匹配（同 lang / zone）
+  const [includeLogic, setIncludeLogic] = useState(true);
+
+  useEffect(() => {
+    setIncludeLogic(loadIncludeLogicReasoning());
+  }, []);
+
+  /** 落盘写在 setter 里而不是 effect 里，免得上面那次回读被首帧的默认值盖掉 */
+  const chooseLogicReasoning = (next: boolean) => {
+    setIncludeLogic(next);
+    saveIncludeLogicReasoning(next);
+  };
+
+  // 这三个数都读整份索引，与开关无关：365 解锁算的是「做过的题」，
+  // 关掉逻辑题只是抽不到新的，已经做过的不该被追认作废
   const completedCount = index ? validCompletedCount(index, records) : 0;
   const unlockProgress = index ? hiddenUnlockProgress(index, records) : 0;
   const hiddenUnlocked = index ? isHiddenModeUnlocked(index, records) : false;
   // 题库范围不再是独立 state：前位卡就是唯一真源
   const libraryMode: LibraryMode = frontZone === 'trivial' && hiddenUnlocked ? 'hidden' : 'classic';
-  const activeIndex = indexForLibraryMode(index || [], hiddenUnlocked ? libraryMode : 'classic');
+  // 抽题池分两层收窄：先按题库范围（classic / 9.0），再按逻辑推理开关。
+  // 中间那层单独留个名字，因为覆盖率提示要读的正是「开关生效之前」的池子——
+  // 提示说的是这个开关能做什么，不能自己跟着勾选状态变
+  const scopedIndex = indexForLibraryMode(index || [], hiddenUnlocked ? libraryMode : 'classic');
+  const activeIndex = indexForLogicReasoning(scopedIndex, includeLogic);
 
   /** 转牌并落盘。写在 setter 里而不是 effect 里，免得首帧把回读结果覆盖掉 */
   const chooseZone = useCallback((id: ZoneId) => {
@@ -322,7 +346,9 @@ export default function ExamApp() {
     if (stageView !== 'deck') panelRef.current?.focus();
   }, [stageView]);
 
-  // 卡面徽章要的是各区自己的题量，跟当前前位无关，所以两边都单独算一次
+  // 卡面徽章要的是各区自己的题量，跟当前前位无关，所以两边都单独算一次。
+  // 也刻意不过逻辑推理开关：徽章报的是「这个区有多少题」，
+  // 跟着一个抽题偏好上下跳会让人以为题库缩水了
   const classicCount = index ? indexForLibraryMode(index, 'classic').length : 0;
   const expandedCount = index ? indexForLibraryMode(index, 'hidden').length : 0;
 
@@ -378,6 +404,8 @@ export default function ExamApp() {
   };
 
   const totalPool = index ? availableCountForMode(activeIndex, db, pickMode, records) : 0;
+  // 读收窄之前的池子，见 scopedIndex 处的说明。logic 为 0 时整行都不渲染
+  const logicCov = logicCoverage(scopedIndex, db);
   const recordOverview = overview(records);
   // deck 上那条统计条和进度面板里的数字必须同源，否则会出现
   // 「14 道当前错题」而榜上只列得出 12 条
@@ -1026,6 +1054,30 @@ export default function ExamApp() {
             ))}
           </div>
 
+          {/* 逻辑推理开关属于「题库」这一组，所以不另起 fieldLabel。
+              一道标注过的逻辑题都没有时整行不渲染——摆着也只是个按不动的开关。
+              下面那行覆盖率不是可选的补充说明：打标只做了一部分，用户在 MAT 里
+              勾掉开关却几乎没效果时，得能当场看明白是为什么 */}
+          {logicCov.logic > 0 && (
+            <div className={styles.segRow}>
+              <label className={`${styles.checkLabel} ${includeLogic ? styles.segActive : ''}`}>
+                <input
+                  className={styles.checkBox}
+                  type="checkbox"
+                  checked={includeLogic}
+                  // 覆盖率那行是这个开关的实话，不是可选补充，所以显式关联进
+                  // 无障碍描述——否则读屏只念得到「含逻辑推理题，已选中」
+                  aria-describedby="logic-coverage-note"
+                  onChange={(e) => chooseLogicReasoning(e.target.checked)}
+                />
+                {t.setup.logicReasoning}
+              </label>
+              <div className={styles.checkNote} id="logic-coverage-note">
+                {t.setup.logicCoverage(logicCov.logic, logicCov.tagged, logicCov.total, includeLogic)}
+              </div>
+            </div>
+          )}
+
           <div className={styles.fieldLabel}>{t.setup.fieldMode}</div>
           <div className={styles.segRow}>
             <button
@@ -1124,7 +1176,12 @@ export default function ExamApp() {
           {error && <div className={styles.errMsg}>{error}</div>}
           {indexError && <div className={styles.errMsg}>{indexError}</div>}
           {index && totalPool === 0 && (
-            <div className={styles.errMsg}>{t.setup.emptyBank}</div>
+            <div className={styles.errMsg}>
+              {t.setup.emptyBank}
+              {/* 池子空掉时，若逻辑题正被开关挡在外面，直接说明勾回来能多出多少题——
+                  开关就在同屏上方，但「没有可用题目」这句话本身不指向它 */}
+              {!includeLogic && logicCov.logic > 0 && ` ${t.setup.emptyBankLogicHint(logicCov.logic)}`}
+            </div>
           )}
           <div className={styles.backLink}>{t.setup.keyboard}</div>
 

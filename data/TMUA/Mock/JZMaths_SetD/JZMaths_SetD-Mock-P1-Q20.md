@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 8.5
 topics: [Sequences and Series, Algebra (Basic)]
 subtopics: [AP GP, Algebra Manipulation]
-tags: [Ratio and Proportion, General Algebra]
+tags: [Ratio-and-Proportion, General-Algebra]
 status: 已入库
 ---
 

@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 7.5
 topics: [Trigonometry, Logic and Proof]
 subtopics: [Trigonometric Equations, Trigonometry, Graphical Arguments]
-tags: [General Trigonometry, Trig Equation Number of Solutions]
+tags: [General-Trigonometry, Trig-Equation-Number-of-Solutions]
 status: 已入库
 ---
 

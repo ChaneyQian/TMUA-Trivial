@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 7
 topics: [Algebra (Basic)]
 subtopics: [Surds and indices]
-tags: [Exponentials and Logarithms, General Algebra, Logic Equivalence]
+tags: [Exponentials-and-Logarithms, General-Algebra, Logic-Equivalence]
 status: 已入库
 ---
 

@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 8.5
 topics: [Geometry, Polynomial]
 subtopics: [Coordinate Geometry, Vieta's Formulas]
-tags: [Geometry, General Algebra]
+tags: [Geometry, General-Algebra]
 status: 已入库
 ---
 

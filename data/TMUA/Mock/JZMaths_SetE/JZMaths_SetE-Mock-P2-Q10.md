@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 7
 topics: [Polynomial]
 subtopics: [Factor and Remainder Theorem, Polynomials]
-tags: [Polynomial Expansions, General Number of Solutions]
+tags: [Polynomial-Expansions, General-Number-of-Solutions]
 status: 已入库
 ---
 

@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 5.5
 topics: [Logic and Proof, Calculus, Function]
 subtopics: [Logic, Differentiation Application, Algebraic Functions]
-tags: [Differentiation, Logic Deduction]
+tags: [Differentiation, Logic-Deduction]
 status: 已入库
 ---
 

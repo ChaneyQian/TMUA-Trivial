@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 6.5
 topics: [Probability, Sequences and Series]
 subtopics: [Elementary Probability, AP GP]
-tags: [Polynomial Expansions]
+tags: [Polynomial-Expansions]
 status: 已入库
 ---
 

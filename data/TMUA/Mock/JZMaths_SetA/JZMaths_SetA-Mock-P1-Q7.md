@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 7
 topics: [Polynomial]
 subtopics: [Solution of Equations]
-tags: [General Number of Solutions, General Algebra]
+tags: [General-Number-of-Solutions, General-Algebra]
 status: 已入库
 ---
 

@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 6.5
 topics: [Logic and Proof, Function, Algebra (Basic)]
 subtopics: [Logic, Algebraic Functions, Surds and indices]
-tags: [General Algebra, Inequalities]
+tags: [General-Algebra, Inequalities]
 status: 已入库
 ---
 

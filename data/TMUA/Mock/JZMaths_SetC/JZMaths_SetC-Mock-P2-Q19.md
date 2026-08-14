@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 8
 topics: [Sequences and Series, Miscellaneous Pure]
 subtopics: [Sequences and Series, Estimation and Bounds]
-tags: [Sequences and Series, Logic Deduction]
+tags: [Sequences-and-Series, Logic-Deduction]
 status: 已入库
 ---
 

@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 6.5
 topics: [Geometry, Trigonometry]
 subtopics: [Coordinate Geometry, Trigonometry]
-tags: [Circle Geometry, Geometry]
+tags: [Circle-Geometry, Geometry]
 status: 已入库
 ---
 

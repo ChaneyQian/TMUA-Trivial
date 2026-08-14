@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 8
 topics: [Function, Polynomial]
 subtopics: [Exponentials and Logarithms, Symmetric and Cyclic Polynomials]
-tags: [Logic Deduction, Exponentials and Logarithms]
+tags: [Logic-Deduction, Exponentials-and-Logarithms]
 status: 已入库
 ---
 

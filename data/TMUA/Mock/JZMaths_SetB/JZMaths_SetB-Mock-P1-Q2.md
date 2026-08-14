@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 5.5
 topics: [Calculus, Logic and Proof]
 subtopics: [Integration, Graphical Arguments]
-tags: [Area Integration]
+tags: [Area-Integration]
 status: 已入库
 ---
 

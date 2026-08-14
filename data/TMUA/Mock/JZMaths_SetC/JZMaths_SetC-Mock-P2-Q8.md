@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 6.5
 topics: [Polynomial]
 subtopics: [Factor and Remainder Theorem, Polynomials]
-tags: [Remainder Theorem]
+tags: [Remainder-Theorem]
 status: 已入库
 ---
 

@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 7
 topics: [Sequences and Series]
 subtopics: [Binomial Coefficients, Binomial Theorem]
-tags: [Polynomial Expansions]
+tags: [Polynomial-Expansions]
 status: 已入库
 ---
 

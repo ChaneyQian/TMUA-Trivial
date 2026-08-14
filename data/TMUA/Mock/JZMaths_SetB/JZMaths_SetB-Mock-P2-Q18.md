@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 8.5
 topics: [Logic and Proof, Calculus]
 subtopics: [Logic, Integration]
-tags: [Logic Deduction, Integration]
+tags: [Logic-Deduction, Integration]
 status: 已入库
 ---
 

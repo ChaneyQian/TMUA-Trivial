@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 8
 topics: [Sequences and Series, Algebra (Basic)]
 subtopics: [Recurrence Relations, AP GP, Algebra Manipulation]
-tags: [Sequences and Series, General Algebra]
+tags: [Sequences-and-Series, General-Algebra]
 status: 已入库
 ---
 

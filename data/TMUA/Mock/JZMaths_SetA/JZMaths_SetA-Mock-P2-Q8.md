@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 7
 topics: [Sequences and Series, Algebra (Basic)]
 subtopics: [Recurrence Relations, Sequences and Series, Algebra Manipulation]
-tags: [Sequences and Series]
+tags: [Sequences-and-Series]
 status: 已入库
 ---
 

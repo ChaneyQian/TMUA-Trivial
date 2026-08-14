@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 6.5
 topics: [Probability, Sequences and Series]
 subtopics: [Elementary Probability, AP GP]
-tags: [Sequences and Series, Ratio and Proportion]
+tags: [Sequences-and-Series, Ratio-and-Proportion]
 status: 已入库
 ---
 

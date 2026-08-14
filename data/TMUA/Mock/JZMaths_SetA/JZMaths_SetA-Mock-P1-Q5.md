@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 6
 topics: [Function, Logic and Proof]
 subtopics: [Absolute Value Functions, Graphical Arguments]
-tags: [Geometry, Linear Equations]
+tags: [Geometry, Linear-Equations]
 status: 已入库
 ---
 

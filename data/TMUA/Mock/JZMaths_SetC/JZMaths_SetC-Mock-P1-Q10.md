@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 6.5
 topics: [Function, Geometry]
 subtopics: [Functions, Coordinate Geometry]
-tags: [Transformation of Graphs]
+tags: [Transformation-of-Graphs]
 status: 已入库
 ---
 
