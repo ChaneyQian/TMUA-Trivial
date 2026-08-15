@@ -465,6 +465,73 @@ function hasTopicTags(data) {
   return listField(data, 'topics').length > 0 || listField(data, 'subtopics').length > 0;
 }
 
+// ---------------- 知识点倒排（topics.json） ----------------
+//
+// 进度面板的「知识点弱项」要按知识点聚合用户的对错，得有一张
+// 知识点 → qid 的倒排表。它单独落一个文件，不进 index.json：
+// index 每次冷启动都要下载，而这份数据只有打开进度面板才用得到。
+
+/** 12 词规范表。顺序即站内展示顺序的默认序（弱项图另按正确率排） */
+const TOPIC_VOCAB = [
+  'Algebra',
+  'Geometry',
+  'Logic and Proof',
+  'Number Theory',
+  'Function',
+  'Combinatorics',
+  'Misc Pure',
+  'Calculus',
+  'Trigonometry',
+  'Sequences and Series',
+  'Polynomial',
+  'Probability',
+];
+
+/**
+ * 同一个知识点在题库里有好几种写法，全是历史打标口径不一留下的。
+ * 键一律小写，比对前先把取值也压成小写——大小写差异不该算成新词。
+ */
+const TOPIC_ALIASES = {
+  'algebra (basic)': 'Algebra',
+  'algebra (function)': 'Function',
+  'algebra (polynomial)': 'Polynomial',
+  'mis pure': 'Misc Pure',
+  'miscellaneous pure': 'Misc Pure',
+  'statistical theory': 'Probability',
+};
+
+const TOPIC_CANONICAL = new Map(TOPIC_VOCAB.map((name) => [name.toLowerCase(), name]));
+
+/** 规范名或 null（词表外） */
+function canonicalTopic(raw) {
+  const key = String(raw).trim().toLowerCase();
+  return TOPIC_CANONICAL.get(key) || TOPIC_ALIASES[key] || null;
+}
+
+/**
+ * 一道题归并后的知识点。topics 字段本身走 parseFrontmatter，行内与块状
+ * 两种写法都已经认得（行内那 200 条全在 TMUA Mock）。
+ *
+ * 词表外的取值**丢弃并记账**：站内现在应当一个都没有，真冒出来就是打标侧
+ * 引入了新词的信号，构建日志得当场报出来，不能静默吞掉。
+ */
+function canonicalTopics(data, unknown, where) {
+  const out = [];
+  for (const raw of listField(data, 'topics')) {
+    const name = canonicalTopic(raw);
+    if (!name) {
+      const key = String(raw).trim();
+      const seen = unknown.get(key) || { count: 0, sample: where };
+      seen.count++;
+      unknown.set(key, seen);
+      continue;
+    }
+    // 归并之后可能撞同一个规范名（一题既标了 Algebra 又标了 Algebra (Basic)），去重
+    if (!out.includes(name)) out.push(name);
+  }
+  return out;
+}
+
 // ---------------- 主流程 ----------------
 
 function main() {
@@ -482,6 +549,11 @@ function main() {
   const wantedImages = new Set();
   const corrupted = [];
   const diagCandidates = { p1: [], p2: [] };
+  // 知识点倒排与按库覆盖。只收进了 index 的题——判不了分的题在前端根本不存在，
+  // 收进来只会让分母对不上，「练这类题」还会抽到取不回来的 qid
+  const topicQids = new Map();
+  const topicCoverage = {};
+  const unknownTopics = new Map();
   let inlineCount = 0;
   const skipped = { noQid: 0, noStatement: 0, badAnswer: 0, noChoices: 0, answerMismatch: 0, corrupted: 0 };
 
@@ -562,6 +634,23 @@ function main() {
         }
       }
       index.push(indexEntry);
+
+      // 知识点倒排跟着 index.push 走，两者一步不差：coverage 的分母就是
+      // 「这个库进了 index 的题数」，前端披露的也正是这个口径。
+      // diag（诊断集）结构性排除：今天 GMAT 恰好没打标所以进不来，但「恰好」
+      // 不是保证——将来谁给诊断题补了标签，它也绝不能经弱项图这条路露头
+      if (!indexEntry.diag) {
+        const coverage = (topicCoverage[db] ||= { tagged: 0, total: 0 });
+        coverage.total++;
+        const topics = canonicalTopics(data, unknownTopics, path.relative(ROOT, filePath));
+        if (topics.length > 0) {
+          coverage.tagged++;
+          for (const name of topics) {
+            if (!topicQids.has(name)) topicQids.set(name, []);
+            topicQids.get(name).push(qid);
+          }
+        }
+      }
     }
   }
 
@@ -598,10 +687,49 @@ function main() {
     diagSets.map((s, i) => `套${i + 1} P1=${s.p1.length} P2=${s.p2.length}`).join('  '),
   );
 
+  // 知识点倒排。vocab 给全 12 词（哪怕某个词一道题都没有，它仍是规范表的一部分），
+  // byTopic 只列真有题的词。qid 按索引同序（降序），产物与目录遍历顺序无关
+  const byTopic = {};
+  for (const name of TOPIC_VOCAB) {
+    const qids = topicQids.get(name);
+    if (qids && qids.length > 0) byTopic[name] = [...qids].sort((a, b) => b - a);
+  }
+  fs.writeFileSync(
+    path.join(OUT, 'topics.json'),
+    JSON.stringify({ v: 1, vocab: TOPIC_VOCAB, byTopic, coverage: topicCoverage }),
+  );
+
   const counts = {};
   for (const e of index) counts[e.db] = (counts[e.db] || 0) + 1;
 
   console.log('[build-data] 可判分题目：', JSON.stringify(counts), '合计', index.length);
+
+  // 知识点覆盖同样逐库报：弱项图那行「哪些库还没整理完」读的就是这两个数
+  const topicTotals = Object.values(byTopic).reduce((sum, qids) => sum + qids.length, 0);
+  const topicTagged = Object.values(topicCoverage).reduce((sum, c) => sum + c.tagged, 0);
+  console.log(
+    `[build-data] 知识点：${Object.keys(byTopic).length}/${TOPIC_VOCAB.length} 个词有题，` +
+      `已打标 ${topicTagged}/${index.length} 题，标签 ${topicTotals} 条`,
+  );
+  for (const name of TOPIC_VOCAB) {
+    const n = byTopic[name]?.length || 0;
+    console.log(`    ${name.padEnd(22)} ${String(n).padStart(4)}`);
+  }
+  for (const db of Object.keys(topicCoverage).sort()) {
+    const { tagged, total } = topicCoverage[db];
+    const percent = total ? Math.round((tagged / total) * 100) : 0;
+    console.log(
+      `    ${db.padEnd(10)} 知识点已整理 ${String(tagged).padStart(4)}/${String(total).padEnd(4)} (${percent}%)`,
+    );
+  }
+  // 词表外的取值是打标侧引入新词的信号，只能丢弃、但绝不静默：
+  // 站内现在应当零漏网，这几行一旦出现就该有人去处理
+  if (unknownTopics.size > 0) {
+    console.warn(`[build-data] ⚠ topics 出现 ${unknownTopics.size} 个词表外的取值，已丢弃：`);
+    for (const [name, info] of unknownTopics) {
+      console.warn(`    "${name}" ×${info.count}（如 ${info.sample}）`);
+    }
+  }
 
   // 逐库报打标覆盖：面板上的覆盖率提示读的就是这两个数，构建时先亮出来，
   // 哪个库的打标补上了 / 退化了当场就能看见

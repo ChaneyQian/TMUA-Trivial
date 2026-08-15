@@ -21,6 +21,18 @@ import {
   practiceQids,
   trendPoints,
 } from '@/lib/progress';
+import {
+  WEAK_TOPIC_MIN_QUESTIONS,
+  cachedTopics,
+  loadTopics,
+  pickTopicQids,
+  thinTopicCount,
+  topicEntries,
+  topicReach,
+  topicRows,
+  weakTopics,
+  type TopicsData,
+} from '@/lib/topics';
 import styles from './Progress.module.css';
 
 /** 错题榜行里要显示的题面信息，懒取单题 JSON 得到 */
@@ -33,9 +45,17 @@ interface QuestionBrief {
 interface Props {
   records: Records;
   index: IndexEntry[] | null;
+  /**
+   * 弱项图「练这类题」能摸到的范围，由外层按 9.0 的状态划好
+   * （indexForLibraryMode，已排除 hidden 与 diag）。
+   * 面板不该知道那套规则，也绝不能成为绕过它的后门
+   */
+  topicScope: IndexEntry[];
   onBack: () => void;
   /** 重练榜上这几道；同步直调，requestFullscreen 认的是手势链 */
   onRetry: (qids: number[]) => void;
+  /** 弱项图开一场练习；同样必须同步直调 */
+  onPractice: (qids: number[]) => void;
   retryDisabled: boolean;
   /** 抽题失败信息。进度视图下这里是唯一的出口 */
   error: string;
@@ -62,8 +82,10 @@ function sourceLabel(brief: QuestionBrief): string {
 export default function ProgressPanel({
   records,
   index,
+  topicScope,
   onBack,
   onRetry,
+  onPractice,
   retryDisabled,
   error,
   dbLabel,
@@ -128,6 +150,41 @@ export default function ProgressPanel({
       alive = false;
     };
   }, [missed]);
+
+  // 知识点倒排表只在这个面板打开时才取，和上面那批单题 JSON 同一个思路：
+  // 它对 deck 首屏毫无用处。缓存在模块里，开一次取一次是浪费。
+  // 取不到就整块不渲染——弱项分析没有降级形态，宁可缺席也别摆个空壳
+  const [topics, setTopics] = useState<TopicsData | null>(() => cachedTopics());
+  useEffect(() => {
+    if (topics) return;
+    let alive = true;
+    loadTopics()
+      .then((data) => {
+        if (alive) setTopics(data);
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [topics]);
+
+  // 弱项统计走练习池，和上面的统计块、错题榜同一个口径（diag 一律在外）。
+  // 逻辑推理开关不参与：这里统计的是「做过的题」，那层滤网管的是随机抽题
+  const allTopicRows = useMemo(
+    () => (topics ? topicRows(topics, records, practice) : []),
+    [topics, records, practice],
+  );
+  const weak = useMemo(() => weakTopics(allTopicRows), [allTopicRows]);
+  const thin = thinTopicCount(allTopicRows);
+  const reach = useMemo(
+    () => (topics ? topicReach(topics, records, index) : null),
+    [topics, records, index],
+  );
+  // 每行的可练池。空池要把按钮置灰，所以渲染时就得知道它有多大
+  const topicPools = useMemo(() => {
+    if (!topics) return new Map<string, IndexEntry[]>();
+    return new Map(weak.map((row) => [row.topic, topicEntries(topics, row.topic, topicScope)]));
+  }, [topics, weak, topicScope]);
 
   const geo = chartGeometry(points.length);
   const maxPace = Math.max(1, ...points.map((p) => p.pace));
@@ -315,6 +372,68 @@ export default function ProgressPanel({
         )}
         {briefsLoading && <p className={styles.note}>{t.progress.missedLoading}</p>}
       </section>
+
+      {/* 知识点弱项。topics.json 没到位（还在取、或取失败）时整块不出现 */}
+      {topics && (
+        <section className={styles.section}>
+          <div className={styles.sectionHead}>
+            <h3 className={styles.sectionTitle}>{t.progress.weakTitle}</h3>
+            <span className={styles.sectionSub}>{t.progress.weakNote}</span>
+          </div>
+
+          {weak.length === 0 ? (
+            <p className={styles.empty}>{t.progress.weakEmpty(WEAK_TOPIC_MIN_QUESTIONS)}</p>
+          ) : (
+            <ul className={styles.topicList} role="list">
+              {weak.map((row) => {
+                const pool = topicPools.get(row.topic) || [];
+                return (
+                  <li key={row.topic} className={styles.topicRow}>
+                    <span className={styles.topicName}>{t.progress.topicName(row.topic)}</span>
+                    <span className={styles.topicStat}>
+                      {t.progress.weakRow(row.questions, fmtPercent(row.accuracy))}
+                    </span>
+                    {/* 横条只是把上面那个百分比画出来，读屏念文字就够了 */}
+                    <span className={styles.topicBar} aria-hidden="true">
+                      <span
+                        className={styles.topicFill}
+                        style={{ width: `${Math.round(row.accuracy * 100)}%` }}
+                      />
+                    </span>
+                    <button
+                      type="button"
+                      className={`${styles.ghost} ${styles.topicPractice}`}
+                      aria-label={t.progress.weakPracticeAria(t.progress.topicName(row.topic))}
+                      // 池子为空（这个知识点的题都在还没解开的范围里）就置灰
+                      disabled={retryDisabled || pool.length === 0}
+                      // 点的时候才抽题：抽题带随机，渲染期算等于每次重渲染都换一批。
+                      // 直调不包异步，requestFullscreen 认的是手势链
+                      onClick={() => onPractice(pickTopicQids(pool, records))}
+                    >
+                      {t.progress.weakPractice}
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+
+          {/* 够不上门槛的知识点为什么不在榜上，得有个交代 */}
+          {weak.length > 0 && thin > 0 && (
+            <p className={styles.note}>{t.progress.weakThin(thin, WEAK_TOPIC_MIN_QUESTIONS)}</p>
+          )}
+          {/* 打标覆盖按库差得极远，做过的题里有多少真进了分析必须如实说 */}
+          {reach && reach.analysed < reach.attempted && (
+            <p className={styles.note}>
+              {t.progress.weakCoverage(
+                reach.analysed,
+                reach.attempted,
+                reach.banks.map((db) => dbLabel(db)).join(' · '),
+              )}
+            </p>
+          )}
+        </section>
+      )}
 
       <section className={styles.section}>
         <h3 className={styles.sectionTitle}>{t.records.field}</h3>

@@ -147,6 +147,45 @@ const zh = {
     missedRow: (wrong: number, attempts: number) => `错 ${wrong} 次 · 共 ${attempts} 次作答`,
     missedFallback: (qid: number) => `题目 ${qid}`,
     missedLoading: '正在读取题目信息…',
+
+    // 「复盘」不是「弱项」：榜上列的是全部够格的知识点，全对的人也会看到
+    // 自己 100% 的行——那不是弱项，叫弱项就是标题在撒谎。弱的排前面这个
+    // 排序本身写进口径行
+    weakTitle: '知识点复盘',
+    // 和上面的统计块同一个口径、同一种措辞，两处不一致会被当成两种算法
+    weakNote: '已作答题目的累计正确率 · 弱的排前面',
+    weakRow: (questions: number, accuracy: string) => `做过 ${questions} 题 · 正确率 ${accuracy}`,
+    weakPractice: '练这类题',
+    weakPracticeAria: (topic: string) => `练 ${topic} 这类题`,
+    // 知识点显示名。数据里的规范名是英文，界面语言是中文时给译名——
+    // 这些是普通类别词，不是 TMUA/MAT 那种不翻的考试专名。
+    // 词表将来会长，认不出的新词按原文显示，不因为少一条翻译就断档
+    topicName: (name: string) =>
+      ({
+        Algebra: '代数',
+        Geometry: '几何',
+        'Logic and Proof': '逻辑与证明',
+        'Number Theory': '数论',
+        Function: '函数',
+        Combinatorics: '组合',
+        'Misc Pure': '纯数杂题',
+        Calculus: '微积分',
+        Trigonometry: '三角',
+        'Sequences and Series': '数列与级数',
+        Polynomial: '多项式',
+        Probability: '概率',
+      })[name] ?? name,
+    // 样本太小时不给结论。空态兼管两种情况：一道没做过，和做了但每类都不够
+    weakEmpty: (min: number) =>
+      `还看不出弱项 —— 一个知识点做满 ${min} 题，这里才会下结论。多练一些再回来看。`,
+    weakThin: (n: number, min: number) => `另有 ${n} 个知识点做的题不到 ${min} 道，暂时不下结论。`,
+    // 打标覆盖极不均（MAT 5% / ECAA 9%），不说清楚就等于拿一小撮题冒充全貌。
+    // banks 只点名整库覆盖确实不过半的库；名单可能为空——用户漏的题全落在
+    // 已经整理过大半的库里时，还硬点名就是冤枉人
+    weakCoverage: (analysed: number, attempted: number, banks: string) =>
+      banks
+        ? `这里只算整理过知识点的题：你做过的 ${attempted} 道里有 ${analysed} 道。其余的落在知识点还没整理完的库（${banks}），暂时进不来。`
+        : `这里只算整理过知识点的题：你做过的 ${attempted} 道里有 ${analysed} 道，其余的还没整理进知识点。`,
   },
 
   grill: {
@@ -351,6 +390,23 @@ const en: Strings = {
       `Missed ${wrong}× · ${attempts} attempt${attempts === 1 ? '' : 's'}`,
     missedFallback: (qid: number) => `Question ${qid}`,
     missedLoading: 'Loading question details…',
+
+    weakTitle: 'Topic review',
+    weakNote: 'Lifetime accuracy on attempted questions · weakest first',
+    weakRow: (questions: number, accuracy: string) => `${questions} attempted · ${accuracy} correct`,
+    weakPractice: 'Practise these',
+    weakPracticeAria: (topic: string) => `Practise ${topic} questions`,
+    // 英文界面直接用数据里的规范名，恒等映射只为和中文字典同形
+    topicName: (name: string) => name,
+    weakEmpty: (min: number) =>
+      `Nothing to call weak yet — a topic needs ${min} attempted questions before this says anything. Come back after a bit more practice.`,
+    weakThin: (n: number, min: number) =>
+      `${n} other topic${n === 1 ? '' : 's'} ${n === 1 ? 'has' : 'have'} fewer than ${min} attempted questions, so ${n === 1 ? 'it is' : 'they are'} left out for now.`,
+    // 括号里列库名而不是写成主语，一个库和好几个库用同一句话，不必凑单复数
+    weakCoverage: (analysed: number, attempted: number, banks: string) =>
+      banks
+        ? `Only questions sorted by topic are counted here: ${analysed} of the ${attempted} you have attempted. The rest sit in banks that have not been sorted yet (${banks}), so they are left out.`
+        : `Only questions sorted by topic are counted here: ${analysed} of the ${attempted} you have attempted. The rest have not been sorted yet.`,
   },
 
   grill: {

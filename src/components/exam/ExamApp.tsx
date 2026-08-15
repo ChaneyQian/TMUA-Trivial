@@ -3,7 +3,7 @@
 // design.md §2.6 Test 模式:CBT 模拟(照 TMUA 官方机考模板)
 // 练习=点选项后 Enter 批改;Mock=倒计时交卷统一批改
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import IdBadge from '@/components/badge/IdBadge';
 import LangToggle from '@/components/LangToggle';
 import CardDeck from '@/components/deck/CardDeck';
@@ -351,6 +351,18 @@ export default function ExamApp() {
   // 跟着一个抽题偏好上下跳会让人以为题库缩水了
   const classicCount = index ? indexForLibraryMode(index, 'classic').length : 0;
   const expandedCount = index ? indexForLibraryMode(index, 'hidden').length : 0;
+
+  // 弱项图「练这类题」能摸到的范围。按 9.0 的状态划，而不是按当前前位卡——
+  // 进度面板是跨区的复盘视图，但它同样不许成为绕过 9.0 门槛的后门。
+  // 刻意不过逻辑推理开关（P5 裁决，Design §13）：这条路也是随机抽、也会发新题，
+  // 和开关管的范围确实重叠——但按钮上写着知识点的名字，点「练 Logic and Proof」
+  // 却因为一个别处的开关抽不到逻辑题，比「开关没拦住」更让人糊涂。显式点名胜过
+  // 口味开关。useMemo 不是装饰：ProgressPanel 里 12 个知识点 × 全量索引的
+  // 求交挂在这个引用上，每次重渲染换新数组等于白算
+  const topicScope = useMemo(
+    () => (index ? indexForLibraryMode(index, hiddenUnlocked ? 'hidden' : 'classic') : []),
+    [index, hiddenUnlocked],
+  );
 
   const poolCounts: Record<string, number> = { TMUA: 0, TMUA_MOCK: 0, MAT: 0, SMC: 0, ECAA: 0, AMC: 0 };
   for (const e of activeIndex) {
@@ -711,6 +723,21 @@ export default function ExamApp() {
     void start({ db: 'ALL', qids });
   };
 
+  /**
+   * 弱项图的「练这类题」：面板已经按解锁状态划好池子、挑好题，这里只把它送进
+   * 既有的 start({ qids }) 通道。db 同样记 ALL——一个知识点跨库。
+   * 显式落 practice：复盘要的是批改与解析，Mock 的限时交卷在这儿没有意义
+   * （和 startGrill 同一套理由）。
+   */
+  const practiceTopic = (qids: number[]) => {
+    if (qids.length === 0) {
+      setError(t.errors.emptySelection);
+      return;
+    }
+    setMode('practice');
+    void start({ db: 'ALL', qids });
+  };
+
   const saveAndRetry = () => {
     saveCurrentResult();
     leaveResult(t.records.sessionSaved);
@@ -954,8 +981,10 @@ export default function ExamApp() {
               <ProgressPanel
                 records={records}
                 index={index}
+                topicScope={topicScope}
                 onBack={backToDeck}
                 onRetry={retryMissed}
+                onPractice={practiceTopic}
                 retryDisabled={phase === 'loading' || !index}
                 // 进度视图下 errMsg / deckHint 都没挂载，抽题失败必须有自己的出口
                 error={error}
