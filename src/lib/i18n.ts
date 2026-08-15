@@ -157,24 +157,11 @@ const zh = {
     weakRow: (questions: number, accuracy: string) => `做过 ${questions} 题 · 正确率 ${accuracy}`,
     weakPractice: '练这类题',
     weakPracticeAria: (topic: string) => `练 ${topic} 这类题`,
-    // 知识点显示名。数据里的规范名是英文，界面语言是中文时给译名——
-    // 这些是普通类别词，不是 TMUA/MAT 那种不翻的考试专名。
-    // 词表将来会长，认不出的新词按原文显示，不因为少一条翻译就断档
-    topicName: (name: string) =>
-      ({
-        Algebra: '代数',
-        Geometry: '几何',
-        'Logic and Proof': '逻辑与证明',
-        'Number Theory': '数论',
-        Function: '函数',
-        Combinatorics: '组合',
-        'Misc Pure': '纯数杂题',
-        Calculus: '微积分',
-        Trigonometry: '三角',
-        'Sequences and Series': '数列与级数',
-        Polynomial: '多项式',
-        Probability: '概率',
-      })[name] ?? name,
+    // 知识点名一律用题库里的英文规范名，中文界面也不翻（用户裁定，2026-08-15）：
+    // 学生对着的是英文原卷，Number Theory / Sequences and Series 这些词本身就是
+    // 考试语境的一部分，硬翻成中文反而和题面对不上。保留这一层映射是为了
+    // 两本字典同形，将来要改口径只动这一处
+    topicName: (name: string) => name,
     // 样本太小时不给结论。空态兼管两种情况：一道没做过，和做了但每类都不够
     weakEmpty: (min: number) =>
       `还看不出弱项 —— 一个知识点做满 ${min} 题，这里才会下结论。多练一些再回来看。`,

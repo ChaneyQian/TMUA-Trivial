@@ -740,11 +740,13 @@ test('both dictionaries carry the weak-topic copy and own up to the gaps', () =>
     assert.notEqual(DICT.zh.progress[key], DICT.en.progress[key], `${key} 没翻`);
   }
 
-  // 知识点显示名：中文给译名、认不出的新词按原文兜底；英文恒等
-  assert.equal(DICT.zh.progress.topicName('Algebra'), '代数');
-  assert.equal(DICT.zh.progress.topicName('Sequences and Series'), '数列与级数');
-  assert.equal(DICT.zh.progress.topicName('Future Topic'), 'Future Topic', '新词不该因为少一条翻译就断档');
-  assert.equal(DICT.en.progress.topicName('Algebra'), 'Algebra');
+  // 知识点名两种界面都用题库里的英文规范名，不翻（用户裁定）：
+  // 学生对着的是英文原卷，硬翻反而和题面对不上
+  for (const [lang, dict] of Object.entries(DICT)) {
+    for (const name of ['Algebra', 'Sequences and Series', 'Future Topic']) {
+      assert.equal(dict.progress.topicName(name), name, `${lang} 的知识点名不该被翻译或改写`);
+    }
+  }
 
   // 覆盖披露的无名单分支：用户漏的题全落在整理过大半的库里时，不点名任何库
   for (const [lang, dict] of Object.entries(DICT)) {
