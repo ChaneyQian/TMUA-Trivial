@@ -36,7 +36,7 @@ test('static bank separates refreshed TMUA Mock and keeps expanded pools behind 
 
   assert.equal(counts.TMUA?.length, 360);
   // Mock 已从 TMUA/Mock 提升为源里的独立顶层库，并扩充了 BeyondHorizon / Zetta 几套
-  assert.equal(counts.TMUA_MOCK?.length, 439);
+  assert.equal(counts.TMUA_MOCK?.length, 440);
   assert.equal(counts.ECAA?.length, 123);
   assert.equal(counts.MAT?.length, 309);
   assert.equal(counts.SMC?.length, 674);
@@ -56,8 +56,8 @@ test('static bank separates refreshed TMUA Mock and keeps expanded pools behind 
   assert.equal(index.find((entry) => entry.qid === 20132101211101)?.db, 'TMUA_MOCK');
 
   const hidden = index.filter((entry) => entry.hidden);
-  assert.equal(hidden.length, 538);
-  assert.equal(hidden.filter((entry) => entry.db === 'TMUA_MOCK').length, 439);
+  assert.equal(hidden.length, 539);
+  assert.equal(hidden.filter((entry) => entry.db === 'TMUA_MOCK').length, 440);
   assert.equal(hidden.filter((entry) => entry.db === 'MAT').length, 99);
   assert.equal(hidden.some((entry) => entry.db === 'TMUA' || entry.db === 'SMC' || entry.db === 'ECAA'), false);
   assert.equal(index.find((entry) => entry.qid === 20132101202101)?.hidden, true);
@@ -175,4 +175,45 @@ test('a long prose distractor is not mistaken for a swallowed stem', (t) => {
     true,
     '吞了题干的题要记进损坏名单',
   );
+});
+
+test('nine-option questions are supported, and a roman label is not mistaken for the letter I', (t) => {
+  // TMUA Mock 里有一道 9 选项的题（选项值 0–8，答案 I）。
+  // 选项标号扰到 I 后，单个 "i" 就同时像字母 I 和 MAT 老卷的罗马标号——
+  // 答案的体例必须以选项自己的标号为准，不能在解析答案时靠猜
+  const out = fs.mkdtempSync(path.join(os.tmpdir(), 'mcq-nine-out-'));
+  t.after(() => fs.rmSync(out, { recursive: true, force: true }));
+  execFileSync(process.execPath, [path.join(root, 'scripts', 'build-data.mjs')], {
+    cwd: root,
+    stdio: 'pipe',
+    env: { ...process.env, EXAM_OUT: out },
+  });
+  const index = JSON.parse(fs.readFileSync(path.join(out, 'index.json'), 'utf8'));
+
+  const read = (qid) => JSON.parse(fs.readFileSync(path.join(out, 'q', `${qid}.json`), 'utf8'));
+
+  // 正：9 选项的题进了题库，标号一个不少
+  const nine = index
+    .map((entry) => read(entry.qid))
+    .find((q) => q.id === 'BeyondHorizonS4-Mock-P1-Q7');
+  assert.ok(nine, '9 选项的题应当能判分入库');
+  assert.equal(nine.choices.length, 9);
+  assert.deepEqual(
+    nine.choices.map((c) => c.label),
+    ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I'],
+  );
+  assert.equal(nine.answer, 'I');
+
+  // 反：全库的答案都要严格等于某个选项标号（大小写也要一致），
+  // MAT 老卷的罗马标号题不能因此被写成大写 I
+  const mismatched = [];
+  let romanOne = 0;
+  for (const entry of index) {
+    const q = read(entry.qid);
+    const labels = q.choices.map((c) => c.label);
+    if (!labels.includes(q.answer)) mismatched.push(q.id);
+    if (q.answer === 'i') romanOne++;
+  }
+  assert.deepEqual(mismatched, [], '这些题的答案对不上自己的选项标号');
+  assert.ok(romanOne > 0, 'MAT 老卷里确实有答案为罗马 i 的题，这条守卫才有负载');
 });

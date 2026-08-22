@@ -22,7 +22,9 @@ const OUT = process.env.EXAM_OUT ? path.resolve(process.env.EXAM_OUT) : path.joi
 // 目录名带空格无妨：这里只拿它拼路径，题目落进 index 时统一叫 TMUA_MOCK
 const DATABASES = ['TMUA', 'TMUA Mock', 'MAT', 'SMC', 'ECAA', 'AMC', 'GMAT'];
 const ROMANS = ['i', 'ii', 'iii', 'iv', 'v', 'vi'];
-const LETTERS = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+// 扩到 i：TMUA Mock 里有一道 9 选项的题（BeyondHorizonS4-Mock-P1-Q7，选项值 0–8）。
+// MAT / SMC 最多 5 选，括号解析器遇到找不到的标号就停，多一个字母影响不到它们
+const LETTERS = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i'];
 const IMAGE_DIR_NAMES = new Set(['image', 'images']);
 
 // ---------------- frontmatter / 分节 ----------------
@@ -137,7 +139,9 @@ function normalizeAnswer(raw) {
   const m = raw.trim().match(/^[($（【[]*\s*([A-Za-z]+)\s*[)$）】\].]*$/);
   if (!m) return null;
   const token = m[1];
-  if (/^[A-Ha-h]$/.test(token)) return token.toUpperCase();
+  // 这里只把 token 拣出来；单个 i 到底是字母 I 还是罗马数字 i，不在这儿猜——
+  // 交给选项自己的标号去定（见下方的答案规范化）
+  if (/^[A-Ia-i]$/.test(token)) return token.toUpperCase();
   if (ROMANS.includes(token.toLowerCase())) return token.toLowerCase();
   return null;
 }
@@ -155,7 +159,7 @@ const IMAGE_ONLY = /^(?:!\[\[[^\]]+\]\]|!\[[^\]]*\]\([^)]+\))$/;
  * 图片全留在题面里，谁也分不清哪张图对应哪个选项。
  */
 function parseTmuaChoices(statement) {
-  const re = /\$\$\s*\\mathbf\s*\{?\s*([A-H])\s*\}?\s*(?:\\quad|\\;|\\ )?\s*([\s\S]*?)\$\$\s*/g;
+  const re = /\$\$\s*\\mathbf\s*\{?\s*([A-I])\s*\}?\s*(?:\\quad|\\;|\\ )?\s*([\s\S]*?)\$\$\s*/g;
   const blocks = [];
   let m;
   while ((m = re.exec(statement)) !== null) {
@@ -248,7 +252,7 @@ function parseSmcChoices(statement) {
     const choices = [];
     let ok = true;
     for (let k = 0; k < parts.length; k++) {
-      const pm = parts[k].trim().match(/^([A-H])\s+([\s\S]+)$/);
+      const pm = parts[k].trim().match(/^([A-I])\s+([\s\S]+)$/);
       if (!pm || pm[1] !== String.fromCharCode(65 + k)) { ok = false; break; }
       choices.push({ label: pm[1], text: pm[2].trim() });
     }
@@ -262,7 +266,7 @@ function parseSmcChoices(statement) {
 
 /** 兜底：选项留在题面（表格式等），按钮只显字母 */
 function inlineFallback(statement, answer, maxLabels) {
-  if (!/^[A-H]$/.test(answer)) return null;
+  if (!/^[A-I]$/.test(answer)) return null;
   const need = Math.max(maxLabels, answer.charCodeAt(0) - 64);
   return {
     cleaned: statement,
@@ -312,7 +316,7 @@ function detectCorruption(parsed, database) {
 
   // 1. 标号不连续：某个选项块在转换时丢了（如 TMUA 23-P2-Q14 缺 E，标号成了 A B C D F）
   const labs = choices.map((c) => c.label);
-  const family = /^[A-H]$/.test(labs[0])
+  const family = /^[A-I]$/.test(labs[0])
     ? LETTERS.map((l) => l.toUpperCase())
     : ROMANS.includes(labs[0])
       ? ROMANS
@@ -613,7 +617,13 @@ function main() {
       const format = choiceFormat(sourceDb);
       let parsed = parseChoicesFor(format, statement, answer);
       if (!parsed) { skipped.noChoices++; continue; }
-      if (!parsed.choices.some((c) => c.label.toLowerCase() === answer.toLowerCase())) {
+      // 答案的体例以选项自己的标号为准：同一个 "i"，在 9 选项的 TMUA 题里是
+      // 字母 I，在 MAT 老卷里是罗马数字 i。拿选项反查就不用猜，
+      // 也不会把罗马标号的题写成大写 I
+      const matched = parsed.choices.find(
+        (c) => c.label.toLowerCase() === answer.toLowerCase(),
+      );
+      if (!matched) {
         skipped.answerMismatch++;
         continue;
       }
@@ -653,7 +663,7 @@ function main() {
           statement: parsed.cleaned,
           choices: parsed.choices,
           optionsInline: parsed.optionsInline,
-          answer,
+          answer: matched.label,
           solution,
         })
       );
