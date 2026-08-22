@@ -229,3 +229,31 @@ aria-describedby 关联、空池提示指向开关。未采纳：`Proof` 标签�
 数据侧同步观察（用户重整进行中）：Combinatorics 作为 topics 级词汇归零
 （64→0，SMC 重归类），Probability 12→21、Algebra 384→285、Misc Pure
 103→136。管线零故障（空词不渲染、无词表外告警），待用户确认是否符合预期。
+
+## 14. 题库层级调整：TMUA Mock 独立成库（2026-08-15）
+
+题库源把 `TMUA/Mock/` 提升为顶层库 `TMUA Mock/`，并扩充到 15 套 480 题
+（新增 BeyondHorizon S1–S4 + Spec 共 160 题、Zetta 20 题，全部带答案）。
+
+- `sync-bank.mjs` / `build-data.mjs` 各加一个库名，**照源的层级 1:1 镜像**，
+  不替它改嫁回 TMUA/ 底下——data\ 与源长得一样才不会有人对着两棵目录树犯迷糊
+- 同步顺带补了「删文件不删目录」的缺口：整棵子树搬走后会留下空壳
+- 新增 `choiceFormat()`：库名决定**池子**，格式家族决定**用哪个解析器**，
+  两件事分开。TMUA Mock 是独立库但题目照 TMUA 体例写，格式上仍当 TMUA 认。
+  （漏了这层会让整库掉进 inlineFallback，选项内联数从 44 暴涨到 483）
+- 质量闸规则 5 收窄：整句陈述型干扰项（"x cannot be determined from the
+  given information"）天生就长，不该判成吞了题干。改为「长度比 + 没有题干痕迹
+  （问号 / 自己的标号+取值）才放行」，误伤的 2 道 BeyondHorizon 题回到池子。
+  正反两向都有行为测试钉住
+
+可判分题数 1819 → **2018**（Mock 240 → 439）。
+
+**待用户处置的源数据问题：**
+1. MAT 1996/1997 共 6 个文件行尾变成双回车（`\r\r\n`），frontmatter 整块解析
+   不出来 → 对所有工具不可见。全是 Long Question，站点零影响，但建议归一化
+2. `BeyondHorizonS4-Mock-P1-Q7` 有 **9 个选项（A–I）**，答案 I。解析器与键盘流
+   都只到 H，该题被跳过。扩到 I 有坑：`normalizeAnswer` 里单个 "i" 目前按
+   MAT 罗马标号解析，扩字母会与之冲突，需连带改判据
+3. ThrivingScholars 40 题仍无答案
+4. `TMUA Addition`（Euclid Modification 19 题）**按用户指示暂不启用**；
+   Clarkson / SMT Skills 目前是空目录

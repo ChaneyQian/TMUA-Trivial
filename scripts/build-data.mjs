@@ -18,7 +18,9 @@ const BANK = process.env.BANK_PATH ? path.resolve(process.env.BANK_PATH) : path.
 // 里 rm -rf + 重建，就会互相把对方读到一半的产物删掉。
 const OUT = process.env.EXAM_OUT ? path.resolve(process.env.EXAM_OUT) : path.join(ROOT, 'public', 'exam');
 
-const DATABASES = ['TMUA', 'MAT', 'SMC', 'ECAA', 'AMC', 'GMAT'];
+// 'TMUA Mock' 是题库源里的独立顶层库（原先嵌在 TMUA/Mock 下，2026-08 提升出来）。
+// 目录名带空格无妨：这里只拿它拼路径，题目落进 index 时统一叫 TMUA_MOCK
+const DATABASES = ['TMUA', 'TMUA Mock', 'MAT', 'SMC', 'ECAA', 'AMC', 'GMAT'];
 const ROMANS = ['i', 'ii', 'iii', 'iv', 'v', 'vi'];
 const LETTERS = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
 const IMAGE_DIR_NAMES = new Set(['image', 'images']);
@@ -287,6 +289,24 @@ function expectedLabels(labels, n) {
  * 拦截：判断这道题是否已被源数据损坏到不能用。
  * 返回原因字符串；null 表示通过。
  */
+/**
+ * 整句陈述型干扰项（如 "x cannot be determined from the given information"）。
+ *
+ * 它天生就比旁边那些数值选项长很多，那是题目本来的样子，不是吞了题干。
+ * 真被吞进来的题干会留下痕迹：问号，或者规则 6 那种「自己的标号 + 取值」。
+ * 两样都没有、且正文几乎全包在 \text{} 里的，就只是个长选项。
+ */
+function isProseDistractor(choice) {
+  const label = choice.label.toUpperCase();
+  const textSpan = /\\text\s*\{[^}]*\}/g;
+  const stemTrace =
+    /[?？]/.test(choice.text) ||
+    new RegExp('\\\\text\\{[^}]*\\b' + label + '\\s+-?[\\d.]').test(choice.text);
+  if (stemTrace) return false;
+  // 去掉 \text{…} 后基本不剩什么，说明整项就是一句话，而不是题干掺着公式
+  return contentLen(choice.text.replace(textSpan, '')) <= 3;
+}
+
 function detectCorruption(parsed, database) {
   const { choices, cleaned } = parsed;
 
@@ -323,8 +343,10 @@ function detectCorruption(parsed, database) {
   const [max, second] = sorted;
   // ECAA 经常把最后一个干扰项写成整句文字，不能用旧 OCR 题库的长度比规则判断。
   if (database !== 'ECAA' && max >= 40 && second > 0 && max / second >= 5) {
-    const who = choices[lens.indexOf(max)].label;
-    return `选项 ${who} 畸长（${max} 字符，第二长仅 ${second}），疑似吞掉了题干`;
+    const longest = choices[lens.indexOf(max)];
+    if (!isProseDistractor(longest)) {
+      return `选项 ${longest.label} 畸长（${max} 字符，第二长仅 ${second}），疑似吞掉了题干`;
+    }
   }
 
   // 6. 转换时把「题干问句 + 选项标号 + 该选项的值」整串塞进了第一个选项，例如
@@ -339,6 +361,18 @@ function detectCorruption(parsed, database) {
   }
 
   return null;
+}
+
+/**
+ * 选项格式家族：决定用哪个解析器、哪套损坏判据。
+ *
+ * 和「题目属于哪个池子」是两件事。TMUA Mock 已经是源里的独立顶层库，
+ * 但题目仍是照 TMUA 体例写的（$$\mathbf{A} \quad …$$ 公式块），
+ * 格式上就该当 TMUA 认。不映射的话哪个分支都不匹配，整库会掉进
+ * inlineFallback——选项按钮只剩字母，题面里还留着一整串原文
+ */
+function choiceFormat(sourceDatabase) {
+  return sourceDatabase === 'TMUA Mock' ? 'TMUA' : sourceDatabase;
 }
 
 function parseChoicesFor(database, statement, answer) {
@@ -424,8 +458,12 @@ function isDiagnosticQuestion(database) {
 }
 
 function indexDatabase(sourceDatabase, filePath, data) {
+  // 独立顶层库，整库都是 mock
+  if (sourceDatabase === 'TMUA Mock') return 'TMUA_MOCK';
   if (sourceDatabase !== 'TMUA') return sourceDatabase;
 
+  // TMUA/ 下的兜底：mock 曾经嵌在 TMUA/Mock 里，题库源已改成顶层库，
+  // 但认 paper 这一条留着——判据是题目自己写的，不受目录怎么摆布
   const relativeParts = path.relative(path.join(BANK, 'TMUA'), filePath).split(path.sep);
   const isMock = relativeParts[0] === 'Mock' || String(data.paper || '') === 'TMUA Mock';
   return isMock ? 'TMUA_MOCK' : 'TMUA';
@@ -572,7 +610,8 @@ function main() {
       const answer = normalizeAnswer(sections['答案']);
       if (!answer) { skipped.badAnswer++; continue; }
 
-      let parsed = parseChoicesFor(sourceDb, statement, answer);
+      const format = choiceFormat(sourceDb);
+      let parsed = parseChoicesFor(format, statement, answer);
       if (!parsed) { skipped.noChoices++; continue; }
       if (!parsed.choices.some((c) => c.label.toLowerCase() === answer.toLowerCase())) {
         skipped.answerMismatch++;
@@ -581,7 +620,7 @@ function main() {
 
       // 拦截源数据损坏的题（只拦不改；修是人工去改 data\ 下的 md 源文件）
       if (!parsed.optionsInline) {
-        const corruption = detectCorruption(parsed, sourceDb);
+        const corruption = detectCorruption(parsed, format);
         if (corruption) {
           corrupted.push({ db, id: String(data.id || ''), file: path.relative(ROOT, filePath), reason: corruption });
           skipped.corrupted++;

@@ -15,7 +15,10 @@ import { fileURLToPath } from 'url';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const SRC = process.env.BANK_SRC || 'D:\\Obsidian\\repo\\题库';
 const DST = path.join(ROOT, 'data');
-const BANKS = ['TMUA', 'MAT', 'SMC', 'ECAA', 'AMC'];
+// 'TMUA Mock' 是源里的独立顶层库（原先嵌在 TMUA/Mock 下，2026-08 提升出来）。
+// 这里照源的层级 1:1 镜像，不再替它改嫁到 TMUA/ 底下——data\ 与源长得一样，
+// 才不会有人对着两边的目录树犯迷糊
+const BANKS = ['TMUA', 'TMUA Mock', 'MAT', 'SMC', 'ECAA', 'AMC'];
 
 /** 题目文件的判据：frontmatter 里有 qid。没有的就是笔记，不同步。 */
 function isQuestion(file) {
@@ -40,6 +43,19 @@ function walk(dir, base = dir, out = []) {
     }
   }
   return out;
+}
+
+/** 自底向上清掉空目录；根目录本身留着 */
+function pruneEmptyDirs(dir) {
+  if (!fs.existsSync(dir)) return;
+  for (const name of fs.readdirSync(dir)) {
+    const full = path.join(dir, name);
+    let stat;
+    try { stat = fs.statSync(full); } catch { continue; }
+    if (!stat.isDirectory()) continue;
+    pruneEmptyDirs(full);
+    try { if (fs.readdirSync(full).length === 0) fs.rmdirSync(full); } catch {}
+  }
 }
 
 function main() {
@@ -87,6 +103,9 @@ function main() {
       fs.rmSync(path.join(dstDir, rel), { force: true });
       removed++;
     }
+    // 删文件不删目录，整棵子树搬走后会留下一串空壳（TMUA/Mock 提升出去就是这样）。
+    // 空目录不影响构建，但留着会让人以为题还在那儿
+    pruneEmptyDirs(dstDir);
   }
 
   console.log(`[sync-bank] 源：${SRC}`);
