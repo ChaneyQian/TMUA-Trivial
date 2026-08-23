@@ -51,20 +51,6 @@ const zh = {
     fieldBank: '题库',
     // 按题库自己的知识点标签认逻辑题。勾掉之后抽题池里就没有它们了，题数档位跟着缩
     logicReasoning: '含逻辑推理题',
-    // 覆盖率必须如实说：打标只做了一部分，MAT 这种库里勾掉开关几乎没有效果，
-    // 用户得能当场看明白是为什么，而不是以为开关坏了。
-    // 用具体题数而不只是百分比——「309 题里有 16 题」比「5%」更容易照着数
-    // 「所选范围」而不是「本题库」：选混合时横跨好几个库，说本题库就错了。
-    // 勾选态用将来时、已勾掉用完成时——否则勾掉后看着题数掉了、说明还写着
-    // 「取消勾选后就不再抽到」，读起来像没生效
-    logicCoverage: (logic: number, tagged: number, total: number, include: boolean) => {
-      const head = include
-        ? `已认出 ${logic} 道逻辑推理题，取消勾选后就不再抽到。`
-        : `已排除 ${logic} 道逻辑推理题。`;
-      if (tagged >= total) return `${head}所选范围 ${total} 题都整理过知识点。`;
-      const pct = total ? Math.round((tagged / total) * 100) : 0;
-      return `${head}所选范围共 ${total} 题，其中 ${tagged} 题整理过知识点（${pct}%）。剩下 ${total - tagged} 题还没整理，里面若有逻辑题仍会出现。`;
-    },
     // 互斥后 9.0 的同名库是另一批题，按钮上只有题数看不出来，范围得说破
     trivialScopeNote: '此区只收扩展卷（Mock 与回忆题），与经典题库不重复。',
     fieldMode: '模式',
@@ -319,14 +305,6 @@ const en: Strings = {
     mixed: 'Mixed',
     fieldBank: 'Question Bank',
     logicReasoning: 'Include logic reasoning questions',
-    logicCoverage: (logic: number, tagged: number, total: number, include: boolean) => {
-      const head = include
-        ? `${logic} questions here are marked as logic reasoning; unticking leaves them out. `
-        : `${logic} logic reasoning questions are being left out. `;
-      if (tagged >= total) return `${head}All ${total} questions in this selection have been sorted by topic.`;
-      const pct = total ? Math.round((tagged / total) * 100) : 0;
-      return `${head}Of the ${total} questions in this selection, ${tagged} have been sorted by topic (${pct}%). The other ${total - tagged} have not, so any logic questions among them will still come up.`;
-    },
     trivialScopeNote: 'This zone holds only the expanded papers (mocks and recalled questions) — nothing here overlaps the Classic library.',
     fieldMode: 'Mode',
     fieldPick: 'Question Selection',

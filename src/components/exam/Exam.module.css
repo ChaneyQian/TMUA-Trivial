@@ -259,16 +259,6 @@
   cursor: pointer;
 }
 
-/* 覆盖率说明。flex-basis 撑满一整行，把它挤到勾选框下面而不是并排——
-   它是给这个开关兜底的实话，读起来该像一句话，不该像第二个按钮。
-   字号/颜色照 segHint，那已经是面板里「补充说明」的既定样式 */
-.checkNote {
-  flex-basis: 100%;
-  max-width: 46rem;
-  font-size: 0.72rem;
-  line-height: 1.5;
-  color: var(--text-muted);
-}
 
 .recordSection {
   margin-top: 0.9rem;

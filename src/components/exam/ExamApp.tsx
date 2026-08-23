@@ -1155,8 +1155,9 @@ export default function ExamApp() {
 
           {/* 逻辑推理开关属于「题库」这一组，所以不另起 fieldLabel。
               一道标注过的逻辑题都没有时整行不渲染——摆着也只是个按不动的开关。
-              下面那行覆盖率不是可选的补充说明：打标只做了一部分，用户在 MAT 里
-              勾掉开关却几乎没效果时，得能当场看明白是为什么 */}
+              覆盖率披露已按用户裁定移除（2026-08-23）：那是维护者视角的打标
+              进度报告，普通学生不需要读。抽题池的真实数字在题数档位里，
+              空池时另有「勾回可再抽 N 道」的操作提示兑底 */}
           {logicCov.logic > 0 && (
             <div className={styles.segRow}>
               <label className={`${styles.checkLabel} ${includeLogic ? styles.segActive : ''}`}>
@@ -1164,16 +1165,10 @@ export default function ExamApp() {
                   className={styles.checkBox}
                   type="checkbox"
                   checked={includeLogic}
-                  // 覆盖率那行是这个开关的实话，不是可选补充，所以显式关联进
-                  // 无障碍描述——否则读屏只念得到「含逻辑推理题，已选中」
-                  aria-describedby="logic-coverage-note"
                   onChange={(e) => chooseLogicReasoning(e.target.checked)}
                 />
                 {t.setup.logicReasoning}
               </label>
-              <div className={styles.checkNote} id="logic-coverage-note">
-                {t.setup.logicCoverage(logicCov.logic, logicCov.tagged, logicCov.total, includeLogic)}
-              </div>
             </div>
           )}
 

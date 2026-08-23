@@ -35,9 +35,9 @@ test('static bank separates refreshed TMUA Mock and keeps expanded pools behind 
   const counts = Object.groupBy(index, (entry) => entry.db);
 
   // 360 道真题 + 2024/2025 回忆题 75 道（回忆题落 hidden）
-  assert.equal(counts.TMUA?.length, 435);
+  assert.equal(counts.TMUA?.length, 434);
   // Mock 已从 TMUA/Mock 提升为源里的独立顶层库，并扩充了 BeyondHorizon / Zetta 几套
-  assert.equal(counts.TMUA_MOCK?.length, 440);
+  assert.equal(counts.TMUA_MOCK?.length, 432);
   assert.equal(counts.ECAA?.length, 123);
   // MAT 2024（24 题）/ 2025（20 题）回忆题入池后 309 → 353，两卷都归扩展池
   assert.equal(counts.MAT?.length, 353);
@@ -58,12 +58,12 @@ test('static bank separates refreshed TMUA Mock and keeps expanded pools behind 
   assert.equal(index.find((entry) => entry.qid === 20132101211101)?.db, 'TMUA_MOCK');
 
   const hidden = index.filter((entry) => entry.hidden);
-  assert.equal(hidden.length, 658);
-  assert.equal(hidden.filter((entry) => entry.db === 'TMUA_MOCK').length, 440);
+  assert.equal(hidden.length, 649);
+  assert.equal(hidden.filter((entry) => entry.db === 'TMUA_MOCK').length, 432);
   // 1996–2006 的 99 道 + 2024/2025 回忆题的 44 道
   assert.equal(hidden.filter((entry) => entry.db === 'MAT').length, 143);
   // TMUA 自 24/25 回忆题起也有 hidden 卷了；仍无 hidden 的只剩 SMC / ECAA
-  assert.equal(hidden.filter((entry) => entry.db === 'TMUA').length, 75);
+  assert.equal(hidden.filter((entry) => entry.db === 'TMUA').length, 74);
   assert.equal(hidden.some((entry) => entry.db === 'SMC' || entry.db === 'ECAA'), false);
   assert.equal(index.find((entry) => entry.qid === 20132101202101)?.hidden, true);
   assert.equal(index.find((entry) => entry.qid === 20132101202101)?.db, 'TMUA_MOCK');
@@ -222,3 +222,57 @@ test('nine-option questions are supported, and a roman label is not mistaken for
   assert.deepEqual(mismatched, [], '这些题的答案对不上自己的选项标号');
   assert.ok(romanOne > 0, 'MAT 老卷里确实有答案为罗马 i 的题，这条守卫才有负载');
 });
+
+test('questions flagged TODO(...) stay off the site until proofread', (t) => {
+  // 回忆卷里题干或选项存疑的题，正文里留着 TODO(待校对): 标记。
+  // 用户裁定（2026-08-23）：这类题校对完前不上站——删掉标记即自动上架
+  const bank = fs.mkdtempSync(path.join(os.tmpdir(), 'mcq-todo-bank-'));
+  const out = fs.mkdtempSync(path.join(os.tmpdir(), 'mcq-todo-out-'));
+  t.after(() => {
+    fs.rmSync(bank, { recursive: true, force: true });
+    fs.rmSync(out, { recursive: true, force: true });
+  });
+
+  const write = (name, qid, id, extra) => {
+    const dir = path.join(bank, 'TMUA', '2020');
+    fs.mkdirSync(dir, { recursive: true });
+    const body = [
+      '---', 'database: TMUA', `qid: ${qid}`, `id: ${id}`, 'paper: TMUA P1',
+      'year: 2020', 'number: Q1', 'section: Applications', 'difficulty: 0', '---', '',
+      '## 题目', 'Compute $1+1$.', '',
+      '$$\\\\mathbf {A} \\\\quad 1$$', '',
+      '$$\\\\mathbf {B} \\\\quad 2$$', '',
+      '$$\\\\mathbf {C} \\\\quad 3$$', '',
+      '## 答案', 'B', '',
+      ...extra,
+    ].join('\n');
+    fs.writeFileSync(path.join(dir, name), body);
+  };
+
+  write('20-P1-Q1.md', 20200210100, '20-P1-Q1', ['## 解析', 'TODO(待校对): 选项存疑。']);
+  write('20-P1-Q2.md', 20200210200, '20-P1-Q2', ['## 解析', '正常解析，提到 TODO 这个英文词但不带括号。']);
+
+  const built = execFileSync(process.execPath, [path.join(root, 'scripts', 'build-data.mjs')], {
+    cwd: root,
+    encoding: 'utf8',
+    env: { ...process.env, EXAM_OUT: out, BANK_PATH: bank },
+  });
+
+  const index = JSON.parse(fs.readFileSync(path.join(out, 'index.json'), 'utf8'));
+  const qids = new Set(index.map((entry) => entry.qid));
+  assert.equal(qids.has(20200210100), false, '带 TODO(…) 标记的题必须被拦下');
+  assert.equal(qids.has(20200210200), true, '裸词 TODO 不带括号不该误伤');
+})
+
+test('no TODO-flagged question is in the shipped index', () => {
+  // 真实题库的反向审计：在池的题里一道都不许带 TODO( 标记
+  const index = JSON.parse(fs.readFileSync(path.join(root, 'public', 'exam', 'index.json'), 'utf8'));
+  const flagged = [];
+  for (const entry of index) {
+    const q = JSON.parse(
+      fs.readFileSync(path.join(root, 'public', 'exam', 'q', `${entry.qid}.json`), 'utf8'),
+    );
+    if (`${q.statement}${q.solution}`.includes('TODO(')) flagged.push(q.id);
+  }
+  assert.deepEqual(flagged, [], '这些待校对的题漏进了站里');
+})

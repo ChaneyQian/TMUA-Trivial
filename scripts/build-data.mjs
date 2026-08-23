@@ -653,7 +653,7 @@ function main() {
   // 卷面清单：键是「库 + 展示用卷号」，粒度就是题头上写的那一行
   const papers = new Map();
   let inlineCount = 0;
-  const skipped = { noQid: 0, noStatement: 0, badAnswer: 0, noChoices: 0, answerMismatch: 0, corrupted: 0 };
+  const skipped = { noQid: 0, noStatement: 0, todo: 0, badAnswer: 0, noChoices: 0, answerMismatch: 0, corrupted: 0 };
 
   for (const sourceDb of DATABASES) {
     for (const filePath of listQuestionFiles(path.join(BANK, sourceDb))) {
@@ -666,6 +666,11 @@ function main() {
       const sections = parseSections(body);
       const statement = sections['题目'];
       if (!statement) { skipped.noStatement++; continue; }
+
+      // 正文任何位置出现 TODO(…) 标记（如「TODO(待校对):」）即整题不上站：
+      // 回忆卷里这类题的题干或选项存疑，校对完把标记删掉，sync 后自动上架
+      // （用户裁定 2026-08-23）。带括号是为了不误伤英文题面里理论上可能出现的裸词
+      if (body.includes('TODO(')) { skipped.todo++; console.warn(`[build-data] 待校对，暂不上站：${path.relative(ROOT, filePath)}`); continue; }
 
       const answer = normalizeAnswer(sections['答案']);
       if (!answer) { skipped.badAnswer++; continue; }

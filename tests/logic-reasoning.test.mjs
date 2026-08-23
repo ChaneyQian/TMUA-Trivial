@@ -359,32 +359,21 @@ test('the preference persists under a versioned key and defaults to checked', (t
   assert.equal(loadIncludeLogicReasoning(), true, '认不出来的值一律当勾选，不猜');
 });
 
-test('both dictionaries name the switch and own up to the tagging gap', () => {
+test('both dictionaries name the switch, and the maintainer-voiced disclosure is gone', () => {
   for (const lang of ['zh', 'en']) {
-    const { logicReasoning, logicCoverage: note } = DICT[lang].setup;
+    const { logicReasoning } = DICT[lang].setup;
     assert.ok(logicReasoning.trim().length > 0, `${lang} 的开关文案是空的`);
     // 旧口径的措辞不该留在界面上：这个开关和 Paper 2 已经没有关系了
     assert.doesNotMatch(logicReasoning, /Paper\s*2/i, `${lang} 的开关文案还写着 Paper 2`);
-
-    // 打标只做了一部分时，三个数都要出现，用户才对得上账
-    const partial = note(13, 16, 309, true);
-    for (const n of ['13', '16', '309', '293']) {
-      assert.ok(partial.includes(n), `${lang} 的覆盖率文案漏了 ${n}`);
-    }
-    assert.ok(partial.includes('5%'), `${lang} 的覆盖率文案该给出占比`);
-
-    // 全部打标完的库不该再讲「还有没整理的题」——那是没有的事
-    const full = note(26, 674, 674, true);
-    assert.ok(full.includes('26') && full.includes('674'));
-    assert.equal(full.includes('0%'), false, `${lang} 全覆盖时不该出现 0% 这种残数`);
-    assert.notEqual(full, partial, '两种覆盖情况得说不同的话');
+    // 覆盖率披露已按用户裁定移除（2026-08-23）：那是维护者视角的
+    // 打标进度报告，不该出现在学生的题库设置面板上
+    assert.equal('logicCoverage' in DICT[lang].setup, false, `${lang} 还留着 logicCoverage 键`);
   }
   assert.notEqual(
     DICT.zh.setup.logicReasoning,
     DICT.en.setup.logicReasoning,
     '这条不是考试专名，两种语言必须真的翻过',
   );
-  assert.notEqual(DICT.zh.setup.logicCoverage(1, 2, 3, true), DICT.en.setup.logicCoverage(1, 2, 3, true));
 });
 
 test('the setup panel wires the switch into the pick pool and nowhere else', () => {
@@ -427,11 +416,6 @@ test('the setup panel wires the switch into the pick pool and nowhere else', () 
   assert.match(exam, /type="checkbox"/);
   assert.match(exam, /checked=\{includeLogic\}/);
   assert.match(exam, /\{t\.setup\.logicReasoning\}/, '文案必须走字典');
-  // 末位是勾选状态：文案要按已勾/已取消换时态，见下面那条时态测试
-  assert.match(
-    exam,
-    /t\.setup\.logicCoverage\(logicCov\.logic, logicCov\.tagged, logicCov\.total, includeLogic\)/,
-  );
   const switchAt = exam.indexOf('logicCov.logic > 0');
   assert.ok(
     exam.indexOf('t.setup.fieldBank') < switchAt && switchAt < exam.indexOf('t.setup.fieldMode'),
@@ -455,8 +439,8 @@ test('the checkbox borrows the existing panel styling instead of inventing its o
   assert.match(css, /\.checkLabel \{[^}]*var\(--surface-alt\)/s);
   assert.match(css, /\.checkBox \{[^}]*accent-color: var\(--accent\)/s);
   // 说明文字独占一行，不跟勾选框挤在一排
-  assert.match(css, /\.checkNote \{[^}]*flex-basis: 100%;/s);
-  assert.match(css, /\.checkNote \{[^}]*var\(--text-muted\)/s);
+  // 覆盖率披露已移除（用户裁定 2026-08-23），样式也不该留残
+  assert.doesNotMatch(css, /\.checkNote/);
 });
 
 test('the frontmatter parser keeps a block list alive across blank lines and comments', () => {
@@ -499,37 +483,7 @@ test('the frontmatter parser keeps a block list alive across blank lines and com
   }
 });
 
-test('the coverage note speaks in the right tense and never says "this bank" for a mixed pool', () => {
-  for (const [lang, dict] of Object.entries(DICT)) {
-    const on = dict.setup.logicCoverage(118, 324, 360, true);
-    const off = dict.setup.logicCoverage(118, 324, 360, false);
 
-    // 勾掉之后还写「取消勾选后就不再抽到」，读起来像没生效
-    assert.notEqual(on, off, `${lang}: 两种勾选状态的文案必须不同`);
-    if (lang === 'zh') {
-      assert.match(on, /取消勾选后就不再抽到/);
-      assert.match(off, /已排除/);
-      assert.doesNotMatch(off, /取消勾选后就不再抽到/);
-      // 选混合时横跨好几个库，说「本题库」就错了
-      assert.doesNotMatch(on, /本题库/);
-      assert.match(on, /所选范围/);
-    } else {
-      assert.match(on, /unticking leaves them out/);
-      assert.match(off, /being left out/);
-      assert.doesNotMatch(off, /unticking leaves them out/);
-      assert.doesNotMatch(on, /this bank/);
-      assert.match(on, /this selection/);
-    }
-
-    // 全覆盖的库没有免责声明可讲
-    const full = dict.setup.logicCoverage(26, 674, 674, true);
-    assert.doesNotMatch(full, /\d+%/, `${lang}: 100% 打标时不必再报百分比`);
-
-    // 切区瞬间可能出现空范围，百分比不能算成 NaN
-    const empty = dict.setup.logicCoverage(0, 0, 0, true);
-    assert.doesNotMatch(empty, /NaN/, `${lang}: 空范围不该渲染出 NaN`);
-  }
-});
 
 test('an empty pool points back at the switch that emptied it', () => {
   const exam = fs.readFileSync(examPath, 'utf8');
@@ -543,6 +497,5 @@ test('an empty pool points back at the switch that emptied it', () => {
   }
 
   // 覆盖率那行是开关的实话，读屏用户也得听得到
-  assert.match(exam, /aria-describedby="logic-coverage-note"/);
-  assert.match(exam, /id="logic-coverage-note"/);
+  assert.doesNotMatch(exam, /logic-coverage-note/);
 });
