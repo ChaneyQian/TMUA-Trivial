@@ -89,7 +89,7 @@ const zh = {
     quickSummary: (db: string, mode: string, count: number) => `${db} · ${mode} · ${count} 题`,
     emptyBank: '该题库没有可用题目。',
     emptyBankLogicHint: (n: number) => `勾回「含逻辑推理题」可再抽到 ${n} 道。`,
-    keyboard: '键盘：A–I / 1–9 选项 · Enter 批改或下一题 · ←→ 切题 · F 旗标',
+    keyboard: '键盘：A–L / 1–9 选项 · Enter 批改或下一题 · ←→ 切题 · F 旗标',
   },
 
   records: {
@@ -319,7 +319,7 @@ const en: Strings = {
     quickSummary: (db: string, mode: string, count: number) => `${db} · ${mode} · ${count} Qs`,
     emptyBank: 'No questions available in this bank.',
     emptyBankLogicHint: (n: number) => `Ticking "Include logic reasoning questions" back on adds ${n}.`,
-    keyboard: 'Keyboard: A–I / 1–9 select · Enter mark or next · ←→ navigate · F flag',
+    keyboard: 'Keyboard: A–L / 1–9 select · Enter mark or next · ←→ navigate · F flag',
   },
 
   records: {

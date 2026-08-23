@@ -1,0 +1,106 @@
+/* 管理调试页。复用全局主题变量，不发明新设计语言 */
+
+.wrap {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 2rem 1rem 4rem;
+  color: var(--text);
+  font-family: var(--font-ui);
+}
+
+.title {
+  font-size: 1.3rem;
+  margin-bottom: 0.4rem;
+}
+
+.note {
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  margin-bottom: 1.2rem;
+}
+
+.section {
+  margin-top: 1.6rem;
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+}
+
+.head {
+  font-size: 1rem;
+  margin-bottom: 0.6rem;
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.input {
+  flex: 1 1 200px;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-alt);
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-size: 0.88rem;
+}
+
+.btn {
+  padding: 0.45rem 0.8rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.danger {
+  border-color: color-mix(in srgb, red 45%, var(--border));
+}
+
+.error {
+  color: #c0392b;
+  font-size: 0.82rem;
+  margin-top: 0.5rem;
+}
+
+.ok {
+  color: var(--accent);
+  font-size: 0.82rem;
+  margin-top: 0.5rem;
+}
+
+.mono {
+  font-variant-numeric: tabular-nums;
+  font-size: 0.84rem;
+  margin: 0.2rem 0;
+  overflow-wrap: anywhere;
+}
+
+.card {
+  margin-top: 0.8rem;
+  padding: 0.8rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-alt);
+  overflow-x: auto;
+}
+
+.choices {
+  margin: 0.6rem 0 0.4rem 1.4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}

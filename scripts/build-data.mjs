@@ -22,9 +22,11 @@ const OUT = process.env.EXAM_OUT ? path.resolve(process.env.EXAM_OUT) : path.joi
 // 目录名带空格无妨：这里只拿它拼路径，题目落进 index 时统一叫 TMUA_MOCK
 const DATABASES = ['TMUA', 'TMUA Mock', 'MAT', 'SMC', 'ECAA', 'AMC', 'GMAT'];
 const ROMANS = ['i', 'ii', 'iii', 'iv', 'v', 'vi'];
-// 扩到 i：TMUA Mock 里有一道 9 选项的题（BeyondHorizonS4-Mock-P1-Q7，选项值 0–8）。
-// MAT / SMC 最多 5 选，括号解析器遇到找不到的标号就停，多一个字母影响不到它们
-const LETTERS = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i'];
+// 扩到 l：TMUA Mock 实测最多 12 选项（JZMaths SetB-P2-Q18 / SetC-P2-Q20，
+// 另有 7 道 10 选项、1 道 9 选项）。MAT / SMC 最多 5 选，括号解析器遇到
+// 找不到的标号就停，多几个字母影响不到它们。再往上不预留：
+// 题面残留规则（detectCorruption 规则 7）会把超出范围的题大声拦下
+const LETTERS = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l'];
 const IMAGE_DIR_NAMES = new Set(['image', 'images']);
 
 // ---------------- frontmatter / 分节 ----------------
@@ -141,7 +143,7 @@ function normalizeAnswer(raw) {
   const token = m[1];
   // 这里只把 token 拣出来；单个 i 到底是字母 I 还是罗马数字 i，不在这儿猜——
   // 交给选项自己的标号去定（见下方的答案规范化）
-  if (/^[A-Ia-i]$/.test(token)) return token.toUpperCase();
+  if (/^[A-La-l]$/.test(token)) return token.toUpperCase();
   if (ROMANS.includes(token.toLowerCase())) return token.toLowerCase();
   return null;
 }
@@ -159,7 +161,7 @@ const IMAGE_ONLY = /^(?:!\[\[[^\]]+\]\]|!\[[^\]]*\]\([^)]+\))$/;
  * 图片全留在题面里，谁也分不清哪张图对应哪个选项。
  */
 function parseTmuaChoices(statement) {
-  const re = /\$\$\s*\\mathbf\s*\{?\s*([A-I])\s*\}?\s*(?:\\quad|\\;|\\ )?\s*([\s\S]*?)\$\$\s*/g;
+  const re = /\$\$\s*\\mathbf\s*\{?\s*([A-L])\s*\}?\s*(?:\\quad|\\;|\\ )?\s*([\s\S]*?)\$\$\s*/g;
   const blocks = [];
   let m;
   while ((m = re.exec(statement)) !== null) {
@@ -252,7 +254,7 @@ function parseSmcChoices(statement) {
     const choices = [];
     let ok = true;
     for (let k = 0; k < parts.length; k++) {
-      const pm = parts[k].trim().match(/^([A-I])\s+([\s\S]+)$/);
+      const pm = parts[k].trim().match(/^([A-L])\s+([\s\S]+)$/);
       if (!pm || pm[1] !== String.fromCharCode(65 + k)) { ok = false; break; }
       choices.push({ label: pm[1], text: pm[2].trim() });
     }
@@ -266,7 +268,7 @@ function parseSmcChoices(statement) {
 
 /** 兜底：选项留在题面（表格式等），按钮只显字母 */
 function inlineFallback(statement, answer, maxLabels) {
-  if (!/^[A-I]$/.test(answer)) return null;
+  if (!/^[A-L]$/.test(answer)) return null;
   const need = Math.max(maxLabels, answer.charCodeAt(0) - 64);
   return {
     cleaned: statement,
@@ -316,7 +318,7 @@ function detectCorruption(parsed, database) {
 
   // 1. 标号不连续：某个选项块在转换时丢了（如 TMUA 23-P2-Q14 缺 E，标号成了 A B C D F）
   const labs = choices.map((c) => c.label);
-  const family = /^[A-I]$/.test(labs[0])
+  const family = /^[A-L]$/.test(labs[0])
     ? LETTERS.map((l) => l.toUpperCase())
     : ROMANS.includes(labs[0])
       ? ROMANS
@@ -362,6 +364,23 @@ function detectCorruption(parsed, database) {
   const selfLabel = self.label.toUpperCase();
   if (new RegExp(`\\\\text\\{[^}]*\\b${selfLabel}\\s+-?[\\d.]`).test(self.text)) {
     return `选项 ${self.label} 正文里重复出现了自己的标号与取值，疑似整段题干被并入`;
+  }
+
+
+  // 7. 题面里残留了「下一个标号」的选项块：选项比解析器认得多
+  //    （如将来冒出 13 个选项的题，而解析器只扩到 L）。只查
+  //    “恰好是下一个标号”的块，避免误伤 $$\mathbf{M}=...$$ 这种矩阵记号
+  const lastLabel = labs[labs.length - 1].toUpperCase();
+  if (/^[A-Z]$/.test(lastLabel)) {
+    const nextLabel = String.fromCharCode(lastLabel.charCodeAt(0) + 1);
+    const residue = new RegExp(
+      String.raw`\$\$\s*\\mathbf\s*\{?\s*` +
+      nextLabel +
+      String.raw`\s*\}?\s*(?:\\quad|\\;|\\ )`,
+    );
+    if (residue.test(cleaned)) {
+      return `题面里残留了选项 ${nextLabel} 的块，选项数超出解析器范围`;
+    }
   }
 
   return null;
@@ -459,6 +478,19 @@ function splitDiagnosticPaper(entries) {
 /** 诊断集（GMAT）：入 index 但另作一池，体例同 hidden */
 function isDiagnosticQuestion(database) {
   return database === 'GMAT';
+}
+
+/**
+ * 题头显示的卷号。Mock 的 frontmatter 统一写 `paper: TMUA Mock`，
+ * 卷名和 P1/P2 只在 id 里（JZMaths_SetE-Mock-P2-Q14）——不拆出来，
+ * 考试页只能显示「TMUA Mock · Q14」，学生对不出自己在做哪套卷
+ */
+function paperLabel(db, data) {
+  const paper = String(data.paper || '');
+  if (db !== 'TMUA_MOCK') return paper;
+  const m = String(data.id || '').match(/^(.+?)-Mock(?:-P(\d+))?-Q/);
+  if (!m) return paper;
+  return `TMUA Mock ${m[1]}${m[2] ? ` P${m[2]}` : ''}`;
 }
 
 function indexDatabase(sourceDatabase, filePath, data) {
@@ -656,7 +688,7 @@ function main() {
         JSON.stringify({
           qid,
           id: String(data.id || ''),
-          paper: String(data.paper || ''),
+          paper: paperLabel(db, data),
           year: Number(data.year) || 0,
           number: String(data.number || ''),
           database: db,
