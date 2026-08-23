@@ -25,7 +25,14 @@ import {
   type DiagnosticSets,
 } from '@/lib/diagnostic';
 import MathText from '@/components/MathText';
-import { buildExam, fetchIndex, fetchQuestions, ExamQuestion, IndexEntry } from '@/lib/exam';
+import {
+  buildExam,
+  fetchIndex,
+  fetchQuestions,
+  EXAM_DATABASES,
+  ExamQuestion,
+  IndexEntry,
+} from '@/lib/exam';
 import {
   addSession,
   availableCountForMode,
@@ -42,9 +49,11 @@ import {
   logicCoverage,
   overview,
   pickQidsForMode,
+  reachableIndex,
   saveIncludeLogicReasoning,
   saveRecords,
   validCompletedCount,
+  wrongRanking,
   grillCount,
   mergeDiagnostic,
   recordDiagnostic,
@@ -333,6 +342,8 @@ export default function ExamApp() {
 
   /** 顶部小页签换区：换到展不开的区就退回 deck，并说明原因 */
   const selectZoneFromTab = (id: ZoneId) => {
+    // 页签切区不清残留报错的话，复烤区抽题失败的红字会跟到经典区的 errMsg 里
+    setError('');
     const blocked = zoneBlockReason(id);
     if (!blocked) {
       chooseZone(id);
@@ -348,27 +359,50 @@ export default function ExamApp() {
   }, [stageView]);
 
   // 卡面徽章要的是各区自己的题量，跟当前前位无关，所以两边都单独算一次。
+  // 互斥之后 expandedCount 报的是扩展池本身的题数（不再是「经典 + 扩展」的全集）——
+  // 9.0 卡上写 583 题，进去抽到的就是这 583 道，徽章与池子终于是同一件事。
   // 也刻意不过逻辑推理开关：徽章报的是「这个区有多少题」，
   // 跟着一个抽题偏好上下跳会让人以为题库缩水了
   const classicCount = index ? indexForLibraryMode(index, 'classic').length : 0;
   const expandedCount = index ? indexForLibraryMode(index, 'hidden').length : 0;
 
-  // 弱项图「练这类题」能摸到的范围。按 9.0 的状态划，而不是按当前前位卡——
-  // 进度面板是跨区的复盘视图，但它同样不许成为绕过 9.0 门槛的后门。
-  // 刻意不过逻辑推理开关（P5 裁决，Design §13）：这条路也是随机抽、也会发新题，
-  // 和开关管的范围确实重叠——但按钮上写着知识点的名字，点「练 Logic and Proof」
-  // 却因为一个别处的开关抽不到逻辑题，比「开关没拦住」更让人糊涂。显式点名胜过
-  // 口味开关。useMemo 不是装饰：ProgressPanel 里 12 个知识点 × 全量索引的
-  // 求交挂在这个引用上，每次重渲染换新数组等于白算
-  const topicScope = useMemo(
-    () => (index ? indexForLibraryMode(index, hiddenUnlocked ? 'hidden' : 'classic') : []),
+  // 复盘视图能摸到的范围：经典卷 ∪（解锁后的）扩展卷。
+  // 「练这类题」的池子和卷面进度墙的分母都读它——两者都是跨区的复盘口径，
+  // 不该跟着 classic / 9.0 互斥一起收窄（站在 9.0 卡前面打开复盘，
+  // 做过的 TMUA 真题不该凭空消失）。但它同样不是绕过 9.0 门槛的后门。
+  //
+  // 刻意不过逻辑推理开关（P5 裁决，Design §13）：「练这类题」也是随机抽、
+  // 也会发新题，和开关管的范围确实重叠——但按钮上写着知识点的名字，
+  // 点「练 Logic and Proof」却因为一个别处的开关抽不到逻辑题，
+  // 比「开关没拦住」更让人糊涂。显式点名胜过口味开关。
+  //
+  // useMemo 不是装饰：GrillPanel 里 12 个知识点 × 全量索引的求交、
+  // ProgressPanel 里 107 套卷的 qid 求交，都挂在这个引用上
+  const reachable = useMemo(
+    () => (index ? reachableIndex(index, hiddenUnlocked) : []),
     [index, hiddenUnlocked],
   );
 
+  // 两套计数各有各的问题要回答：
+  //   poolCounts 走 activeIndex（题库范围 + 逻辑开关），是按钮上那个「N 题」；
+  //   zoneCounts 只走题库范围，回答「这个区里有没有这个库」。
+  // 分开是因为开关清空某个库时该置灰、不该让按钮整个消失——
+  // 消失了用户就找不到「勾回来能救它」这条路
   const poolCounts: Record<string, number> = { TMUA: 0, TMUA_MOCK: 0, MAT: 0, SMC: 0, ECAA: 0, AMC: 0 };
   for (const e of activeIndex) {
     if (poolCounts[e.db] !== undefined) poolCounts[e.db]++;
   }
+  const zoneCounts: Record<string, number> = { TMUA: 0, TMUA_MOCK: 0, MAT: 0, SMC: 0, ECAA: 0, AMC: 0 };
+  for (const e of scopedIndex) {
+    if (zoneCounts[e.db] !== undefined) zoneCounts[e.db]++;
+  }
+
+  /**
+   * 这个区的题库按钮。互斥之后两区的库集合不再是包含关系：classic 有
+   * TMUA/MAT/SMC/ECAA，9.0 只有 TMUA_MOCK/MAT。在 9.0 面板上摆一排
+   * 「TMUA 0 题」的灰按钮既难看又误导——一个库在这个区没题就不列出来。
+   */
+  const bankChoices: Db[] = [...EXAM_DATABASES.filter((d) => zoneCounts[d] > 0), 'ALL'];
 
   // ---- 设置 ----
   const [phase, setPhase] = useState<Phase>('setup');
@@ -380,9 +414,23 @@ export default function ExamApp() {
   const [minutesTouched, setMinutesTouched] = useState(false);
   const [error, setError] = useState('');
 
+  /**
+   * 记住的题库若在当前区里一道题都没有，退到这个区第一个有题的库。
+   *
+   * 互斥之前只有一个方向会落空（classic 记着 TMUA_MOCK），现在两个方向都会：
+   * 在 9.0 里选了 MAT、转回 classic 要退回 TMUA；在 classic 里选了 SMC、
+   * 转进 9.0 也得退（9.0 没有 SMC）。不退的话卡面「快速开始」的摘要会写着
+   * 一个抽不出题的库，按下去只得到一句「没有可用题目」。
+   *
+   * zoneCounts 由 index + libraryMode 完全决定，所以这三个就是全部依赖。
+   */
   useEffect(() => {
-    if (libraryMode === 'classic' && (db === 'TMUA_MOCK' || db === 'AMC')) setDb('TMUA');
-  }, [db, libraryMode]);
+    if (!index || db === 'ALL' || zoneCounts[db] > 0) return;
+    const fallback = EXAM_DATABASES.find((d) => zoneCounts[d] > 0);
+    setDb(fallback ?? 'ALL');
+    // zoneCounts 每次渲染都是新对象，写进依赖数组等于「每次都跑」；
+    // 它的取值完全由 index + libraryMode 决定，列这三个就是完整依赖
+  }, [index, db, libraryMode]);
 
   // ---- 考试 ----
   const [questions, setQuestions] = useState<ExamQuestion[]>([]);
@@ -422,7 +470,17 @@ export default function ExamApp() {
   const recordOverview = overview(records);
   // deck 上那条统计条和进度面板里的数字必须同源，否则会出现
   // 「14 道当前错题」而榜上只列得出 12 条
-  const practiceStats = practiceOverview(records, practiceQids(index));
+  const practicePool = useMemo(() => practiceQids(index), [index]);
+  const practiceStats = practiceOverview(records, practicePool);
+  // 复烤区卡面的错题数必须与面板里那张榜同源：榜用的是「历史错过（w>0）」，
+  // 而 wrongNow 是「最近一次做错」——错过后改对的题仍在榜上，卡面却报 0，
+  // 两处会当面打臉
+  const grillMissedCount = useMemo(
+    () =>
+      wrongRanking(records, Number.POSITIVE_INFINITY).filter((row) => practicePool.has(row.qid))
+        .length,
+    [records, practicePool],
+  );
 
   const downloadWorkbook = async (data: Records) => {
     const blob = await exportRecordsWorkbook(data);
@@ -716,17 +774,23 @@ export default function ExamApp() {
   };
 
   /**
-   * 错题榜的「重练这些」：练的就是榜上渲染出来的那几行，不掺新题。
+   * 复烤区错题榜的「重练这些」：练的就是榜上渲染出来的那几行，不掺新题。
    * 传进来的 qid 已经过 practiceQids 滤掉 diag，start() 里还会再滤一次。
    * db 记成 ALL——错题跨库，写成某一个库的场次记录是错的。
+   *
+   * 不过 9.0 门禁（P5 已裁决维持，Design §13）：重练的是用户自己的错题历史，
+   * 与 Grill 绑定集同理。
    */
   const retryMissed = (qids: number[]) => {
+    // 显式落 practice，与邻居 startGrill / practiceTopic 同一套理由：复烤区的
+    // 卡面写着「可批改可看解析」，上一场碰巧选过 Mock 就开出限时卷是违约
+    setMode('practice');
     void start({ db: 'ALL', qids });
   };
 
   /**
-   * 弱项图的「练这类题」：面板已经按解锁状态划好池子、挑好题，这里只把它送进
-   * 既有的 start({ qids }) 通道。db 同样记 ALL——一个知识点跨库。
+   * 复烤区知识点复盘的「练这类题」：面板已经按解锁状态划好池子、挑好题，
+   * 这里只把它送进既有的 start({ qids }) 通道。db 同样记 ALL——一个知识点跨库。
    * 显式落 practice：复盘要的是批改与解析，Mock 的限时交卷在这儿没有意义
    * （和 startGrill 同一套理由）。
    */
@@ -933,19 +997,21 @@ export default function ExamApp() {
               onOpen={openZone}
               badges={{
                 classic: t.cardBadge.questions(classicCount),
-                grill: t.cardBadge.questions(grillCount(records)),
+                // 复烤区的池子是「绑定题 + 当前错题」，两者不相交（诊断题不进错题榜）。
+                // 只报绑定数会让卡面写着「0 题」而副文写着「21 道错题」，自相矛盾
+                grill: t.cardBadge.questions(grillCount(records) + grillMissedCount),
                 trivial: hiddenUnlocked
                   ? t.cardBadge.expanded(expandedCount)
                   : t.cardBadge.charging,
               }}
               locked={{ classic: false, grill: false, trivial: !hiddenUnlocked }}
-              // Grill 本期仍是 comingSoon，但绑定集非空时先让用户看见
-              // 「诊断确实留下了东西」
-              // Grill 卡面副文：绑了题就报数，没绑就说清楚要先考一次诊断
+              // Grill 卡面副文：复烤区现在管两批题（诊断绑定 + 全站错题），
+              // 只报绑定数会让「一次诊断没考过、但有一堆错题」的人以为这张卡是空的。
+              // 两个数都为 0 时才说定位，其余情况直接报数
               subs={{
                 grill:
-                  grillCount(records) > 0
-                    ? t.diagnostic.grillBound(grillCount(records))
+                  grillCount(records) > 0 || grillMissedCount > 0
+                    ? t.grill.sub(grillCount(records), grillMissedCount)
                     : t.grill.emptySub,
               }}
               charge={{
@@ -984,13 +1050,8 @@ export default function ExamApp() {
               <ProgressPanel
                 records={records}
                 index={index}
-                topicScope={topicScope}
+                reachable={reachable}
                 onBack={backToDeck}
-                onRetry={retryMissed}
-                onPractice={practiceTopic}
-                retryDisabled={phase === 'loading' || !index}
-                // 进度视图下 errMsg / deckHint 都没挂载，抽题失败必须有自己的出口
-                error={error}
                 dbLabel={(d) => dbName(d as Db)}
                 tools={{
                   busy: recordBusy,
@@ -1044,10 +1105,11 @@ export default function ExamApp() {
               {error && <div className={styles.errMsg}>{error}</div>}
             </>
           ) : frontZone === 'grill' ? (
-            /* 复烤区：池子是 Diagnostic 留下的绑定集，其余走既有的练习通道 */
+            /* 复烤区：诊断绑定集 + 全站错题榜 + 知识点复盘，三块都走既有的练习通道 */
             <GrillPanel
               index={index}
               records={records}
+              topicScope={reachable}
               pickMode={grillPickMode}
               onPickMode={setGrillPickMode}
               count={grillCountChoice}
@@ -1055,6 +1117,10 @@ export default function ExamApp() {
               busy={phase === 'loading' || !index}
               onStart={startGrill}
               onGoDiagnostic={goToDiagnostic}
+              onRetry={retryMissed}
+              onPractice={practiceTopic}
+              dbLabel={(d) => dbName(d as Db)}
+              // 复烤视图下 errMsg / deckHint 都没挂载，抽题失败必须有自己的出口
               error={error}
             />
           ) : (
@@ -1064,10 +1130,7 @@ export default function ExamApp() {
 
           <div className={styles.fieldLabel}>{t.setup.fieldBank}</div>
           <div className={styles.segRow}>
-            {(hiddenUnlocked && libraryMode === 'hidden'
-              ? (['TMUA', 'TMUA_MOCK', 'MAT', 'SMC', 'ECAA', 'AMC', 'ALL'] as Db[])
-              : (['TMUA', 'MAT', 'SMC', 'ECAA', 'ALL'] as Db[])
-            ).map((d) => (
+            {bankChoices.map((d) => (
               <button
                 key={d}
                 className={`${styles.segBtn} ${db === d ? styles.segActive : ''}`}
@@ -1078,13 +1141,17 @@ export default function ExamApp() {
                 <span className={styles.segHint}>
                   {d === 'ALL'
                     ? t.setup.questions(Object.values(poolCounts).reduce((a, b) => a + b, 0))
-                    : d === 'AMC' && poolCounts[d] === 0
-                      ? t.setup.answersPending
-                      : t.setup.questions(poolCounts[d] || 0)}
+                    : t.setup.questions(poolCounts[d] || 0)}
                 </span>
               </button>
             ))}
           </div>
+          {/* 互斥之后同名库在两个区指的不是同一批题：9.0 的 TMUA 是回忆题、
+              MAT 是老卷与回忆题——按钮上只有题数，而题数恰恰是用户最不会
+              去做减法的东西，得把范围说破 */}
+          {libraryMode === 'hidden' && (
+            <p className={styles.zoneScopeNote}>{t.setup.trivialScopeNote}</p>
+          )}
 
           {/* 逻辑推理开关属于「题库」这一组，所以不另起 fieldLabel。
               一道标注过的逻辑题都没有时整行不渲染——摆着也只是个按不动的开关。

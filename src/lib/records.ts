@@ -247,10 +247,34 @@ export function hiddenUnlockProgress(index: IndexEntry[], records: Records): num
   return Math.min(1, validCompletedCount(index, records) / HIDDEN_UNLOCK_COUNT);
 }
 
+/**
+ * 抽题池的题库范围。两个区**互斥**（用户裁定）：
+ * classic 只给经典卷，9.0 Trivial 只给扩展卷，谁也不含谁。
+ *
+ * 从前 'hidden' 返回的是 classic ∪ hidden 全集，于是「进 9.0」实际上等于
+ * 「经典池再加点料」——9.0 里抽 20 题，十有八九抽到的还是 TMUA 真题。
+ * 互斥之后进哪个区就练哪批题，卡面徽章报的也是这个区自己的题量。
+ *
+ * diag（GMAT 诊断集）两个区都不进：那批题只属于 Diagnostic Test，
+ * 设计上全程不给对错，混进任一随机池都会破坏「诊断不泄题」的前提。
+ */
 export function indexForLibraryMode(index: IndexEntry[], mode: LibraryMode): IndexEntry[] {
-  // diag（GMAT 诊断集）永不进随机练习池：那批题只属于 Diagnostic Test，
-  // 设计上全程不给对错，混进 classic/9.0 会破坏「诊断不泄题」的前提
-  return index.filter((entry) => !entry.diag && (mode === 'hidden' || !entry.hidden));
+  return index.filter((entry) => !entry.diag && (mode === 'hidden' ? !!entry.hidden : !entry.hidden));
+}
+
+/**
+ * 用户当前**够得着**的全部题：经典卷 ∪（解锁后的）扩展卷。
+ *
+ * 这不是抽题池，是复盘视图的口径。互斥那层回答的是「这一次去哪个区抽题」，
+ * 而「我做过的题在各知识点上怎么样」「这套卷我做了几题」问的是另一件事——
+ * 它们跨区，不该跟着互斥一起收窄，否则站在 9.0 卡前面打开复盘，
+ * 就会看见自己做过的 TMUA 真题凭空消失。
+ *
+ * 但它同样不是后门：还没拿到 9.0 的人，这里一道扩展池的题也摸不到，
+ * 连卷名都不会出现在卷面进度墙上（不剧透）。
+ */
+export function reachableIndex(index: IndexEntry[], unlocked: boolean): IndexEntry[] {
+  return index.filter((entry) => !entry.diag && (unlocked || !entry.hidden));
 }
 
 // ---- 逻辑推理题开关 ----

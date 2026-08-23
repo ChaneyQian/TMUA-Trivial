@@ -34,11 +34,13 @@ test('static bank separates refreshed TMUA Mock and keeps expanded pools behind 
   const index = JSON.parse(fs.readFileSync(path.join(outputDir, 'index.json'), 'utf8'));
   const counts = Object.groupBy(index, (entry) => entry.db);
 
-  assert.equal(counts.TMUA?.length, 360);
+  // 360 道真题 + 2024/2025 回忆题 75 道（回忆题落 hidden）
+  assert.equal(counts.TMUA?.length, 435);
   // Mock 已从 TMUA/Mock 提升为源里的独立顶层库，并扩充了 BeyondHorizon / Zetta 几套
   assert.equal(counts.TMUA_MOCK?.length, 440);
   assert.equal(counts.ECAA?.length, 123);
-  assert.equal(counts.MAT?.length, 309);
+  // MAT 2024（24 题）/ 2025（20 题）回忆题入池后 309 → 353，两卷都归扩展池
+  assert.equal(counts.MAT?.length, 353);
   assert.equal(counts.SMC?.length, 674);
   assert.equal(counts.AMC?.length || 0, 0, 'AMC files without answers must not enter the gradeable index');
 
@@ -56,10 +58,13 @@ test('static bank separates refreshed TMUA Mock and keeps expanded pools behind 
   assert.equal(index.find((entry) => entry.qid === 20132101211101)?.db, 'TMUA_MOCK');
 
   const hidden = index.filter((entry) => entry.hidden);
-  assert.equal(hidden.length, 539);
+  assert.equal(hidden.length, 658);
   assert.equal(hidden.filter((entry) => entry.db === 'TMUA_MOCK').length, 440);
-  assert.equal(hidden.filter((entry) => entry.db === 'MAT').length, 99);
-  assert.equal(hidden.some((entry) => entry.db === 'TMUA' || entry.db === 'SMC' || entry.db === 'ECAA'), false);
+  // 1996–2006 的 99 道 + 2024/2025 回忆题的 44 道
+  assert.equal(hidden.filter((entry) => entry.db === 'MAT').length, 143);
+  // TMUA 自 24/25 回忆题起也有 hidden 卷了；仍无 hidden 的只剩 SMC / ECAA
+  assert.equal(hidden.filter((entry) => entry.db === 'TMUA').length, 75);
+  assert.equal(hidden.some((entry) => entry.db === 'SMC' || entry.db === 'ECAA'), false);
   assert.equal(index.find((entry) => entry.qid === 20132101202101)?.hidden, true);
   assert.equal(index.find((entry) => entry.qid === 20132101202101)?.db, 'TMUA_MOCK');
   assert.equal(index.find((entry) => entry.qid === 90010210100)?.hidden, undefined);

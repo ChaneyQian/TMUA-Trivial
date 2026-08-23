@@ -18,7 +18,8 @@ const zh = {
 
   zone: {
     title: { classic: '经典题库', grill: '复烤区', trivial: '9.0 Trivial' },
-    sub: { classic: 'TMUA · MAT · SMC · ECAA', grill: '即将开放', trivial: '扩展题库' },
+    // grill 的副文由 ExamApp 按绑定题 / 错题数覆盖，这里是兜底的定位说明
+    sub: { classic: 'TMUA · MAT · SMC · ECAA', grill: '错题与弱项复盘', trivial: '扩展题库' },
   },
 
   deck: {
@@ -64,12 +65,13 @@ const zh = {
       const pct = total ? Math.round((tagged / total) * 100) : 0;
       return `${head}所选范围共 ${total} 题，其中 ${tagged} 题整理过知识点（${pct}%）。剩下 ${total - tagged} 题还没整理，里面若有逻辑题仍会出现。`;
     },
+    // 互斥后 9.0 的同名库是另一批题，按钮上只有题数看不出来，范围得说破
+    trivialScopeNote: '此区只收扩展卷（Mock 与回忆题），与经典题库不重复。',
     fieldMode: '模式',
     fieldPick: '抽题范围',
     fieldCount: (n: number) => `题目数量(题库可用 ${n} 题)`,
     fieldMinutes: '限时(分钟)',
     questions: (n: number) => `${n} 题`,
-    answersPending: '待补答案',
     practice: '练习',
     practiceLabel: '练习(默认)',
     practiceHint: '选完 Enter 即时批改',
@@ -154,6 +156,35 @@ const zh = {
       `${date} · ${db} · ${mode} · ${right}/${n} · ${clock}`,
     sessionPick: '点击图中任意一场查看详情',
 
+    // 卷面进度墙。一套卷一个小方格，颜色深浅＝这套卷做过的比例
+    papersTitle: '卷面进度',
+    // 口径行：分子分母各是什么，一句说清，别让人对着颜色猜
+    papersNote: '已做过的题数 / 卷内可判分题数',
+    paperCell: (label: string, done: number, total: number) =>
+      `${label} · 已做 ${done} / ${total} 题`,
+  },
+
+  grill: {
+    title: '复烤区',
+    // 定位从「诊断绑定集」扩成「错题与弱项的复盘区」，一句话说全三块
+    lead: '把做过的题重新烤一遍：Diagnostic 里考过的题、最常做错的题、按知识点看的复盘，都在这里。',
+    emptySub: '错题与诊断题都会进来',
+    sub: (bound: number, wrong: number) => `${bound} 道绑定 · ${wrong} 道错题`,
+    // 三块全空时的整卡空态。原来那句「完成一次 Diagnostic 后，这里会出现你的题」
+    // 只讲了三分之一——现在普通练习做错的题同样会自己走进来，不说就是漏了半条路
+    emptyTitle: '还没有可复盘的东西',
+    emptyHint:
+      '做几场练习，做错的题会自动出现在这里；考一次 Diagnostic，考过的那 40 道题也会绑进来。',
+    goDiagnostic: '去看 Diagnostic',
+    boundTitle: '诊断绑定题',
+    boundEmpty: '还没考过 Diagnostic —— 考完之后，那 40 道题会绑到这里，答案和解析一起放出来。',
+    bound: (n: number) => `已绑定 ${n} 道题`,
+    dangling: (n: number) => `其中 ${n} 道已随题库更新移除，不计入可用`,
+    fieldCount: (n: number) => `题目数量（可用 ${n} 题）`,
+    countAll: '全部',
+    start: '开始复烤',
+    empty: '当前策略下没有可练的题，换个策略试试。',
+
     missedTitle: '最常做错',
     missedRetry: '重练这些',
     missedEmpty: '还没有错题记录 —— 这里会列出最该回头看的题。',
@@ -165,7 +196,7 @@ const zh = {
     // 自己 100% 的行——那不是弱项，叫弱项就是标题在撒谎。弱的排前面这个
     // 排序本身写进口径行
     weakTitle: '知识点复盘',
-    // 和上面的统计块同一个口径、同一种措辞，两处不一致会被当成两种算法
+    // 和进度面板的统计块同一个口径、同一种措辞，两处不一致会被当成两种算法
     weakNote: '已作答题目的累计正确率 · 弱的排前面',
     weakRow: (questions: number, accuracy: string) => `做过 ${questions} 题 · 正确率 ${accuracy}`,
     weakPractice: '练这类题',
@@ -186,21 +217,6 @@ const zh = {
       banks
         ? `这里只算整理过知识点的题：你做过的 ${attempted} 道里有 ${analysed} 道。其余的落在知识点还没整理完的库（${banks}），暂时进不来。`
         : `这里只算整理过知识点的题：你做过的 ${attempted} 道里有 ${analysed} 道，其余的还没整理进知识点。`,
-  },
-
-  grill: {
-    title: '复烤区',
-    lead: '这里是你在 Diagnostic 里考过的题。可以正常做题、批改、看解析——诊断时不给的答案，在这儿一次烤明白。',
-    emptySub: '完成一次 Diagnostic 后出现',
-    emptyTitle: '还没有绑定的题',
-    emptyHint: '完成一次 Diagnostic 后，这里会出现你的题。',
-    goDiagnostic: '去看 Diagnostic',
-    bound: (n: number) => `已绑定 ${n} 道题`,
-    dangling: (n: number) => `其中 ${n} 道已随题库更新移除，不计入可用`,
-    fieldCount: (n: number) => `题目数量（可用 ${n} 题）`,
-    countAll: '全部',
-    start: '开始复烤',
-    empty: '当前策略下没有可练的题，换个策略试试。',
   },
 
   diagnostic: {
@@ -268,7 +284,11 @@ const en: Strings = {
 
   zone: {
     title: { classic: 'Classic Library', grill: 'Grill', trivial: '9.0 Trivial' },
-    sub: { classic: 'TMUA · MAT · SMC · ECAA', grill: 'Coming Soon', trivial: 'Extended Library' },
+    sub: {
+      classic: 'TMUA · MAT · SMC · ECAA',
+      grill: 'Wrong answers & weak spots',
+      trivial: 'Extended Library',
+    },
   },
 
   deck: {
@@ -307,12 +327,12 @@ const en: Strings = {
       const pct = total ? Math.round((tagged / total) * 100) : 0;
       return `${head}Of the ${total} questions in this selection, ${tagged} have been sorted by topic (${pct}%). The other ${total - tagged} have not, so any logic questions among them will still come up.`;
     },
+    trivialScopeNote: 'This zone holds only the expanded papers (mocks and recalled questions) — nothing here overlaps the Classic library.',
     fieldMode: 'Mode',
     fieldPick: 'Question Selection',
     fieldCount: (n: number) => `Number of Questions (${n} available)`,
     fieldMinutes: 'Time Limit (minutes)',
     questions: (n: number) => `${n} Qs`,
-    answersPending: 'Answers pending',
     practice: 'Practice',
     practiceLabel: 'Practice (default)',
     practiceHint: 'Select, then Enter to mark',
@@ -395,6 +415,31 @@ const en: Strings = {
       `${date} · ${db} · ${mode} · ${right}/${n} · ${clock}`,
     sessionPick: 'Tap any session in the chart for details',
 
+    papersTitle: 'Paper progress',
+    papersNote: 'Questions attempted / gradeable questions in the paper',
+    paperCell: (label: string, done: number, total: number) =>
+      `${label} · ${done} of ${total} attempted`,
+  },
+
+  grill: {
+    title: 'Grill',
+    lead: 'A place to reheat what you have already done: the questions from your Diagnostic, the ones you get wrong most often, and a topic-by-topic review.',
+    emptySub: 'Wrong answers and Diagnostic questions land here',
+    sub: (bound: number, wrong: number) => `${bound} bound · ${wrong} wrong now`,
+    emptyTitle: 'Nothing to review yet',
+    emptyHint:
+      'Practise a few sessions and anything you get wrong turns up here. Sit a Diagnostic and its 40 questions get bound in too.',
+    goDiagnostic: 'See the Diagnostic',
+    boundTitle: 'Diagnostic questions',
+    boundEmpty:
+      'No Diagnostic yet — once you sit one, its 40 questions land here, answers and solutions included.',
+    bound: (n: number) => `${n} questions bound`,
+    dangling: (n: number) => `${n} of them were dropped by a bank update and are not available`,
+    fieldCount: (n: number) => `Number of Questions (${n} available)`,
+    countAll: 'All',
+    start: 'Start Grill',
+    empty: 'Nothing to practise with this selection — try another one.',
+
     missedTitle: 'Most missed',
     missedRetry: 'Retry these',
     missedEmpty: 'No wrong answers recorded yet — the questions worth revisiting will show up here.',
@@ -419,21 +464,6 @@ const en: Strings = {
       banks
         ? `Only questions sorted by topic are counted here: ${analysed} of the ${attempted} you have attempted. The rest sit in banks that have not been sorted yet (${banks}), so they are left out.`
         : `Only questions sorted by topic are counted here: ${analysed} of the ${attempted} you have attempted. The rest have not been sorted yet.`,
-  },
-
-  grill: {
-    title: 'Grill',
-    lead: 'These are the questions you met in the Diagnostic. Practise them normally — marking and solutions included. The answers withheld during the test are all here.',
-    emptySub: 'Unlocked by a Diagnostic',
-    emptyTitle: 'Nothing bound yet',
-    emptyHint: 'Finish a Diagnostic and your questions will show up here.',
-    goDiagnostic: 'See the Diagnostic',
-    bound: (n: number) => `${n} questions bound`,
-    dangling: (n: number) => `${n} of them were dropped by a bank update and are not available`,
-    fieldCount: (n: number) => `Number of Questions (${n} available)`,
-    countAll: 'All',
-    start: 'Start Grill',
-    empty: 'Nothing to practise with this selection — try another one.',
   },
 
   diagnostic: {

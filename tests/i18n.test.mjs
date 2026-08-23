@@ -169,10 +169,22 @@ test('the outer layer renders its copy from the dictionary, not from literals', 
     't.records.exportBtn',
     't.records.clearBtn',
     't.progress.title',
-    't.progress.missedRetry',
+    // P6 新增的卷面进度墙
+    't.progress.papersTitle',
+    't.progress.papersNote',
   ]) {
     assert.ok(progress.includes(key), `the progress panel must render ${key} from the dictionary`);
   }
+
+  // 错题榜与知识点复盘 P6 搬进了复烤区，文案键也跟着搬到 grill 名下——
+  // 字典是按「哪张卡在说话」分的段，键留在 progress 下就对不上人了
+  const grill = fs.readFileSync('src/components/grill/GrillPanel.tsx', 'utf8');
+  assert.match(grill, /useLang\(\)/);
+  for (const key of ['t.grill.missedTitle', 't.grill.missedRetry', 't.grill.weakTitle', 't.grill.weakPractice']) {
+    assert.ok(grill.includes(key), `the grill panel must render ${key} from the dictionary`);
+  }
+  assert.doesNotMatch(grill, /t\.progress\./, 'the grill panel must not borrow the progress copy');
+  assert.doesNotMatch(progress, /t\.progress\.(missed|weak)/, 'that copy moved to the grill panel');
 });
 
 test('the language toggle ships as a round button in the setup stage only', () => {

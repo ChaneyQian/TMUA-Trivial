@@ -211,8 +211,9 @@ test('hidden mode unlocks only after 365 valid unique QIDs have been answered', 
   assert.equal(recordsModule.isHiddenModeUnlocked(index, records), true);
 });
 
-test('classic mode excludes hidden index entries until the expanded pool is selected', () => {
+test('the two zones are mutually exclusive pools, while the reachable set spans both', () => {
   assert.equal(typeof recordsModule.indexForLibraryMode, 'function');
+  assert.equal(typeof recordsModule.reachableIndex, 'function');
   // 标注类型：数组字面量里 hidden: true 会被推断成 boolean，与 IndexEntry 的 hidden?: true 不符
   const index: IndexEntry[] = [
     { qid: 1, db: 'TMUA' },
@@ -224,6 +225,27 @@ test('classic mode excludes hidden index entries until the expanded pool is sele
   ];
 
   assert.deepEqual(recordsModule.indexForLibraryMode(index, 'classic').map((entry) => entry.qid), [1, 4]);
-  // diag（GMAT 诊断集）连 9.0 扩展池也不进——它只属于 Diagnostic Test
-  assert.deepEqual(recordsModule.indexForLibraryMode(index, 'hidden').map((entry) => entry.qid), [1, 2, 3, 4, 5]);
+  // 互斥（P6 用户裁定）：9.0 给的是扩展池本身，不再是「经典 + 扩展」的全集。
+  // 从前进 9.0 抽 20 题，十有八九抽到的还是经典卷，卡面徽章报的也是全集数
+  assert.deepEqual(recordsModule.indexForLibraryMode(index, 'hidden').map((entry) => entry.qid), [2, 3, 5]);
+  // 两个池子不相交，合起来正好是全部非诊断题——互斥的字面意思
+  assert.deepEqual(
+    [
+      ...recordsModule.indexForLibraryMode(index, 'classic'),
+      ...recordsModule.indexForLibraryMode(index, 'hidden'),
+    ]
+      .map((entry) => entry.qid)
+      .sort((a, b) => a - b),
+    [1, 2, 3, 4, 5],
+  );
+
+  // 「够得着的题」是跨区的复盘口径，不跟着互斥收窄：解锁后是并集，
+  // 未解锁就只剩经典卷。diag 两边都不进
+  assert.deepEqual(recordsModule.reachableIndex(index, true).map((entry) => entry.qid), [1, 2, 3, 4, 5]);
+  assert.deepEqual(recordsModule.reachableIndex(index, false).map((entry) => entry.qid), [1, 4]);
+  assert.equal(
+    recordsModule.reachableIndex(index, true).some((entry) => entry.diag),
+    false,
+    'diag questions must never reach a review view either',
+  );
 });

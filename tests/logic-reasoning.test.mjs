@@ -224,14 +224,15 @@ test('unticking removes only tagged logic questions and keeps everything untagge
     '一道都没打标的库，关掉开关也不该少一题',
   );
 
-  // 两层复合：题库范围先滤，标签后滤，各自的口径都不受对方影响
+  // 两层复合：题库范围先滤，标签后滤，各自的口径都不受对方影响。
+  // 两个区互斥（P6 用户裁定）：classic 只有非 hidden，9.0 只有 hidden
   const classic = indexForLibraryMode(MIXED, 'classic');
   assert.deepEqual(classic.map((entry) => entry.qid), [1, 2, 5]);
   assert.deepEqual(indexForLogicReasoning(classic, false).map((entry) => entry.qid), [1, 5]);
 
   const expanded = indexForLibraryMode(MIXED, 'hidden');
-  assert.deepEqual(expanded.map((entry) => entry.qid), [1, 2, 3, 4, 5]);
-  assert.deepEqual(indexForLogicReasoning(expanded, false).map((entry) => entry.qid), [1, 4, 5]);
+  assert.deepEqual(expanded.map((entry) => entry.qid), [3, 4]);
+  assert.deepEqual(indexForLogicReasoning(expanded, false).map((entry) => entry.qid), [4]);
 });
 
 test('coverage reports what the switch can actually reach in the chosen bank', () => {

@@ -1310,3 +1310,10 @@
     transition: none;
   }
 }
+
+/* 9.0 面板题库行下的范围说明：互斥后同名库是另一批题，只有题数看不出来 */
+.zoneScopeNote {
+  margin: 0.35rem 0 0;
+  font-size: 0.74rem;
+  color: var(--text-muted);
+}

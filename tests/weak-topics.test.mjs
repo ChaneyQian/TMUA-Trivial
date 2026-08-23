@@ -17,7 +17,7 @@ import { fileURLToPath } from 'node:url';
 // 显式带 .ts 扩展名：node --experimental-strip-types 直接跑源码，ESM 解析器不补
 import { DICT } from '../src/lib/i18n.ts';
 import { practiceQids } from '../src/lib/progress.ts';
-import { createEmptyRecords, indexForLibraryMode } from '../src/lib/records.ts';
+import { createEmptyRecords, indexForLibraryMode, reachableIndex } from '../src/lib/records.ts';
 import {
   TOPIC_PRACTICE_LIMIT,
   WEAK_TOPIC_MIN_QUESTIONS,
@@ -33,8 +33,11 @@ import {
 } from '../src/lib/topics.ts';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const panelPath = 'src/components/progress/ProgressPanel.tsx';
-const cssPath = 'src/components/progress/Progress.module.css';
+// P6 把知识点复盘从进度面板搬进了复烤区（Design §P6 A）：
+// 「我练到哪儿了」归进度面板，「我该回头做哪些题」归复烤区。
+// 行为一条没改，所以下面这些断言原样跟着搬过来，只换了文件
+const panelPath = 'src/components/grill/GrillPanel.tsx';
+const cssPath = 'src/components/grill/Grill.module.css';
 const examPath = 'src/components/exam/ExamApp.tsx';
 const buildPath = 'scripts/build-data.mjs';
 
@@ -298,7 +301,7 @@ test('diagnostic questions are structurally absent from the topic analysis', (t)
   assert.deepEqual(rows, [{ topic: 'Algebra', questions: 1, attempts: 2, wrong: 1, accuracy: 0.5 }]);
 
   // 「练这类题」的池子同样不给诊断题留门
-  const scope = indexForLibraryMode(SCOPE, 'hidden');
+  const scope = reachableIndex(SCOPE, true);
   const entries = topicEntries(topicsFixture({ Algebra: [1, 5] }), 'Algebra', scope);
   assert.deepEqual(entries.map((entry) => entry.qid), [1]);
 });
@@ -513,24 +516,34 @@ test('the reach note owns up to how much of your practice this analysis covers',
 test('"practise these" stays inside the range the user has actually unlocked', () => {
   const data = topicsFixture({ Algebra: [1, 2, 3, 4, 5] });
 
+  // 范围读的是 reachableIndex（「够得着的题」），不是抽题池那层互斥的
+  // indexForLibraryMode——复盘是跨区的，站在 9.0 卡前面打开它，
+  // 做过的经典卷题不该凭空消失
   // 未解锁：扩展池那道（4，hidden）摸不到，诊断题（5）也摸不到
-  const classic = topicEntries(data, 'Algebra', indexForLibraryMode(SCOPE, 'classic'));
+  const classic = topicEntries(data, 'Algebra', reachableIndex(SCOPE, false));
   assert.deepEqual(classic.map((entry) => entry.qid), [1, 2, 3]);
-  // 解锁之后 hidden 才进来
-  const expanded = topicEntries(data, 'Algebra', indexForLibraryMode(SCOPE, 'hidden'));
+  // 解锁之后 hidden 才进来，而经典卷仍然在
+  const expanded = topicEntries(data, 'Algebra', reachableIndex(SCOPE, true));
   assert.deepEqual(expanded.map((entry) => entry.qid), [1, 2, 3, 4]);
+
+  // 反面：若误用了互斥那层，解锁用户的「练这类题」会只剩扩展池那一道
+  assert.deepEqual(
+    topicEntries(data, 'Algebra', indexForLibraryMode(SCOPE, 'hidden')).map((entry) => entry.qid),
+    [4],
+    '互斥池不该被当成复盘口径——这条钉住两者确实不同',
+  );
 
   // 这个知识点的题全在还没解开的范围里 → 空池，按钮该置灰
   const onlyHidden = topicEntries(
     topicsFixture({ Geometry: [4] }),
     'Geometry',
-    indexForLibraryMode(SCOPE, 'classic'),
+    reachableIndex(SCOPE, false),
   );
   assert.deepEqual(onlyHidden, []);
   assert.deepEqual(pickTopicQids(onlyHidden, createEmptyRecords()), []);
 
   // 词表里没有的知识点、以及一道题都没有的知识点，同样是空池
-  assert.deepEqual(topicEntries(data, 'Calculus', indexForLibraryMode(SCOPE, 'hidden')), []);
+  assert.deepEqual(topicEntries(data, 'Calculus', reachableIndex(SCOPE, true)), []);
 });
 
 test('"practise these" caps at ten and reaches for wrong answers first', () => {
@@ -635,20 +648,20 @@ test('the panel loads the inversion lazily and hides the whole block when it is 
 
   // 每行：知识点名、做过 N 题、正确率、横条、按钮
   assert.match(panel, /\{row\.topic\}/);
-  assert.match(panel, /t\.progress\.weakRow\(row\.questions, fmtPercent\(row\.accuracy\)\)/);
+  assert.match(panel, /t\.grill\.weakRow\(row\.questions, fmtPercent\(row\.accuracy\)\)/);
   assert.match(panel, /styles\.topicBar/);
   assert.match(panel, /styles\.topicFill/);
-  assert.match(panel, /t\.progress\.weakPractice\}/);
+  assert.match(panel, /t\.grill\.weakPractice\}/);
   // 空池置灰
-  assert.match(panel, /disabled=\{retryDisabled \|\| pool\.length === 0\}/);
+  assert.match(panel, /disabled=\{busy \|\| !index \|\| pool\.length === 0\}/);
   // 抽题在点击那一刻发生：渲染期算的话每次重渲染都换一批，还白洗牌
   assert.match(panel, /onClick=\{\(\) => onPractice\(pickTopicQids\(pool, records\)\)\}/);
   assert.doesNotMatch(panel, /setTimeout\([^)]*onPractice/);
 
   // 两条披露：门槛之外的知识点、覆盖不到的题
-  assert.match(panel, /t\.progress\.weakThin\(thin, WEAK_TOPIC_MIN_QUESTIONS\)/);
+  assert.match(panel, /t\.grill\.weakThin\(thin, WEAK_TOPIC_MIN_QUESTIONS\)/);
   assert.match(panel, /reach\.analysed < reach\.attempted/);
-  assert.match(panel, /t\.progress\.weakCoverage\(/);
+  assert.match(panel, /t\.grill\.weakCoverage\(/);
   // 全部知识点都不够格时换引导文案
   assert.match(panel, /weak\.length === 0 \? \(\s*<p className=\{styles\.empty\}>/);
 
@@ -661,22 +674,27 @@ test('the panel loads the inversion lazily and hides the whole block when it is 
 test('the app hands the panel a scope that honours the 9.0 gate and ignores the logic switch', () => {
   const exam = fs.readFileSync(examPath, 'utf8');
 
-  // 范围按解锁状态划，不按当前前位卡——进度面板是跨区的复盘视图。
-  // useMemo 是刻意的：ProgressPanel 里 12 个知识点 × 全量索引的求交挂在
-  // 这个引用上，每次重渲染换新数组等于 memo 白写
+  // 范围按解锁状态划，不按当前前位卡——复烤区是跨区的复盘视图。
+  // 读的是 reachableIndex（经典 ∪ 解锁后的扩展）而不是互斥那层：
+  // 站在 9.0 卡前面打开复盘，做过的经典卷题不该凭空消失。
+  // useMemo 是刻意的：12 个知识点 × 全量索引的求交、107 套卷的 qid 求交
+  // 都挂在这个引用上，每次重渲染换新数组等于 memo 白写
   assert.match(
     exam,
-    /const topicScope = useMemo\(\s*\(\) => \(index \? indexForLibraryMode\(index, hiddenUnlocked \? 'hidden' : 'classic'\) : \[\]\),\s*\[index, hiddenUnlocked\],\s*\);/,
+    /const reachable = useMemo\(\s*\(\) => \(index \? reachableIndex\(index, hiddenUnlocked\) : \[\]\),\s*\[index, hiddenUnlocked\],\s*\);/,
   );
-  assert.match(exam, /topicScope=\{topicScope\}/);
+  assert.match(exam, /topicScope=\{reachable\}/);
+  assert.match(exam, /reachable=\{reachable\}/, '卷面进度墙的分母读的是同一个集合');
   // 逻辑推理开关（P4）不该碰这条路：它管的是随机抽题的口味
   assert.equal(
-    exam.includes('indexForLogicReasoning(topicScope'),
+    exam.includes('indexForLogicReasoning(reachable'),
     false,
     '弱项图不经过逻辑推理那层滤网',
   );
-  assert.equal(exam.includes('topicScope = activeIndex'), false);
   assert.equal(exam.includes('topicScope={activeIndex}'), false);
+  // 互斥那层是抽题池，不是复盘口径；拿它当 scope 会让解锁用户在复烤区
+  // 只练得到扩展卷
+  assert.equal(exam.includes('topicScope={scopedIndex}'), false);
 
   // 走 P0 建好的 start({ qids }) 通道，practice 模式，同步直调
   assert.match(exam, /const practiceTopic = \(qids: number\[\]\) => \{/);
@@ -693,25 +711,29 @@ test('the weak-topic rows reuse the panel styling instead of inventing a new one
 
   // 按钮直接借面板现成的 ghost 样式，不另起一套
   assert.match(panel, /\$\{styles\.ghost\} \$\{styles\.topicPractice\}/);
-  // 行卡片与错题榜同一个配方（边框 + surface-alt），横条与用时细柱同一个配方
+  // 行卡片与错题榜同一个配方（边框 + surface-alt），横条与进度面板的
+  // 用时细柱同一个配方
   assert.match(css, /\.topicRow \{[^}]*var\(--surface-alt\)/s);
   assert.match(css, /\.topicRow \{[^}]*border: 1px solid var\(--border\)/s);
   assert.match(css, /\.topicBar \{[^}]*color-mix\(in srgb, var\(--accent\)/s);
   assert.match(css, /\.topicFill \{[^}]*background: var\(--accent\)/s);
+  // 紧凑版必须排在 .ghost 之后：两个类同权重，靠源码顺序决胜负
+  assert.ok(css.indexOf('.ghost {') < css.indexOf('.topicPractice {'), '.topicPractice 会被 .ghost 整块盖掉');
   // 主题变量之外一个字面色都没有
   assert.doesNotMatch(panel, /#[0-9a-fA-F]{3,8}\b/);
 
   // 横条是装饰，数字在文本里，读屏别念两遍
   assert.match(panel, /className=\{styles\.topicBar\} aria-hidden="true"/);
   // 行名和读屏标签都要走显示名映射：中文界面下知识点给译名，读屏念的得是同一个词
-  assert.match(panel, /\{t\.progress\.topicName\(row\.topic\)\}/);
-  assert.match(panel, /aria-label=\{t\.progress\.weakPracticeAria\(t\.progress\.topicName\(row\.topic\)\)\}/);
+  assert.match(panel, /\{t\.grill\.topicName\(row\.topic\)\}/);
+  assert.match(panel, /aria-label=\{t\.grill\.weakPracticeAria\(t\.grill\.topicName\(row\.topic\)\)\}/);
   assert.match(panel, /className=\{styles\.topicList\} role="list"/);
 });
 
 test('both dictionaries carry the weak-topic copy and own up to the gaps', () => {
   for (const [lang, dict] of Object.entries(DICT)) {
-    const p = dict.progress;
+    // 文案随板块一起搬到了 grill 名下：字典是按「哪张卡在说话」分段的
+    const p = dict.grill;
     for (const key of ['weakTitle', 'weakNote', 'weakPractice']) {
       assert.ok(p[key]?.trim().length > 0, `${lang} 的 ${key} 是空的`);
     }
@@ -729,28 +751,28 @@ test('both dictionaries carry the weak-topic copy and own up to the gaps', () =>
 
   // 口径的英文措辞是裁定过的原话；「弱的排前面」这个排序事实也要说出来
   assert.equal(
-    DICT.en.progress.weakNote,
+    DICT.en.grill.weakNote,
     'Lifetime accuracy on attempted questions · weakest first',
   );
   // 标题不许叫「弱项」：榜上列的是全部够格的知识点，全对的人也会看到 100% 的行
-  assert.doesNotMatch(DICT.zh.progress.weakTitle, /弱项/);
-  assert.doesNotMatch(DICT.en.progress.weakTitle, /weak/i);
+  assert.doesNotMatch(DICT.zh.grill.weakTitle, /弱项/);
+  assert.doesNotMatch(DICT.en.grill.weakTitle, /weak/i);
   // 这些不是考试专名，两种语言必须真的翻过（i18n.test 的白名单不该被撑大）
   for (const key of ['weakTitle', 'weakNote', 'weakPractice']) {
-    assert.notEqual(DICT.zh.progress[key], DICT.en.progress[key], `${key} 没翻`);
+    assert.notEqual(DICT.zh.grill[key], DICT.en.grill[key], `${key} 没翻`);
   }
 
   // 知识点名两种界面都用题库里的英文规范名，不翻（用户裁定）：
   // 学生对着的是英文原卷，硬翻反而和题面对不上
   for (const [lang, dict] of Object.entries(DICT)) {
     for (const name of ['Algebra', 'Sequences and Series', 'Future Topic']) {
-      assert.equal(dict.progress.topicName(name), name, `${lang} 的知识点名不该被翻译或改写`);
+      assert.equal(dict.grill.topicName(name), name, `${lang} 的知识点名不该被翻译或改写`);
     }
   }
 
   // 覆盖披露的无名单分支：用户漏的题全落在整理过大半的库里时，不点名任何库
   for (const [lang, dict] of Object.entries(DICT)) {
-    const bankless = dict.progress.weakCoverage(3, 5, '');
+    const bankless = dict.grill.weakCoverage(3, 5, '');
     assert.ok(bankless.includes('3') && bankless.includes('5'), `${lang} 的无名单分支要给出两个数`);
     assert.doesNotMatch(bankless, /（）|\(\)/, `${lang} 的无名单分支不该留一对空括号`);
   }

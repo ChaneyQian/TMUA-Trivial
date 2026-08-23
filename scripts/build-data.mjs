@@ -493,6 +493,16 @@ function paperLabel(db, data) {
   return `TMUA Mock ${m[1]}${m[2] ? ` P${m[2]}` : ''}`;
 }
 
+/**
+ * 展示用的卷号全名，与考试页题头的 sourceLabel 同一条规则：
+ * paper 里已经写了年份就不重复拼（「ECAA 2021 Section 1 Part B」不该变成
+ * 「… Part B 2021」），没写才补上。卷面进度墙的分卷粒度就是这个字符串。
+ */
+function fullPaperLabel(paper, year) {
+  if (!year || paper.includes(String(year))) return paper;
+  return `${paper} ${year}`;
+}
+
 function indexDatabase(sourceDatabase, filePath, data) {
   // 独立顶层库，整库都是 mock
   if (sourceDatabase === 'TMUA Mock') return 'TMUA_MOCK';
@@ -576,6 +586,18 @@ const TOPIC_ALIASES = {
 
 const TOPIC_CANONICAL = new Map(TOPIC_VOCAB.map((name) => [name.toLowerCase(), name]));
 
+// ---------------- 卷面清单（papers.json） ----------------
+//
+// 进度面板的「卷面进度」墙要按卷统计「这套卷我做过几题」，得有一张
+// 卷 → qid 的清单。和 topics.json 一样单独落一个文件、不进 index.json：
+// index 每次冷启动都要下载，而这份数据只有打开进度面板才用得到。
+//
+// diag（GMAT 诊断集）整库不收：诊断题全程不显示对错，连「做过几题」
+// 都不该经这面墙露出来。
+
+/** 墙上按库分组的顺序，与 lib/exam.ts 的 EXAM_DATABASES 同序 */
+const PAPER_DB_ORDER = ['TMUA', 'TMUA_MOCK', 'MAT', 'SMC', 'ECAA', 'AMC'];
+
 /** 规范名或 null（词表外） */
 function canonicalTopic(raw) {
   const key = String(raw).trim().toLowerCase();
@@ -628,6 +650,8 @@ function main() {
   const topicQids = new Map();
   const topicCoverage = {};
   const unknownTopics = new Map();
+  // 卷面清单：键是「库 + 展示用卷号」，粒度就是题头上写的那一行
+  const papers = new Map();
   let inlineCount = 0;
   const skipped = { noQid: 0, noStatement: 0, badAnswer: 0, noChoices: 0, answerMismatch: 0, corrupted: 0 };
 
@@ -683,13 +707,16 @@ function main() {
       for (const n of referencedImages(statement)) wantedImages.add(n);
       for (const n of referencedImages(solution)) wantedImages.add(n);
 
+      const paper = paperLabel(db, data);
+      const year = Number(data.year) || 0;
+
       fs.writeFileSync(
         path.join(OUT, 'q', `${qid}.json`),
         JSON.stringify({
           qid,
           id: String(data.id || ''),
-          paper: paperLabel(db, data),
-          year: Number(data.year) || 0,
+          paper,
+          year,
           number: String(data.number || ''),
           database: db,
           statement: parsed.cleaned,
@@ -731,6 +758,21 @@ function main() {
             topicQids.get(name).push(qid);
           }
         }
+
+        // 卷面清单同样跟着 index.push 走：墙上那个分母就是「这套卷进了
+        // index 的题数」。判不了分的题在前端根本不存在，收进来只会让
+        // 「做了 25/30」永远差那几道谁也做不到的题
+        const label = fullPaperLabel(paper, year);
+        const key = `${db}|${label}`;
+        let entry = papers.get(key);
+        if (!entry) {
+          // hidden 先按 true 起步，遇到任何一道非 hidden 的题就翻回去——
+          // 整卷都在扩展池里才算一张「锁着的卷」
+          entry = { key, db, label, hidden: true, qids: [] };
+          papers.set(key, entry);
+        }
+        entry.qids.push(qid);
+        if (!indexEntry.hidden) entry.hidden = false;
       }
     }
   }
@@ -780,10 +822,48 @@ function main() {
     JSON.stringify({ v: 1, vocab: TOPIC_VOCAB, byTopic, coverage: topicCoverage }),
   );
 
+  // 卷面清单。库按站内的固定顺序，库内按卷里最大的 qid 降序——qid 前几位就是
+  // 年份，所以这一下等于「新卷在前」，和 index 的排法是同一个方向。
+  // 卷内 qid 同样降序：墙上的分母与 index 一步不差，肉眼比对时也对得上行
+  const paperList = [...papers.values()];
+  for (const entry of paperList) entry.qids.sort((a, b) => b - a);
+  const dbRank = (db) => {
+    const rank = PAPER_DB_ORDER.indexOf(db) + 1;
+    // 未登记的库大声报出来而不是默默兜底：兜底 rank 相同会破坏
+    // paperGroups 的「同库连续」前提，墙上同名分组标题会出现两次
+    if (!rank) console.warn(`[build-data] 卷面排序里没登记过的库：${db}，请补进 PAPER_DB_ORDER`);
+    return rank || PAPER_DB_ORDER.length + 1;
+  };
+  paperList.sort((a, b) => dbRank(a.db) - dbRank(b.db) || b.qids[0] - a.qids[0]);
+
+  // 卷面逐库统计先算（还能读到 hidden），再把 hidden 从落盘数据里整个剥掉：
+  // 运行时没有任何代码读它（防剧透靠 reachable 求交），留在公开 JSON 里
+  // 就是一份零收益的「哪些卷锁着」名单
+  const paperStats = {};
+  for (const entry of paperList) {
+    const row = (paperStats[entry.db] ||= { papers: 0, questions: 0, hidden: 0 });
+    row.papers++;
+    row.questions += entry.qids.length;
+    if (entry.hidden) row.hidden++;
+    delete entry.hidden;
+  }
+  fs.writeFileSync(path.join(OUT, 'papers.json'), JSON.stringify({ v: 1, papers: paperList }));
+
   const counts = {};
   for (const e of index) counts[e.db] = (counts[e.db] || 0) + 1;
 
   console.log('[build-data] 可判分题目：', JSON.stringify(counts), '合计', index.length);
+
+  // 卷面清单逐库报：卷数、题数、其中锁在 9.0 后面的卷数
+  console.log(`[build-data] 卷面清单：${paperList.length} 套卷（不含诊断集）`);
+  for (const db of PAPER_DB_ORDER) {
+    const row = paperStats[db];
+    if (!row) continue;
+    console.log(
+      `    ${db.padEnd(10)} ${String(row.papers).padStart(3)} 套 / ${String(row.questions).padStart(4)} 题` +
+        (row.hidden ? `   其中 ${row.hidden} 套只在 9.0 解锁后可见` : ''),
+    );
+  }
 
   // 知识点覆盖同样逐库报：弱项图那行「哪些库还没整理完」读的就是这两个数
   const topicTotals = Object.values(byTopic).reduce((sum, qids) => sum + qids.length, 0);

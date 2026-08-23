@@ -2,16 +2,16 @@
 
 // 成绩回顾面板。setup 相的第三个子视图，和 deck / 配置面板共用 .stage 的同一格。
 //
-// 只读分析 + 记录管理（XLSX 导入导出从配置面板搬到了这里）。
+// 回答的是「我练到哪儿了」：统计块、最近场次趋势、卷面进度墙、记录文件工具。
+// 「我该回头做哪些题」归复烤区（错题榜与知识点复盘 P6 搬去了那边）。
+//
 // 无任何解锁门槛：第一次打开也要能看，空态自己说话。
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { EXAM_DATA } from '@/lib/config';
 import type { IndexEntry } from '@/lib/exam';
 import { useLang } from '@/lib/LangContext';
-import { wrongRanking, type Records } from '@/lib/records';
+import type { Records } from '@/lib/records';
 import {
-  MISSED_LIMIT,
   TREND_LIMIT,
   chartGeometry,
   fmtClock,
@@ -22,43 +22,27 @@ import {
   trendPoints,
 } from '@/lib/progress';
 import {
-  WEAK_TOPIC_MIN_QUESTIONS,
-  cachedTopics,
-  loadTopics,
-  pickTopicQids,
-  thinTopicCount,
-  topicEntries,
-  topicReach,
-  topicRows,
-  weakTopics,
-  type TopicsData,
-} from '@/lib/topics';
+  cachedPapers,
+  loadPapers,
+  paperGroups,
+  paperLevel,
+  paperProgress,
+  paperShort,
+  type PapersData,
+} from '@/lib/papers';
 import styles from './Progress.module.css';
-
-/** 错题榜行里要显示的题面信息，懒取单题 JSON 得到 */
-interface QuestionBrief {
-  paper: string;
-  year: number;
-  number: string;
-}
 
 interface Props {
   records: Records;
   index: IndexEntry[] | null;
   /**
-   * 弱项图「练这类题」能摸到的范围，由外层按 9.0 的状态划好
-   * （indexForLibraryMode，已排除 hidden 与 diag）。
-   * 面板不该知道那套规则，也绝不能成为绕过它的后门
+   * 用户当前够得着的题，由外层按 9.0 的状态划好
+   * （reachableIndex，已排除 diag，未解锁时不含扩展池）。
+   * 卷面进度墙的分母就是它——面板不该知道解锁规则，
+   * 「锁定用户看不见扩展卷的卷名」这件事全靠这个集合落实
    */
-  topicScope: IndexEntry[];
+  reachable: IndexEntry[];
   onBack: () => void;
-  /** 重练榜上这几道；同步直调，requestFullscreen 认的是手势链 */
-  onRetry: (qids: number[]) => void;
-  /** 弱项图开一场练习；同样必须同步直调 */
-  onPractice: (qids: number[]) => void;
-  retryDisabled: boolean;
-  /** 抽题失败信息。进度视图下这里是唯一的出口 */
-  error: string;
   dbLabel: (db: string) => string;
   tools: {
     busy: boolean;
@@ -72,22 +56,11 @@ interface Props {
   };
 }
 
-function sourceLabel(brief: QuestionBrief): string {
-  const paper = !brief.year || brief.paper.includes(String(brief.year))
-    ? brief.paper
-    : `${brief.paper} ${brief.year}`;
-  return brief.number ? `${paper} · ${brief.number}` : paper;
-}
-
 export default function ProgressPanel({
   records,
   index,
-  topicScope,
+  reachable,
   onBack,
-  onRetry,
-  onPractice,
-  retryDisabled,
-  error,
   dbLabel,
   tools,
 }: Props) {
@@ -99,92 +72,35 @@ export default function ProgressPanel({
   const [pickedTs, setPickedTs] = useState<number | null>(null);
   const pickedIndex = pickedTs === null ? -1 : points.findIndex((p) => p.session.ts === pickedTs);
 
-  // diag（GMAT 诊断集）必须挡在错题榜之外：那批题设计上全程不显示对错，
-  // 漏进来就等于把诊断答案泄出去。先整体排序再过滤，最后才截断——
-  // 反过来先截 10 条的话，前 10 全是诊断题就会得到空榜。
+  // diag（GMAT 诊断集）必须挡在统计之外：那批题设计上全程不显示对错。
+  // 统计块与 deck 上那条统计条共用同一个池子，否则两处数字会对不上
   const practice = useMemo(() => practiceQids(index), [index]);
-  // 统计块和错题榜共用同一个池子，否则会出现「14 道当前错题、榜上只有 12 条」
   const stats = useMemo(() => practiceOverview(records, practice), [records, practice]);
-  const missed = useMemo(
-    () =>
-      wrongRanking(records, Number.POSITIVE_INFINITY)
-        .filter((row) => practice.has(row.qid))
-        .slice(0, MISSED_LIMIT),
-    [records, practice],
-  );
 
-  const [briefs, setBriefs] = useState<Record<number, QuestionBrief>>({});
-  const [pendingBatches, setPendingBatches] = useState(0);
-  const briefsLoading = pendingBatches > 0;
-  // 已经发过请求的 qid。用 ref 而不是看 briefs 里有没有：404 的那些永远进不了
-  // briefs，靠 briefs 判重会让 effect 无限重取
-  const requestedRef = useRef<Set<number>>(new Set());
-
-  // 榜上这几条才取单题 JSON：题源信息不在 index 里，但为它扩 index
-  // 等于让每次冷启动替这个面板买单
+  // 卷面清单只在这个面板打开时才取：它对 deck 首屏毫无用处。
+  // 缓存在模块里，开一次取一次是浪费。取不到就整块不渲染——
+  // 一面画不出格子的墙没有降级形态，宁可缺席也别摆个空壳
+  const [papers, setPapers] = useState<PapersData | null>(() => cachedPapers());
   useEffect(() => {
-    const wanted = missed.map((row) => row.qid).filter((qid) => !requestedRef.current.has(qid));
-    if (wanted.length === 0) return;
-    for (const qid of wanted) requestedRef.current.add(qid);
-
+    if (papers) return;
     let alive = true;
-    // 计数而不是布尔：两批请求重叠时，先回来的那批不该把后一批的加载态清掉
-    setPendingBatches((n) => n + 1);
-    Promise.allSettled(
-      wanted.map(async (qid) => {
-        const res = await fetch(`${EXAM_DATA}/q/${qid}.json`);
-        if (!res.ok) throw new Error(String(res.status));
-        return { qid, data: (await res.json()) as QuestionBrief };
-      }),
-    ).then((results) => {
-      setPendingBatches((n) => Math.max(0, n - 1));
-      if (!alive) return;
-      const next: Record<number, QuestionBrief> = {};
-      for (const item of results) {
-        // 取不到就降级只显 qid：题库换代后旧 qid 会 404，不该让整个面板塌掉
-        if (item.status === 'fulfilled') next[item.value.qid] = item.value.data;
-      }
-      setBriefs((prev) => ({ ...prev, ...next }));
-    });
-    return () => {
-      alive = false;
-    };
-  }, [missed]);
-
-  // 知识点倒排表只在这个面板打开时才取，和上面那批单题 JSON 同一个思路：
-  // 它对 deck 首屏毫无用处。缓存在模块里，开一次取一次是浪费。
-  // 取不到就整块不渲染——弱项分析没有降级形态，宁可缺席也别摆个空壳
-  const [topics, setTopics] = useState<TopicsData | null>(() => cachedTopics());
-  useEffect(() => {
-    if (topics) return;
-    let alive = true;
-    loadTopics()
+    loadPapers()
       .then((data) => {
-        if (alive) setTopics(data);
+        if (alive) setPapers(data);
       })
       .catch(() => {});
     return () => {
       alive = false;
     };
-  }, [topics]);
+  }, [papers]);
 
-  // 弱项统计走练习池，和上面的统计块、错题榜同一个口径（diag 一律在外）。
-  // 逻辑推理开关不参与：这里统计的是「做过的题」，那层滤网管的是随机抽题
-  const allTopicRows = useMemo(
-    () => (topics ? topicRows(topics, records, practice) : []),
-    [topics, records, practice],
+  // 墙的范围口径：外层递进来的「够得着的题」。整卷都够不着的卷连行都不产出，
+  // 于是锁定用户的墙上不会冒出 Mock 的卷名
+  const reachSet = useMemo(() => new Set(reachable.map((entry) => entry.qid)), [reachable]);
+  const wall = useMemo(
+    () => (papers ? paperGroups(paperProgress(papers, reachSet, records)) : []),
+    [papers, reachSet, records],
   );
-  const weak = useMemo(() => weakTopics(allTopicRows), [allTopicRows]);
-  const thin = thinTopicCount(allTopicRows);
-  const reach = useMemo(
-    () => (topics ? topicReach(topics, records, index) : null),
-    [topics, records, index],
-  );
-  // 每行的可练池。空池要把按钮置灰，所以渲染时就得知道它有多大
-  const topicPools = useMemo(() => {
-    if (!topics) return new Map<string, IndexEntry[]>();
-    return new Map(weak.map((row) => [row.topic, topicEntries(topics, row.topic, topicScope)]));
-  }, [topics, weak, topicScope]);
 
   const geo = chartGeometry(points.length);
   const maxPace = Math.max(1, ...points.map((p) => p.pace));
@@ -331,107 +247,40 @@ export default function ProgressPanel({
         )}
       </section>
 
-      <section className={styles.section}>
-        <div className={styles.sectionHead}>
-          <h3 className={styles.sectionTitle}>{t.progress.missedTitle}</h3>
-          {/* 榜上有行才出现，出现即字面为真：练的就是下面列的这几道 */}
-          {missed.length > 0 && (
-            <button
-              type="button"
-              className={styles.retry}
-              disabled={retryDisabled}
-              onClick={() => onRetry(missed.map((row) => row.qid))}
-            >
-              {t.progress.missedRetry}
-            </button>
-          )}
-        </div>
-
-        {/* 抽题失败在 progress 视图下没有别的出口：errMsg 挂在配置面板、
-            deckHint 挂在 CardDeck，这里都没有 */}
-        {error && <p className={styles.error}>{error}</p>}
-
-        {missed.length === 0 ? (
-          <p className={styles.empty}>{t.progress.missedEmpty}</p>
-        ) : (
-          <ol className={styles.missedList} role="list">
-            {missed.map((row) => {
-              const brief = briefs[row.qid];
-              return (
-                <li key={row.qid} className={styles.missedRow}>
-                  <span className={styles.missedName}>
-                    {brief ? sourceLabel(brief) : t.progress.missedFallback(row.qid)}
-                  </span>
-                  <span className={styles.missedStat}>
-                    {t.progress.missedRow(row.stat.w, row.stat.a)}
-                  </span>
-                </li>
-              );
-            })}
-          </ol>
-        )}
-        {briefsLoading && <p className={styles.note}>{t.progress.missedLoading}</p>}
-      </section>
-
-      {/* 知识点弱项。topics.json 没到位（还在取、或取失败）时整块不出现 */}
-      {topics && (
+      {/* 卷面进度墙。papers.json 没到位（还在取、或取失败）时整块不出现。
+          一套卷一个小方格，颜色深浅＝这套卷已做题数的占比 */}
+      {wall.length > 0 && (
         <section className={styles.section}>
           <div className={styles.sectionHead}>
-            <h3 className={styles.sectionTitle}>{t.progress.weakTitle}</h3>
-            <span className={styles.sectionSub}>{t.progress.weakNote}</span>
+            <h3 className={styles.sectionTitle}>{t.progress.papersTitle}</h3>
+            <span className={styles.sectionSub}>{t.progress.papersNote}</span>
           </div>
 
-          {weak.length === 0 ? (
-            <p className={styles.empty}>{t.progress.weakEmpty(WEAK_TOPIC_MIN_QUESTIONS)}</p>
-          ) : (
-            <ul className={styles.topicList} role="list">
-              {weak.map((row) => {
-                const pool = topicPools.get(row.topic) || [];
-                return (
-                  <li key={row.topic} className={styles.topicRow}>
-                    <span className={styles.topicName}>{t.progress.topicName(row.topic)}</span>
-                    <span className={styles.topicStat}>
-                      {t.progress.weakRow(row.questions, fmtPercent(row.accuracy))}
+          {wall.map((group) => (
+            <div key={group.db} className={styles.paperGroup}>
+              <div className={styles.paperGroupName}>{dbLabel(group.db)}</div>
+              <ul className={styles.paperWall} role="list">
+                {group.papers.map((paper) => (
+                  <li
+                    key={paper.key}
+                    className={`${styles.paperCell} ${
+                      styles[`lv${paperLevel(paper.done, paper.total)}`]
+                    }`}
+                    // 缩写省掉的那截卷名、以及精确题数：悬停给 title，
+                    // 键盘与触屏拿不到 title，同一句再给 aria-label ——
+                    // 否则 Specimen 那格读屏只能听到光秃秃的「P1」
+                    title={t.progress.paperCell(paper.label, paper.done, paper.total)}
+                    aria-label={t.progress.paperCell(paper.label, paper.done, paper.total)}
+                  >
+                    <span className={styles.paperName}>{paperShort(paper.label, paper.db)}</span>
+                    <span className={styles.paperCount}>
+                      {paper.done}/{paper.total}
                     </span>
-                    {/* 横条只是把上面那个百分比画出来，读屏念文字就够了 */}
-                    <span className={styles.topicBar} aria-hidden="true">
-                      <span
-                        className={styles.topicFill}
-                        style={{ width: `${Math.round(row.accuracy * 100)}%` }}
-                      />
-                    </span>
-                    <button
-                      type="button"
-                      className={`${styles.ghost} ${styles.topicPractice}`}
-                      aria-label={t.progress.weakPracticeAria(t.progress.topicName(row.topic))}
-                      // 池子为空（这个知识点的题都在还没解开的范围里）就置灰
-                      disabled={retryDisabled || pool.length === 0}
-                      // 点的时候才抽题：抽题带随机，渲染期算等于每次重渲染都换一批。
-                      // 直调不包异步，requestFullscreen 认的是手势链
-                      onClick={() => onPractice(pickTopicQids(pool, records))}
-                    >
-                      {t.progress.weakPractice}
-                    </button>
                   </li>
-                );
-              })}
-            </ul>
-          )}
-
-          {/* 够不上门槛的知识点为什么不在榜上，得有个交代 */}
-          {weak.length > 0 && thin > 0 && (
-            <p className={styles.note}>{t.progress.weakThin(thin, WEAK_TOPIC_MIN_QUESTIONS)}</p>
-          )}
-          {/* 打标覆盖按库差得极远，做过的题里有多少真进了分析必须如实说 */}
-          {reach && reach.analysed < reach.attempted && (
-            <p className={styles.note}>
-              {t.progress.weakCoverage(
-                reach.analysed,
-                reach.attempted,
-                reach.banks.map((db) => dbLabel(db)).join(' · '),
-              )}
-            </p>
-          )}
+                ))}
+              </ul>
+            </div>
+          ))}
         </section>
       )}
 

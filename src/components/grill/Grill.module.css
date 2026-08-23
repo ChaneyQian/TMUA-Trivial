@@ -25,15 +25,48 @@
   line-height: 1.6;
 }
 
-.bound {
-  margin-top: 0.8rem;
-  color: var(--text);
-  font-size: 0.8rem;
-  font-variant-numeric: tabular-nums;
+/* ---- 三块的壳 ---- */
+/* 与进度面板的分节同一个配方（上边框 + 同样的字号），两张卡摆在同一套
+   舞台格里，分节长得不一样会立刻显得是两个人做的 */
+
+.section {
+  margin-top: 1.4rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
 }
 
-.dangling {
+.sectionHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.6rem;
+}
+
+.sectionTitle {
+  font-size: 0.95rem;
+  font-weight: 650;
+  color: var(--text);
+}
+
+.sectionSub {
   color: var(--text-muted);
+  font-size: 0.72rem;
+}
+
+.empty {
+  padding: 0.9rem 0;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  line-height: 1.6;
+}
+
+.note {
+  margin-top: 0.5rem;
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  line-height: 1.5;
 }
 
 /* ---- 空态 ---- */
@@ -81,6 +114,134 @@
 
 .ghost:active {
   transform: translateY(1px);
+}
+
+.ghost:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* ---- 最常做错 ---- */
+
+.retry {
+  padding: 0.35rem 0.7rem;
+  border: 0;
+  border-radius: 8px;
+  background: var(--accent);
+  color: #fff;
+  font-family: var(--font-ui);
+  font-size: 0.76rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.retry:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.missedList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  list-style: none;
+}
+
+.missedRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.4rem;
+  padding: 0.5rem 0.65rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-alt);
+}
+
+.missedName {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text);
+  font-size: 0.82rem;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.missedStat {
+  color: var(--text-muted);
+  font-size: 0.74rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* ---- 知识点复盘 ---- */
+/* 沿用错题榜那套卡片行：同一块面板里不该出现第二种列表长相 */
+
+.topicList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  list-style: none;
+}
+
+.topicRow {
+  display: grid;
+  grid-template-areas:
+    'name action'
+    'stat action'
+    'bar  bar';
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.2rem 0.6rem;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-alt);
+}
+
+.topicName {
+  grid-area: name;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text);
+  font-size: 0.82rem;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.topicStat {
+  grid-area: stat;
+  color: var(--text-muted);
+  font-size: 0.74rem;
+  font-variant-numeric: tabular-nums;
+}
+
+/* 横条与进度面板折线图的用时细柱同一个配方：轨道是淡化的 accent，填充是实色 */
+.topicBar {
+  grid-area: bar;
+  height: 5px;
+  margin-top: 0.3rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+}
+
+.topicFill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--accent);
+}
+
+/* 弱项行里的紧凑版。必须排在 .ghost 之后：两个类同权重，靠源码顺序
+   决胜负，写在前面这几条紧凑声明会整块被 .ghost 盖掉 */
+.topicPractice {
+  grid-area: action;
+  margin-top: 0;
+  padding: 0.34rem 0.6rem;
+  font-size: 0.74rem;
+  white-space: nowrap;
 }
 
 @media (max-width: 640px) {

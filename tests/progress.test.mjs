@@ -33,6 +33,8 @@ const libPath = 'src/lib/progress.ts';
 const examPath = 'src/components/exam/ExamApp.tsx';
 const recordsPath = 'src/lib/records.ts';
 const deckPath = 'src/components/deck/CardDeck.tsx';
+// 错题榜与知识点复盘 P6 搬进了复烤区；跟它们有关的断言也跟着搬到这个文件上
+const grillPath = 'src/components/grill/GrillPanel.tsx';
 
 test('the progress panel ships as its own view with no unlock gate', () => {
   assert.equal(fs.existsSync(panelPath), true, 'missing ProgressPanel');
@@ -59,46 +61,22 @@ test('the progress panel ships as its own view with no unlock gate', () => {
   assert.doesNotMatch(panel, /hiddenUnlocked|HIDDEN_UNLOCK_COUNT|locked/);
 });
 
-test('the missed list is ranked by wrongRanking and can start a retry run', () => {
+test('the progress panel keeps the trend and the paper wall, and hands the review blocks to the grill', () => {
   const panel = fs.readFileSync(panelPath, 'utf8');
-  const exam = fs.readFileSync(examPath, 'utf8');
+  const grill = fs.readFileSync(grillPath, 'utf8');
 
-  // 错题榜确实走既有的 wrongRanking，不是另写一套排序
-  assert.match(panel, /wrongRanking/);
-  assert.match(panel, /import \{[\s\S]*?wrongRanking[\s\S]*?\} from '@\/lib\/records'/);
-  // 先整体排序、再过滤、最后才截断：反过来的话前 10 全是诊断题就会得到空榜
-  assert.match(panel, /wrongRanking\(records, Number\.POSITIVE_INFINITY\)/);
-  assert.doesNotMatch(panel, /wrongRanking\(records, MISSED_LIMIT\)/);
+  // 留下的：统计块、最近场次、卷面进度墙、记录文件工具
+  assert.match(panel, /t\.progress\.sessionsTitle/);
+  assert.match(panel, /t\.progress\.papersTitle/);
+  assert.match(panel, /styles\.recordActions/);
 
-  // 重练的是榜上渲染出来的那几行本身，不再由 pickQidsForMode 掺新题
-  assert.match(panel, /onClick=\{\(\) => onRetry\(missed\.map\(\(row\) => row\.qid\)\)\}/);
-  assert.match(exam, /const retryMissed = \(qids: number\[\]\) => \{/);
-  assert.match(exam, /start\(\{ db: 'ALL', qids \}\)/);
-  // start 支持显式 qid 列表，并在这一层再滤一次 diag（调用方已滤过，这是第二道闸）
-  assert.match(exam, /override\?\.qids \?\? pickQidsForMode/);
-  // diag 默认仍被这一层挡住；只有 Grill 显式传 allowDiag —— 它的池子本来就是诊断题
-  assert.match(exam, /override\.allowDiag \|\| !entry\.diag/);
-  assert.match(exam, /start\(\{ db: 'ALL', qids \}\)/, 'the retry path must not opt into diag');
-  assert.doesNotMatch(exam, /retryMissed[\s\S]{0,200}allowDiag/);
-  // 按钮只在榜上有行时渲染：出现即字面为真，不需要再靠置灰兜底
-  assert.match(panel, /\{missed\.length > 0 && \(\s*<button/);
-  // 同步调用链（requestFullscreen 只认手势）
-  assert.doesNotMatch(exam, /setTimeout\([^)]*start\(\{/);
-});
-
-test('a failed pick has a visible exit in every stage view', () => {
-  const exam = fs.readFileSync(examPath, 'utf8');
-  const panel = fs.readFileSync(panelPath, 'utf8');
-  const css = fs.readFileSync(cssPath, 'utf8');
-
-  // errMsg 只挂在配置面板、deckHint 只挂在 CardDeck，
-  // 进度视图必须有自己的出口，否则「重练这些」失败会完全静默
-  assert.match(exam, /error=\{error\}/);
-  assert.match(panel, /error: string;/);
-  assert.match(panel, /\{error && <p className=\{styles\.error\}>\{error\}<\/p>\}/);
-  assert.match(css, /\.error\s*\{/);
-  // 换视图时清掉上一个视图留下的错误，免得串台
-  assert.match(exam, /setError\(''\); \/\/ 上一个视图留下的抽题错误不带过去/);
+  // 搬走的：错题榜与知识点复盘整块。进度面板不该再留一份
+  for (const gone of ['wrongRanking', 'MISSED_LIMIT', 'missedList', 'topicList', 'onRetry', 'onPractice']) {
+    assert.equal(panel.includes(gone), false, `${gone} 应当已经搬去复烤区`);
+  }
+  assert.match(grill, /wrongRanking/);
+  assert.match(grill, /styles\.missedList/);
+  assert.match(grill, /styles\.topicList/);
 });
 
 test('the trend chart is reachable without sight or a mouse', () => {
@@ -113,7 +91,7 @@ test('the trend chart is reachable without sight or a mouse', () => {
   // 轴标是给眼睛看的，读屏走清单，别念两遍
   assert.match(panel, /className=\{styles\.axis\} aria-hidden="true"/);
   // list-style: none 在 Safari/VoiceOver 会丢列表语义，显式补 role
-  assert.match(panel, /className=\{styles\.missedList\} role="list"/);
+  assert.match(panel, /className=\{styles\.paperWall\} role="list"/);
 });
 
 test('progress helpers behave, not just exist', () => {
@@ -215,6 +193,7 @@ test('Escape means something different in each stage view', () => {
 
 test('diagnostic questions are filtered out of both the missed list and the retry pool', () => {
   const panel = fs.readFileSync(panelPath, 'utf8');
+  const grill = fs.readFileSync(grillPath, 'utf8');
   const records = fs.readFileSync(recordsPath, 'utf8');
   const index = readIndex();
 
@@ -223,24 +202,30 @@ test('diagnostic questions are filtered out of both the missed list and the retr
   assert.ok(diag.length > 0, 'the index must actually carry diag entries for this guard to matter');
 
   // 正：错题榜的池子由 practiceQids 划定，而它排除 diag
-  assert.match(panel, /practiceQids/);
-  assert.match(panel, /practice\.has\(row\.qid\)/);
+  assert.match(grill, /practiceQids/);
+  assert.match(grill, /practice\.has\(row\.qid\)/);
   const lib = fs.readFileSync(libPath, 'utf8');
   assert.match(lib, /if \(!entry\.diag\) out\.add\(entry\.qid\)/);
 
-  // 正：重练的池子是 activeIndex，而 indexForLibraryMode 同样排除 diag
+  // 正：重练的池子是 activeIndex，而 indexForLibraryMode 同样排除 diag；
+  // 复盘视图走 reachableIndex，那一层也一样不放 diag 过去
   assert.match(records, /indexForLibraryMode[\s\S]*?!entry\.diag/);
+  assert.match(records, /reachableIndex[\s\S]*?!entry\.diag/);
 
   // 正：统计块与 deck 统计条也走同一个池子，否则会出现
-  // 「N 道当前错题」而榜上列不出那么多条
+  // 「N 道当前错题」而复烤区榜上列不出那么多条
   assert.match(panel, /practiceOverview\(records, practice\)/);
   const exam = fs.readFileSync(examPath, 'utf8');
-  assert.match(exam, /practiceOverview\(records, practiceQids\(index\)\)/);
+  // M2 后 ExamApp 把池子抽成了 practicePool，口径不变
+  assert.match(exam, /const practicePool = useMemo\(\(\) => practiceQids\(index\), \[index\]\);/);
+  assert.match(exam, /practiceOverview\(records, practicePool\)/);
   assert.match(exam, /practiceStats\.wrongNow/);
 
-  // 反：面板不许把原始 index 直接当池子用，也不许用不分池的 overview() 出统计
-  assert.doesNotMatch(panel, /index\.map\(\(entry\) => entry\.qid\)/);
-  assert.doesNotMatch(panel, /overview\(records\)/);
+  // 反：两块面板都不许把原始 index 直接当池子用，也不许用不分池的 overview() 出统计
+  for (const source of [panel, grill]) {
+    assert.doesNotMatch(source, /index\.map\(\(entry\) => entry\.qid\)/);
+    assert.doesNotMatch(source, /overview\(records\)/);
+  }
 });
 
 test('progress motion stays on the compositor and degrades to instant', () => {

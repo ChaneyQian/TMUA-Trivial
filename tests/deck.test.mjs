@@ -2,6 +2,8 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import test from 'node:test';
 
+import { indexForLibraryMode } from '../src/lib/records.ts';
+
 const zonesPath = 'src/components/deck/zones.ts';
 const deckPath = 'src/components/deck/CardDeck.tsx';
 const deckCssPath = 'src/components/deck/Deck.module.css';
@@ -33,8 +35,12 @@ test('the deck ships three zones as one data table plus their cover art', () => 
   assert.match(i18n, /grill: 'Grill'/);
   assert.match(i18n, /trivial: '9\.0 Trivial'/);
   assert.match(i18n, /classic: 'TMUA · MAT · SMC · ECAA'/);
-  assert.match(i18n, /grill: '即将开放'/);
-  assert.match(i18n, /grill: 'Coming Soon'/);
+  // P6 起 Grill 是「错题与弱项的复盘区」，兜底副文不能再写「即将开放」——
+  // 那张卡从 P3 就开着了，实际副文还由 ExamApp 按绑定题/错题数覆盖
+  assert.match(i18n, /grill: '错题与弱项复盘'/);
+  assert.match(i18n, /grill: 'Wrong answers & weak spots'/);
+  assert.doesNotMatch(i18n, /grill: '即将开放'/);
+  assert.doesNotMatch(i18n, /grill: 'Coming Soon'/);
   assert.match(i18n, /trivial: '扩展题库'/);
   assert.match(i18n, /trivial: 'Extended Library'/);
 
@@ -213,6 +219,80 @@ test('the primary action sits above the optional record tools, and the deck can 
   // onClick / onStart —— 事件对象会被当成 override。包一层，但仍是同步调用链
   assert.match(exam, /onStart: \(\) => void start\(\)/);
   assert.doesNotMatch(exam, /onClick=\{start\}/);
+});
+
+/**
+ * 注：全套测试里所有 build-data 调用都带 EXAM_OUT 临时目录，没有谁会重写
+ * public/exam——重试只防「开发者正在另一个终端里 npm run data」这种外部并发，
+ * 测试文件又是并发跑的——撞上那一瞬间会读到半个文件。重试一次，别让套件偶发飘红。
+ */
+function readIndex(attempts = 5) {
+  for (let i = 0; i < attempts; i++) {
+    try {
+      const parsed = JSON.parse(fs.readFileSync('public/exam/index.json', 'utf8'));
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    } catch {}
+    const until = Date.now() + 120;
+    while (Date.now() < until) {
+      /* wait */
+    }
+  }
+  throw new Error('could not read a complete public/exam/index.json');
+}
+
+test('the two zones are exclusive, so the 9.0 badge and its bank buttons report that pool alone', () => {
+  const exam = fs.readFileSync(examPath, 'utf8');
+  const index = readIndex();
+
+  // 徽章：expandedCount 报的是扩展池本身，不再是「经典 + 扩展」的全集。
+  // 期望值从数据现算——池子会随题库增长，写死只会变成维护负担
+  const classic = indexForLibraryMode(index, 'classic');
+  const expanded = indexForLibraryMode(index, 'hidden');
+  assert.ok(expanded.length > 0 && classic.length > 0, '两个池子都得真有题，这条才有负载');
+  assert.equal(
+    expanded.length + classic.length,
+    index.filter((entry) => !entry.diag).length,
+    '两池不相交、合起来是全部非诊断题',
+  );
+  assert.equal(
+    expanded.some((entry) => !entry.hidden),
+    false,
+    '9.0 池里混进了经典卷——徽章上那个数就不是它自己的题量了',
+  );
+  assert.match(exam, /const expandedCount = index \? indexForLibraryMode\(index, 'hidden'\)\.length : 0;/);
+  assert.match(exam, /t\.cardBadge\.expanded\(expandedCount\)/);
+
+  // 题库按钮按「这个区里有没有这个库」列，不再写死两串字面量。
+  // 互斥之后 9.0 只剩 Mock 与 MAT，摆一排「TMUA 0 题」的灰按钮既难看又误导
+  const banksOf = (pool) => [...new Set(pool.map((entry) => entry.db))].sort();
+  // 库名单也从数据现算，不写死：回忆题会持续补入，钉具体库名只会变成维护负担
+  const hiddenBanks = [...new Set(index.filter((e) => e.hidden && !e.diag).map((e) => e.db))].sort();
+  const classicBanks = [...new Set(index.filter((e) => !e.hidden && !e.diag).map((e) => e.db))].sort();
+  assert.deepEqual(banksOf(expanded), hiddenBanks);
+  assert.deepEqual(banksOf(classic), classicBanks);
+  assert.ok(hiddenBanks.length > 0 && classicBanks.length > 0, '两个区都得真有库');
+  assert.match(exam, /const bankChoices: Db\[\] = \[\.\.\.EXAM_DATABASES\.filter\(\(d\) => zoneCounts\[d\] > 0\), 'ALL'\];/);
+  assert.match(exam, /\{bankChoices\.map\(\(d\) => \(/);
+  assert.doesNotMatch(exam, /\['TMUA', 'TMUA_MOCK', 'MAT', 'SMC', 'ECAA', 'AMC', 'ALL'\]/);
+
+  // 显示的题数仍走 activeIndex（含逻辑开关），但「列不列这个库」只看题库范围：
+  // 开关清空一个库时该置灰、不该让按钮整个消失，否则用户找不到勾回来这条路
+  assert.match(exam, /for \(const e of scopedIndex\) \{\s*\n\s*if \(zoneCounts\[e\.db\] !== undefined\) zoneCounts\[e\.db\]\+\+;/);
+  assert.match(exam, /disabled=\{d !== 'ALL' && poolCounts\[d\] === 0\}/);
+
+  // 记忆的题库若在当前区没题就兜底。互斥之前只有一个方向会落空，现在两个方向都会
+  assert.match(exam, /if \(!index \|\| db === 'ALL' \|\| zoneCounts\[db\] > 0\) return;/);
+  assert.match(exam, /const fallback = EXAM_DATABASES\.find\(\(d\) => zoneCounts\[d\] > 0\);/);
+  assert.doesNotMatch(exam, /libraryMode === 'classic' && \(db === 'TMUA_MOCK'/);
+
+  // 365 解锁计数与充电条口径不变：读的仍是整份索引
+  for (const call of [
+    'validCompletedCount(index, records)',
+    'hiddenUnlockProgress(index, records)',
+    'isHiddenModeUnlocked(index, records)',
+  ]) {
+    assert.ok(exam.includes(call), `${call} 必须读整份索引，互斥不该动它`);
+  }
 });
 
 test('the deck is a setup-phase sub-state that leaves the exam runtime alone', () => {

@@ -159,15 +159,24 @@ test('the grill zone is open, with an empty state that points at the diagnostic'
   const grillBlock = zones.slice(zones.indexOf("id: 'grill'"), zones.indexOf("id: 'trivial'"));
   assert.match(grillBlock, /comingSoon: false/);
 
-  // 空态文案与指路
-  assert.match(panel, /if \(bound === 0\)/);
-  assert.match(panel, /t\.grill\.emptyTitle/);
-  assert.match(panel, /t\.grill\.emptyHint/);
+  // 绑定块自己的空态：一次诊断没考过时指路去 Diagnostic
+  assert.match(panel, /\{bound === 0 \? \(/);
+  assert.match(panel, /t\.grill\.boundEmpty/);
   assert.match(panel, /t\.grill\.goDiagnostic/);
   assert.match(panel, /useLang\(\)/);
-  // 卡面副文：绑了报数，没绑说清楚要先考一次
+  // 卡面副文：两个数任一非零就报数，全零才说定位。
+  // 只报绑定数会让「没考过诊断、但一堆错题」的人以为这张卡是空的
   assert.match(exam, /t\.grill\.emptySub/);
-  assert.match(exam, /t\.diagnostic\.grillBound\(grillCount\(records\)\)/);
+  // 卡面口径必须与面板里那张榜同源（历史错过 w>0，非 wrongNow）：
+  // 错过后改对的题仍在榜上，卡面却报 0，两处会当面打臉
+  assert.match(exam, /t\.grill\.sub\(grillCount\(records\), grillMissedCount\)/);
+  assert.match(exam, /grillCount\(records\) > 0 \|\| grillMissedCount > 0/);
+  assert.match(
+    exam,
+    /wrongRanking\(records, Number\.POSITIVE_INFINITY\)\.filter\(\(row\) => practicePool\.has\(row\.qid\)\)/,
+  );
+  // 徽章跟着同一个池子走：只报绑定数会让卡面写「0 题」而副文写「21 道错题」
+  assert.match(exam, /t\.cardBadge\.questions\(grillCount\(records\) \+ grillMissedCount\)/);
 
   // 面板挂在 grill 前位上，且悬空数如实显示
   assert.match(exam, /frontZone === 'grill' \? \(/);
@@ -179,6 +188,63 @@ test('the grill zone is open, with an empty state that points at the diagnostic'
   assert.match(result, /去 Grill 看看/);
   assert.match(exam, /const goToGrillFromResult = \(\) => \{/);
   assert.match(exam, /chooseZone\('grill'\)/);
+});
+
+test('the grill is three blocks, and the whole-card empty state only shows when all three are', () => {
+  const panel = fs.readFileSync(panelPath, 'utf8');
+  const exam = fs.readFileSync(examPath, 'utf8');
+
+  // 三块，各有各的标题与空态
+  for (const key of [
+    't.grill.boundTitle',
+    't.grill.boundEmpty',
+    't.grill.missedTitle',
+    't.grill.missedEmpty',
+    't.grill.weakTitle',
+  ]) {
+    assert.ok(panel.includes(key), `复烤区少了 ${key} 这一块`);
+  }
+  assert.equal((panel.match(/<section className=\{styles\.section\}>/g) || []).length, 3);
+
+  // 整卡空态的条件是三块全空——原来那句「完成一次 Diagnostic 后」
+  // 只讲了三分之一，现在普通练习的错题同样会自己走进来
+  assert.match(panel, /const allEmpty = bound === 0 && missed\.length === 0 && weak\.length === 0;/);
+  assert.match(panel, /\{allEmpty \? \(/);
+  assert.match(panel, /t\.grill\.emptyTitle/);
+  assert.match(panel, /t\.grill\.emptyHint/);
+
+  // 两个练习按钮的既有语义一条不变：走 start({ qids })、db 记 ALL、
+  // 同步直调、不掺新题、不给 diag 开门
+  assert.match(panel, /onClick=\{\(\) => onRetry\(missed\.map\(\(row\) => row\.qid\)\)\}/);
+  assert.match(panel, /onClick=\{\(\) => onPractice\(pickTopicQids\(pool, records\)\)\}/);
+  assert.match(exam, /const retryMissed = \(qids: number\[\]\) => \{/);
+  assert.match(exam, /const practiceTopic = \(qids: number\[\]\) => \{/);
+  assert.match(exam, /onRetry=\{retryMissed\}/);
+  assert.match(exam, /onPractice=\{practiceTopic\}/);
+  assert.doesNotMatch(exam, /retryMissed[\s\S]{0,200}allowDiag/);
+  assert.doesNotMatch(exam, /practiceTopic[\s\S]{0,300}allowDiag/);
+  assert.doesNotMatch(panel, /setTimeout\([^)]*on(Retry|Practice)/);
+
+  // 错题榜确实走既有的 wrongRanking：先整体排序、再过滤、最后才截断。
+  // 反过来先截 10 条的话，前 10 全是诊断题就会得到空榜
+  assert.match(panel, /wrongRanking\(records, Number\.POSITIVE_INFINITY\)/);
+  assert.doesNotMatch(panel, /wrongRanking\(records, MISSED_LIMIT\)/);
+  // 按钮只在榜上有行时渲染：出现即字面为真，不需要再靠置灰兜底
+  assert.match(panel, /\{missed\.length > 0 && \(\s*<button/);
+});
+
+test('a failed pick has a visible exit in the grill view', () => {
+  const exam = fs.readFileSync(examPath, 'utf8');
+  const panel = fs.readFileSync(panelPath, 'utf8');
+
+  // errMsg 只挂在配置面板、deckHint 只挂在 CardDeck，复烤视图必须有自己的出口，
+  // 否则「重练这些」「练这类题」失败会完全静默。三个按钮共用这一处回执，
+  // 所以它摆在最上面而不是跟在某一个按钮后面
+  assert.match(exam, /error=\{error\}/);
+  assert.match(panel, /error: string;/);
+  assert.match(panel, /\{error && <div className=\{examStyles\.errMsg\}>\{error\}<\/div>\}/);
+  // 换视图时清掉上一个视图留下的错误，免得串台
+  assert.match(exam, /setError\(''\); \/\/ 上一个视图留下的抽题错误不带过去/);
 });
 
 test('the workbook carries the grill bindings, and old files still import', async () => {
