@@ -662,10 +662,18 @@
   border-left-color: var(--accent);
 }
 
-.solBlur {
-  filter: blur(7px);
-  user-select: none;
-  pointer-events: none;
+.solPlaceholder {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  padding: 0.2rem 0 0.4rem;
+}
+
+.solBar {
+  display: block;
+  height: 0.85em;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--text-muted) 18%, transparent);
 }
 
 .qMeta {

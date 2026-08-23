@@ -1485,12 +1485,24 @@ export default function ExamApp() {
                 </button>
               )}
             </div>
-            <div className={solShown.has(idx) && isGraded ? undefined : styles.solBlur}>
-              <p>
-                <strong>答案:{q.answer.toUpperCase()}</strong>
-              </p>
-              {q.solution && <MathText text={q.solution} />}
-            </div>
+            {/* 未揭示时压根不渲染真实内容——高斯模糊挡不住轮廓（「答案:C」的
+                大字短行、图形题的图都能透出来），而且 blur 只是视觉滤镜，
+                DOM 里仍是明文，划选/Ctrl+F/读屏都拿得到。骨架条是假的，随便看 */}
+            {solShown.has(idx) && isGraded ? (
+              <div>
+                <p>
+                  <strong>答案:{q.answer.toUpperCase()}</strong>
+                </p>
+                {q.solution && <MathText text={q.solution} />}
+              </div>
+            ) : (
+              <div className={styles.solPlaceholder} aria-hidden="true">
+                <span className={styles.solBar} style={{ width: '34%' }} />
+                <span className={styles.solBar} style={{ width: '92%' }} />
+                <span className={styles.solBar} style={{ width: '85%' }} />
+                <span className={styles.solBar} style={{ width: '63%' }} />
+              </div>
+            )}
           </div>
         )}
       </div>
