@@ -1,0 +1,243 @@
+/* 公告牌：左下角药丸 ↔ 票券式告示卡。
+   与像素小助手（右下）对称落位；全部动效走合成器（transform/opacity），
+   唯一的例外是流光标题的 background-position——那是充电条满格流光的
+   同一条纹理，小面积装饰，沿用既有先例 */
+
+.dock {
+  position: fixed;
+  left: 1rem;
+  bottom: 1rem;
+  z-index: 40;
+  font-family: var(--font-ui);
+}
+
+/* ---- 收起态：药丸 ---- */
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.42rem 0.85rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 0.8rem;
+  font-family: var(--font-ui);
+  cursor: pointer;
+  box-shadow: 0 2px 10px rgba(26, 26, 46, 0.08);
+  transition: transform 180ms ease, opacity 180ms ease;
+  animation: noticePillIn 260ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+.pill:hover {
+  transform: translateY(-2px);
+}
+
+/* 药丸上的小灯：9.0 同款青色，呼吸提醒「这里有话」 */
+.pillDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #00c8c2, #9af5f0);
+  animation: noticeBreath 2.4s ease-in-out infinite;
+}
+
+/* ---- 展开态：票券 ---- */
+
+.card {
+  width: min(340px, calc(100vw - 2rem));
+  padding: 1rem 1.1rem 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: 0 14px 40px rgba(26, 26, 46, 0.16);
+  transform-origin: left bottom;
+  animation: noticeCardIn 340ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* 子元素阶梯入场：全部只动 opacity/transform */
+.head,
+.headline,
+.list,
+.tear,
+.note,
+.collapse {
+  animation: noticeRise 320ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+.headline { animation-delay: 70ms; }
+.list { animation-delay: 130ms; }
+.tear { animation-delay: 190ms; }
+.note { animation-delay: 230ms; }
+.collapse { animation-delay: 270ms; }
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.55rem;
+}
+
+/* 解锁横幅同款仪式线：从中点向两侧展开 */
+.rule {
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+  transform-origin: center;
+  animation: noticeRuleOpen 520ms 120ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+.title {
+  font-size: 0.68rem;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+/* 大标题：满格充电条那条青色流光的文字版。
+   background-clip: text 不可用时退回实色，绝不显示成一块渐变色砖 */
+.headline {
+  margin: 0 0 0.6rem;
+  font-size: 1.06rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+@supports (background-clip: text) or (-webkit-background-clip: text) {
+  .headline {
+    background: linear-gradient(90deg, #007f85, #00c8c2 30%, #9af5f0 50%, #00c8c2 70%, #007f85);
+    background-size: 200% 100%;
+    background-clip: text;
+    color: transparent;
+    animation: noticeRise 320ms 70ms cubic-bezier(0.2, 0.7, 0.2, 1) both,
+      noticeFlow 3.2s 400ms linear infinite;
+  }
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  line-height: 1.45;
+}
+
+.tag {
+  flex: none;
+  padding: 0.1rem 0.4rem;
+  border: 1px solid color-mix(in srgb, var(--accent) 40%, var(--border));
+  border-radius: 5px;
+  font-size: 0.66rem;
+  letter-spacing: 0.04em;
+  color: var(--accent);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+/* 撕票线：虚线 + 两侧缺口圆（用页面底色抠出票根质感） */
+.tear {
+  position: relative;
+  height: 0;
+  margin: 0.75rem -1.1rem;
+  border-top: 1.5px dashed var(--border);
+}
+
+.tear::before,
+.tear::after {
+  content: '';
+  position: absolute;
+  top: -7px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--bg);
+  border: 1px solid var(--border);
+}
+
+.tear::before { left: -8px; border-left-color: transparent; }
+.tear::after { right: -8px; border-right-color: transparent; }
+
+.note {
+  margin: 0 0 0.6rem;
+  font-size: 0.74rem;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+.collapse {
+  padding: 0.34rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-alt);
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: transform 160ms ease, opacity 160ms ease;
+}
+
+.collapse:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.collapse:active {
+  transform: translateY(1px);
+}
+
+@keyframes noticeCardIn {
+  from { opacity: 0; transform: translateY(16px) scale(0.94); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes noticePillIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes noticeRise {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes noticeRuleOpen {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+@keyframes noticeBreath {
+  0%, 100% { transform: scale(1); opacity: 0.75; }
+  50% { transform: scale(1.35); opacity: 1; }
+}
+
+@keyframes noticeFlow {
+  from { background-position: 0% 0; }
+  to { background-position: -200% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pill,
+  .pillDot,
+  .card,
+  .head,
+  .headline,
+  .list,
+  .tear,
+  .note,
+  .collapse,
+  .rule {
+    animation: none;
+  }
+}

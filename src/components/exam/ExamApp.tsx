@@ -13,6 +13,7 @@ import DiagnosticIntro from '@/components/diagnostic/DiagnosticIntro';
 import DiagnosticRunner from '@/components/diagnostic/DiagnosticRunner';
 import DiagnosticResult from '@/components/diagnostic/DiagnosticResult';
 import GrillPanel from '@/components/grill/GrillPanel';
+import NoticeBoard from '@/components/notice/NoticeBoard';
 import { pickGrillQids } from '@/lib/grill';
 import { historyFor, practiceOverview, practiceQids } from '@/lib/progress';
 import {
@@ -922,6 +923,8 @@ export default function ExamApp() {
         >
           <IdBadge />
           <LangToggle />
+          {/* 公告只在 setup 相挂载：考试进行中不该有任何浮层打扰 */}
+          <NoticeBoard />
 
           {deckLive && (
             <CardDeck

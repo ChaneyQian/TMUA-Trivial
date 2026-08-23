@@ -92,6 +92,19 @@ const zh = {
     keyboard: '键盘：A–L / 1–9 选项 · Enter 批改或下一题 · ←→ 切题 · F 旗标',
   },
 
+  notice: {
+    pill: '公告',
+    pillAria: '展开公告',
+    regionAria: '站点公告',
+    title: 'Notice',
+    collapse: '收起',
+    headline: '9.0 Trivial 已开放',
+    itemMat: 'MAT 2024–2025 回忆题 MCQ',
+    itemTmuaCn: 'TMUA CN 2024–2025 回忆题',
+    // 主观提示就老实说是主观的，不假装官方定级
+    note: '主观上个人认为适合 7.5–9.0 选手的 Mock 卷内容。',
+  },
+
   records: {
     field: '做题记录（可选）',
     seen: '已做',
@@ -320,6 +333,18 @@ const en: Strings = {
     emptyBank: 'No questions available in this bank.',
     emptyBankLogicHint: (n: number) => `Ticking "Include logic reasoning questions" back on adds ${n}.`,
     keyboard: 'Keyboard: A–L / 1–9 select · Enter mark or next · ←→ navigate · F flag',
+  },
+
+  notice: {
+    pill: 'Notice',
+    pillAria: 'Open the notice board',
+    regionAria: 'Site notice',
+    title: 'Notice',
+    collapse: 'Dismiss',
+    headline: '9.0 Trivial is now open',
+    itemMat: 'MAT 2024–2025 recalled MCQs',
+    itemTmuaCn: 'TMUA CN 2024–2025 recalled papers',
+    note: 'Subjectively, the Mock content here suits 7.5–9.0 scorers — a personal take.',
   },
 
   records: {

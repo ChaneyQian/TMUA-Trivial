@@ -71,7 +71,8 @@ test('no dictionary entry is blank, and the two languages actually differ', () =
   assert.deepEqual(
     identical.sort(),
     // diagnostic.title 和 9.0 Trivial 一样是功能专名，两边都叫 Diagnostic Test
-    ['diagnostic.title', 'langToggle.title', 'zone.sub.classic', 'zone.title.trivial'],
+    // notice.title 是票券抬头的装饰性拉丁字标（NOTICE），两边同文是排版选择
+    ['diagnostic.title', 'langToggle.title', 'notice.title', 'zone.sub.classic', 'zone.title.trivial'],
     'these entries are identical in both languages — translate them or whitelist them here',
   );
 });
