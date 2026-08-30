@@ -70,6 +70,12 @@ interface Props {
   dbLabel: (db: string) => string;
   /** 抽题失败信息。复烤视图下这里是唯一的出口 */
   error: string;
+  /**
+   * 上一场从这个区开出去的成绩回执，外层已经按来源取好文案；空串＝没有。
+   * 三块的动作原来只有出错才有红字，正常路径一句反馈都没有——
+   * 这条就是那句「你刚才做的事有结果了」。一次性、不落盘（外层管生命周期）
+   */
+  receipt: string;
 }
 
 function sourceLabel(brief: QuestionBrief): string {
@@ -95,6 +101,7 @@ export default function GrillPanel({
   onPractice,
   dbLabel,
   error,
+  receipt,
 }: Props) {
   const { t } = useLang();
 
@@ -225,6 +232,15 @@ export default function GrillPanel({
           deckHint 挂在 CardDeck，这里都没有。三个按钮共用这一处回执，
           所以摆在最上面而不是跟在某一个按钮后面 */}
       {error && <div className={examStyles.errMsg}>{error}</div>}
+
+      {/* 上一场的回执，摆在三块之上（与出错红字同一处「本区总反馈」的位置，
+          但排在它后面——出错要优先被看见）。它跨越了空态分支：三块全空时
+          本来就开不出场次，实际不会同时出现，写在外面只是不必重复两遍 */}
+      {receipt && (
+        <p className={styles.receipt} role="status">
+          {receipt}
+        </p>
+      )}
 
       {allEmpty ? (
         <div className={styles.emptyBox}>

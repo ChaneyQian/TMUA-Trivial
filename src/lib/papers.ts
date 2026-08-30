@@ -9,6 +9,9 @@
 // 口径写死「已做过的题数 / 卷内总题数」：分子是这套卷里作答过至少一次的题，
 // 分母是这套卷进了索引、且用户当前够得着的题。做对做错都算「做过」——
 // 这面墙回答的是「哪几套卷我还没碰过」，不是「我做得对不对」（那是复烤区的事）。
+//
+// 成绩页的完卷横幅（papersJustCompleted）也长在这个模块里：它问的是
+// 「本场把哪几套卷做满了」，答案必须与这面墙同一条判据，否则两处会互相打脸。
 
 // 显式带扩展名：测试用 node --experimental-strip-types 直接跑这个模块，
 // ESM 解析器不会替你补 .ts（records.ts 里的 './i18n.ts' 同理）
@@ -91,6 +94,16 @@ export interface PaperProgress {
 }
 
 /**
+ * 这道题算不算「做过」。做对做错都算，一次都没作答才不算。
+ * 抽成一个名字是因为完卷横幅（papersJustCompleted）要用同一条判据——
+ * 横幅说「这卷做满了」而墙上还差一格，那是两套算法在打架。
+ */
+function attempted(records: Records, qid: number): boolean {
+  const stat = records.q[String(qid)];
+  return !!stat && stat.a > 0;
+}
+
+/**
  * 每套卷的完成度。
  *
  * reach 是「用户当前够得着的题」（reachableIndex 划的，已排除 diag，
@@ -110,8 +123,7 @@ export function paperProgress(
     for (const qid of paper.qids) {
       if (!reach.has(qid)) continue;
       total++;
-      const stat = records.q[String(qid)];
-      if (stat && stat.a > 0) done++;
+      if (attempted(records, qid)) done++;
     }
     if (total === 0) continue;
     rows.push({
@@ -122,6 +134,44 @@ export function paperProgress(
       total,
       ratio: done / total,
     });
+  }
+  return rows;
+}
+
+/**
+ * 本场交卷让哪几套卷从「未做满」跨到「做满」——完卷横幅要报的就是这批卷。
+ *
+ * before 是开考那一刻的记录快照（ExamApp 的 historyAtStartRef，与成绩页
+ * 逐题历史同一份），answered 是本场**作答过**的 qid。跳过的题不算做过，
+ * 这与 addSession 的口径一致（它也只给 answered 的题 a+1），两边不一致
+ * 就会出现「横幅说满了、下次打开墙上还差一格」。
+ *
+ * 只报跨线的卷：before 就已经满档的卷不在结果里，所以同一套卷做第二遍
+ * 不会再弹一次。整卷都够不着的卷压根不产出（同 paperProgress 的 reach 口径），
+ * 于是锁定用户不会因为一场复烤而在横幅上看见扩展卷的卷名。
+ */
+export function papersJustCompleted(
+  data: PapersData,
+  reach: ReadonlySet<number>,
+  before: Records,
+  answered: ReadonlySet<number>,
+): PaperProgress[] {
+  const rows: PaperProgress[] = [];
+  for (const paper of data.papers) {
+    let total = 0;
+    let was = 0;
+    let now = 0;
+    for (const qid of paper.qids) {
+      if (!reach.has(qid)) continue;
+      total++;
+      const seen = attempted(before, qid);
+      if (seen) was++;
+      if (seen || answered.has(qid)) now++;
+    }
+    // total === 0 是「整卷够不着」；was === total 是「本来就满了」，
+    // 两种都不该上榜
+    if (total === 0 || was >= total || now < total) continue;
+    rows.push({ key: paper.key, db: paper.db, label: paper.label, done: now, total, ratio: 1 });
   }
   return rows;
 }

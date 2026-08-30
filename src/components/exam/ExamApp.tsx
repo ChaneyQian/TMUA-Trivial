@@ -17,6 +17,12 @@ import NoticeBoard from '@/components/notice/NoticeBoard';
 import { pickGrillQids } from '@/lib/grill';
 import { historyFor, practiceOverview, practiceQids } from '@/lib/progress';
 import {
+  cachedPapers,
+  loadPapers,
+  papersJustCompleted,
+  type PapersData,
+} from '@/lib/papers';
+import {
   attemptsLeft,
   canAttempt,
   fetchDiagnosticSets,
@@ -76,6 +82,14 @@ type Phase = 'setup' | 'loading' | 'exam' | 'result' | 'diagnostic' | 'diagResul
 type StageView = 'deck' | 'zone' | 'progress';
 type Mode = 'practice' | 'mock';
 type Db = 'TMUA' | 'TMUA_MOCK' | 'MAT' | 'SMC' | 'ECAA' | 'AMC' | 'ALL';
+/**
+ * 本场是从复烤区哪一块开出来的；不是复烤区来的就是 null。
+ * 成绩页的错题闭环回执（B3）和复烤区顶部的操作回执（B5）都只认这一个标记。
+ *
+ * 刻意**不进** SessionRecord、不进 XLSX 线格式：它是「当场的一句话」，
+ * 不是持久数据。换台机器导入记录，谁也不需要知道去年某一场是从哪个按钮点进去的。
+ */
+type GrillOrigin = 'grill' | 'retry' | 'topic';
 
 const UNLOCK_SEEN_KEY = 'mcq-test:hidden-unlock-seen:v1';
 const ZONE_KEY = 'mcq-test:zone:v1';
@@ -445,8 +459,19 @@ export default function ExamApp() {
   const [elapsed, setElapsed] = useState(0);
   const [resultActionError, setResultActionError] = useState('');
   const savedResultRef = useRef<Records | null>(null);
-  /** 本场开考那一刻的 records 快照，成绩页逐题历史只读它 */
+  /** 本场开考那一刻的 records 快照，成绩页逐题历史与完卷横幅都只读它 */
   const historyAtStartRef = useRef<Records | null>(null);
+  /** 见 GrillOrigin：本场从复烤区哪一块开出来的，只活在当场 */
+  const sessionOriginRef = useRef<GrillOrigin | null>(null);
+  /**
+   * 复烤区顶部的一次性回执（B5）。挂 state 不落盘：下次进面板还在，
+   * 开新场（start 里清）或刷新（state 天然归零）就消失。
+   */
+  const [grillReceipt, setGrillReceipt] = useState<{
+    origin: GrillOrigin;
+    n: number;
+    right: number;
+  } | null>(null);
   // 主题只在 exam 阶段渲染(无 SSR 标记),惰性初始化读 dataset 不会造成水合不匹配
   const [scheme, setScheme] = useState(() =>
     typeof document === 'undefined' ? 'light' : document.documentElement.dataset.theme || 'light'
@@ -458,6 +483,49 @@ export default function ExamApp() {
       commandPet({ state: 'review', moveTo: 'home' });
     } else if (phase === 'setup') commandPet({ state: 'idle', moveTo: 'home' });
   }, [phase]);
+
+  // ---- 完卷横幅的数据（B2）----
+  //
+  // papers.json 只在走到成绩页时才取：deck 首屏和考试运行时都用不到它，
+  // 没道理让每次冷启动替一条横幅买单（与进度面板的卷墙同一个思路，
+  // 缓存也共用 lib/papers 的模块级那份，两处只会取一次）。
+  // 取失败就一直是 null，横幅整块不渲染——绝不挡成绩页主体。
+  const [papers, setPapers] = useState<PapersData | null>(() => cachedPapers());
+  useEffect(() => {
+    if (phase !== 'result' || papers) return;
+    let alive = true;
+    loadPapers()
+      .then((data) => {
+        if (alive) setPapers(data);
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [phase, papers]);
+
+  /**
+   * 本场把哪几套卷做满了。
+   *
+   * 「之前」读的是开考快照（historyAtStartRef），不是 records —— records 要等
+   * 用户在成绩页点了某个按钮才落盘，读它会让横幅在点击那一刻才冒出来。
+   * 「之后」＝快照 + 本场作答过的题，判据与卷面进度墙共用（papersJustCompleted）。
+   *
+   * 范围仍走 reachable：够不着的卷压根不参与，锁定用户不会在横幅上
+   * 看见扩展卷的卷名。papers 为 null（还在取 / 取失败）时返回空数组。
+   */
+  const finishedPapers = useMemo(() => {
+    if (phase !== 'result' || !papers || !historyAtStartRef.current) return [];
+    const answeredQids = new Set<number>();
+    questions.forEach((question, i) => {
+      if (answers[i] !== null) answeredQids.add(question.qid);
+    });
+    if (answeredQids.size === 0) return [];
+    const reach = new Set(reachable.map((entry) => entry.qid));
+    return papersJustCompleted(papers, reach, historyAtStartRef.current, answeredQids);
+    // historyAtStartRef 是 ref，本身不进依赖；它只在 start() 里、也就是进 exam 相
+    // 之前写一次，成绩页整段生命周期里都不会变
+  }, [phase, papers, questions, answers, reachable]);
 
   const setCountAnd = (n: number) => {
     setCount(n);
@@ -557,6 +625,8 @@ export default function ExamApp() {
     qids?: number[];
     /** 只有 Grill 用：它的池子本来就是诊断题 */
     allowDiag?: boolean;
+    /** 本场从复烤区哪一块开出来的；不传＝不是复烤区来的（见 GrillOrigin） */
+    origin?: GrillOrigin;
   }) => {
     if (!index) return;
     const useDb = override?.db ?? db;
@@ -565,6 +635,10 @@ export default function ExamApp() {
     if (override?.db) setDb(override.db);
     if (override?.pickMode) setPickMode(override.pickMode);
     if (override?.count) setCountAnd(override.count);
+    // 来源标记与上一场的回执都在这唯一的开考入口收拢，不摊到各个调用点：
+    // 日后再多一条开考路径，忘了清理就会把别人的回执挂在自己头上
+    sessionOriginRef.current = override?.origin ?? null;
+    setGrillReceipt(null);
     setError('');
     setPhase('loading');
     // 全屏须在用户手势同步调用链里发起(失败静默降级)
@@ -636,7 +710,25 @@ export default function ExamApp() {
     return next;
   };
 
+  /**
+   * 离开成绩页时给复烤区留一条回执（B5）。
+   *
+   * 写在这里而不是 finish()：finish 是 useCallback([])，把 questions / answers
+   * 塞进它的依赖会让计时器那个 effect 每次渲染都重挂一次 setInterval——
+   * 为一条回执动考试运行时的计时器不值得。离开成绩页时 questions / answers
+   * 都还在（是 leaveResult 自己把它们清空的），现算一遍就够。
+   */
+  const stashGrillReceipt = () => {
+    const origin = sessionOriginRef.current;
+    if (!origin) return;
+    const right = questions.filter((question, i) => sameLabel(answers[i], question.answer)).length;
+    setGrillReceipt({ origin, n: questions.length, right });
+    // 离开成绩页即清来源标记：别让不变量靠「只有 start() 能进成绩页」这条外部事实兑着
+  sessionOriginRef.current = null;
+};
+
   const leaveResult = (message: string) => {
+    stashGrillReceipt();
     setRecordMessage(message);
     setQuestions([]);
     setPhase('setup');
@@ -649,6 +741,7 @@ export default function ExamApp() {
    */
   const openProgressFromResult = () => {
     saveCurrentResult();
+    stashGrillReceipt();
     setRecordMessage(t.records.sessionSaved);
     setQuestions([]);
     if (deckTimerRef.current) window.clearTimeout(deckTimerRef.current);
@@ -683,6 +776,8 @@ export default function ExamApp() {
     // 「仅两次机会」是本功能最重的规则，不能只押在一个三元表达式上。
     if (!index || !canAttempt(records.diag)) return;
     setError('');
+    // 一场诊断也是「新的上一场」：不清的话，考完回到复烤区顶上还挂着更早那场的回执
+    setGrillReceipt(null);
     setPhase('loading');
     document.documentElement.requestFullscreen?.().catch(() => {});
     try {
@@ -758,13 +853,28 @@ export default function ExamApp() {
     // Grill 一律练习模式：这里的分工就是给批改与解析，Mock 的限时交卷没意义。
     // setMode 与下面的 setPhase('loading') 同批渲染，等 phase 变 'exam' 时早已生效
     setMode('practice');
-    void start({ db: 'ALL', qids, allowDiag: true });
+    void start({ db: 'ALL', qids, allowDiag: true, origin: 'grill' });
   };
 
   /** 诊断成绩页 → 复烤区：把刚绑上的这批题直接摆到面前 */
   const goToGrillFromResult = () => {
     chooseZone('grill');
     leaveDiagnostic();
+  };
+
+  /**
+   * 复烤区顶部那条回执的文案（B5）。在渲染时取字典而不是把成句存进 state，
+   * 这样切语言时它会跟着翻——存成句子的话，切到英文还挂着上一句中文。
+   */
+  const grillReceiptText = (): string => {
+    if (!grillReceipt) return '';
+    const line =
+      grillReceipt.origin === 'retry'
+        ? t.grill.receiptRetry
+        : grillReceipt.origin === 'topic'
+          ? t.grill.receiptTopic
+          : t.grill.receiptGrill;
+    return line(grillReceipt.n, grillReceipt.right);
   };
 
   /** 空态里的指路：转到 9.0 卡并展开（锁着就是 Diagnostic 介绍页） */
@@ -785,7 +895,9 @@ export default function ExamApp() {
     // 显式落 practice，与邻居 startGrill / practiceTopic 同一套理由：复烤区的
     // 卡面写着「可批改可看解析」，上一场碰巧选过 Mock 就开出限时卷是违约
     setMode('practice');
-    void start({ db: 'ALL', qids });
+    // origin: 'retry' 是成绩页那句「这批错题这次对了 M / N」的唯一开关（B3）——
+    // 另外两条路不带这个标记，那句话就只在真的重练错题时才出现
+    void start({ db: 'ALL', qids, origin: 'retry' });
   };
 
   /**
@@ -800,7 +912,7 @@ export default function ExamApp() {
       return;
     }
     setMode('practice');
-    void start({ db: 'ALL', qids });
+    void start({ db: 'ALL', qids, origin: 'topic' });
   };
 
   const saveAndRetry = () => {
@@ -1003,8 +1115,13 @@ export default function ExamApp() {
                 trivial: hiddenUnlocked
                   ? t.cardBadge.expanded(expandedCount)
                   : t.cardBadge.charging,
+                // 标化题库还没上内容，报的是「即将开放」而不是题数——
+                // 一个 0 会被读成「这个库空了」，而它是还没开门
+                board: t.cardBadge.comingSoon,
               }}
-              locked={{ classic: false, grill: false, trivial: !hiddenUnlocked }}
+              // board 刻意不锁：它没有门槛，只是内容没到（Design §17-C）。
+              // 锁定态在卡面是另一套读法（充能中 / 去考 Diagnostic），别混用
+              locked={{ classic: false, grill: false, trivial: !hiddenUnlocked, board: false }}
               // Grill 卡面副文：复烤区现在管两批题（诊断绑定 + 全站错题），
               // 只报绑定数会让「一次诊断没考过、但有一堆错题」的人以为这张卡是空的。
               // 两个数都为 0 时才说定位，其余情况直接报数
@@ -1122,6 +1239,8 @@ export default function ExamApp() {
               dbLabel={(d) => dbName(d as Db)}
               // 复烤视图下 errMsg / deckHint 都没挂载，抽题失败必须有自己的出口
               error={error}
+              // 上一场从这个区开出去的成绩回执（B5）。开新场就清，不落盘
+              receipt={grillReceiptText()}
             />
           ) : (
         <div className={styles.setupCard}>
@@ -1326,6 +1445,34 @@ export default function ExamApp() {
     return (
       <div className={styles.wrap}>
         <div className={styles.resultWrap}>
+          {/* 完卷横幅（B2）。只在本场真把某套卷从「未做满」推到「做满」时出现，
+              一次性、不落盘——刷新成绩页就没了，这是明确接受的。
+              papers.json 取不到时 finishedPapers 恒为空，整块不渲染，
+              绝不挡住下面的成绩主体 */}
+          {finishedPapers.length > 0 && (
+            <div className={styles.finishBanner} role="status">
+              <span className={styles.finishMark} aria-hidden="true" />
+              <div className={styles.finishText}>
+                <div className={styles.finishTitle}>
+                  {finishedPapers.length === 1
+                    ? '完卷 · 这一套做满了'
+                    : `完卷 · 这一场做满了 ${finishedPapers.length} 套卷`}
+                </div>
+                {/* 横幅算在落盘之前（完卷时刻的仪式感不能等按钮），
+                    但用户若点「跳过本场统计」，这一场不写入记录、卷墙不会点亮——
+                    这句小字把条件说破，横幅就不是断言既成事实的假话 */}
+                <div className={styles.finishNote}>计入统计后，卷面进度墙上这一格就会点亮</div>
+                <div className={styles.finishPapers}>
+                  {finishedPapers.map((paper) => (
+                    <span key={paper.key} className={styles.finishPaper}>
+                      {paper.label}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
           <div className={styles.scoreCard}>
             <div className={styles.scoreBig}>
               {right} / {questions.length}
@@ -1334,6 +1481,17 @@ export default function ExamApp() {
               {DB_NAMES[db]} · {mode === 'mock' ? 'Mock 限时' : '练习'}模式
               <br />
               已作答 {answered} 题 · 用时 {fmtClock(elapsed)}
+              {/* 错题重练的闭环回执（B3）：只有从复烤区「重练这些」进来的场次才有
+                  这一句。分母是本场题数，分子是本场做对的——它回答的是
+                  「上次错的这批，这次救回来几道」 */}
+              {sessionOriginRef.current === 'retry' && (
+                <>
+                  <br />
+                  <span className={styles.retryReceipt}>
+                    上次错的这 {questions.length} 道，这次对了 {right} 道
+                  </span>
+                </>
+              )}
             </div>
             <div className={styles.scoreBtns}>
               <button

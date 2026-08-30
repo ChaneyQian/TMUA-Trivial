@@ -1,9 +1,11 @@
 'use client';
 
-// 设置页一级：三张堆叠功能卡（Classic / Grill / 9.0 Trivial）。
-// 前牌完整、左右各露一张后牌的边缘；点后牌转到前位，点前牌展开为配置面板。
+// 设置页一级：堆叠功能卡（Classic / Grill / 9.0 Trivial / 标化题库）。
+// 前牌完整、左右各露一张后牌的边缘，多出来的牌沉到居中的第三层；
+// 点后牌转到前位，点前牌展开为配置面板。
 //
-// 全部卡面数据来自 zones.ts，这里不写单卡分支。
+// 全部卡面数据来自 zones.ts，这里不写单卡分支——卡的张数也一样，
+// 槽位是按环形位次算出来的，加一张卡不需要动这个组件。
 
 import { useEffect, useRef } from 'react';
 import { useLang } from '@/lib/LangContext';
@@ -89,7 +91,7 @@ export default function CardDeck({
 
   /**
    * 跟手位移直接写进节点，不走 state：touchmove 的频率等于屏幕刷新率，
-   * 每帧 setState 就是每帧重渲染 3 张卡 + 3 张封面。传 null 表示收手复位。
+   * 每帧 setState 就是每帧重渲染全部卡面与封面。传 null 表示收手复位。
    */
   const setDrag = (px: number | null) => {
     const node = stackRef.current;
@@ -198,8 +200,17 @@ export default function CardDeck({
         <div ref={stackRef} className={styles.stack}>
           {ZONES.map((zone) => {
             const offset = ringOffset(zone.id, front);
+            // 位次 → 槽位。三张牌时末位就是 2（左后牌），四张牌时末位是 3，
+            // 中间那张落到 slotBack（居中偏上、更小更暗的第三层）。
+            // 写成「末位即左后牌」而不是钉死数字，加卡才不用回来改这一行。
             const slot =
-              offset === 0 ? styles.slotFront : offset === 1 ? styles.slotRight : styles.slotLeft;
+              offset === 0
+                ? styles.slotFront
+                : offset === 1
+                  ? styles.slotRight
+                  : offset === ZONES.length - 1
+                    ? styles.slotLeft
+                    : styles.slotBack;
             const isFront = offset === 0;
             const openable = !zone.comingSoon && !locked[zone.id] && zone.quickStart;
             return (
@@ -306,7 +317,10 @@ export default function CardDeck({
                         // 读屏念出来的就该是它真正会做的事
                         zone.unlockPath === 'progress' && locked[zone.id]
                         ? t.deck.diagnosticAria(zone.no, t.zone.title[zone.id])
-                        : t.deck.openAria(zone.no, t.zone.title[zone.id])
+                        : // comingSoon 卡按 Enter 只会弹「即将开放」，念「展开配置」就是骗读屏
+                          zone.comingSoon
+                          ? t.block.comingSoon(t.zone.title[zone.id])
+                          : t.deck.openAria(zone.no, t.zone.title[zone.id])
                   }
                   onClick={() => (isFront ? onOpen(zone.id) : onFront(zone.id))}
                 />

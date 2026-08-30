@@ -145,7 +145,9 @@ test('a grill session is a normal practice session: it writes q and s', () => {
   assert.match(exam, /const startGrill = \(\) => \{/);
   assert.match(exam, /pickGrillQids\(index, records, grillCountChoice, grillPickMode\)/);
   assert.match(exam, /setMode\('practice'\)/);
-  assert.match(exam, /start\(\{ db: 'ALL', qids \}\)/);
+  // 通道形状带上了来源标记（P7-B5：复烤区的操作回执要认出这一场是从哪块开出去的）。
+  // 标记只影响回执文案，抽题参数一个没变——db / qids / allowDiag 仍是原来那三个
+  assert.match(exam, /start\(\{ db: 'ALL', qids, allowDiag: true, origin: 'grill' \}\)/);
   assert.match(exam, /if \(phase !== 'exam' \|\| !q\) return;/);
 });
 

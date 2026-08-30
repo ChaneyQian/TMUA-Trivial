@@ -1301,6 +1301,134 @@
   }
 }
 
+/* ============ 完卷横幅（B2）与错题重练回执（B3） ============ */
+
+/* 一场把某套卷做满了才出现。纹理取满格充电条那条青色流光，
+   横幅本身只用它画左侧的一道竖标和标题文字——整块铺渐变会盖过成绩本身，
+   而这里的主角始终是分数 */
+.finishBanner {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  box-sizing: border-box;
+  padding: 0.85rem 1.1rem;
+  margin-bottom: 0.9rem;
+  border: 1px solid color-mix(in srgb, var(--border) 60%, #00a8ad);
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: 0 0 0 1px rgb(0 168 173 / 8%), 0 0 22px rgb(0 168 173 / 12%);
+  font-family: var(--font-ui);
+  /* 只动 transform / opacity，整段都留在合成器层 */
+  animation: finishRise 380ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* 左侧那道竖标就是充电条满格时的渐变本体，竖过来用 */
+.finishMark {
+  flex: 0 0 4px;
+  align-self: stretch;
+  min-height: 2.2rem;
+  border-radius: 3px;
+  background: linear-gradient(
+    180deg,
+    #00a8ad 0%,
+    #54e5df 22%,
+    #d6ffff 38%,
+    #54e5df 54%,
+    #00a8ad 76%,
+    #54e5df 100%
+  );
+  background-size: 100% 260%;
+  box-shadow: 0 0 11px rgb(0 211 208 / 55%);
+  animation: finishFlow 2.6s linear infinite;
+}
+
+.finishText {
+  min-width: 0;
+}
+
+/* 标题走公告牌大标题同一套：background-clip: text 不可用就退回实色，
+   绝不显示成一块渐变色砖 */
+.finishTitle {
+  font-size: 0.98rem;
+  font-weight: 700;
+  color: #007f85;
+}
+
+@supports (background-clip: text) or (-webkit-background-clip: text) {
+  .finishTitle {
+    background: linear-gradient(90deg, #007f85, #00c8c2 30%, #9af5f0 50%, #00c8c2 70%, #007f85);
+    background-size: 240% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: chargeFlow 3.4s linear infinite;
+  }
+}
+
+/* 暗色下 #007f85 压在 --surface 上只有 3.4:1，流光扫过时对比度在 3.4↔13 之间
+   摆动。把首尾停靠色抬到 #00c8c2（7.8:1），亮色主题不受影响 */
+:global([data-theme='dark']) .finishTitle {
+  color: #00c8c2;
+}
+
+@supports (background-clip: text) or (-webkit-background-clip: text) {
+  :global([data-theme='dark']) .finishTitle {
+    background: linear-gradient(90deg, #00c8c2, #5fe3dd 30%, #9af5f0 50%, #5fe3dd 70%, #00c8c2);
+    background-size: 240% 100%;
+    background-clip: text;
+    color: transparent;
+  }
+}
+
+.finishNote {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  margin-top: 0.15rem;
+}
+
+.finishPapers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem 0.5rem;
+  margin-top: 0.28rem;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+}
+
+/* 一场满多卷时卷名各自成块，读得出是几套而不是一长串 */
+.finishPaper {
+  padding: 0.1rem 0.45rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface-alt);
+}
+
+@keyframes finishRise {
+  from { opacity: 0; transform: translateY(10px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* 竖版流光。chargeFlow 推的是 background-position 的 x，竖标要推 y */
+@keyframes finishFlow {
+  from { background-position: 50% 0%; }
+  to { background-position: 50% -260%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* 降级成瞬显：横幅照常出现，只是不再有入场与流光 */
+  .finishBanner,
+  .finishMark,
+  .finishTitle {
+    animation: none;
+  }
+}
+
+/* 从复烤区「重练这些」进来的场次才有这一句 */
+.retryReceipt {
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+
 /* 9.0 面板题库行下的范围说明：互斥后同名库是另一批题，只有题数看不出来 */
 .zoneScopeNote {
   margin: 0.35rem 0 0;

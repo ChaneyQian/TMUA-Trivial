@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import test from 'node:test';
 
+import { ZONE_IDS, ringOffset, stepZone } from '../src/components/deck/zones.ts';
 import { indexForLibraryMode } from '../src/lib/records.ts';
 
 const zonesPath = 'src/components/deck/zones.ts';
@@ -10,7 +11,7 @@ const deckCssPath = 'src/components/deck/Deck.module.css';
 const examPath = 'src/components/exam/ExamApp.tsx';
 const examCssPath = 'src/components/exam/Exam.module.css';
 
-test('the deck ships three zones as one data table plus their cover art', () => {
+test('the deck ships four zones as one data table plus their cover art', () => {
   assert.equal(fs.existsSync(zonesPath), true, 'missing zones table');
   assert.equal(fs.existsSync(deckPath), true, 'missing CardDeck component');
   assert.equal(fs.existsSync(deckCssPath), true, 'missing deck styles');
@@ -18,12 +19,16 @@ test('the deck ships three zones as one data table plus their cover art', () => 
   assert.equal(fs.existsSync('public/cards/classic.jpg'), true, 'missing Classic cover');
   assert.equal(fs.existsSync('public/cards/grill.jpg'), true, 'missing Grill cover');
   assert.equal(fs.existsSync('public/cards/trivial.jpg'), true, 'missing 9.0 Trivial cover');
+  // board.jpg 刻意不断言存在：P1 定下的机制就是「缺图走渐变兜底，
+  // 放进文件即生效、零代码改动」。骨架卡不等图，图到了也不用改这条
 
   const zones = fs.readFileSync(zonesPath, 'utf8');
 
-  // 三区、三个编号，卡面文案与解锁路径都从这张表来，组件里不写单卡分支
-  for (const id of ["'classic'", "'grill'", "'trivial'"]) assert.match(zones, new RegExp(id));
-  for (const no of ["'01'", "'02'", "'03'"]) assert.match(zones, new RegExp(no));
+  // 四区、四个编号，卡面文案与解锁路径都从这张表来，组件里不写单卡分支
+  for (const id of ["'classic'", "'grill'", "'trivial'", "'board'"]) {
+    assert.match(zones, new RegExp(id));
+  }
+  for (const no of ["'01'", "'02'", "'03'", "'04'"]) assert.match(zones, new RegExp(no));
   // 卡面文案已搬进 lib/i18n.ts（外层双语），zones.ts 只留与语言无关的结构。
   // 三区的标题/副文改由字典保证，两种语言各一份，见 tests/i18n.test.mjs。
   assert.doesNotMatch(zones, /title:\s*'/);
@@ -43,27 +48,47 @@ test('the deck ships three zones as one data table plus their cover art', () => 
   assert.doesNotMatch(i18n, /grill: 'Coming Soon'/);
   assert.match(i18n, /trivial: '扩展题库'/);
   assert.match(i18n, /trivial: 'Extended Library'/);
+  // P7-C1 的第四张卡，双语齐备
+  assert.match(i18n, /board: '标化题库'/);
+  assert.match(i18n, /board: 'Standard Bank'/);
+  assert.match(i18n, /board: '分类看板 · 即将开放'/);
+  assert.match(i18n, /board: 'Browse-only board · Coming soon'/);
 
   // P2/P3 的留位：展开给哪套面板、解锁走哪条路
   assert.match(zones, /panel: 'full'/);
   assert.match(zones, /panel: 'countOnly'/);
   assert.match(zones, /unlockPath: 'progress'/);
   assert.match(zones, /'diagnostic'/, 'the diagnostic unlock path must stay reserved for P2');
-  // P3 起三个区全部开放；这张表只保留结构，开放与否仍由 comingSoon 表达
+  // P3 起前三个区全部开放；这张表只保留结构，开放与否仍由 comingSoon 表达
   assert.match(zones, /comingSoon: boolean;/, 'the structural flag must stay on the table');
   assert.equal(
     (zones.match(/comingSoon: false/g) || []).length,
     3,
-    'all three zones are open from P3 on',
+    'the first three zones stay open',
+  );
+  // 标化题库是骨架卡：只有它是 comingSoon，且刻意不设解锁门槛
+  // （unlockPath 仍是 free）——它不是锁着，是内容还没进来
+  const boardBlock = zones.slice(zones.indexOf("id: 'board'"));
+  assert.match(boardBlock, /comingSoon: true/);
+  assert.match(boardBlock, /unlockPath: 'free'/);
+  assert.match(boardBlock, /panel: 'none'/, 'a browse-only board opens no pick-and-time panel');
+  assert.match(boardBlock, /quickStart: false/, 'a card that hands out no paper has no quick start');
+  assert.equal(
+    (zones.match(/comingSoon: true/g) || []).length,
+    1,
+    'only the board is a skeleton card',
   );
 
   // 图没就位时的兜底：每区一条 CSS 渐变，垫在封面 <img> 底下
   assert.match(zones, /grad: string;/);
   assert.equal(
     (zones.match(/'radial-gradient\(/g) || []).length,
-    3,
+    4,
     'every zone needs a gradient placeholder',
   );
+  // 第四张的占位色与前三张分得开（鼠尾草绿 vs 蓝 / 橙 / 深青）：
+  // 缺图期间四张卡全靠渐变认人，撞色就等于四张一样的卡
+  assert.match(boardBlock, /#5a8a6a/, 'the board placeholder is the sage-green one');
 
   // 封面走 basePath，和工牌 / 宠物同一套静态资源规矩
   const deck = fs.readFileSync(deckPath, 'utf8');
@@ -72,6 +97,79 @@ test('the deck ships three zones as one data table plus their cover art', () => 
   // 封面是装饰位：alt="" 时 404 的 img 什么也不画，渐变直接透出，
   // 既不需要 onError，也不会冒出破图图标
   assert.match(deck, /alt=""/);
+});
+
+test('the ring keeps cycling both ways once a fourth card joins it', () => {
+  assert.equal(ZONE_IDS.length, 4, '第四张卡进表之后，环上就是四张');
+
+  // 按同一方向走满一圈：必须回到出发的那张，且路上每张各出现一次。
+  // 这是 ←→ 循环的全部承诺，比钉死「按右键从 classic 到 grill」耐改得多
+  for (const start of ZONE_IDS) {
+    const seen = [];
+    let at = start;
+    for (let i = 0; i < ZONE_IDS.length; i++) {
+      seen.push(at);
+      at = stepZone(at, 1);
+    }
+    assert.equal(at, start, `右旋一圈没有回到 ${start}`);
+    assert.equal(new Set(seen).size, ZONE_IDS.length, '一圈里有卡重复或缺席');
+  }
+
+  // ←→ 互为逆操作：按错方向再按回来，回到原处
+  for (const id of ZONE_IDS) {
+    assert.equal(stepZone(stepZone(id, 1), -1), id);
+    assert.equal(stepZone(stepZone(id, -1), 1), id);
+  }
+
+  // 位次取遍 0..n-1，前位恒为 0：CardDeck 按位次分槽，漏一个位次就等于
+  // 有一张卡没有槽位、四张牌叠成三张
+  for (const front of ZONE_IDS) {
+    assert.equal(ringOffset(front, front), 0);
+    assert.deepEqual(
+      ZONE_IDS.map((id) => ringOffset(id, front)).sort(),
+      [0, 1, 2, 3],
+    );
+  }
+});
+
+test('the fourth card gets a slot of its own instead of piling onto the left one', () => {
+  const deck = fs.readFileSync(deckPath, 'utf8');
+  const css = fs.readFileSync(deckCssPath, 'utf8');
+
+  // 槽位映射写成「末位即左后牌」，中间的落到第三层。
+  // 钉死数字的话，下一张卡进表就会悄悄叠到左后牌上
+  assert.match(deck, /offset === ZONES\.length - 1/);
+  assert.match(deck, /styles\.slotBack/);
+  assert.match(css, /\.slotBack\s*\{/);
+
+  // 第三层比两张侧牌更靠后：z-index 更小、遮罩更暗
+  assert.match(css, /\.slotBack\s*\{[\s\S]*?z-index: 0/);
+  assert.match(css, /\.slotBack::after\s*\{[\s\S]*?opacity: 0\.5/);
+
+  // 位移用百分比：transform 的百分比按卡片自身尺寸解析，
+  // 340px 与 375px 下才露出同一比例的那道边（与 --slot-x 同一套理由）
+  assert.match(css, /--slot-back-y:\s*-?\d+(\.\d+)?%/);
+  // 跟手位移也要作用到第三层，否则横滑时它会呆在原地
+  assert.match(css, /\.slotBack\s*\{[\s\S]*?var\(--drag, 0px\)/);
+  // 第三层往上退出去的那截要有 padding 接着，不然它挤进 .head 的外边距里
+  assert.match(css, /\.viewport\s*\{[\s\S]*?padding-top:\s*30px/);
+});
+
+test('the board card is a coming-soon skeleton: it turns to the front but never opens', () => {
+  const exam = fs.readFileSync(examPath, 'utf8');
+
+  // 徽章走 comingSoon 体例，不报「0 题」—— 那会被读成「这个库空了」
+  assert.match(exam, /board: t\.cardBadge\.comingSoon/);
+  // 不锁定：它没有门槛，只是内容还没进来。锁定态在卡面是另一套读法
+  assert.match(
+    exam,
+    /locked=\{\{ classic: false, grill: false, trivial: !hiddenUnlocked, board: false \}\}/,
+  );
+  // 展不开走的仍是 P1 那套 block.comingSoon，没有为第四张卡新写分支
+  assert.match(exam, /if \(zone\.comingSoon\) return t\.block\.comingSoon\(t\.zone\.title\[id\]\);/);
+  // 选区落盘的白名单里没有 board：存进去只会在下次回读时被判非法，
+  // localStorage 里不该留一个永远走不通的值
+  assert.doesNotMatch(exam, /saved === 'board'/);
 });
 
 test('the 280ms swap window is stated the same in the component and both stylesheets', () => {

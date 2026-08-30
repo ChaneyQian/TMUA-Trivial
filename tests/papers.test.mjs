@@ -24,6 +24,7 @@ import {
   paperLevel,
   paperProgress,
   paperShort,
+  papersJustCompleted,
   resetPapersCache,
 } from '../src/lib/papers.ts';
 import { createEmptyRecords, reachableIndex } from '../src/lib/records.ts';
@@ -276,6 +277,81 @@ test('the wall only shows papers the user can actually reach', () => {
   assert.deepEqual(stale.map((row) => [row.label, row.total]), [['TMUA P1 2020', 1]]);
   assert.deepEqual(paperProgress(FIXTURE, new Set(), records), []);
   assert.deepEqual(paperGroups([]), []);
+});
+
+/* ---- 完卷横幅（P7-B2）：本场把哪几套卷从「未做满」推到了「做满」 ---- */
+
+test('the completion banner names only the papers this session actually filled', () => {
+  const reach = setOf(reachableIndex(SCOPE, true));
+  // P1 差最后一道（101/102/103 做过，104 没有）；P2 与 Mock 各差一道
+  const before = recordsOf([101, 102, 103, 201, 301]);
+
+  // 本场补上 104 → 只有 P1 跨线，另外两套还差着
+  assert.deepEqual(
+    papersJustCompleted(FIXTURE, reach, before, new Set([104])).map((row) => row.label),
+    ['TMUA P1 2020'],
+  );
+
+  // 一场满多卷：三个缺口一起补上，三条都要报出来（顺序沿用卷单）
+  assert.deepEqual(
+    papersJustCompleted(FIXTURE, reach, before, new Set([104, 202, 302])).map((row) => row.label),
+    ['TMUA P1 2020', 'TMUA P2 2020', 'TMUA Mock Zetta P1'],
+  );
+
+  // 没跨线就一条都不产出：做了题，但这套卷离满还差得远
+  assert.deepEqual(
+    papersJustCompleted(FIXTURE, reach, recordsOf([101]), new Set([102])),
+    [],
+    'P1 才做到 2/4，不该报完卷',
+  );
+  // 整场一题没作答（Mock 全跳过）等于什么也没发生
+  assert.deepEqual(papersJustCompleted(FIXTURE, reach, before, new Set()), []);
+  // 本来就满档的卷不重复弹——同一套卷做第二遍不该再庆祝一次
+  const full = recordsOf([101, 102, 103, 104]);
+  assert.deepEqual(papersJustCompleted(FIXTURE, reach, full, new Set([101, 104])), []);
+  // 做错也算做过：这面墙问的是「碰没碰过」，不是「做得对不对」
+  const allWrong = createEmptyRecords();
+  for (const qid of [101, 102, 103]) allWrong.q[String(qid)] = { a: 2, w: 2, t: 1, c: 0 };
+  assert.deepEqual(
+    papersJustCompleted(FIXTURE, reach, allWrong, new Set([104])).map((row) => row.label),
+    ['TMUA P1 2020'],
+  );
+});
+
+test('the banner cannot leak a locked paper name, and it agrees with the wall', () => {
+  const before = recordsOf([301]);
+
+  // 锁定用户：扩展卷整卷够不着，就算这一场碰巧把它做完了，横幅也不点它的名。
+  // 「不剧透」与卷墙是同一条口径 —— 都只认外层递进来的 reach
+  assert.deepEqual(
+    papersJustCompleted(FIXTURE, setOf(reachableIndex(SCOPE, false)), before, new Set([302])),
+    [],
+  );
+  // 解锁后同一份输入就该报出来：上一条拦下的是范围，不是这条路本身
+  assert.deepEqual(
+    papersJustCompleted(FIXTURE, setOf(reachableIndex(SCOPE, true)), before, new Set([302])).map(
+      (row) => row.label,
+    ),
+    ['TMUA Mock Zetta P1'],
+  );
+
+  // 与卷墙同一条判据：横幅报满的卷，墙上必须也是满档。
+  // 两套算法打架的表现就是「横幅说做满了、进度面板里还差一格」
+  const reach = setOf(reachableIndex(SCOPE, true));
+  const snapshot = recordsOf([101, 102, 103, 201, 301]);
+  const answered = new Set([104, 202, 302]);
+  const after = createEmptyRecords();
+  after.q = { ...snapshot.q };
+  // 本场做的这几道全做错，仍然算「做过」
+  for (const qid of answered) after.q[String(qid)] = { a: 1, w: 1, t: 2, c: 0 };
+  const wall = paperProgress(FIXTURE, reach, after);
+  const crossed = papersJustCompleted(FIXTURE, reach, snapshot, answered);
+  assert.equal(crossed.length, 3, '这份输入该跨三套卷，否则下面的比对是空转');
+  for (const row of crossed) {
+    const cell = wall.find((paper) => paper.key === row.key);
+    assert.equal(cell.done, cell.total, `${row.label} 在墙上还没做满`);
+    assert.equal(paperLevel(cell.done, cell.total), PAPER_LEVELS - 1);
+  }
 });
 
 test('the five colour levels never round away "barely started" or "one to go"', () => {

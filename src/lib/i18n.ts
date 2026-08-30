@@ -17,13 +17,19 @@ const zh = {
   langToggle: { label: 'EN', aria: '切换到英文', title: '中 / EN' },
 
   zone: {
-    title: { classic: '经典题库', grill: '复烤区', trivial: '9.0 Trivial' },
+    title: { classic: '经典题库', grill: '复烤区', trivial: '9.0 Trivial', board: '标化题库' },
     // grill 的副文由 ExamApp 按绑定题 / 错题数覆盖，这里是兜底的定位说明
-    sub: { classic: 'TMUA · MAT · SMC · ECAA', grill: '错题与弱项复盘', trivial: '扩展题库' },
+    sub: {
+      classic: 'TMUA · MAT · SMC · ECAA',
+      grill: '错题与弱项复盘',
+      trivial: '扩展题库',
+      // 副文先把定位说破：它是看板不是考场，进去只看题不作答
+      board: '分类看板 · 即将开放',
+    },
   },
 
   deck: {
-    headSub: 'TMUA 公益 · 三个功能区，选一张卡开始',
+    headSub: 'TMUA 公益 · 四个功能区，选一张卡开始',
     groupAria: '功能区选择',
     keys: '← → 切换功能区 · Enter 展开 · 也可左右滑动',
     chargeLabel: (value: number, max: number) => `充能 ${value} / ${max}`,
@@ -38,6 +44,9 @@ const zh = {
     questions: (n: number) => `${n} 题`,
     expanded: (n: number) => `🔥 ${n} 题`,
     charging: '🔒 充能中',
+    // P1 的体例原样取回（P3「三区全开」时删过一次）：还没上内容的卡报这一句，
+    // 与「🔒 充能中」刻意不同——那是锁着等你充能，这是压根还没开门
+    comingSoon: '即将开放',
   },
 
   block: {
@@ -171,6 +180,12 @@ const zh = {
     start: '开始复烤',
     empty: '当前策略下没有可练的题，换个策略试试。',
 
+    // 上一场从复烤区开出去的成绩回执。三块各有各的说法——都写「上一场：N 题 · 对 M」
+    // 的话，用户点了三个不同的按钮却收到同一句话，回执就退化成噪音
+    receiptGrill: (n: number, right: number) => `上一场：复烤 ${n} 题 · 对 ${right}`,
+    receiptRetry: (n: number, right: number) => `上一场：重练错题 ${n} 题 · 对 ${right}`,
+    receiptTopic: (n: number, right: number) => `上一场：知识点复盘 ${n} 题 · 对 ${right}`,
+
     missedTitle: '最常做错',
     missedRetry: '重练这些',
     missedEmpty: '还没有错题记录 —— 这里会列出最该回头看的题。',
@@ -269,16 +284,22 @@ const en: Strings = {
   langToggle: { label: '中', aria: 'Switch to Chinese', title: '中 / EN' },
 
   zone: {
-    title: { classic: 'Classic Library', grill: 'Grill', trivial: '9.0 Trivial' },
+    title: {
+      classic: 'Classic Library',
+      grill: 'Grill',
+      trivial: '9.0 Trivial',
+      board: 'Standard Bank',
+    },
     sub: {
       classic: 'TMUA · MAT · SMC · ECAA',
       grill: 'Wrong answers & weak spots',
       trivial: 'Extended Library',
+      board: 'Browse-only board · Coming soon',
     },
   },
 
   deck: {
-    headSub: 'Free for TMUA · Three zones — pick a card to begin',
+    headSub: 'Free for TMUA · Four zones — pick a card to begin',
     groupAria: 'Zone selection',
     keys: '← → switch zone · Enter to open · or swipe sideways',
     chargeLabel: (value: number, max: number) => `Charging ${value} / ${max}`,
@@ -293,6 +314,7 @@ const en: Strings = {
     questions: (n: number) => `${n} Qs`,
     expanded: (n: number) => `🔥 ${n} Qs`,
     charging: '🔒 Charging',
+    comingSoon: 'Coming Soon',
   },
 
   block: {
@@ -417,6 +439,11 @@ const en: Strings = {
     countAll: 'All',
     start: 'Start Grill',
     empty: 'Nothing to practise with this selection — try another one.',
+
+    receiptGrill: (n: number, right: number) => `Last session: ${n} grilled · ${right} correct`,
+    receiptRetry: (n: number, right: number) => `Last session: ${n} retried · ${right} correct`,
+    receiptTopic: (n: number, right: number) =>
+      `Last session: ${n} topic questions · ${right} correct`,
 
     missedTitle: 'Most missed',
     missedRetry: 'Retry these',

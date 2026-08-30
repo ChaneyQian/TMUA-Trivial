@@ -698,7 +698,8 @@ test('the app hands the panel a scope that honours the 9.0 gate and ignores the 
 
   // 走 P0 建好的 start({ qids }) 通道，practice 模式，同步直调
   assert.match(exam, /const practiceTopic = \(qids: number\[\]\) => \{/);
-  assert.match(exam, /setMode\('practice'\);\s*\n\s*void start\(\{ db: 'ALL', qids \}\);/);
+  // origin 是 P7-B5 加的来源标记，只喂复烤区顶部那条回执；抽题参数没变
+  assert.match(exam, /setMode\('practice'\);\s*\n\s*void start\(\{ db: 'ALL', qids, origin: 'topic' \}\);/);
   assert.match(exam, /onPractice=\{practiceTopic\}/);
   assert.doesNotMatch(exam, /setTimeout\([^)]*practiceTopic/);
   // 诊断题不该从这条路混进普通考试：start 没收到 allowDiag

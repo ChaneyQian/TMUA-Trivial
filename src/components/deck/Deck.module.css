@@ -17,6 +17,14 @@
   --slot-y: 8px;
   --slot-scale: 0.92;
   --slot-rot: 6deg;
+  /* 第三层（四张牌起才会用到）：居中、更小、往上退。
+     位移用百分比而不是像素——百分比按卡片自身尺寸解析，
+     缩放留下的内缩边距也随卡宽变，两者同步才能在 375px 和 340px 下
+     露出同一比例的那道边。-9% 减去 (1−0.88)/2 = 6% 的内缩，净露 3% 卡高。 */
+  /* 净露出卡高的 6%（扣除 scale 0.88 的内缩）：375px 约 22px 命中带。
+     -9% 时只剩 11px，手指根本点不中第三层卡 */
+  --slot-back-y: -12%;
+  --slot-back-scale: 0.88;
 
   font-family: var(--font-ui);
   animation: deckIn 280ms cubic-bezier(0.2, 0.7, 0.2, 1);
@@ -67,7 +75,10 @@
   box-sizing: border-box;
   width: min(calc(var(--card-w) * 1.32), 100%);
   margin: 0 auto;
-  padding-top: 10px;
+  /* 第三层往上退 3% 卡高（340px 卡宽时约 15px），留出的就是这段 padding：
+     不留的话它会溢到 .head 的外边距里，虽然 overflow-y: visible 不裁，
+     但两块东西挤在一起就没有「牌叠得更深」那个读法了 */
+  padding-top: 30px;
   overflow-x: clip;
   overflow-y: visible;
   /* 纵向滚动交还浏览器、横向留给我们；因此手势逻辑里不需要（也不能）preventDefault */
@@ -137,9 +148,23 @@
     scale(var(--slot-scale)) rotate(calc(0deg - var(--slot-rot)));
 }
 
+/* 第三层：不做旋转，只靠「更小 + 更暗 + 往上退」表达深度。
+   给它也转 6° 的话，左右两张侧牌之间会多出一个说不清朝哪边的斜角。
+   z-index 0 让它待在两张侧牌之下 —— 露出的那道边才在最外圈。 */
+.slotBack {
+  z-index: 0;
+  transform: translate3d(var(--drag, 0px), var(--slot-back-y), 0)
+    scale(var(--slot-back-scale));
+}
+
 .slotRight::after,
 .slotLeft::after {
   opacity: 0.3;
+}
+
+/* 比侧牌再暗一档：三层压下去，深浅要能读出先后 */
+.slotBack::after {
+  opacity: 0.52;
 }
 
 /* 跟手期间关掉补间，松手再交还 transition */
