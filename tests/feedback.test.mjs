@@ -234,3 +234,13 @@ test('the finish banner owns up to the not-yet-recorded state', () => {
   // 跳过统计那条路确实不落盘——这正是小字存在的理由，一起钉住
   assert.match(exam, /onClick=\{\(\) => leaveResult\(t\.records\.sessionSkipped\)\}/);
 });
+
+test('the finish banner never asserts a fact that skipping the stats would undo', () => {
+  // A1：横幅在落盘之前渲染（完卷时刻的仪式感不能等按钮），
+  // 但用户可以点「跳过本场统计」——那样卷墙永远不会点亮。
+  // 文案必须是条件式的真话，不许断言既成事实
+  const exam = fs.readFileSync('src/components/exam/ExamApp.tsx', 'utf8');
+  assert.match(exam, /计入统计后这一套就做满/);
+  assert.match(exam, /计入统计后将做满/);
+  assert.doesNotMatch(exam, /这一套做满了/, '旧文案对跳过统计的场次是假话');
+});

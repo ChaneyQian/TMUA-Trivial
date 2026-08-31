@@ -1455,8 +1455,8 @@ export default function ExamApp() {
               <div className={styles.finishText}>
                 <div className={styles.finishTitle}>
                   {finishedPapers.length === 1
-                    ? '完卷 · 这一套做满了'
-                    : `完卷 · 这一场做满了 ${finishedPapers.length} 套卷`}
+                    ? '完卷 · 计入统计后这一套就做满'
+                    : `完卷 · 计入统计后将做满 ${finishedPapers.length} 套卷`}
                 </div>
                 {/* 横幅算在落盘之前（完卷时刻的仪式感不能等按钮），
                     但用户若点「跳过本场统计」，这一场不写入记录、卷墙不会点亮——
