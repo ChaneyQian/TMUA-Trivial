@@ -468,7 +468,8 @@ test('the frontmatter parser keeps a block list alive across blank lines and com
     execFileSync(process.execPath, [path.join(root, 'scripts', 'build-data.mjs')], {
       cwd: root,
       stdio: 'pipe',
-      env: { ...process.env, EXAM_OUT: outputDir, BANK_PATH: bank },
+      // 合成题库只有三道题，关掉可判分底线（见 build-data 的 MIN_GRADEABLE）
+      env: { ...process.env, EXAM_OUT: outputDir, BANK_PATH: bank, MIN_GRADEABLE: '0' },
     });
     const index = JSON.parse(fs.readFileSync(path.join(outputDir, 'index.json'), 'utf8'));
     const byQid = new Map(index.map((entry) => [entry.qid, entry]));

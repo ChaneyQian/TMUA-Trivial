@@ -113,6 +113,7 @@ export interface DiagnosticSet {
 }
 
 export interface DiagnosticSets {
+  v: number;
   sets: DiagnosticSet[];
 }
 
@@ -120,12 +121,15 @@ export interface DiagnosticSets {
 export async function fetchDiagnosticSets(): Promise<DiagnosticSets> {
   const res = await fetch(`${EXAM_DATA}/diag.json`);
   if (!res.ok) throw new Error(`diag.json ${res.status}`);
-  return res.json();
-}
-
-/** 诊断题在索引里的那一池，仅用于「数据是否就绪」的兜底判断 */
-export function diagnosticPool(index: IndexEntry[] | null): IndexEntry[] {
-  return (index || []).filter((entry) => entry.diag);
+  const data = (await res.json()) as DiagnosticSets;
+  // 形状闸（与 topics.ts / papers.ts 同款）：代理/CDN 返回 200 的错误体、
+  // 将来 v2 改结构命中旧缓存，只校 res.ok 一个都挡不住。畸形数据进了 state，
+  // 介绍页那句 diagSets.sets.length 就是一条 TypeError 白屏路径——
+  // 取不到就不渲染开始按钮，这句承诺必须包含「取到了但不是那份数据」
+  if (data?.v !== 1 || !Array.isArray(data.sets)) {
+    throw new Error('diag.json shape mismatch');
+  }
+  return data;
 }
 
 /** 倒计时显示。诊断里可用时间不会超过一小时，m:ss 够用 */

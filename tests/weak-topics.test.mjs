@@ -360,7 +360,8 @@ test('an out-of-vocabulary topic is dropped and reported, never swallowed', (t) 
   // 空列表 = 没整理过，进分母不进分子
   write('20-P1-Q5.md', `${base(20200210500, '20-P1-Q5')}\ntopics: []\nstatus: 已入库`);
 
-  const { topics, log } = buildInto(t, { BANK_PATH: bank });
+  // 合成题库只有五道题，关掉可判分底线（见 build-data 的 MIN_GRADEABLE）
+  const { topics, log } = buildInto(t, { BANK_PATH: bank, MIN_GRADEABLE: '0' });
 
   assert.deepEqual(topics.byTopic.Algebra, [20200210300, 20200210100]);
   assert.deepEqual(topics.byTopic.Probability, [20200210100], '`Statistical Theory` 归到 Probability');

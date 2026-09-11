@@ -36,6 +36,12 @@ jobs:
           NEXT_PUBLIC_BASE_PATH: /${{ github.event.repository.name }}
         run: npm run build
 
+      # 测试跑在 build 之后只是历史习惯（几处审计断言原先要现成的 public\exam\），
+      # 现在它们自己会按需产数据，顺序已经无所谓——留在这里是因为构建更快失败，
+      # 拿不到产物时先看见的是构建报错而不是一串审计红
+      - name: Run tests
+        run: npm test
+
       # 注意：不要加 enablement: true。创建 Pages 站点的 API 不接受默认的
       # GITHUB_TOKEN，会以 "Resource not accessible by integration" 硬失败。
       # Pages 必须先在 Settings → Pages → Source 里手动选成 GitHub Actions。

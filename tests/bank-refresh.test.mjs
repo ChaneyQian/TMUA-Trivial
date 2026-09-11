@@ -1,10 +1,12 @@
 import assert from 'node:assert/strict';
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
+
+import { readExamIndex, readExamQuestion } from './helpers/exam-data.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const dataDir = path.join(root, 'data');
@@ -158,7 +160,8 @@ test('a long prose distractor is not mistaken for a swallowed stem', (t) => {
   execFileSync(process.execPath, [path.join(root, 'scripts', 'build-data.mjs')], {
     cwd: root,
     stdio: 'pipe',
-    env: { ...process.env, EXAM_OUT: out, BANK_PATH: bank },
+    // 合成题库只有两道题，可判分底线（默认 1000）要关掉——这里测的是解析行为
+    env: { ...process.env, EXAM_OUT: out, BANK_PATH: bank, MIN_GRADEABLE: '0' },
   });
 
   const index = JSON.parse(fs.readFileSync(path.join(out, 'index.json'), 'utf8'));
@@ -255,7 +258,8 @@ test('questions flagged TODO(...) stay off the site until proofread', (t) => {
   const built = execFileSync(process.execPath, [path.join(root, 'scripts', 'build-data.mjs')], {
     cwd: root,
     encoding: 'utf8',
-    env: { ...process.env, EXAM_OUT: out, BANK_PATH: bank },
+    // 合成题库题量远低于可判分底线，这里关掉它（见 build-data 的 MIN_GRADEABLE）
+    env: { ...process.env, EXAM_OUT: out, BANK_PATH: bank, MIN_GRADEABLE: '0' },
   });
 
   const index = JSON.parse(fs.readFileSync(path.join(out, 'index.json'), 'utf8'));
@@ -266,13 +270,71 @@ test('questions flagged TODO(...) stay off the site until proofread', (t) => {
 
 test('no TODO-flagged question is in the shipped index', () => {
   // 真实题库的反向审计：在池的题里一道都不许带 TODO( 标记
-  const index = JSON.parse(fs.readFileSync(path.join(root, 'public', 'exam', 'index.json'), 'utf8'));
+  const index = readExamIndex();
   const flagged = [];
   for (const entry of index) {
-    const q = JSON.parse(
-      fs.readFileSync(path.join(root, 'public', 'exam', 'q', `${entry.qid}.json`), 'utf8'),
-    );
+    const q = readExamQuestion(entry.qid);
     if (`${q.statement}${q.solution}`.includes('TODO(')) flagged.push(q.id);
   }
   assert.deepEqual(flagged, [], '这些待校对的题漏进了站里');
+})
+
+test('an empty bank fails the build instead of quietly shipping an empty site', (t) => {
+  // 题库目录配错、sync 没跑完、源盘没挂上——这几件事产出的都是「结构完好但空」
+  // 的站点，构建成功、部署成功、没有任何信号。理智底线就是拦这一类灾难
+  const bank = fs.mkdtempSync(path.join(os.tmpdir(), 'mcq-floor-bank-'));
+  const out = fs.mkdtempSync(path.join(os.tmpdir(), 'mcq-floor-out-'));
+  t.after(() => {
+    fs.rmSync(bank, { recursive: true, force: true });
+    fs.rmSync(out, { recursive: true, force: true });
+  });
+  // 目录在、题一道没有：BANK 不存在那条路早就硬失败了，这里测的是另一种空
+  fs.mkdirSync(path.join(bank, 'TMUA', '2020'), { recursive: true });
+
+  const empty = spawnSync(process.execPath, [path.join(root, 'scripts', 'build-data.mjs')], {
+    cwd: root,
+    encoding: 'utf8',
+    env: { ...process.env, EXAM_OUT: out, BANK_PATH: bank },
+  });
+  assert.notEqual(empty.status, 0, '空题库必须让构建非零退出');
+  assert.match(empty.stderr, /可判分题目只有 0 道/);
+
+  // 空索引不认 MIN_GRADEABLE 的豁免：一道题都判不了的站点没有任何场景需要它
+  const forced = spawnSync(process.execPath, [path.join(root, 'scripts', 'build-data.mjs')], {
+    cwd: root,
+    encoding: 'utf8',
+    env: { ...process.env, EXAM_OUT: out, BANK_PATH: bank, MIN_GRADEABLE: '0' },
+  });
+  assert.notEqual(forced.status, 0, 'MIN_GRADEABLE=0 也不该放空索引过关');
+
+  // 有题但远低于底线，同样拦下——默认底线是 1000，不是 1
+  fs.writeFileSync(
+    path.join(bank, 'TMUA', '2020', '20-P1-Q1.md'),
+    [
+      '---', 'database: TMUA', 'qid: 20200210100', 'id: 20-P1-Q1', 'paper: TMUA P1',
+      'year: 2020', 'number: Q1', 'section: Applications', 'difficulty: 0', '---', '',
+      '## 题目', 'Compute $1+1$.', '',
+      '$$\\mathbf {A} \\quad 1$$', '',
+      '$$\\mathbf {B} \\quad 2$$', '',
+      '## 答案', 'B', '',
+    ].join('\n'),
+  );
+  const thin = spawnSync(process.execPath, [path.join(root, 'scripts', 'build-data.mjs')], {
+    cwd: root,
+    encoding: 'utf8',
+    env: { ...process.env, EXAM_OUT: out, BANK_PATH: bank },
+  });
+  assert.notEqual(thin.status, 0, '一道题的题库同样低于底线');
+  assert.match(thin.stderr, /低于底线 1000/);
+
+  // 同一个题库放开底线就该通过：这道闸只管「产物是不是空的」，
+  // 不掺别的判据（尤其不因 corrupted > 0 失败——有缺陷的题就是要静默 hid 掉）
+  const allowed = spawnSync(process.execPath, [path.join(root, 'scripts', 'build-data.mjs')], {
+    cwd: root,
+    encoding: 'utf8',
+    env: { ...process.env, EXAM_OUT: out, BANK_PATH: bank, MIN_GRADEABLE: '0' },
+  });
+  assert.equal(allowed.status, 0, `放开底线后不该再失败：\n${allowed.stderr}`);
+  // 读不出来的文件进计数、进日志，不再是一句裸 continue
+  assert.match(allowed.stdout, /跳过：.*"unreadable":0/);
 })

@@ -14,6 +14,7 @@ import {
   budgetFor,
   canAttempt,
   deadlineFrom,
+  fetchDiagnosticSets,
   isPass,
   passMark,
   remainingSeconds,
@@ -28,6 +29,7 @@ import {
   recordDiagnostic,
   HIDDEN_UNLOCK_COUNT,
 } from '../src/lib/records.ts';
+import { readExamIndex, readExamJson } from './helpers/exam-data.mjs';
 
 /**
  * 结构断言要看的是真正渲染的东西，不是注释。
@@ -39,24 +41,6 @@ function codeOnly(source) {
     .replace(/\{\/\*[\s\S]*?\*\/\}/g, '')
     .replace(/\/\*[\s\S]*?\*\//g, '')
     .replace(/(^|[^:])\/\/.*$/gm, '$1');
-}
-
-/**
- * bank-refresh.test.mjs 会在同一次 npm test 里重跑 build-data 重写产物，
- * 测试文件又是并发跑的——撞上那一瞬间会读到半个文件。重试一次，别让套件偶发飘红。
- */
-function readJson(file, ok, attempts = 5) {
-  for (let i = 0; i < attempts; i++) {
-    try {
-      const parsed = JSON.parse(fs.readFileSync(file, 'utf8'));
-      if (ok(parsed)) return parsed;
-    } catch {}
-    const until = Date.now() + 120;
-    while (Date.now() < until) {
-      /* wait */
-    }
-  }
-  throw new Error(`could not read a complete ${file}`);
 }
 
 const introPath = 'src/components/diagnostic/DiagnosticIntro.tsx';
@@ -80,7 +64,7 @@ function levelByQid(dir) {
 }
 
 test('the diagnostic ships two fixed papers, not a random draw', () => {
-  const diag = readJson('public/exam/diag.json', (d) => Array.isArray(d?.sets) && d.sets.length > 0);
+  const diag = readExamJson('diag.json', (d) => d?.v === 1 && Array.isArray(d.sets) && d.sets.length > 0);
 
   assert.equal(diag.sets.length, DIAGNOSTIC_MAX_ATTEMPTS, 'one fixed set per attempt');
   for (const [i, set] of diag.sets.entries()) {
@@ -130,7 +114,7 @@ test('the diagnostic ships two fixed papers, not a random draw', () => {
   // logic / tagged（逻辑推理开关及其覆盖率提示）是后来加的两个可选标记，
   // 和 hidden / diag 同体例：这张白名单要拦的是「把整份固定卷塞进 index」
   // 那类膨胀，不是拦所有新字段
-  const index = readJson('public/exam/index.json', (d) => Array.isArray(d) && d.length > 0);
+  const index = readExamIndex();
   for (const entry of index) {
     for (const key of Object.keys(entry)) {
       assert.ok(
@@ -139,6 +123,37 @@ test('the diagnostic ships two fixed papers, not a random draw', () => {
       );
     }
   }
+});
+
+test('a malformed diag.json is rejected instead of crashing the intro card', async (t) => {
+  // 与 topics.ts / papers.ts 同款形状闸：只校 res.ok 挡不住代理/CDN 返回 200 的
+  // 错误体，也挡不住将来 v2 改结构撞上旧缓存。畸形数据进了 state，
+  // 介绍页那句 diagSets.sets.length 就是一条 TypeError 白屏路径
+  const realFetch = globalThis.fetch;
+  t.after(() => {
+    globalThis.fetch = realFetch;
+  });
+
+  const good = { v: 1, sets: [{ p1: [1], p2: [2] }] };
+  globalThis.fetch = async () => ({ ok: true, status: 200, json: async () => good });
+  assert.deepEqual(await fetchDiagnosticSets(), good);
+
+  for (const junk of [{ sets: [] }, { v: 2, sets: [] }, { v: 1, sets: 'x' }, { v: 1 }, null]) {
+    globalThis.fetch = async () => ({ ok: true, status: 200, json: async () => junk });
+    await assert.rejects(
+      fetchDiagnosticSets(),
+      /shape/,
+      `畸形负载 ${JSON.stringify(junk)} 不该被放进来`,
+    );
+  }
+
+  // 非 200 仍然是非 200
+  globalThis.fetch = async () => ({ ok: false, status: 404, json: async () => good });
+  await assert.rejects(fetchDiagnosticSets(), /404/);
+
+  // 前端那条 ready 断言拿的是 sets.length——形状闸不在，它就是 TypeError 的落点
+  const exam = codeOnly(fs.readFileSync(examPath, 'utf8'));
+  assert.match(exam, /ready=\{!!diagSets && diagSets\.sets\.length > 0\}/);
 });
 
 test('the countdown is driven by a deadline, never by counting ticks', () => {

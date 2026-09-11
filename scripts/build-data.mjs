@@ -17,6 +17,13 @@ const BANK = process.env.BANK_PATH ? path.resolve(process.env.BANK_PATH) : path.
 // EXAM_OUT 只给测试用：node --test 并行跑多个测试文件，若它们都往 public\exam
 // 里 rm -rf + 重建，就会互相把对方读到一半的产物删掉。
 const OUT = process.env.EXAM_OUT ? path.resolve(process.env.EXAM_OUT) : path.join(ROOT, 'public', 'exam');
+// 理智底线：收尾时可判分题数低于这个数就硬失败。防的是「题库目录配错 / 同步没跑完 /
+// 盘挂了」这类灾难——它们产出的是一个结构完好但几乎空的站点，构建成功、部署成功、
+// 静默上线，没人会收到任何信号。现库 2000+ 题，1000 离得够远，不会被日常增删碰到。
+// MIN_GRADEABLE 只给测试用：合成题库只有两三道题，测的是解析行为不是题量。
+const MIN_GRADEABLE = /^\d+$/.test(process.env.MIN_GRADEABLE || '')
+  ? Number(process.env.MIN_GRADEABLE)
+  : 1000;
 
 // 'TMUA Mock' 是题库源里的独立顶层库（原先嵌在 TMUA/Mock 下，2026-08 提升出来）。
 // 目录名带空格无妨：这里只拿它拼路径，题目落进 index 时统一叫 TMUA_MOCK
@@ -653,12 +660,18 @@ function main() {
   // 卷面清单：键是「库 + 展示用卷号」，粒度就是题头上写的那一行
   const papers = new Map();
   let inlineCount = 0;
-  const skipped = { noQid: 0, noStatement: 0, todo: 0, badAnswer: 0, noChoices: 0, answerMismatch: 0, corrupted: 0 };
+  const skipped = { unreadable: 0, noQid: 0, noStatement: 0, todo: 0, badAnswer: 0, noChoices: 0, answerMismatch: 0, corrupted: 0 };
 
   for (const sourceDb of DATABASES) {
     for (const filePath of listQuestionFiles(path.join(BANK, sourceDb))) {
       let raw;
-      try { raw = fs.readFileSync(filePath, 'utf-8'); } catch { continue; }
+      // 读不出来的文件绝不能静默吞掉：权限、文件被占用、坏扇区、符号链接断了，
+      // 都会走到这里。原先是裸 continue，一整批题凭空消失时日志里连个痕迹都没有
+      try { raw = fs.readFileSync(filePath, 'utf-8'); } catch (e) {
+        skipped.unreadable++;
+        console.warn(`[build-data] 读不出来，跳过：${path.relative(ROOT, filePath)}（${e.code || e.message}）`);
+        continue;
+      }
       const { data, body } = parseFrontmatter(raw);
       if (!data.qid) { skipped.noQid++; continue; }
       const db = indexDatabase(sourceDb, filePath, data);
@@ -809,7 +822,9 @@ function main() {
   const p1Sets = splitDiagnosticPaper(diagCandidates.p1);
   const p2Sets = splitDiagnosticPaper(diagCandidates.p2);
   const diagSets = p1Sets.map((p1, i) => ({ p1, p2: p2Sets[i] || [] }));
-  fs.writeFileSync(path.join(OUT, 'diag.json'), JSON.stringify({ sets: diagSets }));
+  // 带 v：前端的形状闸靠它分辨「这份 JSON 是不是我要的那份」，
+  // 与 topics.json / papers.json 同体例
+  fs.writeFileSync(path.join(OUT, 'diag.json'), JSON.stringify({ v: 1, sets: diagSets }));
   console.log(
     '[build-data] Diagnostic 固定卷：',
     diagSets.map((s, i) => `套${i + 1} P1=${s.p1.length} P2=${s.p2.length}`).join('  '),
@@ -928,6 +943,21 @@ function main() {
   console.log(`[build-data] 图片：引用 ${wantedImages.size} 张，复制 ${copied} 张`);
   if (missing.length) {
     console.warn(`[build-data] 缺失图片 ${missing.length} 张：${missing.slice(0, 5).join(', ')}${missing.length > 5 ? ' …' : ''}`);
+  }
+
+  // 理智底线放在所有日志之后：真触发时上面那几段统计正是排查的第一手材料。
+  //
+  // 刻意**不**因 corrupted > 0 失败——有缺陷的题就是要静默 hid 掉（用户裁定），
+  // 拿它拦部署等于让一道坏题掐住整个站。这道闸只管一件事：产物是不是空的。
+  // 空索引不认 MIN_GRADEABLE 的豁免：一道题都判不了的站点没有任何场景需要它
+  if (index.length === 0 || index.length < MIN_GRADEABLE) {
+    console.error(
+      `\n[build-data] ✗ 可判分题目只有 ${index.length} 道，低于底线 ${MIN_GRADEABLE}，拒绝产出这份索引。\n` +
+        `    题库目录：${BANK}\n` +
+        `    多半是题库目录配错、sync 没跑完，或者源盘没挂上。\n` +
+        `    确认题库确实缩到这个规模，再用 MIN_GRADEABLE 调低底线。`,
+    );
+    process.exit(1);
   }
 }
 

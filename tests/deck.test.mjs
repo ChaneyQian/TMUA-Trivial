@@ -4,6 +4,7 @@ import test from 'node:test';
 
 import { ZONE_IDS, ringOffset, stepZone } from '../src/components/deck/zones.ts';
 import { indexForLibraryMode } from '../src/lib/records.ts';
+import { readExamIndex } from './helpers/exam-data.mjs';
 
 const zonesPath = 'src/components/deck/zones.ts';
 const deckPath = 'src/components/deck/CardDeck.tsx';
@@ -319,28 +320,9 @@ test('the primary action sits above the optional record tools, and the deck can 
   assert.doesNotMatch(exam, /onClick=\{start\}/);
 });
 
-/**
- * 注：全套测试里所有 build-data 调用都带 EXAM_OUT 临时目录，没有谁会重写
- * public/exam——重试只防「开发者正在另一个终端里 npm run data」这种外部并发，
- * 测试文件又是并发跑的——撞上那一瞬间会读到半个文件。重试一次，别让套件偶发飘红。
- */
-function readIndex(attempts = 5) {
-  for (let i = 0; i < attempts; i++) {
-    try {
-      const parsed = JSON.parse(fs.readFileSync('public/exam/index.json', 'utf8'));
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-    } catch {}
-    const until = Date.now() + 120;
-    while (Date.now() < until) {
-      /* wait */
-    }
-  }
-  throw new Error('could not read a complete public/exam/index.json');
-}
-
 test('the two zones are exclusive, so the 9.0 badge and its bank buttons report that pool alone', () => {
   const exam = fs.readFileSync(examPath, 'utf8');
-  const index = readIndex();
+  const index = readExamIndex();
 
   // 徽章：expandedCount 报的是扩展池本身，不再是「经典 + 扩展」的全集。
   // 期望值从数据现算——池子会随题库增长，写死只会变成维护负担
