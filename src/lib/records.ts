@@ -135,12 +135,6 @@ export function addSession(
   return { ...records, v: 1, q, s };
 }
 
-export function recordSession(results: SessionResult[], session: SessionInput): Records {
-  const records = addSession(loadRecords(), results, session);
-  saveRecords(records);
-  return records;
-}
-
 /**
  * 诊断交卷。刻意**不碰** q 和 s：
  *   - 写 q 会让这批题出现在错题榜、成绩页历史里，等于把对错泄出去；

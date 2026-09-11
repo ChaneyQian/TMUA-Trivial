@@ -9,7 +9,6 @@
 // 显式带扩展名：测试用 node --experimental-strip-types 直接跑这个模块，
 // ESM 解析器不会替你补 .ts（records.ts 里的 './i18n.ts' 同理）
 import { EXAM_DATA } from './config.ts';
-import type { IndexEntry } from './exam';
 
 /** 每卷题数 */
 export const DIAGNOSTIC_PAPER_SIZE = 20;
