@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import "katex/dist/katex.min.css";
+// katex 的样式表已随 MathText 一起走 next/dynamic（见 components/MathTextRender.tsx）：
+// 首屏是卡组，一道公式都不渲染，没有理由让它占冷启动
 import "./globals.css";
 
 export const metadata: Metadata = {
