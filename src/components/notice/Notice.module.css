@@ -240,4 +240,12 @@
   .rule {
     animation: none;
   }
+
+  /* transition 也是动效：药丸 hover 的抬升、收起按钮 :active 的下压都靠它补间。
+     两条 transition 都只声明在基础类上（:hover / :active 只改 transform），
+     所以同特异性、靠后覆盖就够——状态变化照旧发生，只是瞬时 */
+  .pill,
+  .collapse {
+    transition: none;
+  }
 }

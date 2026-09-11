@@ -480,8 +480,14 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  /* 特异性必须压过被覆盖的那条规则，不能只写基础类名：
+     `.libraryChargeReady .chargeLight`（0,2,0）会把裸 `.chargeLight`（0,1,0）
+     的 animation: none 顶掉，充满之后那盏灯照旧在呼吸。同理
+     `.libraryChargeReady .libraryChargeFill` 的流光 */
   .chargeLight,
+  .libraryChargeReady .chargeLight,
   .libraryChargeFill,
+  .libraryChargeReady .libraryChargeFill,
   .unlockOverlay,
   .unlockClosing,
   .unlockPanel,
@@ -505,6 +511,14 @@
 
   .unlockRule {
     width: min(64vw, 340px);
+  }
+
+  /* transition 同样是动效：充电条那条 520ms 的 width 补间、按钮壳 220ms 的
+     配色补间，关掉 animation 之后它们还在，减动效就只减了一半。
+     两条 transition 都只声明在基础类上，所以这里同特异性、靠后覆盖即可 */
+  .libraryCharge,
+  .libraryChargeFill {
+    transition: none;
   }
 }
 
