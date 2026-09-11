@@ -17,7 +17,7 @@ test('the notice board pops for unseen ids, collapses to a pill, and never nags 
 
   // 版本化已读：发新公告改 NOTICE_ID 即对全员重新弹出；同一则收起过就保持收起
   assert.match(board, /export const NOTICE_ID = '[^']+';/);
-  assert.match(board, /mcq-test:notice:v1/);
+  assert.match(board, /import \{ NOTICE_KEY \} from '@\/lib\/storage'/);
   assert.ok(/^\d{4}-\d{2}/.test(NOTICE_ID), 'id 以年月开头，翻公告历史时对得上时间');
 
   // 首帧一律收起 + effect 回读（水合纪律），落盘在收起的 handler 里

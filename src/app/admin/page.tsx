@@ -18,9 +18,9 @@ import {
   saveRecords,
   type Records,
 } from '@/lib/records';
+import { ADMIN_SESSION_KEY as ADMIN_KEY } from '@/lib/storage';
 import styles from './admin.module.css';
 
-const ADMIN_KEY = 'mcq-test:admin:v1';
 const ADMIN_PASSWORD = 'admin123';
 
 interface QuestionJson {

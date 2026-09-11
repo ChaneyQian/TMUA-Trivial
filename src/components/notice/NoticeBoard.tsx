@@ -9,11 +9,11 @@
 
 import { useEffect, useState } from 'react';
 import { useLang } from '@/lib/LangContext';
+import { NOTICE_KEY } from '@/lib/storage';
 import styles from './Notice.module.css';
 
 /** 发新公告时改这个 id，收起状态即对全员失效、重新弹出 */
 export const NOTICE_ID = '2026-08-trivial-open';
-const NOTICE_KEY = 'mcq-test:notice:v1';
 
 export default function NoticeBoard() {
   // 首帧一律收起：既避免水合不匹配，也让入场动画从「药丸已在」的世界里弹出来

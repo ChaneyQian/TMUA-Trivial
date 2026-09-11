@@ -385,7 +385,7 @@ test('the deck is a setup-phase sub-state that leaves the exam runtime alone', (
   assert.match(exam, /type StageView = 'deck' \| 'zone' \| 'progress'/);
   assert.match(exam, /stageView/);
   // 选区落盘，未解锁 / 未开放的区回落经典
-  assert.match(exam, /mcq-test:zone:v1/);
+  assert.match(exam, /ZONE_KEY \} from '@\/lib\/storage'/);
   assert.match(exam, /localStorage\.setItem\(ZONE_KEY, id\)/);
   assert.match(exam, /saved === 'trivial' \|\| saved === 'classic'/);
 

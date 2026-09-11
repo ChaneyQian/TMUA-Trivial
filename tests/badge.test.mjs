@@ -24,7 +24,8 @@ test('the ID badge ships its avatar and both QR plates as static assets', () => 
 test('the badge drops on first visit only, then lives behind the ribbon', () => {
   const component = fs.readFileSync(componentPath, 'utf8');
 
-  assert.match(component, /mcq-test:badge-seen:v1/);
+  // 键名本身登记在 lib/storage.ts（见 storage.test.mjs），组件只负责用对那一个
+  assert.match(component, /BADGE_SEEN_KEY as SEEN_KEY \} from '@\/lib\/storage'/);
   assert.match(component, /localStorage\.getItem\(SEEN_KEY\)/);
   assert.match(component, /localStorage\.setItem\(SEEN_KEY, '1'\)/);
   // 收起是顺着挂绳往上收回，纯 CSS，不再量位置做 FLIP：

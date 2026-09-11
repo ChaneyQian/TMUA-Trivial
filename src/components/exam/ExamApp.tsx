@@ -32,6 +32,8 @@ import {
   type DiagnosticSets,
 } from '@/lib/diagnostic';
 import MathText from '@/components/MathText';
+// 存储键一律从 lib/storage.ts 取，组件里不再散落字面量（见那份登记表）
+import { THEME_KEY, UNLOCK_SEEN_KEY, ZONE_KEY } from '@/lib/storage';
 import {
   buildExam,
   fetchIndex,
@@ -92,8 +94,6 @@ type Db = 'TMUA' | 'TMUA_MOCK' | 'MAT' | 'SMC' | 'ECAA' | 'AMC' | 'ALL';
  */
 type GrillOrigin = 'grill' | 'retry' | 'topic';
 
-const UNLOCK_SEEN_KEY = 'mcq-test:hidden-unlock-seen:v1';
-const ZONE_KEY = 'mcq-test:zone:v1';
 /** deck 淡出与面板淡入交叠的窗口，和 Exam.module.css / Deck.module.css 的 280ms 对齐 */
 const ZONE_SWAP_MS = 280;
 
@@ -1048,7 +1048,7 @@ export default function ExamApp() {
     setScheme(v);
     document.documentElement.dataset.theme = v;
     try {
-      localStorage.setItem('theme', v);
+      localStorage.setItem(THEME_KEY, v);
     } catch {}
   };
 

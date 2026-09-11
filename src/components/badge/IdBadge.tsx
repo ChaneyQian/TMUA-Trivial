@@ -4,10 +4,10 @@
 // 工牌本体是独立浮层（不嵌在题库展示卡里），翻开后变成左右双页：左联系方式、右赞助。
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { BADGE_SEEN_KEY as SEEN_KEY } from '@/lib/storage';
 import styles from './IdBadge.module.css';
 
 const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH || '';
-const SEEN_KEY = 'mcq-test:badge-seen:v1';
 
 /** 工牌上的身份信息，要改文案只动这里 */
 const IDENTITY = {

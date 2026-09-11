@@ -2,8 +2,9 @@
 
 import type { IndexEntry, ExamDb } from './exam';
 import { s as strings } from './i18n.ts';
+// 存储键的登记处（显式带扩展名的理由同上面那行 i18n.ts）
+import { RECORDS_KEY as KEY, LOGIC_REASONING_KEY } from './storage.ts';
 
-const KEY = 'mcq-test:records:v1';
 const MAX_SESSIONS = 200;
 const MAX_IMPORT_BYTES = 5 * 1024 * 1024;
 export const HIDDEN_UNLOCK_COUNT = 365;
@@ -287,7 +288,8 @@ export function reachableIndex(index: IndexEntry[], unlocked: boolean): IndexEnt
 // 逻辑题，已经做过的照常计数——所以 validCompletedCount 拿的始终是整份索引。
 // 同理，Grill 的池子是诊断绑定集、Diagnostic 是固定卷，两者都不经过这层。
 
-export const LOGIC_REASONING_KEY = 'mcq-test:logic-reasoning:v1';
+// 登记处在 lib/storage.ts；这里原样转出，调用方与测试不必跟着改 import
+export { LOGIC_REASONING_KEY };
 
 /**
  * 取消勾选时**只**排除已标注为逻辑推理的题。没打标的题一律留下：

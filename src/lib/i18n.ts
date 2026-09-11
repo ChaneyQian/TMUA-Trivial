@@ -9,7 +9,8 @@
 
 export type Lang = 'zh' | 'en';
 
-export const LANG_KEY = 'mcq-test:lang:v1';
+// 存储键的登记处是 lib/storage.ts；这里原样转出，调用方不必跟着改 import
+export { LANG_KEY } from './storage.ts';
 export const DEFAULT_LANG: Lang = 'zh';
 
 const zh = {
