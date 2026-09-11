@@ -27,6 +27,7 @@ import {
   canAttempt,
   fetchDiagnosticSets,
   isPass,
+  remainingSeconds,
   setIndexForAttempt,
   type DiagnosticSets,
 } from '@/lib/diagnostic';
@@ -456,6 +457,14 @@ export default function ExamApp() {
   const [navOpen, setNavOpen] = useState(false);
   const [confirmEnd, setConfirmEnd] = useState(false);
   const [secondsLeft, setSecondsLeft] = useState(0);
+  /**
+   * 限时卷的截止时间戳。剩余秒数一律拿它现算，绝不靠 tick 累减——
+   * 后台标签页的 setInterval 会被浏览器限流甚至冻住，数 tick 等于把 Alt-Tab
+   * 变成一个免费暂停键（与 Diagnostic 同一条理由，见 lib/diagnostic.ts 的
+   * remainingSeconds）。那边的 deadlineFrom 不复用：它加的是诊断逐题的 120s
+   * 基础时长 + 时间银行，跟整卷时限不是一回事；共用的是 remainingSeconds 这个算法。
+   */
+  const deadlineRef = useRef(0);
   const [elapsed, setElapsed] = useState(0);
   const [resultActionError, setResultActionError] = useState('');
   const savedResultRef = useRef<Records | null>(null);
@@ -663,6 +672,8 @@ export default function ExamApp() {
       setGraded(new Array(qs.length).fill(false));
       setFlagged(new Array(qs.length).fill(false));
       setSolShown(new Set());
+      // 开考即定死截止时刻；练习模式不显示倒计时，写了也没人读
+      deadlineRef.current = Date.now() + minutes * 60 * 1000;
       setSecondsLeft(minutes * 60);
       setElapsed(0);
       setResultActionError('');
@@ -934,22 +945,39 @@ export default function ExamApp() {
   };
 
   // ---- 计时 ----
+  //
+  // elapsed 仍然按 tick 累加：它只是「这场用了多久」的展示与记录，被限流走慢了
+  // 顶多少记几秒，不构成可以被 Alt-Tab 占的便宜。倒计时不一样，它是限时卷的
+  // 立身之本，所以按截止时间戳现算。
   useEffect(() => {
     if (phase !== 'exam') return;
-    const t = setInterval(() => {
+    const timer = setInterval(() => {
       setElapsed((e) => e + 1);
-      if (mode === 'mock') {
-        setSecondsLeft((s) => {
-          if (s <= 1) {
-            finish();
-            return 0;
-          }
-          return s - 1;
-        });
-      }
+      // updater 必须是纯函数：StrictMode 下 React 会把它调用两次，
+      // 从前 finish() 就塞在这里面——那等于同一场交两次卷。归零改由下面
+      // 那个独立 effect 处理
+      if (mode === 'mock') setSecondsLeft(remainingSeconds(deadlineRef.current));
     }, 1000);
-    return () => clearInterval(t);
-  }, [phase, mode, finish]);
+    return () => clearInterval(timer);
+  }, [phase, mode]);
+
+  // 回到前台立刻重算一次：限流期间 tick 可能一次都没跑，
+  // 屏幕上那个数字必须马上对上真实流逝的时间（切出去 20 秒就该少 20 秒）
+  useEffect(() => {
+    if (phase !== 'exam' || mode !== 'mock') return;
+    const onVisible = () => {
+      if (!document.hidden) setSecondsLeft(remainingSeconds(deadlineRef.current));
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => document.removeEventListener('visibilitychange', onVisible);
+  }, [phase, mode]);
+
+  // 归零即交卷。单列一个 effect 而不是塞回 updater：finish() 带副作用
+  // （退全屏、切 phase），放在 setState 的 updater 里会被 StrictMode 双调用
+  useEffect(() => {
+    if (phase !== 'exam' || mode !== 'mock' || secondsLeft > 0) return;
+    finish();
+  }, [phase, mode, secondsLeft, finish]);
 
   // ---- 组件卸载兜底退全屏 ----
   useEffect(() => {

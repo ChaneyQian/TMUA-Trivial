@@ -161,10 +161,14 @@ test('the grill receipt survives a trip back to the panel but not a new session'
   // 没有来源标记的普通场次不留回执
   assert.match(examCode, /const origin = sessionOriginRef\.current;\s*\n\s*if \(!origin\) return;/);
 
-  // 计时器那个 effect 的依赖没被动过：把 questions / answers 塞进 finish 的依赖
-  // 会让 setInterval 每次渲染重挂一次
+  // finish 仍是空依赖的 useCallback：把 questions / answers 塞进它的依赖，
+  // 会让挂着它的那个 effect 每次渲染重挂一次（回执因此才结算在 leaveResult，
+  // 不结算在 finish 里）
   assert.match(examCode, /const finish = useCallback\(\(\) => \{[\s\S]*?\}, \[\]\);/);
-  assert.match(examCode, /\}, \[phase, mode, finish\]\);/);
+  // 倒计时改成时间戳制之后，跑 setInterval 的那个 effect 干脆不再依赖 finish——
+  // 归零交卷单列一个 effect（见 tests/exam-timer.test.mjs）
+  assert.match(examCode, /\}, \[phase, mode\]\);/);
+  assert.match(examCode, /\}, \[phase, mode, secondsLeft, finish\]\);/);
 
   // 面板拿到的是成句文案，渲染时才取字典 —— 存成句子的话切语言会留着上一句
   assert.match(examCode, /receipt=\{grillReceiptText\(\)\}/);
