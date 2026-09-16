@@ -7,9 +7,9 @@ year:
 number: Q1
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Function]
+subtopics: [Exponentials and Logarithms, Functions]
+tags: [Domain-Restriction, Quadratic-Inequality, Division-by-Zero]
 status: 已入库
 ---
 

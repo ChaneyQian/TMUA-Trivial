@@ -7,9 +7,9 @@ year:
 number: Q7
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Geometry, Trigonometry]
+subtopics: [Euclid Geometry, Trigonometry]
+tags: [Regular-Polygon, Isosceles, Area-Ratio, Apothem]
 status: 已入库
 ---
 

@@ -7,9 +7,9 @@ year:
 number: Q5
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Logic and Proof, Number Theory]
+subtopics: [Logic, Divisibility]
+tags: [Iff, Primes, Factorisation, Geometric-Series]
 status: 已入库
 ---
 

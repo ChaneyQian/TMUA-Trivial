@@ -7,9 +7,9 @@ year:
 number: Q19
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: [待补答案]
+topics: [Geometry, Miscellaneous Pure]
+subtopics: [Euclid Geometry, Misc Pure]
+tags: [Pythagoras, Sum-and-Product, 待补答案]
 status: 已入库
 ---
 

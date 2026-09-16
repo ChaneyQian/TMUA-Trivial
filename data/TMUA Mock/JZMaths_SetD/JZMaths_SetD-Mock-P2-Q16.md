@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 8
 topics: [Logic and Proof]
 subtopics: [Logic]
-tags: [Logic-Deduction]
+tags: [Truth-Value-Puzzle, Exactly-k-True, Deduction]
 status: 已入库
 ---
 

@@ -7,9 +7,9 @@ year:
 number: Q19
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Function, Polynomial]
+subtopics: [Exponentials and Logarithms, Solution of Equations]
+tags: [Domain-Restriction, Discriminant, Root-Location, Parameter-Range, Case-Split]
 status: 已入库
 ---
 

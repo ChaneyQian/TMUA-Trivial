@@ -7,9 +7,9 @@ year:
 number: Q5
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Sequences and Series, Number Theory]
+subtopics: [AP GP, Number Theory]
+tags: [Arithmetic-Series, Sum-Formula, Perfect-Square]
 status: 已入库
 ---
 

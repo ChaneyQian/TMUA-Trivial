@@ -7,9 +7,9 @@ year:
 number: Q14
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: [待补答案]
+topics: [Logic and Proof, Geometry]
+subtopics: [Logic, Coordinate Geometry]
+tags: [Iff, Counterexample, Distance-Formula, 待补答案]
 status: 已入库
 ---
 

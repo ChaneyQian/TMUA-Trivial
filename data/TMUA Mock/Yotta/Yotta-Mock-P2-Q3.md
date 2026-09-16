@@ -7,9 +7,9 @@ year:
 number: Q3
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Logic and Proof, Number Theory]
+subtopics: [Logic, Proof, Modular Arithmetic and Congruences]
+tags: [Truth-Value-List, Existence-Construction, Mod-4-Argument, Difference-of-Squares, Perfect-Square]
 status: 已入库
 ---
 

@@ -7,9 +7,9 @@ year:
 number: Q6
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Geometry]
+subtopics: [Coordinate Geometry]
+tags: [Midpoint, Parallelogram, Vector-Addition]
 status: 已入库
 ---
 

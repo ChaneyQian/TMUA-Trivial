@@ -7,9 +7,9 @@ year:
 number: Q13
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: [待补答案]
+topics: [Sequences and Series]
+subtopics: [AP GP]
+tags: [Arithmetic-Series, Grouping, 待补答案]
 status: 已入库
 ---
 

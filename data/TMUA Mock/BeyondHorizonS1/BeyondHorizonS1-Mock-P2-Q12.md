@@ -7,9 +7,9 @@ year:
 number: Q12
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Logic and Proof, Function]
+subtopics: [Logic, Proof, Absolute Value Functions]
+tags: [Truth-Value-List, Counterexample, Absolute-Value-Properties]
 status: 已入库
 ---
 

@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 5.5
 topics: [Logic and Proof, Calculus, Function]
 subtopics: [Logic, Differentiation Application, Algebraic Functions]
-tags: [Logic-Sufficiency, Differentiation]
+tags: [Sufficient-Condition, Differentiation]
 status: 已入库
 ---
 

@@ -7,9 +7,9 @@ year:
 number: Q4
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Sequences and Series]
+subtopics: [Binomial Theorem, Binomial Coefficients]
+tags: [Ratio-of-Consecutive-Terms, Greatest-Coefficient]
 status: 已入库
 ---
 

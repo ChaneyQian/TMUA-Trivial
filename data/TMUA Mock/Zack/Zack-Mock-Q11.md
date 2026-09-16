@@ -7,9 +7,9 @@ year:
 number: Q11
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Probability]
+subtopics: [Conditional Probability]
+tags: [Bayes-Theorem, Posterior-Update, Law-of-Total-Probability]
 status: 已入库
 ---
 

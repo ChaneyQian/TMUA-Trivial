@@ -7,9 +7,9 @@ year:
 number: Q15
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Calculus, Algebra (Basic)]
+subtopics: [Differentiation, Algebra Manipulation]
+tags: [Difference-of-Two-Squares, Surd-Factorisation, Removable-Singularity, Fractional-Indices]
 status: 已入库
 ---
 

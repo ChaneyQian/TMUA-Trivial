@@ -7,9 +7,9 @@ year:
 number: Q14
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Trigonometry, Geometry]
+subtopics: [Trigonometric Equations, Coordinate Geometry]
+tags: [General-Solution, Annulus, Circle-Area, Arithmetic-Progression]
 status: 已入库
 ---
 

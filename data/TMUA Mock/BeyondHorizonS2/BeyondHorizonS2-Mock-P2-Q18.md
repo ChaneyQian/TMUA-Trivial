@@ -7,9 +7,9 @@ year:
 number: Q18
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Algebra (Basic)]
+subtopics: [Simultaneous Equations]
+tags: [Word-Problem, Speed-Distance-Time, Elimination]
 status: 已入库
 ---
 

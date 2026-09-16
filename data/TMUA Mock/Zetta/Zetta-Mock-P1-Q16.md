@@ -7,9 +7,9 @@ year:
 number: Q16
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Algebra (Basic), Number Theory]
+subtopics: [Algebra Manipulation, Diophantine Equations]
+tags: [Symmetric-Expression, Clear-Denominators, Counting-Solutions, Case-Split]
 status: 已入库
 ---
 

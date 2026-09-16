@@ -7,9 +7,9 @@ year:
 number: Q11
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: [待补答案]
+topics: [Statistical Theory, Sequences and Series]
+subtopics: [Descriptive Statistics, Sequences and Series]
+tags: [Median, Triangular-Numbers, 待补答案]
 status: 已入库
 ---
 

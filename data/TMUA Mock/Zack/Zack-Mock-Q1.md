@@ -7,9 +7,9 @@ year:
 number: Q1
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Geometry, Sequences and Series]
+subtopics: [Coordinate Geometry, Sequences and Series]
+tags: [Sector-Area, Triangular-Numbers, Arithmetic-Series]
 status: 已入库
 ---
 

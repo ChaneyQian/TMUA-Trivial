@@ -7,9 +7,9 @@ year:
 number: Q8
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: [待补答案, 原卷缺陷]
+topics: [Calculus]
+subtopics: [Integration]
+tags: [Area-Between-Curves, Odd-Symmetry, Intersection-Point, 待补答案, 原卷缺陷]
 status: 已入库
 ---
 

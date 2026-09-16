@@ -7,9 +7,9 @@ year:
 number: Q9
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Sequences and Series]
+subtopics: [Recurrence Relations]
+tags: [AP-GP, Arithmetic-Progression, Off-by-One]
 status: 已入库
 ---
 

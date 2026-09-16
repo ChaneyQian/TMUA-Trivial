@@ -7,9 +7,9 @@ year:
 number: Q9
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Geometry, Polynomial]
+subtopics: [Coordinate Geometry, Solution of Equations]
+tags: [Tangency, Completing-the-Square, Parabola, Minimum-Distance]
 status: 已入库
 ---
 

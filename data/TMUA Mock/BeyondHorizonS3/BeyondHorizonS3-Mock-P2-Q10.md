@@ -7,9 +7,9 @@ year:
 number: Q10
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Miscellaneous Pure]
+subtopics: [Combinatorics]
+tags: [Casework, Elementary-Symmetric-Sums, Counting]
 status: 已入库
 ---
 

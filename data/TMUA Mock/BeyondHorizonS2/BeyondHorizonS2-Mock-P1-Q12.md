@@ -7,9 +7,9 @@ year:
 number: Q12
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Trigonometry]
+subtopics: [Trigonometric Equations, Trigonometric Identities]
+tags: [Quadratic-in-Cos, Solution-Counting, Pythagorean-Identity]
 status: 已入库
 ---
 

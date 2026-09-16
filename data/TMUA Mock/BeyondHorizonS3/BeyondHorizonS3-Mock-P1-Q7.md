@@ -7,9 +7,9 @@ year:
 number: Q7
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Miscellaneous Pure]
+subtopics: [Combinatorics]
+tags: [Block-Method, Permutations]
 status: 已入库
 ---
 

@@ -7,9 +7,9 @@ year:
 number: Q12
 section: Multiple Choice
 difficulty: 7
-topics: [Function]
-subtopics: [Exponentials and Logarithms, Functions]
-tags: [Exponentials-and-Logarithms, Graphs-of-Functions]
+topics: [Logic and Proof, Function]
+subtopics: [Logic, Proof, Exponentials and Logarithms, Functions]
+tags: [Truth-Value-List, Counterexample, Exponentials-and-Logarithms, Graphs-of-Functions]
 status: 已入库
 ---
 
@@ -45,6 +45,8 @@ $$ \mathbf{J} \quad \text{All four statements are true.} $$
 ### AI备注
 
 
+ℹ️ 2026-09-14 Fable 复核：按 §2.4ter 并挂线调整 Proof。
+ℹ️ 2026-09-14 按 owner 裁定补挂 Logic（命题列表/充要题一律挂，不限 3 tag）。
 ## 答案
 D
 

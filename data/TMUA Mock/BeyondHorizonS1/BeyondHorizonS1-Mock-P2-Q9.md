@@ -7,9 +7,9 @@ year:
 number: Q9
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Logic and Proof, Polynomial]
+subtopics: [Logic, Polynomials, Solution of Equations]
+tags: [Truth-Value-List, Palindromic-Polynomial, Discriminant, Factorisation]
 status: 已入库
 ---
 

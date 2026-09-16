@@ -7,9 +7,9 @@ year:
 number: Q12
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Calculus]
+subtopics: [Differentiation Application, Optimization]
+tags: [Stationary-Points, Endpoint-Check, Cubic]
 status: 已入库
 ---
 

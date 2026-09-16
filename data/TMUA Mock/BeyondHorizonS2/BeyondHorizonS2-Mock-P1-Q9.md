@@ -7,9 +7,9 @@ year:
 number: Q9
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: [待补答案, 原卷缺陷]
+topics: [Function]
+subtopics: [Functions]
+tags: [Graph-Transformations, Translation, 原卷缺陷, 待补答案]
 status: 已入库
 ---
 
@@ -50,4 +50,3 @@ D
 Apply the three steps in order. The translation sends $y = 3x^2$ to $y = 3(x - 2)^2 - 4$, a parabola with vertex $(2, -4)$. Reflecting in the $y$-axis replaces $x$ by $-x$ and moves the vertex to $(-2, -4)$, giving $y = 3(x + 2)^2 - 4$. The stretch parallel to the $y$-axis with scale factor $3$ then multiplies the whole right-hand side by $3$:
 $$y = 9(x + 2)^2 - 12 = 9x^2 + 36x + 24.$$
 Only options C and D have leading coefficient $9$, and D is $9x^2 - 36x + 24 = 9(x - 2)^2 - 12$, the mirror image of the curve just obtained; it is exactly what the same three steps produce if the reflection in the $y$-axis is dropped, or if the translation vector is taken as $\begin{pmatrix} -2 \\ -4 \end{pmatrix}$. Since both the leading coefficient and the constant term match, D is plainly the intended key and is recorded as the answer, but the sign of the $x$ term disagrees with the printed transformation list. The answer is D.
-TODO(待校对): Q9 严格按题面三步变换得 $y = 9x^2 + 36x + 24$，与任何选项都不符；选项 D 只差 $x$ 项符号，相当于漏掉第二步反射，或平移向量应为 $\begin{pmatrix} -2 \\ -4 \end{pmatrix}$。ANSWER 暂记 D，待裁定。

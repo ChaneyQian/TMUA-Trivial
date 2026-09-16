@@ -7,9 +7,9 @@ year:
 number: Q7
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Logic and Proof, Miscellaneous Pure]
+subtopics: [Logic, Proof, Combinatorics]
+tags: [Truth-Value-List, Counterexample, Pigeonhole]
 status: 已入库
 ---
 

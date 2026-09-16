@@ -7,9 +7,9 @@ year:
 number: Q14
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Number Theory]
+subtopics: [Modular Arithmetic and Congruences]
+tags: [Digit-Sum, Cyclic-Powers, Mod-9]
 status: 已入库
 ---
 

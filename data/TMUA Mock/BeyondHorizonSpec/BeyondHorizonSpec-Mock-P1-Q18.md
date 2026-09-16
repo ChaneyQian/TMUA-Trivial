@@ -7,9 +7,9 @@ year:
 number: Q18
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Miscellaneous Pure]
+subtopics: [Combinatorics]
+tags: [Forced-Ordering, Choosing-a-Split, Combinations]
 status: 已入库
 ---
 

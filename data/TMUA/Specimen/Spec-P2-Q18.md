@@ -10,7 +10,7 @@ difficulty: 0
 topics: [Statistical Theory]
 subtopics: [Descriptive Statistics]
 tags:
-  - specimen
+  - Specimen
 status: 已入库
 ---
 

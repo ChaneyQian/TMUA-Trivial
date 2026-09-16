@@ -7,9 +7,9 @@ year:
 number: Q14
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: [待补答案]
+topics: [Calculus]
+subtopics: [Differentiation Application]
+tags: [Tangent-Line, Quotient-Rule, 待补答案]
 status: 已入库
 ---
 

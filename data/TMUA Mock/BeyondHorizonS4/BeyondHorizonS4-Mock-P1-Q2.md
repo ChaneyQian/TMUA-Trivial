@@ -7,9 +7,9 @@ year:
 number: Q2
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Geometry]
+subtopics: [Solid Geometry]
+tags: [Space-Diagonal, Inscribed-Solid, Cube]
 status: 已入库
 ---
 

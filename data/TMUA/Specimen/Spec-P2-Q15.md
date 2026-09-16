@@ -7,10 +7,10 @@ year:
 number: Q15
 section: Reasoning
 difficulty: 0
-topics: []
-subtopics: []
-tags:
-  - specimen
+topics: [Logic and Proof]
+subtopics: [Logic, Proof]
+tags: [Truth-Value-List, Counterexample, Inequality-Manipulation, Sign-of-Multiplier]
+  - Specimen
 status: 已入库
 ---
 

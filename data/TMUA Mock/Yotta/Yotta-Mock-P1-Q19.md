@@ -7,9 +7,9 @@ year:
 number: Q19
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Function, Logic and Proof]
+subtopics: [Exponentials and Logarithms, Absolute Value Functions, Logic]
+tags: [Truth-Value-List, Domain-Restriction, Inverse-Function]
 status: 已入库
 ---
 

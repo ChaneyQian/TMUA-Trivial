@@ -7,9 +7,9 @@ year:
 number: Q5
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: [待补答案]
+topics: [Statistical Theory]
+subtopics: [Descriptive Statistics]
+tags: [Mean, Simultaneous-Equations, 待补答案]
 status: 已入库
 ---
 

@@ -7,9 +7,9 @@ year:
 number: Q13
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Number Theory]
+subtopics: [Modular Arithmetic and Congruences]
+tags: [Units-Digit, Factorial, Place-Value]
 status: 已入库
 ---
 
@@ -22,7 +22,6 @@ $$\mathbf{C} \quad 1$$
 $$\mathbf{D} \quad 7$$
 $$\mathbf{E} \quad 5$$
 $$\mathbf{F} \quad 9$$
-TODO(待校对): 原卷此题最后三个选项的字母全部印成 (D)，即 (A)(B)(C)(D)(D)(D)；此处按顺序重标为 D/E/F，选项内容 7/5/9 未改动。
 
 ## 备注
 

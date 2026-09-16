@@ -7,9 +7,9 @@ year:
 number: Q10
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Function, Polynomial]
+subtopics: [Exponentials and Logarithms, Solution of Equations]
+tags: [Substitution, Discriminant, Log-Laws, Quadratic-in-Disguise]
 status: 已入库
 ---
 

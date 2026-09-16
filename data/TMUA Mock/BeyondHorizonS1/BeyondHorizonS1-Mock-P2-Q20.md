@@ -7,9 +7,9 @@ year:
 number: Q20
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Calculus, Function]
+subtopics: [Integration, Exponentials and Logarithms]
+tags: [Definite-Integral, Antiderivative, Log-Integral]
 status: 已入库
 ---
 

@@ -7,9 +7,9 @@ year:
 number: Q12
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Function, Polynomial]
+subtopics: [Exponentials and Logarithms, Vieta's Formulas]
+tags: [Log-to-Index-Form, Sum-of-Roots, Change-of-Base]
 status: 已入库
 ---
 

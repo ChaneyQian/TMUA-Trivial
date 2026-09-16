@@ -7,9 +7,9 @@ year:
 number: Q18
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Function]
+subtopics: [Iterated Functions, Floor, Ceiling and Fractional Part Functions]
+tags: [Perfect-Square, Iteration, Simulation]
 status: 已入库
 ---
 

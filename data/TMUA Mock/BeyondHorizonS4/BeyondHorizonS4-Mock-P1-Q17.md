@@ -7,9 +7,9 @@ year:
 number: Q17
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Geometry]
+subtopics: [Euclid Geometry]
+tags: [Equilateral-Triangle, Centroid, Extremal-Chord]
 status: 已入库
 ---
 

@@ -7,9 +7,9 @@ year:
 number: Q8
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Calculus]
+subtopics: [Integration]
+tags: [Indefinite-Integral, Constant-of-Integration, Negative-Indices]
 status: 已入库
 ---
 

@@ -7,9 +7,9 @@ year:
 number: Q1
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Miscellaneous Pure, Function]
+subtopics: [Estimation and Bounds, Exponentials and Logarithms]
+tags: [Change-of-Base, Comparing-Values, Surd-Simplification]
 status: 已入库
 ---
 

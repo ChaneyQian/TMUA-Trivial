@@ -7,9 +7,9 @@ year:
 number: Q4
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Logic and Proof, Function]
+subtopics: [Logic, Functions]
+tags: [Necessary-vs-Sufficient, Counterexample, Discontinuous-Function, Root-Counting]
 status: 已入库
 ---
 

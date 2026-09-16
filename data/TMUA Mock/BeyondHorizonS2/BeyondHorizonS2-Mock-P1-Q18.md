@@ -7,9 +7,9 @@ year:
 number: Q18
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Function]
+subtopics: [Exponentials and Logarithms]
+tags: [Log-Laws, Change-of-Base, Reciprocal-Logs]
 status: 已入库
 ---
 

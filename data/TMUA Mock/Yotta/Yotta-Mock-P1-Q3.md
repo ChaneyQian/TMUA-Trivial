@@ -7,9 +7,9 @@ year:
 number: Q3
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Function, Calculus]
+subtopics: [Iterated Functions, Absolute Value Functions, Integration]
+tags: [Piecewise-Function, Triangle-Area, Self-Similarity]
 status: 已入库
 ---
 

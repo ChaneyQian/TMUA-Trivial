@@ -7,9 +7,9 @@ year:
 number: Q10
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Number Theory]
+subtopics: [Modular Arithmetic and Congruences]
+tags: [Units-Digit, Periodicity, Powers-Cycle]
 status: 已入库
 ---
 

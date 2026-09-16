@@ -7,9 +7,9 @@ year:
 number: Q8
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Function]
+subtopics: [Exponentials and Logarithms]
+tags: [Infinite-Nesting, Self-Similarity, Log-to-Index-Form]
 status: 已入库
 ---
 

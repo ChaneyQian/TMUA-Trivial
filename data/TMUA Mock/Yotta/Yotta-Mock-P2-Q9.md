@@ -7,9 +7,9 @@ year:
 number: Q9
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Logic and Proof, Calculus]
+subtopics: [Proof, Integration]
+tags: [Error-Spotting, Constant-of-Integration, Integration-by-Parts]
 status: 已入库
 ---
 

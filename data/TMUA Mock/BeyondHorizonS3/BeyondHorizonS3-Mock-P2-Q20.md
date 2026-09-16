@@ -7,9 +7,9 @@ year:
 number: Q20
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Sequences and Series, Number Theory]
+subtopics: [Recurrence Relations, Modular Arithmetic and Congruences]
+tags: [Row-Sum, Telescoping-Recurrence, Chinese-Remainder-Theorem]
 status: 已入库
 ---
 

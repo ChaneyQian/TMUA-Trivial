@@ -7,9 +7,9 @@ year:
 number: Q8
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Miscellaneous Pure]
+subtopics: [Combinatorics]
+tags: [Derangement, Binomial-Coefficients, Fixed-Points]
 status: 已入库
 ---
 

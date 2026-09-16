@@ -9,8 +9,8 @@ section: Reasoning
 difficulty: 0
 topics: [Logic and Proof]
 subtopics: [Proof]
-tags:
-  - specimen
+tags: [Counterexample, If-Then]
+  - Specimen
 status: 已入库
 ---
 

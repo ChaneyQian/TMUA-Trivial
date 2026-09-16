@@ -8,8 +8,8 @@ number: Q18
 section: Multiple Choice
 difficulty: 8.5
 topics: [Logic and Proof, Calculus]
-subtopics: [Logic, Integration]
-tags: [Logic-Deduction, Integration]
+subtopics: [Logic, Proof, Integration]
+tags: [Truth-Value-List, Counterexample, Integration]
 status: 已入库
 ---
 
@@ -54,6 +54,7 @@ $$ \mathbf{L} \quad \text{all except IV} $$
 ### AI备注
 
 
+ℹ️ 2026-09-14 Fable 复核：按 §2.4ter 并挂线调整 Proof。
 ## 答案
 F
 

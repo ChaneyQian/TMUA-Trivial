@@ -7,9 +7,9 @@ year:
 number: Q2
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Geometry]
+subtopics: [Coordinate Geometry]
+tags: [Equations-of-Circles, Distance-Formula, Simultaneous-Equations]
 status: 已入库
 ---
 

@@ -7,9 +7,9 @@ year:
 number: Q3
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: [待补答案]
+topics: [Number Theory]
+subtopics: [Divisibility]
+tags: [Digit-Reversal, Place-Value, 待补答案]
 status: 已入库
 ---
 

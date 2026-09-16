@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 6
 topics: [Logic and Proof, Calculus]
 subtopics: [Logic, Differentiation Application, Integration]
-tags: [Logic-Deduction, Differentiation]
+tags: [Necessary-Condition, Counterexample, Differentiation]
 status: 已入库
 ---
 

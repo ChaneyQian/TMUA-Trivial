@@ -7,9 +7,9 @@ year:
 number: Q7
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Polynomial]
+subtopics: [Factor and Remainder Theorem]
+tags: [Comparing-Coefficients, Polynomial-Division, Integer-Solutions]
 status: 已入库
 ---
 

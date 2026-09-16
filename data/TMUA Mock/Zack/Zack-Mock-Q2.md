@@ -7,9 +7,9 @@ year:
 number: Q2
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Function, Calculus]
+subtopics: [Floor, Ceiling and Fractional Part Functions, Integration]
+tags: [Periodicity, Definite-Integral, Substitution]
 status: 已入库
 ---
 

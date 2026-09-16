@@ -7,9 +7,9 @@ year:
 number: Q6
 section: Multiple Choice
 difficulty: 6
-topics: [Geometry, Function, Algebra (Basic)]
-subtopics: [Coordinate Geometry, Algebraic Functions, Algebra Manipulation]
-tags: [Transformation-of-Graphs]
+topics: [Logic and Proof, Geometry, Function, Algebra (Basic)]
+subtopics: [Logic, Coordinate Geometry, Algebraic Functions, Algebra Manipulation]
+tags: [Truth-Value-List, Transformation-of-Graphs]
 status: 已入库
 ---
 
@@ -45,6 +45,7 @@ $$ \mathbf{H} \quad \text{none of them} $$
 ### AI备注
 
 
+ℹ️ 2026-09-14 按 owner 裁定补挂 Logic（命题列表/充要题一律挂，不限 3 tag）。
 ## 答案
 H
 

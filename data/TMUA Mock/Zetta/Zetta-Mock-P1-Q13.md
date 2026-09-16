@@ -7,9 +7,9 @@ year:
 number: Q13
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Geometry]
+subtopics: [Solid Geometry]
+tags: [Cross-Section, Space-Diagonal, Rhombus-Diagonals, Cube]
 status: 已入库
 ---
 

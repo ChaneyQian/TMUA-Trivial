@@ -7,9 +7,9 @@ year:
 number: Q15
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Calculus, Polynomial]
+subtopics: [Integral Identity, Solution of Equations]
+tags: [Symmetry, Substitution, Sum-of-Roots]
 status: 已入库
 ---
 

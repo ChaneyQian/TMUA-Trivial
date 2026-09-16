@@ -7,9 +7,9 @@ year:
 number: Q5
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Number Theory, Logic and Proof]
+subtopics: [Divisibility, Proof]
+tags: [Counterexample, Consecutive-Integers, Factorial-Divisibility]
 status: 已入库
 ---
 

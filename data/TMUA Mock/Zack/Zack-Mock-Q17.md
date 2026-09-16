@@ -7,9 +7,9 @@ year:
 number: Q17
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Function, Polynomial]
+subtopics: [Exponentials and Logarithms, Solution of Equations]
+tags: [Change-of-Base, Domain-Restriction, Extraneous-Roots]
 status: 已入库
 ---
 

@@ -7,9 +7,9 @@ year:
 number: Q4
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Logic and Proof, Function, Polynomial]
+subtopics: [Logic, Exponentials and Logarithms, Solution of Equations]
+tags: [Truth-Value-List, Log-to-Index-Form, Factor-Theorem, Uniqueness]
 status: 已入库
 ---
 

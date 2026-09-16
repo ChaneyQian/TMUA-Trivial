@@ -7,9 +7,9 @@ year:
 number: Q18
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Function, Logic and Proof]
+subtopics: [Iterated Functions, Logic, Proof]
+tags: [Truth-Value-List, Counterexample, Range]
 status: 已入库
 ---
 

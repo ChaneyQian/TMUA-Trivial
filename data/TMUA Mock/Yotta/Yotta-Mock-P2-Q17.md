@@ -7,9 +7,9 @@ year:
 number: Q17
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Logic and Proof, Calculus]
+subtopics: [Logic, Differentiation]
+tags: [Truth-Value-List, Domain-Restriction, Monotonicity, Second-Derivative]
 status: 已入库
 ---
 

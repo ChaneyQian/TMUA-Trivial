@@ -7,9 +7,9 @@ year:
 number: Q8
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Function, Algebra (Basic)]
+subtopics: [Exponentials and Logarithms, Algebra Manipulation]
+tags: [Substitution, Completing-the-Square, Reciprocal-Function]
 status: 已入库
 ---
 

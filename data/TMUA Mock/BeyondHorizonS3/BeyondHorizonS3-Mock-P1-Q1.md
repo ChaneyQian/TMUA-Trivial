@@ -7,9 +7,9 @@ year:
 number: Q1
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Miscellaneous Pure, Function]
+subtopics: [Inequalities, Algebraic Functions]
+tags: [Domain-Restriction, Squaring-Both-Sides, Extraneous-Roots]
 status: 已入库
 ---
 

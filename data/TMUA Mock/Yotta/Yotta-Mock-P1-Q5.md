@@ -7,9 +7,9 @@ year:
 number: Q5
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Sequences and Series, Function]
+subtopics: [Recurrence Relations, Limits]
+tags: [Characteristic-Equation, Dominant-Root, Quadratic-Formula]
 status: 已入库
 ---
 

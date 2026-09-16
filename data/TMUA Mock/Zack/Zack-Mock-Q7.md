@@ -7,9 +7,9 @@ year:
 number: Q7
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Algebra (Basic)]
+subtopics: [Systems Of Linear Equations]
+tags: [Word-Problem, Work-Rate, Elimination]
 status: 已入库
 ---
 

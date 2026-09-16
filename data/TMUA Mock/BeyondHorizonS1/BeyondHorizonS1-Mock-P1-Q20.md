@@ -7,9 +7,9 @@ year:
 number: Q20
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: [待补答案, 原卷缺陷]
+topics: [Geometry]
+subtopics: [Solid Geometry]
+tags: [Cone-Volume, Frustum, Similar-Triangles, 原卷缺陷, 待补答案]
 status: 已入库
 ---
 
@@ -37,10 +37,11 @@ $$\mathbf{F} \quad \frac{2417}{20}\pi$$
   「$B$ 尖朝下从 $A$ 顶部半径 1.5 的开口插入卡住，没入部分为半径 1.5、高 1.8 的小锥」，
   得 $\frac{2417}{40}\pi$ = 选项 C。`ANSWER` 记 C 是基于**这个未在题面写明的摆放假设**，
   并非题面推出的结论。
-
+- **键对拍（2026-09-11，键源 tmua.fyi）**：键给 **A**（$\frac{1867}{40}\pi$）。`ANSWER` 已改记 A（出题人意图项）。
+  仍无法反推出题人用的摆法：A 对应 $V_{A\cap B}=\frac{329}{40}\pi$，试过「B 倒扣、顶点落在 A 底面中心」「B 正立、A 整体落在 B 内（得 $\frac{1475}{40}\pi$，不在选项）」都对不上。题面「内锥比外锥大却 placed inside」的矛盾没有因键而消失，标签保留。
 
 ## 答案
-C
+A
 
 ## 解析
 The quantity asked for is the volume of the symmetric difference, namely $V_A + V_B - 2V_{A \cap B}$. For cone $A$, the radius shrinks linearly from $3$ at the base to $0$ at height $5$, so it equals $1.5$ at height $2.5$; the truncated solid is therefore a frustum of height $2.5$ with radii $3$ and $1.5$, and

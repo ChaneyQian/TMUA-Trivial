@@ -7,9 +7,9 @@ year:
 number: Q10
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Function]
+subtopics: [Exponentials and Logarithms, Inverse Functions]
+tags: [Quadratic-in-Disguise, Extraneous-Roots, Substitution]
 status: 已入库
 ---
 

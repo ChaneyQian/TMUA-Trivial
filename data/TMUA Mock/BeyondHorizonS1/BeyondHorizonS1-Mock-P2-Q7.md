@@ -7,9 +7,9 @@ year:
 number: Q7
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: [待补答案, 原卷缺陷]
+topics: [Logic and Proof, Number Theory]
+subtopics: [Logic, Proof, Divisibility]
+tags: [Truth-Value-List, Counterexample, Deduction, Perfect-Square, 原卷缺陷, 待补答案]
 status: 已入库
 ---
 

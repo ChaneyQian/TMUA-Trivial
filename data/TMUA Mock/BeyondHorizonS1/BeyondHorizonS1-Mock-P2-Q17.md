@@ -7,9 +7,9 @@ year:
 number: Q17
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Statistical Theory]
+subtopics: [Descriptive Statistics]
+tags: [Mean, Median, Mode, Extremal-Construction]
 status: 已入库
 ---
 

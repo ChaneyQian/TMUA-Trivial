@@ -7,9 +7,9 @@ year:
 number: Q15
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Polynomial, Calculus]
+subtopics: [Solution of Equations, Differentiation Application]
+tags: [Turning-Points, Sign-Condition, Parameter-Range]
 status: 已入库
 ---
 

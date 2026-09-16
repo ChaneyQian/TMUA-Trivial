@@ -7,9 +7,9 @@ year:
 number: Q1
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Logic and Proof, Algebra (Basic)]
+subtopics: [Logic, Surds and indices]
+tags: [Truth-Value-List, Square-Root-Sign, Surds]
 status: 已入库
 ---
 

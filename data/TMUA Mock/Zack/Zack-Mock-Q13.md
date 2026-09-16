@@ -7,9 +7,9 @@ year:
 number: Q13
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Trigonometry, Sequences and Series]
+subtopics: [Trigonometric Equations, AP GP]
+tags: [Sum-to-Infinity, Convergence-Condition, Solution-Count]
 status: 已入库
 ---
 

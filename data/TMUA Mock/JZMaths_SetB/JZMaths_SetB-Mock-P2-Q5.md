@@ -7,9 +7,9 @@ year:
 number: Q5
 section: Multiple Choice
 difficulty: 6
-topics: [Miscellaneous Pure, Polynomial, Algebra (Basic)]
-subtopics: [Inequalities, Polynomials, Algebra Manipulation]
-tags: [Inequalities, Logic-Equivalence]
+topics: [Logic and Proof, Miscellaneous Pure, Polynomial, Algebra (Basic)]
+subtopics: [Logic, Inequalities, Polynomials, Algebra Manipulation]
+tags: [Iff, Inequalities]
 status: 已入库
 ---
 
@@ -36,6 +36,7 @@ $$ \mathbf{H} \quad -\frac{1}{2} \le k \le \frac{1}{2} $$
 ### AI备注
 
 
+ℹ️ 2026-09-14 按 owner 裁定补挂 Logic（命题列表/充要题一律挂，不限 3 tag）。
 ## 答案
 D
 

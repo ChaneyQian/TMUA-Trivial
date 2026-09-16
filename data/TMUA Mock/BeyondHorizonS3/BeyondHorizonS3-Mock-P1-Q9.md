@@ -7,9 +7,9 @@ year:
 number: Q9
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Sequences and Series]
+subtopics: [Binomial Theorem]
+tags: [Factorisation, Coefficient-Extraction, Convolution]
 status: 已入库
 ---
 

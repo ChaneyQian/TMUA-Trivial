@@ -7,9 +7,9 @@ year:
 number: Q9
 section: Multiple Choice
 difficulty: 7
-topics: [Algebra (Basic), Function]
-subtopics: [Systems Of Linear Equations, Exponentials and Logarithms]
-tags: [Exponentials-and-Logarithms, Linear-Equations]
+topics: [Logic and Proof, Algebra (Basic), Function]
+subtopics: [Logic, Systems Of Linear Equations, Exponentials and Logarithms]
+tags: [Iff, Exponentials-and-Logarithms, Linear-Equations]
 status: 已入库
 ---
 
@@ -40,6 +40,7 @@ $$ \mathbf{H} \quad \text{All real } k \text{ except } k = 1 $$
 ### AI备注
 
 
+ℹ️ 2026-09-14 按 owner 裁定补挂 Logic（命题列表/充要题一律挂，不限 3 tag）。
 ## 答案
 B
 

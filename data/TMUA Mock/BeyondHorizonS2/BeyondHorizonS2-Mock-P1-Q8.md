@@ -7,9 +7,9 @@ year:
 number: Q8
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Trigonometry, Algebra (Basic)]
+subtopics: [Trigonometry, Simultaneous Equations]
+tags: [Elimination, Quadratic-Formula, Pythagorean-Identity, Minimum-Value]
 status: 已入库
 ---
 

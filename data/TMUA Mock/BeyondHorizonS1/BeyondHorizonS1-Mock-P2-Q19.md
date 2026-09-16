@@ -7,9 +7,9 @@ year:
 number: Q19
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Logic and Proof, Miscellaneous Pure]
+subtopics: [Logic, Proof, Inequalities]
+tags: [Truth-Value-List, Counterexample, Inequality-Manipulation, Quantifiers]
 status: 已入库
 ---
 

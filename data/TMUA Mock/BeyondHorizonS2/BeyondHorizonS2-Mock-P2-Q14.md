@@ -7,9 +7,9 @@ year:
 number: Q14
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Sequences and Series]
+subtopics: [Recurrence Relations]
+tags: [Functional-Equation, Triangular-Numbers, Closed-Form]
 status: 已入库
 ---
 

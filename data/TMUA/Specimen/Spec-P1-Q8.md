@@ -10,7 +10,7 @@ difficulty: 0
 topics: []
 subtopics: []
 tags:
-  - specimen
+  - Specimen
 status: 已入库
 ---
 
@@ -56,6 +56,7 @@ $$
 ### AI备注
 
 
+ℹ️ 2026-08-15 核 官方 Specimen Paper 1 Solutions（Version 1.1, Nov 2020） p10：首行 log₁₀(aˣb²ˣc³ˣ = log₁₀2 缺右括号，原册即如此。转写忠实，未改。
 ## 答案
 F
 

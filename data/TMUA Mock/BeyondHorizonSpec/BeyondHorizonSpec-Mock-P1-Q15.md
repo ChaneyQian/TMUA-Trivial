@@ -7,9 +7,9 @@ year:
 number: Q15
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Function]
+subtopics: [Algebraic Functions]
+tags: [Symmetry, Comparing-Coefficients, Rectangular-Hyperbola]
 status: 已入库
 ---
 

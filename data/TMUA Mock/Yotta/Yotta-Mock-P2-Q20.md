@@ -7,9 +7,9 @@ year:
 number: Q20
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Algebra (Basic)]
+subtopics: [Simultaneous Equations, Algebra Manipulation]
+tags: [Completing-the-Square, Sum-of-Squares, No-Solution]
 status: 已入库
 ---
 

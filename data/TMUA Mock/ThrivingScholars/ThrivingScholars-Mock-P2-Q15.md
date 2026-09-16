@@ -7,9 +7,9 @@ year:
 number: Q15
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: [待补答案]
+topics: [Logic and Proof]
+subtopics: [Logic]
+tags: [Necessary-Condition, Contrapositive, 待补答案]
 status: 已入库
 ---
 

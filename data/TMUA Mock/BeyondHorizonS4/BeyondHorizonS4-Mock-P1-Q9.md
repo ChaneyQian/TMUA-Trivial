@@ -7,9 +7,9 @@ year:
 number: Q9
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Function, Sequences and Series]
+subtopics: [Exponentials and Logarithms, AP GP]
+tags: [Log-Laws, Arithmetic-Series]
 status: 已入库
 ---
 

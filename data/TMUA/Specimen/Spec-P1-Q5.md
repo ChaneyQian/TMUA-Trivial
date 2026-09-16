@@ -10,7 +10,7 @@ difficulty: 0
 topics: []
 subtopics: []
 tags:
-  - specimen
+  - Specimen
 status: 已入库
 ---
 
@@ -48,8 +48,38 @@ $$
 ### AI备注
 
 
+⚠️ 2026-08-15 转写修正：解析段原为「（无）」，内容被切进了 Spec-P1-Q4 的解析末尾，已移回。答案 D 与推导一致。
 ## 答案
 D
 
 ## 解析
-（无）
+$$
+y = - \log_ {1 0} (1 - x)
+$$
+
+$$
+\Longleftrightarrow - y = \log_ {1 0} (1 - x)
+$$
+
+negate
+
+$$
+\Longleftrightarrow 1 0 ^ {- y} = 1 - x
+$$
+
+exponentiate to base 10
+
+$$
+\Longleftrightarrow x + 1 0 ^ {- y} = 1
+$$
+
+add x
+
+$$
+\Longleftrightarrow \qquad x = 1 - 1 0 ^ {- y}
+$$
+
+subtract $10^{-y}$
+
+so the answer is D.
+

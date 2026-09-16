@@ -7,9 +7,9 @@ year:
 number: Q12
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Polynomial, Calculus]
+subtopics: [Solution of Equations, Differentiation Application]
+tags: [Root-Counting, Turning-Points, Factorisation]
 status: 已入库
 ---
 
@@ -27,7 +27,9 @@ $$\mathbf{E} \quad 4$$
 ### 我的备注
 
 ### AI备注
-
+- **键对拍（2026-09-11，键源 tmua.fyi）**：键给 **C**（2 个正根），库记 **B**（1 个）。**库是对的，键错。**
+  $x^4-2\sqrt2x^3+2x^2-4x = x\,[\,x(x-\sqrt2)^2-4\,]$，而 $x(x-\sqrt2)^2$ 在 $x>0$ 上先升到 $\frac{8\sqrt2}{27}\approx0.42$、
+  回落到 0、再单调升到 $\infty$，与 4 只交一次（$x\approx2.644$）。数值扫描 $(0,20]$ 亦只有 1 个变号点。站上题面与库内转写逐字一致，不是抄错。
 
 ## 答案
 B

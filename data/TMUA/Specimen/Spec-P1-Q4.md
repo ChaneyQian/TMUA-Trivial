@@ -10,7 +10,7 @@ difficulty: 0
 topics: []
 subtopics: []
 tags:
-  - specimen
+  - Specimen
 status: 已入库
 ---
 
@@ -43,6 +43,7 @@ $$
 ### AI备注
 
 
+⚠️ 2026-08-15 转写修正：本题解析段末尾原先粘着 Q5 的整段解析（裸标题「Question 5」起），已剪掉并移回 Spec-P1-Q5。
 ## 答案
 E
 
@@ -54,35 +55,3 @@ We can now make a table showing the signs of the three factors for different val
 <table><tr><td></td><td> $x < -1$ </td><td> $x = -1$ </td><td> $-1 < x < 1$ </td><td> $x = 1$ </td><td> $1 < x < 2$ </td><td> $x = 2$ </td><td> $x > 2$ </td></tr><tr><td> $x + 1$ </td><td>-</td><td>0</td><td>+</td><td>+</td><td>+</td><td>+</td><td>+</td></tr><tr><td> $x - 1$ </td><td>-</td><td>-</td><td>-</td><td>0</td><td>+</td><td>+</td><td>+</td></tr><tr><td> $x - 2$ </td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>0</td><td>+</td></tr><tr><td> $f(x)$ </td><td>-</td><td>0</td><td>+</td><td>0</td><td>-</td><td>0</td><td>+</td></tr></table>
 
 Therefore f(x) is positive when $- 1 < x < 1$ and when $x > 2$. , so the answer is E.
-
-Question 5
-
-$$
-y = - \log_ {1 0} (1 - x)
-$$
-
-$$
-\Longleftrightarrow - y = \log_ {1 0} (1 - x)
-$$
-
-negate
-
-$$
-\Longleftrightarrow 1 0 ^ {- y} = 1 - x
-$$
-
-exponentiate to base 10
-
-$$
-\Longleftrightarrow x + 1 0 ^ {- y} = 1
-$$
-
-add x
-
-$$
-\Longleftrightarrow \qquad x = 1 - 1 0 ^ {- y}
-$$
-
-subtract $10^{-y}$
-
-so the answer is D.

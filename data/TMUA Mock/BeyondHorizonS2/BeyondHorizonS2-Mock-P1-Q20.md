@@ -7,9 +7,9 @@ year:
 number: Q20
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Calculus, Trigonometry, Miscellaneous Pure]
+subtopics: [Integration, Trigonometry, Estimation and Bounds]
+tags: [Sign-Analysis, No-Antiderivative, Substitution]
 status: 已入库
 ---
 

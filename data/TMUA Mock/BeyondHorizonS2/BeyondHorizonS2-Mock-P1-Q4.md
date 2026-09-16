@@ -7,9 +7,9 @@ year:
 number: Q4
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Calculus, Function]
+subtopics: [Differentiation Application, Algebraic Functions]
+tags: [Fractional-Indices, Sign-Analysis, Monotonicity]
 status: 已入库
 ---
 

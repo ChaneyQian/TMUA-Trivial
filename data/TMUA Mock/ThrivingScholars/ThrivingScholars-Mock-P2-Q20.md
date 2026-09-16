@@ -7,9 +7,9 @@ year:
 number: Q20
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: [待补答案]
+topics: [Miscellaneous Pure]
+subtopics: [Inequalities]
+tags: [Sign-Diagram, Parity, Perfect-Square, 待补答案]
 status: 已入库
 ---
 

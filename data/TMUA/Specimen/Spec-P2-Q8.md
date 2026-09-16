@@ -7,10 +7,10 @@ year:
 number: Q8
 section: Reasoning
 difficulty: 0
-topics: []
-subtopics: []
-tags:
-  - specimen
+topics: [Logic and Proof, Number Theory]
+subtopics: [Logic, Divisibility]
+tags: [Quantifiers, Counterexample, Consecutive-Integers]
+  - Specimen
 status: 已入库
 ---
 
@@ -48,6 +48,7 @@ $$
 ### AI备注
 
 
+ℹ️ 2026-09-16 小 tag Iff → Quantifiers：题问命题对哪些 n 成立，属量词/对哪些值成立一类（同 22-P2-Q9、22-P2-Q13），不是充要。
 ## 答案
 C
 

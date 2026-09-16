@@ -7,9 +7,9 @@ year:
 number: Q16
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Probability]
+subtopics: [Elementary Probability]
+tags: [Exchangeability, Random-Permutation, Combinations]
 status: 已入库
 ---
 

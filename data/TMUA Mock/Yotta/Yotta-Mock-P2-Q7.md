@@ -7,9 +7,9 @@ year:
 number: Q7
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Geometry, Number Theory]
+subtopics: [Euclid Geometry, Divisibility]
+tags: [Regular-Polygon, Central-Angle, LCM]
 status: 已入库
 ---
 

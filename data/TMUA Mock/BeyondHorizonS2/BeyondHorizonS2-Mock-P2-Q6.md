@@ -7,9 +7,9 @@ year:
 number: Q6
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Logic and Proof, Miscellaneous Pure]
+subtopics: [Logic, Proof, Combinatorics]
+tags: [Truth-Value-List, Deduction, Double-Counting]
 status: 已入库
 ---
 
@@ -25,7 +25,8 @@ $$\mathbf{D} \quad \text{nothing can be said about the sizes of the committees}$
 ### 我的备注
 
 ### AI备注
-
+- **键对拍（2026-09-11，键源 tmua.fyi）**：站上写 **E**，但本题只有 A–D 四个选项，是站方数据错位。库记 **B** 不动：
+  7 人 7 委员会、两两恰共一人、每人恰在 3 个——这是 Fano 平面，每个委员会恰 3 人。
 
 ## 答案
 B

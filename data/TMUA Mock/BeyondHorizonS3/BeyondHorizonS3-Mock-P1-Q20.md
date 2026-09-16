@@ -7,9 +7,9 @@ year:
 number: Q20
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Algebra (Basic)]
+subtopics: [Algebra Manipulation]
+tags: [Difference-of-Two-Squares, Telescoping, Geometric-Series, Powers-of-Two]
 status: 已入库
 ---
 

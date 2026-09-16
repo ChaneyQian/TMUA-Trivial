@@ -7,9 +7,9 @@ year:
 number: Q10
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Probability]
+subtopics: [Elementary Probability]
+tags: [Penney-Game, Coin-Flips, Pattern-Matching]
 status: 已入库
 ---
 

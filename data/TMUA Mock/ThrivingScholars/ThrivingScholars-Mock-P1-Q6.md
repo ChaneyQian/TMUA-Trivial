@@ -7,9 +7,9 @@ year:
 number: Q6
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: [待补答案]
+topics: [Function, Polynomial]
+subtopics: [Absolute Value Functions, Solution of Equations]
+tags: [Case-Split, Root-Counting, 待补答案]
 status: 已入库
 ---
 

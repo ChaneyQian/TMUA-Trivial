@@ -7,9 +7,9 @@ year:
 number: Q19
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Trigonometry, Geometry]
+subtopics: [Sine and Cosine Rule, Coordinate Geometry]
+tags: [Cosine-Rule, Concentric-Circles, Exact-Values]
 status: 已入库
 ---
 

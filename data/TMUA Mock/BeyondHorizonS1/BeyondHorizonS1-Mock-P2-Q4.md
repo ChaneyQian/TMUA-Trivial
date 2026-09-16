@@ -7,9 +7,9 @@ year:
 number: Q4
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Logic and Proof, Miscellaneous Pure]
+subtopics: [Logic, Proof, Graph Theory]
+tags: [Truth-Value-List, Counterexample, Proof-by-Contradiction, Handshake-Lemma, Parity]
 status: 已入库
 ---
 

@@ -7,9 +7,9 @@ year:
 number: Q19
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Function]
+subtopics: [Exponentials and Logarithms]
+tags: [Domain-Restriction, Nested-Functions, Log-Inequality]
 status: 已入库
 ---
 

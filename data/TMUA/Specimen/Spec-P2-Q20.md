@@ -7,10 +7,10 @@ year:
 number: Q20
 section: Reasoning
 difficulty: 0
-topics: []
-subtopics: []
-tags:
-  - specimen
+topics: [Logic and Proof]
+subtopics: [Logic]
+tags: [Truth-Value-Puzzle, Proof-by-Cases, Truth-Tellers-and-Liars, Self-Reference, Parity]
+  - Specimen
 status: 已入库
 ---
 

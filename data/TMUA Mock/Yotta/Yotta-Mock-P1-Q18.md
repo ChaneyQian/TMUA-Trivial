@@ -7,9 +7,9 @@ year:
 number: Q18
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Miscellaneous Pure]
+subtopics: [Combinatorics]
+tags: [Gap-Method, Binomial-Coefficients, Non-Adjacent-Selection]
 status: 已入库
 ---
 

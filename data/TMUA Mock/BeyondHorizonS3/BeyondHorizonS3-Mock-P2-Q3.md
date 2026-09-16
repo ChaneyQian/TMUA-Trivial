@@ -7,9 +7,9 @@ year:
 number: Q3
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Polynomial]
+subtopics: [Polynomials]
+tags: [Degree, Leading-Term, Cancellation-Check]
 status: 已入库
 ---
 

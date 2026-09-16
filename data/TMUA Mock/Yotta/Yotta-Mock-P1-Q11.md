@@ -7,9 +7,9 @@ year:
 number: Q11
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Function, Sequences and Series]
+subtopics: [Inverse Functions, AP GP]
+tags: [Geometric-Series, Range, Work-Rate]
 status: 已入库
 ---
 

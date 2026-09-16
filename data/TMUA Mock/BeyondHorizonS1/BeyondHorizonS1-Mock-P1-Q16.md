@@ -7,9 +7,9 @@ year:
 number: Q16
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Miscellaneous Pure, Algebra (Basic)]
+subtopics: [Inequalities, Surds and indices]
+tags: [Case-Split, Domain-Restriction, Squaring-Both-Sides]
 status: 已入库
 ---
 

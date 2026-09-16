@@ -7,9 +7,9 @@ year:
 number: Q2
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Number Theory]
+subtopics: [Modular Arithmetic and Congruences]
+tags: [Units-Digit, Place-Value]
 status: 已入库
 ---
 

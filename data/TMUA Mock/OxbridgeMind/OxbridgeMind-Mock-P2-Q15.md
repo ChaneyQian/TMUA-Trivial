@@ -1,0 +1,36 @@
+---
+database: TMUA
+qid: 20132101231215
+id: OxbridgeMind-Mock-P2-Q15
+paper: TMUA Mock
+year:
+number: Q15
+section: Multiple Choice
+difficulty: 0
+topics: [Polynomial]
+subtopics: [Solution of Equations, Factor and Remainder Theorem]
+tags: [Factor-Theorem, Root-Counting, Quartic-Factorisation]
+status: 待复核
+---
+
+## 题目
+How many real roots does the equation have: $$x^4-4x^3+5x^2-8x+6=0$$
+
+$$ \mathbf{A} \quad 0 $$
+$$ \mathbf{B} \quad 1 $$
+$$ \mathbf{C} \quad 2 $$
+$$ \mathbf{D} \quad 3 $$
+$$ \mathbf{E} \quad 4 $$
+
+## 备注
+
+### 我的备注
+
+### AI备注
+来源：tmua.io 社区卷 `community__oxbridgemind__p2`，作者 **OxbridgeMind**（站点标题：OxbridgeMind TMUA Paper 2）。
+第三方录入的第三方模拟卷，**非官方真题，未经原卷核对**；站点不提供解析，`## 解析` 待补。
+
+## 答案
+C
+
+## 解析

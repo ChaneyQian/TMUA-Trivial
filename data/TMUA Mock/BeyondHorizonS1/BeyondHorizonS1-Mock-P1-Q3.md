@@ -7,9 +7,9 @@ year:
 number: Q3
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Function, Miscellaneous Pure]
+subtopics: [Absolute Value Functions, Inequalities]
+tags: [Case-Split, Factorising, Sign-Analysis]
 status: 已入库
 ---
 

@@ -7,9 +7,9 @@ year:
 number: Q3
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Miscellaneous Pure]
+subtopics: [Inclusion-Exclusion Principle]
+tags: [Venn-Diagram, Percentage, Set-Cardinality]
 status: 已入库
 ---
 
@@ -21,7 +21,6 @@ $$\mathbf{C} \quad 10$$
 $$\mathbf{D} \quad 20$$
 $$\mathbf{E} \quad 30$$
 $$\mathbf{F} \quad 40$$
-TODO(待校对): 原卷此题最后三个选项的字母全部印成 (D)，即 (A)(B)(C)(D)(D)(D)；此处按顺序重标为 D/E/F，选项内容 20/30/40 未改动。
 
 ## 备注
 

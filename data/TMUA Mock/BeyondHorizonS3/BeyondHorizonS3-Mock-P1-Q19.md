@@ -7,9 +7,9 @@ year:
 number: Q19
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Sequences and Series]
+subtopics: [Binomial Coefficients, Binomial Theorem]
+tags: [Absorption-Identity, Sum-of-Binomial-Coefficients]
 status: 已入库
 ---
 

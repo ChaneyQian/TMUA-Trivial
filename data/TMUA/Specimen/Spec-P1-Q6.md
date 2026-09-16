@@ -10,7 +10,7 @@ difficulty: 0
 topics: []
 subtopics: []
 tags:
-  - specimen
+  - Specimen
 status: 已入库
 ---
 
@@ -45,6 +45,7 @@ $$
 ### AI备注
 
 
+ℹ️ 2026-08-15 核 官方 Specimen Paper 1 Solutions（Version 1.1, Nov 2020） p8：末句「the product of the roots is the constant, which is 7」原册即印 7（c²−6c+8 的常数项是 8）。转写忠实，属原册错误，未改。
 ## 答案
 D
 

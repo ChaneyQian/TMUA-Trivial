@@ -7,9 +7,9 @@ year:
 number: Q8
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Trigonometry, Function]
+subtopics: [Trigonometry, Functions]
+tags: [Composite-Function, Periodicity, Monotonicity, Range]
 status: 已入库
 ---
 

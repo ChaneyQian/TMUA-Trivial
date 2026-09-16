@@ -7,9 +7,9 @@ year:
 number: Q11
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Algebra (Basic)]
+subtopics: [Algebra Manipulation]
+tags: [Clear-Denominators, Completing-the-Square, Perfect-Square]
 status: 已入库
 ---
 

@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 5.5
 topics: [Logic and Proof, Number Theory]
 subtopics: [Proof, Divisibility]
-tags: [Logic-Counterexample]
+tags: [Counterexample, If-Then]
 status: 已入库
 ---
 

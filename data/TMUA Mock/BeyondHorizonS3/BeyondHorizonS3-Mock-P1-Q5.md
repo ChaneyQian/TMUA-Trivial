@@ -7,9 +7,9 @@ year:
 number: Q5
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Function, Trigonometry]
+subtopics: [Exponentials and Logarithms, Trigonometry]
+tags: [Change-of-Base, Comparing-Values, Exact-Values]
 status: 已入库
 ---
 

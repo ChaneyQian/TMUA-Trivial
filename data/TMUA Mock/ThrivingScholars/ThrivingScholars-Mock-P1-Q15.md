@@ -7,9 +7,9 @@ year:
 number: Q15
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: [待补答案]
+topics: [Sequences and Series]
+subtopics: [Recurrence Relations]
+tags: [Reciprocal-Substitution, AP-GP, Closed-Form, 待补答案]
 status: 已入库
 ---
 

@@ -7,9 +7,9 @@ year:
 number: Q20
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Polynomial, Algebra (Basic)]
+subtopics: [Solution of Equations, Algebra Manipulation]
+tags: [Comparing-Coefficients, Telescoping-Coefficients, Fractional-Indices]
 status: 已入库
 ---
 

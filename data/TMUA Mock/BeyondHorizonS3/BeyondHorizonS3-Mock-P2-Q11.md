@@ -7,9 +7,9 @@ year:
 number: Q11
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Geometry]
+subtopics: [Coordinate Geometry]
+tags: [Locus, Tangency, Circle-Geometry]
 status: 已入库
 ---
 

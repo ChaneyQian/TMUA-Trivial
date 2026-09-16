@@ -7,9 +7,9 @@ year:
 number: Q17
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Polynomial]
+subtopics: [Vieta's Formulas]
+tags: [Sum-and-Product, Difference-of-Roots, Factorising]
 status: 已入库
 ---
 

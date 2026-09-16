@@ -7,9 +7,9 @@ year:
 number: Q19
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: [待补答案, 原卷缺陷]
+topics: [Logic and Proof, Function]
+subtopics: [Logic, Exponentials and Logarithms]
+tags: [Sufficient-Condition, Counterexample, Vacuous-Truth, 待补答案, 原卷缺陷]
 status: 已入库
 ---
 
@@ -36,9 +36,11 @@ $$\mathbf{F} \quad \text{is not implied by any of the above conditions}$$
   另一方面，出题人显然是想让 F 当答案（A–D 均有明确反例），
   (E) 里的 $a \leq 0$ 极可能是排印错误。
   两轮独立解题分别给出 E 与 F。`ANSWER` 记 E（严格逻辑下可辩护的那个），但不构成定论。
+- **键对拍（2026-09-11，键源 tmua.fyi）**：键给 **C**（$a\ge1,\ b\ge1,\ d\ge c \Rightarrow a^c\le b^d$）。**键错**：$a=3,b=1,c=1,d=2$ 满足前件而 $3\le1$ 假。
+  `ANSWER` 改记 C（意图项）。E 空真 / F 的分歧仍在，且现在多了一层「键本身不成立」，标签保留。
 
 ## 答案
-E
+C
 
 ## 解析
 Each option asserts an implication of the form "condition $\implies a^c \leq b^d$", so to reject an option it is enough to find numbers meeting the condition for which the conclusion fails.

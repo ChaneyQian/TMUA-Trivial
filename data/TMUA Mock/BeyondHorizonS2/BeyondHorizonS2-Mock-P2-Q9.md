@@ -7,9 +7,9 @@ year:
 number: Q9
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Logic and Proof, Function]
+subtopics: [Logic, Exponentials and Logarithms]
+tags: [Truth-Value-List, If-Then, Log-Laws]
 status: 已入库
 ---
 

@@ -7,9 +7,9 @@ year:
 number: Q18
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Function, Geometry]
+subtopics: [Absolute Value Functions, Coordinate Geometry]
+tags: [Taxicab-Metric, Diagonals, Translation]
 status: 已入库
 ---
 

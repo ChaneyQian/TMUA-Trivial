@@ -7,9 +7,9 @@ year:
 number: Q10
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: [待补答案]
+topics: [Trigonometry]
+subtopics: [Sine and Cosine Rule]
+tags: [Pythagorean-Identity, Ratio, Integer-Solutions, 待补答案]
 status: 已入库
 ---
 

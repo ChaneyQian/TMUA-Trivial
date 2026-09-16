@@ -7,9 +7,9 @@ year:
 number: Q15
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Statistical Theory, Algebra (Basic)]
+subtopics: [Descriptive Statistics, Simultaneous Equations]
+tags: [Mean, Two-Variable-System, Word-Problem]
 status: 已入库
 ---
 

@@ -7,9 +7,9 @@ year:
 number: Q4
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Function]
+subtopics: [Functions]
+tags: [Graph-Transformations, Translation, Reflection, Stretch]
 status: 已入库
 ---
 

@@ -7,9 +7,9 @@ year:
 number: Q16
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Trigonometry, Function]
+subtopics: [Trigonometric Equations, Functions]
+tags: [Composite-Function, Range-of-Inner-Function, Periodicity, Solution-Count]
 status: 已入库
 ---
 

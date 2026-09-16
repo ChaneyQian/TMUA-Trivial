@@ -7,9 +7,9 @@ year:
 number: Q9
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Function, Trigonometry, Logic and Proof]
+subtopics: [Exponentials and Logarithms, Trigonometric Equations, Graphical Arguments]
+tags: [Domain-Restriction, Intersection-Count, Sign-Analysis]
 status: 已入库
 ---
 

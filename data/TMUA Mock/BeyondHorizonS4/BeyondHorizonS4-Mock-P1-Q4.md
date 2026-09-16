@@ -7,9 +7,9 @@ year:
 number: Q4
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Sequences and Series]
+subtopics: [Sequences and Series]
+tags: [Telescoping, Factorial]
 status: 已入库
 ---
 

@@ -7,9 +7,9 @@ year:
 number: Q5
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: [待补答案, 原卷缺陷]
+topics: [Logic and Proof]
+subtopics: [Logic]
+tags: [Truth-Value-Puzzle, If-Then, Self-Reference, 待补答案, 原卷缺陷]
 status: 已入库
 ---
 
@@ -36,10 +36,11 @@ $$\mathbf{E} \quad \text{None of us are liars}$$
   与「无人说谎」矛盾 → E 说谎；B 说谎；C 的「若 E 说谎则 D 说谎」在 E 说谎、D 诚实下为假 → C 说谎。）
   唯一自洽指派是 A 真、B 假、C 假、D 真、E 假，**A 与 D 都必然说真话**。
   `ANSWER` 记 D（唯一"仅凭自身陈述就锁死"的人，最可能是出题人本意），但 A 同样成立。
-
+- **键对拍（2026-09-11，键源 tmua.fyi）**：键给 **A**，库原记 D。真值指派唯一（A 真、B 假、C 假、D 真、E 假），**A 与 D 都被迫说真话**，
+  出题人取 A。`ANSWER` 改记 A（意图项），「单选却有两个必真者」的缺陷仍在。
 
 ## 答案
-D
+A
 
 ## 解析
 Take the usual convention that a truth-teller's statement is true and a liar's statement is false.

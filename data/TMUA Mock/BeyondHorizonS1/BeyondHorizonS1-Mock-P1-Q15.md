@@ -7,9 +7,9 @@ year:
 number: Q15
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Polynomial, Miscellaneous Pure]
+subtopics: [Solution of Equations, Inequalities]
+tags: [Discriminant, Quadratic-Inequality, Degenerate-Coefficient]
 status: 已入库
 ---
 

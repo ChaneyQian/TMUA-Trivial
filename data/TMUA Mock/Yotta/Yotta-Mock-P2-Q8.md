@@ -7,9 +7,9 @@ year:
 number: Q8
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Logic and Proof, Calculus]
+subtopics: [Proof, Integration]
+tags: [Counterexample, If-Then, Signed-Area]
 status: 已入库
 ---
 

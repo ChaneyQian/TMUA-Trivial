@@ -7,9 +7,9 @@ year:
 number: Q8
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Algebra (Basic), Miscellaneous Pure]
+subtopics: [Surds and indices, Estimation and Bounds]
+tags: [Rationalising-Denominator, Approximation]
 status: 已入库
 ---
 

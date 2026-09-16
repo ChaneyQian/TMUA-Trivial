@@ -7,9 +7,9 @@ year:
 number: Q10
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Algebra (Basic)]
+subtopics: [Surds and indices]
+tags: [Denesting-Surds, Square-Root-Sign, Perfect-Square]
 status: 已入库
 ---
 

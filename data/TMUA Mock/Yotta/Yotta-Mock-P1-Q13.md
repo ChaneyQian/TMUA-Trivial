@@ -7,9 +7,9 @@ year:
 number: Q13
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Number Theory]
+subtopics: [Arithmetic Function, Divisibility]
+tags: [Sum-of-Divisors, Prime-Factorisation, Divisor-Pairing]
 status: 已入库
 ---
 

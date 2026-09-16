@@ -7,9 +7,9 @@ year:
 number: Q13
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: [待补答案]
+topics: [Calculus, Logic and Proof]
+subtopics: [Integration, Graphical Arguments]
+tags: [Area-Under-Curve, Semicircle-Area, 待补答案]
 status: 已入库
 ---
 

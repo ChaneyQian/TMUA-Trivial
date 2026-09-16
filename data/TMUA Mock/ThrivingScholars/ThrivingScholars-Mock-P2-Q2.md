@@ -7,9 +7,9 @@ year:
 number: Q2
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: [待补答案]
+topics: [Polynomial]
+subtopics: [Polynomials, Factor and Remainder Theorem]
+tags: [Minimal-Degree, Factored-Form, 待补答案]
 status: 已入库
 ---
 

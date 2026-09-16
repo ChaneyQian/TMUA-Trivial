@@ -7,9 +7,9 @@ year:
 number: Q2
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Algebra (Basic)]
+subtopics: [Algebra Manipulation]
+tags: [Word-Problem, Inverse-Proportion, Rate]
 status: 已入库
 ---
 

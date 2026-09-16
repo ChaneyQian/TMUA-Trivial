@@ -7,9 +7,9 @@ year:
 number: Q13
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Geometry]
+subtopics: [Coordinate Geometry]
+tags: [Tangency, Perpendicular-Gradients, Equations-of-Circles]
 status: 已入库
 ---
 

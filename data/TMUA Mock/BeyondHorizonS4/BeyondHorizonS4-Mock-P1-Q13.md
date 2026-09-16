@@ -7,9 +7,9 @@ year:
 number: Q13
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Trigonometry, Logic and Proof]
+subtopics: [Trigonometric Equations, Graphical Arguments]
+tags: [Intersection-Count, Growing-Amplitude, Sign-Change]
 status: 已入库
 ---
 

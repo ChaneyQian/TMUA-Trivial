@@ -7,9 +7,9 @@ year:
 number: Q11
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Calculus, Miscellaneous Pure]
+subtopics: [Optimization, Misc Pure]
+tags: [Inscribed-Rectangle, Geometry-to-Equation, Symmetry]
 status: 已入库
 ---
 

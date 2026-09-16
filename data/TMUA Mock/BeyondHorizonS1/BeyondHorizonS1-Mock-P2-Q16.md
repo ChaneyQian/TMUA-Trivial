@@ -7,9 +7,9 @@ year:
 number: Q16
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Number Theory]
+subtopics: [Divisibility]
+tags: [Perfect-Square, Integer-Solutions, Divisor-Search]
 status: 已入库
 ---
 

@@ -7,9 +7,9 @@ year:
 number: Q11
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: [待补答案]
+topics: [Function, Sequences and Series]
+subtopics: [Exponentials and Logarithms, Recurrence Relations]
+tags: [Change-of-Base, Log-Laws, Telescoping, 待补答案]
 status: 已入库
 ---
 

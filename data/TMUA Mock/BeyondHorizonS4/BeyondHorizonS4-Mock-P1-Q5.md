@@ -7,9 +7,9 @@ year:
 number: Q5
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Algebra (Basic), Geometry]
+subtopics: [Simultaneous Equations, Conic Sections]
+tags: [Substitution, Intersection-Count, Tangency]
 status: 已入库
 ---
 

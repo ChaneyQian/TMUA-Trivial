@@ -7,9 +7,9 @@ year:
 number: Q10
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Probability, Sequences and Series]
+subtopics: [Elementary Probability, Recurrence Relations]
+tags: [Expected-Value, First-Step-Analysis, Geometric-Series]
 status: 已入库
 ---
 

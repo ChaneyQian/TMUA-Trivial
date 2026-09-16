@@ -7,9 +7,9 @@ year:
 number: Q18
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Miscellaneous Pure, Geometry]
+subtopics: [Combinatorics, Solid Geometry]
+tags: [Lattice-Points, Case-Split, Counting, Cube]
 status: 已入库
 ---
 

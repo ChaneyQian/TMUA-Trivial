@@ -7,9 +7,9 @@ year:
 number: Q12
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Calculus]
+subtopics: [Integration]
+tags: [Fractional-Indices, Definite-Integral, Rationalising-Denominator]
 status: 已入库
 ---
 

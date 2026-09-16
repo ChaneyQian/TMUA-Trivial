@@ -7,9 +7,9 @@ year:
 number: Q17
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: [待补答案, 原卷缺陷]
+topics: [Miscellaneous Pure]
+subtopics: [Combinatorics]
+tags: [Exhaustive-Enumeration, Bracketing, 原卷缺陷, 待补答案]
 status: 已入库
 ---
 
@@ -25,7 +25,6 @@ $$\mathbf{D} \quad 10$$
 $$\mathbf{E} \quad 13$$
 $$\mathbf{F} \quad 19$$
 $$\mathbf{G} \quad 25$$
-TODO(待校对): 穷举计算得到的答案是 20，不在任何选项中；F（19）只是数值上最接近。疑为原卷答案键有误或计数口径未说清，需统筹者裁定。
 
 ## 备注
 
@@ -38,10 +37,11 @@ TODO(待校对): 穷举计算得到的答案是 20，不在任何选项中；F�
   而选项集合是 $\{4,5,8,10,13,19,25\}$，无 20。
   另试三种口径均不命中：全括号表达式 36、模交换律 18、模交换+结合律 16。
   `ANSWER` 记 F（19，数值最近），**不是正确答案**。解析里已列出全部 20 个表达式便于对拍。
-
+- **键对拍（2026-09-11，键源 tmua.fyi）**：键给 **D**（10 种）。此前三种口径穷举得 20 / 36 / 18 / 16，没有一种得 10，
+  说明出题人的计数口径与题面「order of operations does matter」的示例仍对不上。`ANSWER` 改记 D（意图项），标签保留。
 
 ## 答案
-F
+D
 
 ## 解析
 There are five ways to bracket four operands and four choices for each of the three operators, giving $5 \times 4^3 = 320$ candidate expressions. Discarding those that divide by zero and evaluating the remainder exactly as fractions, $36$ of the fully bracketed expressions equal $16$. Collapsing each of those to the string one would actually write down under ordinary precedence rules, which is the convention the question fixes when it counts $4 * (4 - 4/4)$ and $(4 - 4/4) * 4$ as two generations, leaves $20$ distinct generations, namely $4+4+4+4$, $4*4+4-4$, $4*4-4+4$, $4+4*4-4$, $4-4+4*4$, $4*4-(4-4)$, $4-(4-4*4)$, $(4+4-4)*4$, $(4-4+4)*4$, $(4-(4-4))*4$, $4*(4+4-4)$, $4*(4-4+4)$, $4*(4-(4-4))$, $4*4*4/4$, $4*4/4*4$, $4/4*4*4$, $4*4/(4/4)$, $4/(4/4)*4$, $4/(4/4/4)$ and $4/(4/(4*4))$. The count $20$ matches none of the seven printed options; the nearest is F at $19$, so F is recorded only provisionally and this item is flagged as defective.

@@ -7,9 +7,9 @@ year:
 number: Q14
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Function, Calculus]
+subtopics: [Floor, Ceiling and Fractional Part Functions, Integration]
+tags: [Step-Function, Piecewise-Integration, Definite-Integral]
 status: 已入库
 ---
 

@@ -7,9 +7,9 @@ year:
 number: Q16
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Statistical Theory]
+subtopics: [Descriptive Statistics]
+tags: [Extremal-Construction, Median, Unique-Mode, Range]
 status: 已入库
 ---
 

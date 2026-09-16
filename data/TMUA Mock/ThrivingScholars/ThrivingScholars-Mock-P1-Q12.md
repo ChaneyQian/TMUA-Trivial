@@ -7,9 +7,9 @@ year:
 number: Q12
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: [待补答案]
+topics: [Calculus, Logic and Proof]
+subtopics: [Integration, Graphical Arguments]
+tags: [Fundamental-Theorem-of-Calculus, Signed-Area, 待补答案]
 status: 已入库
 ---
 

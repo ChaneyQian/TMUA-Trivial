@@ -7,9 +7,9 @@ year:
 number: Q13
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Function]
+subtopics: [Floor, Ceiling and Fractional Part Functions, Iterated Functions]
+tags: [Perfect-Square, Iteration, Step-Count]
 status: 已入库
 ---
 

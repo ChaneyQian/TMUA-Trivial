@@ -7,9 +7,9 @@ year:
 number: Q3
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Function]
+subtopics: [Algebraic Functions]
+tags: [Sign-Analysis, Comparing-Magnitudes, Reciprocal-Function]
 status: 已入库
 ---
 

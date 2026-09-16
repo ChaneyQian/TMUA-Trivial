@@ -7,9 +7,9 @@ year:
 number: Q4
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Sequences and Series, Polynomial]
+subtopics: [AP GP, Solution of Equations]
+tags: [Sum-to-Infinity, Geometric-Series, Extraneous-Roots, Binomial-Expansion]
 status: 已入库
 ---
 

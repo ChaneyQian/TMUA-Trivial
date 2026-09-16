@@ -7,9 +7,9 @@ year:
 number: Q1
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Polynomial]
+subtopics: [Factor and Remainder Theorem]
+tags: [Factor-Theorem, Polynomial-Division, Grouping]
 status: 已入库
 ---
 

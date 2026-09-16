@@ -7,9 +7,9 @@ year:
 number: Q18
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: [待补答案]
+topics: [Trigonometry, Logic and Proof]
+subtopics: [Trigonometric Equations, Graphical Arguments]
+tags: [Solution-Counting, Intersection-Count, 待补答案]
 status: 已入库
 ---
 

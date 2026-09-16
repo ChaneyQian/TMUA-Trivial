@@ -7,9 +7,9 @@ year:
 number: Q10
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Sequences and Series]
+subtopics: [Binomial Theorem]
+tags: [Coefficient-Extraction, Integer-Constraint]
 status: 已入库
 ---
 

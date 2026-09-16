@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 5.5
 topics: [Logic and Proof, Algebra (Basic)]
 subtopics: [Proof, Algebra Manipulation]
-tags: [Logic-Deduction, General-Algebra]
+tags: [Deduction, Error-Spotting, Extraneous-Root, General-Algebra, Surd-Manipulation]
 status: 已入库
 ---
 

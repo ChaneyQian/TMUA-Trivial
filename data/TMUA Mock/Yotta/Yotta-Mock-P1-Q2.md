@@ -7,9 +7,9 @@ year:
 number: Q2
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Polynomial]
+subtopics: [Factor and Remainder Theorem]
+tags: [Cubic, Factored-Form, Auxiliary-Function]
 status: 已入库
 ---
 

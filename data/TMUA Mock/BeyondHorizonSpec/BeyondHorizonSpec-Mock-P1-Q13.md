@@ -7,9 +7,9 @@ year:
 number: Q13
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Trigonometry]
+subtopics: [Trigonometric Equations, Trigonometric Identities]
+tags: [Solution-Count, Interval-Scaling, Shift-Identity]
 status: 已入库
 ---
 

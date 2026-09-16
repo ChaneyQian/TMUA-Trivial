@@ -7,9 +7,9 @@ year:
 number: Q13
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Geometry]
+subtopics: [Solid Geometry]
+tags: [Net-Unfolding, Pythagoras, Shortest-Path]
 status: 已入库
 ---
 

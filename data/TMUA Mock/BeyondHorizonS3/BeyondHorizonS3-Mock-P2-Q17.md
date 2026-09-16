@@ -7,9 +7,9 @@ year:
 number: Q17
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Miscellaneous Pure, Polynomial]
+subtopics: [Inequalities, Solution of Equations]
+tags: [Quadratic-Inequality, Parameter-Range, Root-Ordering]
 status: 已入库
 ---
 

@@ -7,9 +7,9 @@ year:
 number: Q20
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: [待补答案]
+topics: [Geometry, Sequences and Series]
+subtopics: [Euclid Geometry, AP GP]
+tags: [Arithmetic-Series, Circle-Area, 待补答案]
 status: 已入库
 ---
 

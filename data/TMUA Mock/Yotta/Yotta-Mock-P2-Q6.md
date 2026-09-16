@@ -7,9 +7,9 @@ year:
 number: Q6
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Logic and Proof, Calculus]
+subtopics: [Logic, Differentiation Application]
+tags: [Necessary-Condition, Counterexample, Stationary-Points, Point-of-Inflection]
 status: 已入库
 ---
 

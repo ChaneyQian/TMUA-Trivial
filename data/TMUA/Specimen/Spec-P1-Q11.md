@@ -10,7 +10,7 @@ difficulty: 0
 topics: []
 subtopics: []
 tags:
-  - specimen
+  - Specimen
 status: 已入库
 ---
 
@@ -43,13 +43,14 @@ $$
 ### AI备注
 
 
+⚠️ 2026-08-15 解析转写修正：「The first gives x log₁₀2 = log₁₀3」的 x 被 OCR 成冒号，已按 官方 Specimen Paper 1 Solutions（Version 1.1, Nov 2020） p13 改回。另：同页相加那一行原册即印成 log₁₀15/log₁₀2（应为 log₁₀5）且缺右括号 log₁₀(3×5，属原册错误，未改。
 ## 答案
 E
 
 ## 解析
 Writing $y = 2 ^ { x }$ , the equation becomes $y ^ { 2 } - 8 y + 1 5 = 0$ , which factorises to give $( y - 3 ) ( y - 5 ) = 0$ Thus $y = 3$ or $y = 5 ,$ , so $2 ^ { x } = 3$ or $2 ^ { x } = 5$
 
-The given options all use logarithms to base 10, so we will take logarithms of these two equations to base 10. The first gives $: \log _ { 1 0 } 2 = \log _ { 1 0 } 3$ , so $x = { \frac { \log _ { 1 0 } 3 } { \log _ { 1 0 } 2 } } .$ . Likewise, the second equation gives $x = { \frac { \log _ { 1 0 } 5 } { \log _ { 1 0 } 2 } }$ . Finally, we can add these to obtain
+The given options all use logarithms to base 10, so we will take logarithms of these two equations to base 10. The first gives $x \log _ { 1 0 } 2 = \log _ { 1 0 } 3$ , so $x = { \frac { \log _ { 1 0 } 3 } { \log _ { 1 0 } 2 } } .$ . Likewise, the second equation gives $x = { \frac { \log _ { 1 0 } 5 } { \log _ { 1 0 } 2 } }$ . Finally, we can add these to obtain
 
 $$
 \frac {\log_ {1 0} 3}{\log_ {1 0} 2} + \frac {\log_ {1 0} 1 5}{\log_ {1 0} 2} = \frac {\log_ {1 0} (3 \times 5}{\log_ {1 0} 2} = \frac {\log_ {1 0} 1 5}{\log_ {1 0} 2}

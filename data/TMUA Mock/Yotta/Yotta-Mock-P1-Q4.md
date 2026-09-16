@@ -7,9 +7,9 @@ year:
 number: Q4
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Algebra (Basic), Number Theory]
+subtopics: [Algebra Manipulation, Number Theory]
+tags: [SFFT, Prime-Factorisation, Symmetric-Expression]
 status: 已入库
 ---
 

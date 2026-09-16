@@ -7,9 +7,9 @@ year:
 number: Q16
 section: Multiple Choice
 difficulty: 7.5
-topics: [Function]
-subtopics: [Functions]
-tags: [Logic-Equivalence, Transformation-of-Graphs]
+topics: [Logic and Proof, Function]
+subtopics: [Logic, Functions]
+tags: [Iff, Transformation-of-Graphs]
 status: 已入库
 ---
 
@@ -38,6 +38,7 @@ $$ \mathbf{F} \quad f(x) = f(6 - x) \text{ for all } x $$
 ### AI备注
 
 
+ℹ️ 2026-09-14 按 owner 裁定补挂 Logic（命题列表/充要题一律挂，不限 3 tag）。
 ## 答案
 C
 

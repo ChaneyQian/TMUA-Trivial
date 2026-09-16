@@ -7,9 +7,9 @@ year:
 number: Q13
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Logic and Proof, Function, Calculus]
+subtopics: [Logic, Absolute Value Functions, Differentiation]
+tags: [Truth-Value-List, Differentiability, Limit-Definition]
 status: 已入库
 ---
 

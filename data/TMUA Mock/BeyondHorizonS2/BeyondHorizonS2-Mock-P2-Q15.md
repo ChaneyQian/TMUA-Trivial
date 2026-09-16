@@ -7,9 +7,9 @@ year:
 number: Q15
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Geometry]
+subtopics: [Vectors]
+tags: [Dot-Product, Cauchy-Schwarz, Range]
 status: 已入库
 ---
 

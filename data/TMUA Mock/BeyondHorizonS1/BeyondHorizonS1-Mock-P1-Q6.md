@@ -7,9 +7,9 @@ year:
 number: Q6
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Number Theory]
+subtopics: [Diophantine Equations]
+tags: [Completing-the-Square, Sum-of-Two-Squares, Integer-Solutions]
 status: 已入库
 ---
 

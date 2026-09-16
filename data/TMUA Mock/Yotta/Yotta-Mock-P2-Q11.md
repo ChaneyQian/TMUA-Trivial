@@ -7,9 +7,9 @@ year:
 number: Q11
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Number Theory, Logic and Proof]
+subtopics: [Modular Arithmetic and Congruences, Logic]
+tags: [Iff, Multiplicative-Order, Repunit, Divisibility]
 status: 已入库
 ---
 

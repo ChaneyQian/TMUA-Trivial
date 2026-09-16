@@ -7,9 +7,9 @@ year:
 number: Q4
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Miscellaneous Pure]
+subtopics: [Combinatorics, Estimation and Bounds]
+tags: [Gap-Argument, Extremal-Construction, Block-Construction]
 status: 已入库
 ---
 

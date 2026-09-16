@@ -7,9 +7,9 @@ year:
 number: Q17
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Geometry]
+subtopics: [Coordinate Geometry]
+tags: [Tangent-Circles, Distance-Between-Centres, Equations-of-Circles]
 status: 已入库
 ---
 

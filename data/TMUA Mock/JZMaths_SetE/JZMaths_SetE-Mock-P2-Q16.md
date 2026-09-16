@@ -8,8 +8,8 @@ number: Q16
 section: Multiple Choice
 difficulty: 7.5
 topics: [Logic and Proof, Miscellaneous Pure, Calculus]
-subtopics: [Logic, Numerical Methods, Differentiation Application, Integral Identity]
-tags: [Logic-Deduction, Integration, Differentiation]
+subtopics: [Logic, Proof, Numerical Methods, Differentiation Application, Integral Identity]
+tags: [Truth-Value-List, Counterexample, Integration, Differentiation]
 status: 已入库
 ---
 
@@ -38,6 +38,7 @@ $$ \mathbf{H} \quad \text{all of them} $$
 ### AI备注
 
 
+ℹ️ 2026-09-14 Fable 复核：按 §2.4ter 并挂线调整 Proof。
 ## 答案
 A
 

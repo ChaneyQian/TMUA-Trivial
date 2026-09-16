@@ -7,9 +7,9 @@ year:
 number: Q1
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Number Theory]
+subtopics: [Divisibility]
+tags: [Square-Both-Sides, Multiples, Counting-Solutions]
 status: 已入库
 ---
 

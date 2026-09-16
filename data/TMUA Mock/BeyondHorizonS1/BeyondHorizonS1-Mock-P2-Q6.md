@@ -7,9 +7,9 @@ year:
 number: Q6
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Logic and Proof, Number Theory]
+subtopics: [Logic, Proof, Modular Arithmetic and Congruences]
+tags: [Truth-Value-List, Deduction, Parity, Mod-4-Casework]
 status: 已入库
 ---
 

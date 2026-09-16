@@ -7,9 +7,9 @@ year:
 number: Q2
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Logic and Proof, Miscellaneous Pure]
+subtopics: [Logic, Inequalities]
+tags: [Iff, Quantifiers, Monotonicity, Boundary-Case]
 status: 已入库
 ---
 

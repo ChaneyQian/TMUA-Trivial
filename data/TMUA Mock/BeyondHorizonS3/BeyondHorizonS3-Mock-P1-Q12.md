@@ -7,9 +7,9 @@ year:
 number: Q12
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Miscellaneous Pure, Function]
+subtopics: [Numerical Methods, Exponentials and Logarithms]
+tags: [Trapezium-Rule, Log-Laws]
 status: 已入库
 ---
 

@@ -7,9 +7,9 @@ year:
 number: Q6
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Function, Algebra (Basic)]
+subtopics: [Functions, Algebra Manipulation]
+tags: [Completing-the-Square, Composite-Function, Range]
 status: 已入库
 ---
 

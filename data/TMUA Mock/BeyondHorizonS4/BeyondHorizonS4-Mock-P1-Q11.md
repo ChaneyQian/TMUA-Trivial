@@ -7,9 +7,9 @@ year:
 number: Q11
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: [待补答案, 原卷缺陷]
+topics: [Calculus]
+subtopics: [Differentiation Application]
+tags: [Monotonicity, Sign-Table, Quadratic-Inequality, 待补答案, 原卷缺陷]
 status: 已入库
 ---
 
@@ -38,13 +38,13 @@ $$\mathbf{G} \quad -3 \leq x \leq -2$$
   而选项里的分界点全是 $-2,-3,-4$。若 $f=4x^{2}+24x+5$、$g=x^{3}+9x^{2}+24x-10$
   （即 $f'$ 零点 $-3$、$g'$ 零点 $-4$ 与 $-2$），答案恰为选项 E，形状完全对上。
   按「以原卷为准」题面未改，`ANSWER` 记 B（只取主分支），**不是正确答案**。
-
+- **键对拍（2026-09-11，键源 tmua.fyi）**：键给 **A**（$x\ge-2$）。**键错**：$x=0$ 时 $f'(0)=10>0$、$g'(0)=8>0$，两函数同增，$0$ 不可能在解集里。
+  按题面系数解集为 $x\le-2$ 或 $-\frac43\le x\le-\frac54$，按「系数应为 24」的猜测解集为 E；键 A 两者都不是。`ANSWER` 改记 A（意图项），标签保留。
 
 ## 答案
-B
+A
 
 ## 解析
 Here $f'(x) = 8x + 10$, so $f$ is decreasing for $x < -\frac{5}{4}$ and increasing for $x > -\frac{5}{4}$. Also $g'(x) = 3x^2 + 10x + 8 = (3x + 4)(x + 2)$, so $g$ is increasing for $x < -2$ and for $x > -\frac{4}{3}$, and decreasing on $-2 < x < -\frac{4}{3}$. Because $-\frac{4}{3} < -\frac{5}{4}$, the case "$f$ increasing and $g$ decreasing" has empty solution set, and the case "$f$ decreasing and $g$ increasing" gives
 $$x \leq -2 \quad \text{or} \quad -\tfrac{4}{3} \leq x \leq -\tfrac{5}{4}.$$
 That set is not among the listed options; its main branch $x \leq -2$ is option B, which is what is recorded here pending review. The answer is B.
-TODO(待校对): Q11 自解结果为 $x \leq -2$ 或 $-4/3 \leq x \leq -5/4$，与 A–G 任何一项都不吻合。选项中反复出现的 $-2, -3, -4$ 提示原卷题干系数可能有误：若 $f'$ 的零点在 $-3$、$g'$ 的零点在 $-4$ 与 $-2$，答案恰好是 E。此处暂记 ANSWER: B（只取主分支），请统筹者裁定。

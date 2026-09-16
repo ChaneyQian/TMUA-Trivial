@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 7
 topics: [Logic and Proof]
 subtopics: [Logic]
-tags: [Logic-Deduction, Logic-Sufficiency, Logic-Equivalence]
+tags: [Exactly-k-True, Contrapositive, Deduction]
 status: 已入库
 ---
 

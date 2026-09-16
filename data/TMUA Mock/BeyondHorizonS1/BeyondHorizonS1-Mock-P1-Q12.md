@@ -7,9 +7,9 @@ year:
 number: Q12
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Calculus]
+subtopics: [Integration, Optimization]
+tags: [Signed-Area, Sign-Analysis, Definite-Integral]
 status: 已入库
 ---
 

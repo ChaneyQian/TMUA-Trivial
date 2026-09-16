@@ -7,9 +7,9 @@ year:
 number: Q9
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Sequences and Series]
+subtopics: [Binomial Theorem]
+tags: [Multinomial-Theorem, Coefficient-Extraction, Case-Split]
 status: 已入库
 ---
 

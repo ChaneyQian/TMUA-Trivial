@@ -7,9 +7,9 @@ year:
 number: Q19
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Probability, Miscellaneous Pure]
+subtopics: [Elementary Probability, Combinatorics]
+tags: [Run-Length, Coin-Flips, State-Recursion]
 status: 已入库
 ---
 

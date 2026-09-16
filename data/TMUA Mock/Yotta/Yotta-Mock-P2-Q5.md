@@ -7,9 +7,9 @@ year:
 number: Q5
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Function, Algebra (Basic)]
+subtopics: [Algebraic Functions, Simultaneous Equations]
+tags: [Domain-Restriction, Line-Intersection, Hidden-Domain]
 status: 已入库
 ---
 

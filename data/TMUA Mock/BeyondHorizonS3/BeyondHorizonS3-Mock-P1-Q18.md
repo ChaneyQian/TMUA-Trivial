@@ -7,9 +7,9 @@ year:
 number: Q18
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Sequences and Series, Number Theory]
+subtopics: [Fibonacci Numbers, Modular Arithmetic and Congruences]
+tags: [Pisano-Period, Periodic-Sequence, Divisibility]
 status: 已入库
 ---
 

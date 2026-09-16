@@ -7,9 +7,9 @@ year:
 number: Q19
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Calculus, Algebra (Basic)]
+subtopics: [Integration, Algebra Manipulation]
+tags: [Definite-Integral, Minimum-Value, Completing-the-Square]
 status: 已入库
 ---
 

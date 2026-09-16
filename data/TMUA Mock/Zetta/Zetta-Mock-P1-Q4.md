@@ -7,9 +7,9 @@ year:
 number: Q4
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Sequences and Series]
+subtopics: [AP GP]
+tags: [Sum-to-Infinity, Convergence-Condition, Geometric-Series]
 status: 已入库
 ---
 

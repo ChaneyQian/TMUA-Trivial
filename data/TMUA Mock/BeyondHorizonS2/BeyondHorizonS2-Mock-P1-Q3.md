@@ -7,9 +7,9 @@ year:
 number: Q3
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: [待补答案, 原卷缺陷]
+topics: [Trigonometry]
+subtopics: [Trigonometric Equations]
+tags: [Sign-Analysis, Multiple-Angle, 原卷缺陷, 待补答案]
 status: 已入库
 ---
 
@@ -46,4 +46,3 @@ C
 On the open interval $0 < x < \pi$ we have $-1 < \cos x < 1$, so the factor $1 + \cos x$ is strictly positive throughout and the sign of $y$ is the sign of $\sin 3x$ alone. As $x$ runs over $(0, \pi)$ the argument $3x$ runs over $(0, 3\pi)$, and $\sin 3x < 0$ exactly when $3x \in (\pi, 2\pi)$, that is when
 $$\frac{\pi}{3} < x < \frac{2\pi}{3}.$$
 That interval is not offered by any of the six options, so as printed the question has no correct answer. The option list does fit the same computation carried out on the smaller domain $0 < x < \frac{\pi}{2}$, where the negative part of $(1 + \cos x)\sin 3x$ is precisely $\frac{\pi}{3} < x < \frac{\pi}{2}$, matching option C; on that reading the answer is C. The recorded answer is therefore provisional and the printed upper limit of the domain needs checking against the author's intent.
-TODO(待校对): Q3 的正确解集为 $\frac{\pi}{3} < x < \frac{2\pi}{3}$，六个选项均无此项；若定义域改成 $0 < x < \frac{\pi}{2}$ 则恰为选项 C。此处 ANSWER 暂记 C，待裁定。

@@ -7,9 +7,9 @@ year:
 number: Q1
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Miscellaneous Pure]
+subtopics: [Inequalities]
+tags: [Sign-Diagram, Factorising, Cubic]
 status: 已入库
 ---
 

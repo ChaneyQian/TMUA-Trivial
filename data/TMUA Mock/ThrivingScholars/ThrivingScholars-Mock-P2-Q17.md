@@ -7,9 +7,9 @@ year:
 number: Q17
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: [待补答案]
+topics: [Function, Number Theory]
+subtopics: [Exponentials and Logarithms, Diophantine Equations]
+tags: [Log-Laws, Integer-Solutions, 待补答案]
 status: 已入库
 ---
 

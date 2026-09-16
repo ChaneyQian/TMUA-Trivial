@@ -7,9 +7,9 @@ year:
 number: Q1
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Calculus, Polynomial]
+subtopics: [Integration, Solution of Equations]
+tags: [Definite-Integral, Parameter-in-Limit, Monotonicity]
 status: 已入库
 ---
 

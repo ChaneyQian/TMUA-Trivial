@@ -7,9 +7,9 @@ year:
 number: Q3
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Trigonometry]
+subtopics: [Trigonometric Identities]
+tags: [Harmonic-Form, Maximum-Value, Circle-Parametrisation]
 status: 已入库
 ---
 

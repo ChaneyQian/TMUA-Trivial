@@ -7,9 +7,9 @@ year:
 number: Q7
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Trigonometry]
+subtopics: [Trigonometric Equations]
+tags: [Quadratic-in-Disguise, Periodicity, Solution-Count]
 status: 已入库
 ---
 

@@ -7,9 +7,9 @@ year:
 number: Q12
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Probability]
+subtopics: [Conditional Probability]
+tags: [Counting-Outcomes, At-Least-Condition]
 status: 已入库
 ---
 

@@ -7,9 +7,9 @@ year:
 number: Q20
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Calculus, Geometry]
+subtopics: [Integration, Coordinate Geometry]
+tags: [Rotation-of-Axes, Rectangular-Hyperbola, Area-Between-Curves]
 status: 已入库
 ---
 

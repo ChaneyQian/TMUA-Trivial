@@ -7,9 +7,9 @@ year:
 number: Q15
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Calculus, Function]
+subtopics: [Differentiation, Functions]
+tags: [Chain-Rule, Translation, Function-Notation]
 status: 已入库
 ---
 

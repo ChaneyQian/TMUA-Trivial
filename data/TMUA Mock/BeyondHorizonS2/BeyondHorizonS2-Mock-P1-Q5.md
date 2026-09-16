@@ -7,9 +7,9 @@ year:
 number: Q5
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Geometry, Miscellaneous Pure]
+subtopics: [Coordinate Geometry, Inequalities]
+tags: [Completing-the-Square, Equations-of-Circles, Quadratic-Inequality]
 status: 已入库
 ---
 

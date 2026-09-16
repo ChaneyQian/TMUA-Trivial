@@ -7,9 +7,9 @@ year:
 number: Q6
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Sequences and Series, Algebra (Basic)]
+subtopics: [Sequences and Series, Partial Fractions]
+tags: [Telescoping, Partial-Fractions]
 status: 已入库
 ---
 

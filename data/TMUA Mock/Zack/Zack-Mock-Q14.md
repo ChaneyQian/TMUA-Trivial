@@ -7,9 +7,9 @@ year:
 number: Q14
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Number Theory]
+subtopics: [Diophantine Equations]
+tags: [Unit-Fractions, Bounding-Argument, Case-Split]
 status: 已入库
 ---
 

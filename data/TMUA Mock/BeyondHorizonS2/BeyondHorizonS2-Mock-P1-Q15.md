@@ -7,9 +7,9 @@ year:
 number: Q15
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Number Theory]
+subtopics: [Diophantine Equations]
+tags: [Perfect-Cube, Binomial-Expansion, Integer-Solutions]
 status: 已入库
 ---
 

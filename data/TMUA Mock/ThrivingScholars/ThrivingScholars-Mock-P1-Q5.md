@@ -7,9 +7,9 @@ year:
 number: Q5
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: [待补答案]
+topics: [Calculus, Function]
+subtopics: [Differentiation Application, Exponentials and Logarithms]
+tags: [Tangent-Line, Subtangent, 待补答案]
 status: 已入库
 ---
 

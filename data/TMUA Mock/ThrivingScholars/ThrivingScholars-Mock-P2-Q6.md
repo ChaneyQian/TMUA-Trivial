@@ -7,9 +7,9 @@ year:
 number: Q6
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: [待补答案]
+topics: [Number Theory]
+subtopics: [Divisibility]
+tags: [Prime-Factorisation, Factorial, 待补答案]
 status: 已入库
 ---
 

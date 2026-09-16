@@ -7,9 +7,9 @@ year:
 number: Q1
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Polynomial]
+subtopics: [Vieta's Formulas]
+tags: [Sum-of-Roots, Comparing-Coefficients, Distractor-Constants]
 status: 已入库
 ---
 

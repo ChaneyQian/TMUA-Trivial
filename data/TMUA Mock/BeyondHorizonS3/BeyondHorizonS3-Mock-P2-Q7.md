@@ -7,9 +7,9 @@ year:
 number: Q7
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Algebra (Basic)]
+subtopics: [Algebra Manipulation]
+tags: [Homogeneity, Percentage-Change, Scaling]
 status: 已入库
 ---
 
@@ -27,7 +27,9 @@ $$\mathbf{E} \quad \text{Increase of 25\%}$$
 ### 我的备注
 
 ### AI备注
-
+- **键对拍（2026-09-11，键源 tmua.fyi）**：键给 **D**（减少 25%），库记 **E**（增加 25%）。**库是对的，键错。**
+  两个分式都是 $-1$ 次齐次式，全体变量乘 $0.8$ 后整体乘 $1/0.8=1.25$，无论原值正负，变化率都是 $+25\%$；
+  随机取值数值验证得 $+25.0\%$。出题人多半想当然「输入减小 ⟹ 输出减小」。
 
 ## 答案
 E

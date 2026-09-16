@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 5.5
 topics: [Logic and Proof, Miscellaneous Pure]
 subtopics: [Proof, Inequalities]
-tags: [Logic-Deduction, Logic-Equivalence]
+tags: [Deduction, Error-Spotting, Irreversible-Step]
 status: 已入库
 ---
 

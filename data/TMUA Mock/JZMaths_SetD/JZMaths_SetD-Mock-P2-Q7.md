@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 6.5
 topics: [Logic and Proof, Polynomial]
 subtopics: [Logic, Solution of Equations]
-tags: [Differentiation, Logic-Deduction]
+tags: [Necessary-Condition, Differentiation]
 status: 已入库
 ---
 

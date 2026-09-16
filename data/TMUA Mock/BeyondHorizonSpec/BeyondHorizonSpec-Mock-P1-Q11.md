@@ -7,9 +7,9 @@ year:
 number: Q11
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Geometry]
+subtopics: [Euclid Geometry]
+tags: [Pythagoras, Pythagorean-Triple, Area-Subtraction, Casework]
 status: 已入库
 ---
 

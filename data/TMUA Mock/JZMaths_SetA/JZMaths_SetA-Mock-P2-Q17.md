@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 8
 topics: [Logic and Proof, Number Theory]
 subtopics: [Proof, Divisibility]
-tags: [Logic-Deduction]
+tags: [Error-Spotting, Inequality-Manipulation, Counterexample, Boundary-Case]
 status: 已入库
 ---
 

@@ -7,9 +7,9 @@ year:
 number: Q16
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Geometry]
+subtopics: [Coordinate Geometry]
+tags: [Equations-of-Circles, Completing-the-Square, Distance-Between-Centres, Parameter-Range]
 status: 已入库
 ---
 

@@ -7,9 +7,9 @@ year:
 number: Q8
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Logic and Proof, Function]
+subtopics: [Logic, Algebraic Functions]
+tags: [Truth-Value-List, Linear-Function, Squeeze-Argument]
 status: 已入库
 ---
 

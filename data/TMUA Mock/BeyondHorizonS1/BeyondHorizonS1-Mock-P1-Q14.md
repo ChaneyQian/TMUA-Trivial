@@ -7,9 +7,9 @@ year:
 number: Q14
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Sequences and Series]
+subtopics: [AP GP]
+tags: [Arithmetic-Series, Sum-Formula, Simultaneous-Equations]
 status: 已入库
 ---
 

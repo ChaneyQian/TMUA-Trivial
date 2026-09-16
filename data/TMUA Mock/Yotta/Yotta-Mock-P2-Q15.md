@@ -7,9 +7,9 @@ year:
 number: Q15
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Logic and Proof, Number Theory]
+subtopics: [Logic, Proof, Number Theory]
+tags: [Truth-Value-List, Counterexample, Unstated-Assumption, Primes]
 status: 已入库
 ---
 

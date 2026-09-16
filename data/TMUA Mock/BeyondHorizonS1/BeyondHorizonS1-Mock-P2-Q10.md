@@ -7,9 +7,9 @@ year:
 number: Q10
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Logic and Proof, Number Theory]
+subtopics: [Logic, Proof, Divisibility]
+tags: [Truth-Value-List, Counterexample, Deduction, Binomial-Expansion, Set-Inclusion]
 status: 已入库
 ---
 

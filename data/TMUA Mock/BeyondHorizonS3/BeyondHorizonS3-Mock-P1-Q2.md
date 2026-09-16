@@ -7,9 +7,9 @@ year:
 number: Q2
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Number Theory]
+subtopics: [Arithmetic Function]
+tags: [Divisor-Pairing, Sum-of-Divisors, Bijection]
 status: 已入库
 ---
 

@@ -10,7 +10,7 @@ difficulty: 0
 topics: []
 subtopics: []
 tags:
-  - specimen
+  - Specimen
 status: 已入库
 ---
 
@@ -52,6 +52,7 @@ $$
 ### AI备注
 
 
+ℹ️ 2026-08-15 核 官方 Specimen Paper 2 Solutions（© UCLES 2019） p9：「upper bound for the area is 5650 cm」（漏 ²）与「lower bound for the height is 79.5 cm」（应为 width）两处原册即如此。转写忠实，答案 F 无误，未改。
 ## 答案
 F
 

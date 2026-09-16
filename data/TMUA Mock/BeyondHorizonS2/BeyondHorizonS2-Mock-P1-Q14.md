@@ -7,9 +7,9 @@ year:
 number: Q14
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Polynomial]
+subtopics: [Solution of Equations]
+tags: [Substitution, Discriminant, Root-Counting]
 status: 已入库
 ---
 

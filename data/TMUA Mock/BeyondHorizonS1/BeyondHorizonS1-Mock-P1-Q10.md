@@ -7,9 +7,9 @@ year:
 number: Q10
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Calculus]
+subtopics: [Integration, Integral Identity]
+tags: [Substitution, Linear-Substitution, Definite-Integral]
 status: 已入库
 ---
 

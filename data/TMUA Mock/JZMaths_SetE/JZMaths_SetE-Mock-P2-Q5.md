@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 6
 topics: [Logic and Proof, Miscellaneous Pure, Function]
 subtopics: [Logic, Inequalities, Absolute Value Functions]
-tags: [Logic-Deduction]
+tags: [Exactly-k-True, Negation, Deduction]
 status: 已入库
 ---
 

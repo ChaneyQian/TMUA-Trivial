@@ -7,9 +7,9 @@ year:
 number: Q2
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Function]
+subtopics: [Functions, Exponentials and Logarithms]
+tags: [Graph-Transformations, Completing-the-Square, Translation, Index-Laws]
 status: 已入库
 ---
 

@@ -8,8 +8,8 @@ number: Q14
 section: Multiple Choice
 difficulty: 7
 topics: [Logic and Proof, Geometry]
-subtopics: [Logic, Euclid Geometry, Vectors]
-tags: [Logic-Deduction, Geometry]
+subtopics: [Logic, Proof, Euclid Geometry, Vectors]
+tags: [Truth-Value-List, Counterexample, Geometry]
 status: 已入库
 ---
 
@@ -45,6 +45,7 @@ $$ \mathbf{J} \quad \text{none of them} $$
 ### AI备注
 
 
+ℹ️ 2026-09-14 Fable 复核：按 §2.4ter 并挂线调整 Proof。
 ## 答案
 A
 

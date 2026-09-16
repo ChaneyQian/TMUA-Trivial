@@ -7,9 +7,9 @@ year:
 number: Q12
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Geometry, Algebra (Basic)]
+subtopics: [Solid Geometry, Algebra Manipulation]
+tags: [3D-Pythagoras, Symmetric-Sums, Surface-Area]
 status: 已入库
 ---
 

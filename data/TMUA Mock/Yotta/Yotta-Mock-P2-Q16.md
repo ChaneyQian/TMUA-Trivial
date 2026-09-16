@@ -7,9 +7,9 @@ year:
 number: Q16
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Logic and Proof]
+subtopics: [Logic]
+tags: [Contrapositive, Exactly-k-True, If-Then, Parity]
 status: 已入库
 ---
 

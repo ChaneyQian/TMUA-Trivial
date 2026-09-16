@@ -7,9 +7,9 @@ year:
 number: Q20
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Function, Calculus, Sequences and Series]
+subtopics: [Floor, Ceiling and Fractional Part Functions, Integration, Sequences and Series]
+tags: [Step-Function, Reindexing, Telescoping]
 status: 已入库
 ---
 

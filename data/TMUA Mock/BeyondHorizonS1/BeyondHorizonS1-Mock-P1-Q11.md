@@ -7,9 +7,9 @@ year:
 number: Q11
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Trigonometry]
+subtopics: [Trigonometric Equations, Trigonometric Identities]
+tags: [Factorising, Pythagorean-Identity, Solution-Count]
 status: 已入库
 ---
 

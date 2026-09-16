@@ -9,8 +9,8 @@ section: Reasoning
 difficulty: 0
 topics: [Logic and Proof]
 subtopics: [Logic]
-tags:
-  - specimen
+tags: [Negation, Quantifiers]
+  - Specimen
 status: 已入库
 ---
 

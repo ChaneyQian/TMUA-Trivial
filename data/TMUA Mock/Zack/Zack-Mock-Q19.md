@@ -7,9 +7,9 @@ year:
 number: Q19
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Number Theory]
+subtopics: [Divisibility]
+tags: [Divisor-Count, Prime-Factorisation, Proper-Divisor]
 status: 已入库
 ---
 

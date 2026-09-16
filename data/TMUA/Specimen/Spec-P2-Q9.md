@@ -7,10 +7,10 @@ year:
 number: Q9
 section: Reasoning
 difficulty: 0
-topics: []
-subtopics: []
-tags:
-  - specimen
+topics: [Logic and Proof]
+subtopics: [Logic]
+tags: [Negation, Quantifiers]
+  - Specimen
 status: 已入库
 ---
 

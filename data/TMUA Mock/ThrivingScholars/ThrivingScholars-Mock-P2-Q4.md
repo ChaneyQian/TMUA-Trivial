@@ -7,9 +7,9 @@ year:
 number: Q4
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: [待补答案]
+topics: [Logic and Proof, Calculus]
+subtopics: [Logic, Differentiation Application]
+tags: [Truth-Value-List, Necessary-vs-Sufficient, Counterexample, Sign-Diagram, 待补答案]
 status: 已入库
 ---
 

@@ -7,9 +7,9 @@ year:
 number: Q3
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Polynomial]
+subtopics: [Vieta's Formulas]
+tags: [Sum-of-Roots, Product-of-Roots, Transformed-Roots]
 status: 已入库
 ---
 

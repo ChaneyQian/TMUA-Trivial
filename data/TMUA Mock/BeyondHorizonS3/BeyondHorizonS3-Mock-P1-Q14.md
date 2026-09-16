@@ -7,9 +7,9 @@ year:
 number: Q14
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Polynomial]
+subtopics: [Vieta's Formulas]
+tags: [Sum-and-Product, Symmetric-Functions, Cube-Sum-Identity]
 status: 已入库
 ---
 

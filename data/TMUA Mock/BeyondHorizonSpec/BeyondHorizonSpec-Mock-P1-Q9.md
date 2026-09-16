@@ -7,9 +7,9 @@ year:
 number: Q9
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Probability]
+subtopics: [Elementary Probability]
+tags: [Complementary-Counting, Combinations, Playing-Cards]
 status: 已入库
 ---
 

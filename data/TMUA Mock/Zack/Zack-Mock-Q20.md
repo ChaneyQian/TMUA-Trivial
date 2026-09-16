@@ -7,9 +7,9 @@ year:
 number: Q20
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Geometry]
+subtopics: [Euclid Geometry]
+tags: [Reuleaux-Triangle, Sector-Area, Equilateral-Triangle, Area-Subtraction]
 status: 已入库
 ---
 

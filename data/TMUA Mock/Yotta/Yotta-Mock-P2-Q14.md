@@ -7,9 +7,9 @@ year:
 number: Q14
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Function, Miscellaneous Pure]
+subtopics: [Exponentials and Logarithms, Estimation and Bounds]
+tags: [Index-Laws, Change-of-Base, Periodicity]
 status: 已入库
 ---
 

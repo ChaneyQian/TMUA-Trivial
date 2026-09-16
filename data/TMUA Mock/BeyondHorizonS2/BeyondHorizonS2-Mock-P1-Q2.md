@@ -7,9 +7,9 @@ year:
 number: Q2
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Calculus, Algebra (Basic)]
+subtopics: [Differentiation, Algebra Manipulation]
+tags: [Product-Rule, Completing-the-Square, Minimum-Value]
 status: 已入库
 ---
 

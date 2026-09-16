@@ -7,9 +7,9 @@ year:
 number: Q18
 section: Multiple Choice
 difficulty: 8
-topics: [Function, Polynomial]
-subtopics: [Exponentials and Logarithms, Symmetric and Cyclic Polynomials]
-tags: [Logic-Deduction, Exponentials-and-Logarithms]
+topics: [Logic and Proof, Function, Polynomial]
+subtopics: [Logic, Proof, Exponentials and Logarithms, Symmetric and Cyclic Polynomials]
+tags: [Truth-Value-List, Proof-by-Cases, Exponentials-and-Logarithms, Deduction]
 status: 已入库
 ---
 
@@ -32,6 +32,8 @@ $$ \mathbf{D} \quad \text{The equations have no solutions.} $$
 ### AI备注
 
 
+ℹ️ 2026-09-14 Fable 复核：按 §2.4ter 并挂线调整 Proof。
+ℹ️ 2026-09-14 按 owner 裁定补挂 Logic（命题列表/充要题一律挂，不限 3 tag）。
 ## 答案
 D
 

@@ -7,9 +7,9 @@ year:
 number: Q20
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Probability, Number Theory]
+subtopics: [Elementary Probability, Number Theory]
+tags: [Base-Conversion, Place-Value, Counting-Integers]
 status: 已入库
 ---
 

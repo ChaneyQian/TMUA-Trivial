@@ -7,9 +7,9 @@ year:
 number: Q1
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: [待补答案]
+topics: [Probability, Number Theory]
+subtopics: [Conditional Probability, Divisibility]
+tags: [Law-of-Total-Probability, Number-of-Divisors, 待补答案]
 status: 已入库
 ---
 

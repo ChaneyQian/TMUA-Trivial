@@ -7,9 +7,9 @@ year:
 number: Q16
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Function, Calculus]
+subtopics: [Floor, Ceiling and Fractional Part Functions, Integration]
+tags: [Fractional-Part, Periodicity, Definite-Integral]
 status: 已入库
 ---
 

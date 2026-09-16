@@ -7,9 +7,9 @@ year:
 number: Q10
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: [待补答案, 原卷缺陷]
+topics: [Algebra (Basic), Polynomial]
+subtopics: [Algebra Manipulation, Solution of Equations]
+tags: [Substitution, Quadratic-in-Disguise, 原卷缺陷, 待补答案]
 status: 已入库
 ---
 

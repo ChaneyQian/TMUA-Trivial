@@ -7,9 +7,9 @@ year:
 number: Q12
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Trigonometry, Miscellaneous Pure]
+subtopics: [Trigonometry, Estimation and Bounds]
+tags: [Radians, Monotonicity, Exact-Values]
 status: 已入库
 ---
 

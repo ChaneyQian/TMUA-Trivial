@@ -8,8 +8,8 @@ number: Q10
 section: Multiple Choice
 difficulty: 7
 topics: [Logic and Proof, Function]
-subtopics: [Logic, Exponentials and Logarithms]
-tags: [Logic-Deduction, Exponentials-and-Logarithms]
+subtopics: [Logic, Proof, Exponentials and Logarithms]
+tags: [Could-Be-True, Existence-Construction, Exponentials-and-Logarithms]
 status: 已入库
 ---
 
@@ -45,6 +45,7 @@ $$ \mathbf{H} \quad \text{All four statements.} $$
 ### AI备注
 
 
+ℹ️ 2026-09-14 Fable 复核：按 §2.4ter 并挂线调整 Proof。
 ## 答案
 C
 

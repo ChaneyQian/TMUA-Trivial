@@ -7,9 +7,9 @@ year:
 number: Q5
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Number Theory, Miscellaneous Pure]
+subtopics: [Divisibility, Estimation and Bounds]
+tags: [Word-Problem, Fraction-of-Total, Bounding-Argument]
 status: 已入库
 ---
 

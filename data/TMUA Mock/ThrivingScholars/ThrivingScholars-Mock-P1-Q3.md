@@ -7,9 +7,9 @@ year:
 number: Q3
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: [待补答案]
+topics: [Geometry]
+subtopics: [Euclid Geometry]
+tags: [Regular-Polygon, Area-of-Triangle, 待补答案]
 status: 已入库
 ---
 

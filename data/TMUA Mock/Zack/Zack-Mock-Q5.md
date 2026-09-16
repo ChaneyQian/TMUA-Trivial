@@ -7,9 +7,9 @@ year:
 number: Q5
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Number Theory]
+subtopics: [Divisibility]
+tags: [LCM, Prime-Factorisation, Perfect-Square]
 status: 已入库
 ---
 

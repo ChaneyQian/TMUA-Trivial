@@ -7,9 +7,9 @@ year:
 number: Q13
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Miscellaneous Pure]
+subtopics: [Combinatorics, Inclusion-Exclusion Principle]
+tags: [Complementary-Counting, Word-Counting]
 status: 已入库
 ---
 

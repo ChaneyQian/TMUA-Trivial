@@ -8,8 +8,8 @@ number: Q10
 section: Multiple Choice
 difficulty: 7
 topics: [Logic and Proof]
-subtopics: [Logic, Graphical Arguments]
-tags: [Logic-Deduction, Inequalities]
+subtopics: [Logic, Proof, Graphical Arguments]
+tags: [Truth-Value-List, Counterexample, Inequalities]
 status: 已入库
 ---
 
@@ -42,6 +42,7 @@ $$ \mathbf{H} \quad \text{I, II and III} $$
 ### AI备注
 
 
+ℹ️ 2026-09-14 Fable 复核：按 §2.4ter 并挂线调整 Proof。
 ## 答案
 G
 

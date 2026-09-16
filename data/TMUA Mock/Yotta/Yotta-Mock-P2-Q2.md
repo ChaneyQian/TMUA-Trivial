@@ -7,9 +7,9 @@ year:
 number: Q2
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Logic and Proof, Number Theory]
+subtopics: [Logic, Proof, Modular Arithmetic and Congruences]
+tags: [If-Then, Converse, Counterexample, Boundary-Case, Primes]
 status: 已入库
 ---
 

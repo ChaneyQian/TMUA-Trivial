@@ -7,9 +7,9 @@ year:
 number: Q15
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Trigonometry]
+subtopics: [Inverse Trigonometric Functions, Trigonometric Identities]
+tags: [Double-Angle, Right-Triangle]
 status: 已入库
 ---
 

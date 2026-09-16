@@ -7,9 +7,9 @@ year:
 number: Q17
 section: Multiple Choice
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Function, Miscellaneous Pure]
+subtopics: [Exponentials and Logarithms, Estimation and Bounds]
+tags: [Power-Tower, Order-of-Magnitude, Index-Laws]
 status: 已入库
 ---
 

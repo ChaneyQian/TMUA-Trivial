@@ -10,7 +10,7 @@ difficulty: 0
 topics: []
 subtopics: []
 tags:
-  - specimen
+  - Specimen
 status: 已入库
 ---
 
@@ -55,6 +55,7 @@ $$
 ### AI备注
 
 
+⚠️ 2026-08-15 解析转写修正：末句「an integer if d < 0.)」的收尾被 OCR 成乱码，已按 官方 Specimen Paper 1 Solutions（Version 1.1, Nov 2020） p18 改回。另：对齐块第三行 2^{5c)} 的多余反括号原册即如此，属原册错误，未改。
 ## 答案
 E
 
@@ -67,4 +68,4 @@ $$
 
 For this to be an integer, we require 2c and −4d to be non-negative integers. Since $c$ and $d$ are non-zero integers, we need $c > 0$ and $d < 0$ , which is option E.
 
-(In fact, this is an “if and only if” condition; options C, D and F would make the expression non-integer, as would A and $\mathrm { G }$; while conditions $B$ and $H$ are necessary, they are not sufficient: if $d < 0$ , it is still possible that $c < 0$ , so it is not true that the given expression is (necessarily) an integer if $d < 0 . \mathrm { ‰ }$ 1
+(In fact, this is an “if and only if” condition; options C, D and F would make the expression non-integer, as would A and $\mathrm { G }$; while conditions $B$ and $H$ are necessary, they are not sufficient: if $d < 0$ , it is still possible that $c < 0$ , so it is not true that the given expression is (necessarily) an integer if $d < 0$.)

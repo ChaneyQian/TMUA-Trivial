@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 9
 topics: [Logic and Proof, Geometry]
 subtopics: [Logic, Euclid Geometry]
-tags: [Logic-Deduction]
+tags: [Truth-Value-List, Necessary-vs-Sufficient, Counterexample]
 status: 已入库
 ---
 

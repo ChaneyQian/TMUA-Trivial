@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 6.5
 topics: [Logic and Proof, Calculus, Function]
 subtopics: [Proof, Differentiation Application, Algebraic Functions]
-tags: [Logic-Deduction, Inequalities]
+tags: [Deduction, Error-Spotting, Division-by-Zero, Inequalities]
 status: 已入库
 ---
 
