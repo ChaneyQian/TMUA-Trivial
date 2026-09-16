@@ -523,3 +523,62 @@ ics 导出、提醒推送、跨设备同步关注（无后端）；月历网格�
 
 ### 分期
 D1 数据通道 + 胶囊 + 日程卡 + 关注（一期打完，规模 ≈ 公告牌那次）
+
+## 20. 看板首个内容：TMUA Logic & Proof 分节读本〔草案〕（2026-09-16，待用户确认）
+
+来源：「TMUA Revision笔记」会话转来的归节定稿（按考纲 Section 2 分三部分七节，
+A1–A4 / B1–B2 / C1），要求做线上版。参考实现是 Revision Notes 里的
+build_logicproof_compendium.py（commit a566420）与三本成品 PDF。
+落点即 §17-C 的 04 卡「标化题库」：C2 数据管线 + 看板阅读器，本读本是它的第一份内容。
+
+### 输入数据核对（2026-09-16 实测）
+- 导出 logic-tags-export.json：204 题，203 题已带 `compendium_section`（23-P2-Q6 无节，
+  只挂错因标，不在读本内）；分布 A1 6 / A2 10 / A3 59 / A4 15 / B1 50 / B2 36 / C1 27
+  （来信写 A2 11 / B2 35，差一题，已回问）
+- 站内可对上 199 题：题号体例一致（`16-P2-Q10`、`Spec-P1-Q3`、`24-Q7`、
+  `JZMaths_SetE-Mock-P2-Q20` 就是站内单题 JSON 的 `id`），无需新解析器
+- 未上站 5 题：25-Q28/30/38/40/43，全是缺答案被 badAnswer 闸挡下的 2025 回忆卷
+- 199 题里 75 题在 9.0 Trivial 区（JZMaths 55 + 24/25 回忆卷 20），恰好就是
+  读本的「Further practice」部分；「Worked examples」（2016–2023 真题 + Specimen）
+  全在经典区
+- 52 题（只挂 Proof 子题型、不挂 Logic）不在站内逻辑开关的判定内——开关口径是
+  subtopics 含 Logic 或 topics 含 Logic and Proof；读本按导出为准，不受开关影响
+
+### 数据管线（构建期，零运行时依赖）
+- 导出文件是 vault 侧产物（.claude/tagging/fleet/），不在题库目录；由 sync-bank
+  多拷一份到仓库 `content/logic-proof/tags.json`，题库目录仍是唯一源
+- 讲解文字（各节 spec 引文、「How the questions are set」要点、17 条错因释义、
+  三部分导语）目前是参考脚本里的 LaTeX；一次性转成 Markdown（emph→斜体、
+  textbf→粗体、itemize→列表，公式原样留给 KaTeX）落 `content/logic-proof/sections.md`，
+  转换稿需人审——这是用户自己写的讲解，不能让转换走样
+- build-data 新产出 `public/exam/board/logic-proof.json`
+  `{ v:1, parts:[{letter,title,intro}], sections:[{id,title,spec,intro,howSet[],
+    worked:[qid], practice:[qid], commonErrors:[{tag,name,desc,qids}], seeAlso:[{qid,section}]}] }`
+  题目只引用站内 qid，阅读时照常懒取 q/<qid>.json（题面/选项/答案/解析都在）
+- 归节不在站内重算：直接读导出的 `compendium_section`；节内顺序照参考脚本的
+  natkey（Specimen 最前 → 年/卷/题号；回忆卷年/题号；模拟套/卷/题号）
+- 三道闸照搬 diag：不进抽题池、不计 365、不进错题/复盘/卷墙。读本只是「引用」，
+  不产生新的 index 条目，池子天然不动
+- 导出里对不上站内的题（现 5 道）构建期 warn 并跳过，不硬失败——答案补齐后自动出现
+
+### 阅读器 UI（04 卡展开）
+- 看板首页：三部分 → 七节，每节显示 题数（Worked / Practice）与一句话
+- 节页：考纲引文盒 → How the questions are set → Worked examples（逐题：卷号标签、
+  题面、选项、答案与解析**直接展开**，不判分、不计时）→ Further practice →
+  Common errors（错因名 + 释义 + 题号跳转）→ See also（跨节引用跳转）→ 上一节/下一节
+- 复用 MathText、卷号体例（`TMUA 2016 P2 Q10` / `TMUA Spec P1 Q3` / `TMUA Mock JZMaths_SetE P2 Q20`）
+- 回忆卷提示行沿用 PDF 措辞：24/25 为回忆重构，选项多为转述
+
+### 待拍板
+1. **Trivial 门禁**：Further practice 的 75 题都在 9.0 区。建议**尊重门禁**——未解锁时
+   该小节折叠为锁定态（列出题数，不给题面），与「Trivial 和经典题库互斥」及
+   「重练不过门禁也要守」的既有裁定一致；解锁后完整展示
+2. 缺答案的 5 道 2025 回忆卷：建议**先不上**（答案补齐自动出现），不为读本另开无答案通道
+3. 只挂 Proof 的 52 题要不要并入站内逻辑开关的判定：读本不需要，纯粹是开关口径问题
+4. 笔记区（§17-C3）本期不做；讲解文字转换稿由谁审：建议 Opus 转 + 第二个 Opus 对照
+   PDF 校，用户终审
+
+### 分期
+LP1 数据管线（sync 拷贝 + 讲解转 Markdown + build-data 产出 + 测试：203 题全部归节、
+顺序与 PDF 一致、闸不漏）→ LP2 阅读器 UI（看板首页 + 节页 + 门禁态）。
+两期各自可发布；LP1 先上不影响任何现有页面。
