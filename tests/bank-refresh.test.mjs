@@ -156,6 +156,18 @@ test('a long prose distractor is not mistaken for a swallowed stem', (t) => {
 
   write('20-P1-Q1.md', 20200210100, '20-P1-Q1', proseOptions, 'D');
   write('20-P1-Q2.md', 20200210200, '20-P1-Q2', swallowedOptions, 'A');
+  // 句子里夹着一小段公式的干扰项（TMUA Mock Sed P2 Q17 的选项 G）：去掉 \text 后
+  // 还剩个 f(x)，光看「剩余 ≤ 3 字符」会把它当成吞了题干
+  const mixedOptions = [
+    '$$\\mathbf{A} \\quad 1$$',
+    '',
+    '$$\\mathbf{B} \\quad 2$$',
+    '',
+    '$$\\mathbf{C} \\quad 3$$',
+    '',
+    '$$\\mathbf{D} \\quad \\text{no number of such pairs guarantees the deduction of} f(x) \\text{.}$$',
+  ].join('\n');
+  write('20-P1-Q3.md', 20200210300, '20-P1-Q3', mixedOptions, 'D');
 
   execFileSync(process.execPath, [path.join(root, 'scripts', 'build-data.mjs')], {
     cwd: root,
@@ -182,6 +194,13 @@ test('a long prose distractor is not mistaken for a swallowed stem', (t) => {
     corrupted.some((row) => row.id === '20-P1-Q2'),
     true,
     '吞了题干的题要记进损坏名单',
+  );
+
+  assert.equal(qids.has(20200210300), true, '句中夹公式的整句干扰项也是正常题目');
+  assert.equal(
+    corrupted.some((row) => row.id === '20-P1-Q3'),
+    false,
+    '句中夹公式的干扰项不该进损坏名单',
   );
 });
 

@@ -316,8 +316,11 @@ function isProseDistractor(choice) {
     /[?？]/.test(choice.text) ||
     new RegExp('\\\\text\\{[^}]*\\b' + label + '\\s+-?[\\d.]').test(choice.text);
   if (stemTrace) return false;
-  // 去掉 \text{…} 后基本不剩什么，说明整项就是一句话，而不是题干掺着公式
-  return contentLen(choice.text.replace(textSpan, '')) <= 3;
+  // 去掉 \text{…} 后基本不剩什么，说明整项就是一句话，而不是题干掺着公式。
+  // 句子中间夹一小段公式的（「…guarantees the deduction of} f(x) \text{.}」）
+  // 也算：剩余部分不到整项的两成
+  const rest = contentLen(choice.text.replace(textSpan, ''));
+  return rest <= 3 || rest <= contentLen(choice.text) * 0.2;
 }
 
 function detectCorruption(parsed, database) {
