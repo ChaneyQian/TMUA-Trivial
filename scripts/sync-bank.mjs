@@ -3,7 +3,7 @@
 // 题库那边除了题目本身，还放着给自己看的工作笔记（Readme、讲义、对接说明…），
 // 里面常有本机绝对路径和 Obsidian 双链。本项目是公开仓库，那些不该跟着发出去，
 // 所以这里按「有没有 qid frontmatter」过滤：没有 qid 的 md 一律不同步。
-// 图片与其它资源照常同步。
+// 图片与其它资源照常同步，只有同步软件的残留文件（见 isJunk）除外。
 //
 // 用法：npm run sync            （默认源 D:\Obsidian\repo\题库）
 //       BANK_SRC=... npm run sync
@@ -14,7 +14,8 @@ import { fileURLToPath } from 'url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const SRC = process.env.BANK_SRC || 'D:\\Obsidian\\repo\\题库';
-const DST = path.join(ROOT, 'data');
+// DATA_OUT 只给测试用：合成源目录不该往真的 data\ 里镜像
+const DST = process.env.DATA_OUT ? path.resolve(process.env.DATA_OUT) : path.join(ROOT, 'data');
 // 'TMUA Mock' 是源里的独立顶层库（原先嵌在 TMUA/Mock 下，2026-08 提升出来）。
 // 这里照源的层级 1:1 镜像，不再替它改嫁到 TMUA/ 底下——data\ 与源长得一样，
 // 才不会有人对着两边的目录树犯迷糊
@@ -27,6 +28,22 @@ function isQuestion(file) {
   } catch {
     return false;
   }
+}
+
+/**
+ * 同步软件和编辑器留下的残留文件，一律不镜像。
+ *
+ * 源库在坚果云上，断点续传会留下
+ * `19-Q27.md.nutstore-sync-1788077928880-r808r9fd0eh.download` 这种半成品；
+ * 它不以 .md 结尾，「有没有 qid」那道闸拦不住，会被当成资源原样拷进 data\。
+ */
+function isJunk(name) {
+  return (
+    name.startsWith('.') ||
+    name.includes('nutstore-sync') ||
+    /\.(download|tmp|part)$/i.test(name) ||
+    name.endsWith('~')
+  );
 }
 
 function walk(dir, base = dir, out = []) {
@@ -66,6 +83,7 @@ function main() {
 
   let copied = 0;
   let skipped = 0;
+  let junk = 0;
   let removed = 0;
   const skippedNames = [];
 
@@ -79,6 +97,11 @@ function main() {
 
     const wanted = new Set();
     for (const rel of walk(srcDir)) {
+      // 不进 wanted：data\ 里若已有同名残留，下面的镜像删除会照「源侧不存在」清掉
+      if (isJunk(path.basename(rel))) {
+        junk++;
+        continue;
+      }
       const from = path.join(srcDir, rel);
       if (rel.toLowerCase().endsWith('.md') && !isQuestion(from)) {
         skipped++;
@@ -109,7 +132,9 @@ function main() {
   }
 
   console.log(`[sync-bank] 源：${SRC}`);
-  console.log(`[sync-bank] 更新 ${copied} 个文件，删除 ${removed} 个，过滤掉 ${skipped} 个非题目文件`);
+  console.log(
+    `[sync-bank] 更新 ${copied} 个文件，删除 ${removed} 个，过滤掉 ${skipped} 个非题目文件、${junk} 个残留文件`,
+  );
   for (const n of skippedNames) console.log(`    跳过（无 qid）：${n}`);
 }
 
