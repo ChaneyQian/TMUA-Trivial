@@ -660,7 +660,18 @@ function main() {
   // 卷面清单：键是「库 + 展示用卷号」，粒度就是题头上写的那一行
   const papers = new Map();
   let inlineCount = 0;
-  const skipped = { unreadable: 0, noQid: 0, noStatement: 0, todo: 0, badAnswer: 0, noChoices: 0, answerMismatch: 0, corrupted: 0 };
+  const skipped = { unreadable: 0, noQid: 0, duplicate: 0, noStatement: 0, todo: 0, badAnswer: 0, noChoices: 0, answerMismatch: 0, corrupted: 0 };
+  // 同一份跳过还按「库/子目录」记一遍。总数说明不了任何事——badAnswer 两百多题
+  // 摊在哪几套卷上，刷新题库时得当场看见，否则没法挑出该去补答案的那一卷
+  const skippedByDir = new Map();
+  const skip = (reason, filePath) => {
+    skipped[reason]++;
+    const parts = path.relative(BANK, path.dirname(filePath)).split(path.sep).filter(Boolean);
+    const dir = parts.slice(0, 2).join('/');
+    const row = skippedByDir.get(dir) || {};
+    row[reason] = (row[reason] || 0) + 1;
+    skippedByDir.set(dir, row);
+  };
 
   for (const sourceDb of DATABASES) {
     for (const filePath of listQuestionFiles(path.join(BANK, sourceDb))) {
@@ -668,29 +679,39 @@ function main() {
       // 读不出来的文件绝不能静默吞掉：权限、文件被占用、坏扇区、符号链接断了，
       // 都会走到这里。原先是裸 continue，一整批题凭空消失时日志里连个痕迹都没有
       try { raw = fs.readFileSync(filePath, 'utf-8'); } catch (e) {
-        skipped.unreadable++;
+        skip('unreadable', filePath);
         console.warn(`[build-data] 读不出来，跳过：${path.relative(ROOT, filePath)}（${e.code || e.message}）`);
         continue;
       }
       const { data, body } = parseFrontmatter(raw);
-      if (!data.qid) { skipped.noQid++; continue; }
+      if (!data.qid) { skip('noQid', filePath); continue; }
+
+      // 历年真题重排出来的题（MAT Specimen 两卷 32 题里就有 26 道），题库侧打了
+      // tags: [重复题]。整题不入池——它和被重排的那道题同时在池里，抽题时
+      // 等于把同一道题发两遍。精确匹配整个标签，「重复题目」之类不算。
+      // 不逐题 warn：这是永久状态不是待办（跟 TODO( 不一样），逐目录那张表
+      // 报出 `MAT/Specimen duplicate 26` 就够审了
+      if (listField(data, 'tags').includes('重复题')) {
+        skip('duplicate', filePath);
+        continue;
+      }
       const db = indexDatabase(sourceDb, filePath, data);
 
       const sections = parseSections(body);
       const statement = sections['题目'];
-      if (!statement) { skipped.noStatement++; continue; }
+      if (!statement) { skip('noStatement', filePath); continue; }
 
       // 正文任何位置出现 TODO(…) 标记（如「TODO(待校对):」）即整题不上站：
       // 回忆卷里这类题的题干或选项存疑，校对完把标记删掉，sync 后自动上架
       // （用户裁定 2026-08-23）。带括号是为了不误伤英文题面里理论上可能出现的裸词
-      if (body.includes('TODO(')) { skipped.todo++; console.warn(`[build-data] 待校对，暂不上站：${path.relative(ROOT, filePath)}`); continue; }
+      if (body.includes('TODO(')) { skip('todo', filePath); console.warn(`[build-data] 待校对，暂不上站：${path.relative(ROOT, filePath)}`); continue; }
 
       const answer = normalizeAnswer(sections['答案']);
-      if (!answer) { skipped.badAnswer++; continue; }
+      if (!answer) { skip('badAnswer', filePath); continue; }
 
       const format = choiceFormat(sourceDb);
       let parsed = parseChoicesFor(format, statement, answer);
-      if (!parsed) { skipped.noChoices++; continue; }
+      if (!parsed) { skip('noChoices', filePath); continue; }
       // 答案的体例以选项自己的标号为准：同一个 "i"，在 9 选项的 TMUA 题里是
       // 字母 I，在 MAT 老卷里是罗马数字 i。拿选项反查就不用猜，
       // 也不会把罗马标号的题写成大写 I
@@ -698,7 +719,7 @@ function main() {
         (c) => c.label.toLowerCase() === answer.toLowerCase(),
       );
       if (!matched) {
-        skipped.answerMismatch++;
+        skip('answerMismatch', filePath);
         continue;
       }
 
@@ -707,7 +728,7 @@ function main() {
         const corruption = detectCorruption(parsed, format);
         if (corruption) {
           corrupted.push({ db, id: String(data.id || ''), file: path.relative(ROOT, filePath), reason: corruption });
-          skipped.corrupted++;
+          skip('corrupted', filePath);
           continue;
         }
       } else {
@@ -932,6 +953,18 @@ function main() {
     );
   }
   console.log('[build-data] 跳过：', JSON.stringify(skipped));
+  // 逐目录摊开，总数大的排前面：刷新题库时就按这几行去审该补哪一卷
+  const dirRows = [...skippedByDir]
+    .map(([dir, reasons]) => [dir, reasons, Object.values(reasons).reduce((a, b) => a + b, 0)])
+    .sort((a, b) => b[2] - a[2] || a[0].localeCompare(b[0]));
+  const dirWidth = dirRows.reduce((w, [dir]) => Math.max(w, dir.length), 0);
+  for (const [dir, reasons] of dirRows) {
+    const detail = Object.entries(reasons)
+      .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+      .map(([reason, n]) => `${reason} ${n}`)
+      .join('  ');
+    console.log(`[build-data]   ${dir.padEnd(dirWidth)}  ${detail}`);
+  }
   // 选项解析不出来、退化成「按钮只显字母」的题（选项仍在题面里可读，不影响作答）
   if (inlineCount) console.log(`[build-data] 选项内联（按钮只显字母）：${inlineCount} 题`);
   if (corrupted.length) {
