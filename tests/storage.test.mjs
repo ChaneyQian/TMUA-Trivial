@@ -4,6 +4,8 @@ import path from 'node:path';
 import test from 'node:test';
 
 import * as storage from '../src/lib/storage.ts';
+// 键的**取值**怎么迁移写在 records.ts 里，这里连过来一起钉住
+import { loadLogicFilter, saveLogicFilter } from '../src/lib/records.ts';
 
 const layoutPath = 'src/app/layout.tsx';
 
@@ -41,6 +43,48 @@ test('every browser-storage key is registered in one place, namespaced and versi
     Object.values(storage).some((value) => String(value).includes('pet-command')),
     false,
   );
+});
+
+/**
+ * 逻辑推理开关 2026-09-16 从两态改成三档（全部 / 仅逻辑题 / 排除），
+ * 键刻意没动：换键等于把所有存量用户的选择静默清空，而上面那条键清单
+ * 也会跟着从 10 变 11。迁移因此只发生在**取值**上。
+ */
+test('the logic-reasoning key survives the two-state to three-way change, old values and all', (t) => {
+  const store = new Map();
+  globalThis.window = {};
+  globalThis.localStorage = {
+    getItem: (key) => (store.has(key) ? store.get(key) : null),
+    setItem: (key, value) => store.set(key, String(value)),
+    removeItem: (key) => store.delete(key),
+  };
+  t.after(() => {
+    delete globalThis.localStorage;
+    delete globalThis.window;
+  });
+
+  assert.equal(storage.LOGIC_REASONING_KEY, 'mcq-test:logic-reasoning:v1', '键不许改名或升版');
+
+  // 两态时代写下的值：'1' 是勾着（含逻辑题）、'0' 是取消勾选（不含）
+  for (const [stored, expected] of [
+    ['1', 'all'],
+    ['0', 'exclude'],
+    ['all', 'all'],
+    ['only', 'only'],
+    ['exclude', 'exclude'],
+    ['maybe', 'all'],
+    ['', 'all'],
+  ]) {
+    store.set(storage.LOGIC_REASONING_KEY, stored);
+    assert.equal(loadLogicFilter(), expected, `存着 ${JSON.stringify(stored)} 时读出的档位不对`);
+  }
+
+  store.delete(storage.LOGIC_REASONING_KEY);
+  assert.equal(loadLogicFilter(), 'all', '没存过就是「全部」');
+
+  // 新写入一律是三档的字面量，不再回写 '1' / '0'
+  saveLogicFilter('only');
+  assert.equal(store.get(storage.LOGIC_REASONING_KEY), 'only');
 });
 
 test('no component keeps a storage key literal of its own', () => {

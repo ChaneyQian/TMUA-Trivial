@@ -59,8 +59,11 @@ const zh = {
     sub: 'TMUA 公益 · 练习进度解锁扩展题库 · 全量真题 Mock',
     mixed: '混合',
     fieldBank: '题库',
-    // 按题库自己的知识点标签认逻辑题。勾掉之后抽题池里就没有它们了，题数档位跟着缩
-    logicReasoning: '含逻辑推理题',
+    // 按题库自己的知识点标签认逻辑题。三档只收窄抽题池，题数档位跟着缩
+    logicReasoning: '逻辑推理题',
+    logicAll: '全部',
+    logicOnly: '仅逻辑题',
+    logicExclude: '排除',
     // 互斥后 9.0 的同名库是另一批题，按钮上只有题数看不出来，范围得说破
     trivialScopeNote: '此区只收扩展卷（Mock 与回忆题），与经典题库不重复。',
     fieldMode: '模式',
@@ -86,7 +89,7 @@ const zh = {
     quickStart: '⚡ 快速开始',
     quickSummary: (db: string, mode: string, count: number) => `${db} · ${mode} · ${count} 题`,
     emptyBank: '该题库没有可用题目。',
-    emptyBankLogicHint: (n: number) => `勾回「含逻辑推理题」可再抽到 ${n} 道。`,
+    emptyBankLogicHint: (n: number) => `「逻辑推理题」切回「全部」可再抽到 ${n} 道。`,
     keyboard: '键盘：A–L / 1–9 选项 · Enter 批改或下一题 · ←→ 切题 · F 旗标',
   },
 
@@ -327,7 +330,10 @@ const en: Strings = {
     sub: 'Free for TMUA · Practise to unlock the extended library · Full past-paper mocks',
     mixed: 'Mixed',
     fieldBank: 'Question Bank',
-    logicReasoning: 'Include logic reasoning questions',
+    logicReasoning: 'Logic reasoning',
+    logicAll: 'All',
+    logicOnly: 'Only logic',
+    logicExclude: 'Exclude',
     trivialScopeNote: 'This zone holds only the expanded papers (mocks and recalled questions) — nothing here overlaps the Classic library.',
     fieldMode: 'Mode',
     fieldPick: 'Question Selection',
@@ -352,7 +358,7 @@ const en: Strings = {
     quickStart: '⚡ Quick Start',
     quickSummary: (db: string, mode: string, count: number) => `${db} · ${mode} · ${count} Qs`,
     emptyBank: 'No questions available in this bank.',
-    emptyBankLogicHint: (n: number) => `Ticking "Include logic reasoning questions" back on adds ${n}.`,
+    emptyBankLogicHint: (n: number) => `Switching Logic reasoning back to "All" adds ${n}.`,
     keyboard: 'Keyboard: A–L / 1–9 select · Enter mark or next · ←→ navigate · F flag',
   },
 

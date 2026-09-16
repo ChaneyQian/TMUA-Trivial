@@ -686,7 +686,8 @@ test('the app hands the panel a scope that honours the 9.0 gate and ignores the 
   );
   assert.match(exam, /topicScope=\{reachable\}/);
   assert.match(exam, /reachable=\{reachable\}/, '卷面进度墙的分母读的是同一个集合');
-  // 逻辑推理开关（P4）不该碰这条路：它管的是随机抽题的口味
+  // 逻辑推理三档（P4，2026-09-16 起 全部 / 仅逻辑题 / 排除）不该碰这条路：
+  // 它管的是随机抽题的口味
   assert.equal(
     exam.includes('indexForLogicReasoning(reachable'),
     false,

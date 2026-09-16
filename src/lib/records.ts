@@ -285,18 +285,32 @@ export function reachableIndex(index: IndexEntry[], unlocked: boolean): IndexEnt
 // 登记处在 lib/storage.ts；这里原样转出，调用方与测试不必跟着改 import
 export { LOGIC_REASONING_KEY };
 
+/** 三档（用户裁定 2026-09-16）：全部 / 仅逻辑题 / 排除逻辑题 */
+export type LogicFilter = 'all' | 'only' | 'exclude';
+
 /**
- * 取消勾选时**只**排除已标注为逻辑推理的题。没打标的题一律留下：
+ * 'exclude' 时**只**排除已标注为逻辑推理的题。没打标的题一律留下：
  * 打标覆盖率在各库之间差得极远（MAT 只有个位数百分比），把「没标过」
  * 当成「可能是逻辑题」排掉会把整个库清空。宁可漏排，不可错排。
+ *
+ * 'only' 反过来只留已标注的——同一个口径的两面，所以没标过的题在这一档
+ * 会全部落选（MAT 这种库因此可能缩到 0 题）。这是打标口径的直接后果，不是 bug。
+ *
+ * 面板的显示条件（当前 db 的 logic > 0）只挡住了其中一种情形：**同一个 db、
+ * 且不再叠加别的滤网**时，'only' 至少还剩一题。它挡不住叠加——再选「仅新题」
+ * 照样能归零；也挡不住「某个区×库组合一道 logic 标注都没有」——那时控件根本
+ * 不渲染，而用户存着的 'only' 仍然生效。现有数据里每个组合的 logic 都 > 0，
+ * 所以后一种当下不发生，但那是**数据依赖**，不是这个函数给的保证。
  */
-export function indexForLogicReasoning(index: IndexEntry[], include: boolean): IndexEntry[] {
-  return include ? index : index.filter((entry) => !entry.logic);
+export function indexForLogicReasoning(index: IndexEntry[], filter: LogicFilter): IndexEntry[] {
+  if (filter === 'all') return index;
+  if (filter === 'only') return index.filter((entry) => !!entry.logic);
+  return index.filter((entry) => !entry.logic);
 }
 
 /** 当前题库范围内，这个开关到底管得到多少题 */
 export interface LogicCoverage {
-  /** 已标注为逻辑推理的题数——取消勾选正好排除这些，一道不多 */
+  /** 已标注为逻辑推理的题数——「排除」档正好排除这些，一道不多；「仅逻辑题」档只留这些 */
   logic: number;
   /** 整理过知识点的题数（含上面那些逻辑题），也就是这个开关「看得见」的范围 */
   tagged: number;
@@ -308,7 +322,7 @@ export interface LogicCoverage {
  * 面板上那行覆盖率提示的数据源。刻意接收「过滤之前」的池子：
  * 提示描述的是这个开关能做什么，不能自己随着勾选状态变来变去。
  *
- * 顺带也是勾选框的显示条件（logic > 0）。按标签口径每个库都可能有逻辑题，
+ * 顺带也是这组分段按钮的显示条件（logic > 0）。按标签口径每个库都可能有逻辑题，
  * 不再像卷别口径那样能预先写死是哪几个库。
  */
 export function logicCoverage(index: IndexEntry[], db: ExamDb): LogicCoverage {
@@ -320,19 +334,28 @@ export function logicCoverage(index: IndexEntry[], db: ExamDb): LogicCoverage {
   };
 }
 
-/** 默认含逻辑题：它是题库本来的一部分，只有明确关过的人才该拿到收窄的池子 */
-export function loadIncludeLogicReasoning(): boolean {
-  if (typeof window === 'undefined') return true;
+/**
+ * 默认 'all'：整个题库本来就含逻辑题，只有明确选过别的档位的人才该拿到收窄的池子。
+ *
+ * 键沿用两态时代的 LOGIC_REASONING_KEY，不另开新键——存量用户手里存的是
+ * '1' / '0'，就地映射（'1' → all、'0' → exclude）比多一个键干净；
+ * 认不出来的值一律当 'all'，和从前「不猜」的口径一致。
+ */
+export function loadLogicFilter(): LogicFilter {
+  if (typeof window === 'undefined') return 'all';
   try {
-    return localStorage.getItem(LOGIC_REASONING_KEY) !== '0';
+    const raw = localStorage.getItem(LOGIC_REASONING_KEY);
+    if (raw === 'all' || raw === 'only' || raw === 'exclude') return raw;
+    if (raw === '0') return 'exclude';
+    return 'all';
   } catch {
-    return true;
+    return 'all';
   }
 }
 
-export function saveIncludeLogicReasoning(include: boolean): void {
+export function saveLogicFilter(filter: LogicFilter): void {
   try {
-    localStorage.setItem(LOGIC_REASONING_KEY, include ? '1' : '0');
+    localStorage.setItem(LOGIC_REASONING_KEY, filter);
   } catch {
     // 和 saveRecords 一样：无痕模式或配额满了不该拦住这次练习
   }

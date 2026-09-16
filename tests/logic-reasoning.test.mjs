@@ -10,9 +10,9 @@ import { fileURLToPath } from 'node:url';
 // 或 subtopics 正好是 Logic），不是 TMUA 的 Paper 2 整卷。
 // 这组测试盯四件事：
 //   1. 构建期的 logic / tagged 标记与 md 源文件里的标签严丝合缝
-//   2. 取消勾选只排除「已标注」的题——没打标的一律留下
+//   2. 「排除」档只排除「已标注」的题——没打标的一律留下；「仅逻辑题」是同一口径的反面
 //   3. 覆盖率如实披露：打标只做了一部分，面板上得说得出这个开关管得到多少题
-//   4. 开关只收窄抽题池——365 解锁计数、卡面徽章、Grill、Diagnostic 一律不受影响
+//   4. 三档任一都只收窄抽题池——365 解锁计数、卡面徽章、Grill、Diagnostic 一律不受影响
 //
 // 显式带 .ts 扩展名：node --experimental-strip-types 直接跑源码，ESM 解析器不补
 import { pickGrillQids } from '../src/lib/grill.ts';
@@ -25,10 +25,10 @@ import {
   indexForLibraryMode,
   indexForLogicReasoning,
   isHiddenModeUnlocked,
-  loadIncludeLogicReasoning,
+  loadLogicFilter,
   logicCoverage,
   pickQidsForMode,
-  saveIncludeLogicReasoning,
+  saveLogicFilter,
   validCompletedCount,
 } from '../src/lib/records.ts';
 
@@ -38,7 +38,7 @@ const cssPath = 'src/components/exam/Exam.module.css';
 
 /**
  * 一份混了各种标记的小索引，用来看清每层滤网各自丢掉了谁。
- * 关键是 1 和 5：没打标的题，取消勾选时必须原样留下——
+ * 关键是 1 和 5：没打标的题，切到「排除」时必须原样留下——
  * 「认不出来」不等于「不是逻辑题」，更不等于可以排掉
  */
 const MIXED = [
@@ -201,14 +201,14 @@ test('build-data marks exactly the questions the bank itself tagged as logic', (
   assert.ok(p2NotLogic > 0, 'Paper 2 里大量题目不是逻辑题，卷别口径会错杀它们');
 });
 
-test('unticking removes only tagged logic questions and keeps everything untagged', () => {
+test('excluding removes only tagged logic questions and keeps everything untagged', () => {
   assert.deepEqual(
-    indexForLogicReasoning(MIXED, true).map((entry) => entry.qid),
+    indexForLogicReasoning(MIXED, 'all').map((entry) => entry.qid),
     [1, 2, 3, 4, 5, 6],
-    '勾选时原样放行，一条不动',
+    '「全部」原样放行，一条不动',
   );
   assert.deepEqual(
-    indexForLogicReasoning(MIXED, false).map((entry) => entry.qid),
+    indexForLogicReasoning(MIXED, 'exclude').map((entry) => entry.qid),
     [1, 4, 5, 6],
     '只丢已标注的逻辑题；没打标的 1 / 5 必须留下，打标了但非逻辑的 4 也留下',
   );
@@ -219,20 +219,54 @@ test('unticking removes only tagged logic questions and keeps everything untagge
     { qid: 8, db: 'MAT' },
   ];
   assert.deepEqual(
-    indexForLogicReasoning(untaggedOnly, false).map((entry) => entry.qid),
+    indexForLogicReasoning(untaggedOnly, 'exclude').map((entry) => entry.qid),
     [7, 8],
-    '一道都没打标的库，关掉开关也不该少一题',
+    '一道都没打标的库，切到「排除」也不该少一题',
   );
 
   // 两层复合：题库范围先滤，标签后滤，各自的口径都不受对方影响。
   // 两个区互斥（P6 用户裁定）：classic 只有非 hidden，9.0 只有 hidden
   const classic = indexForLibraryMode(MIXED, 'classic');
   assert.deepEqual(classic.map((entry) => entry.qid), [1, 2, 5]);
-  assert.deepEqual(indexForLogicReasoning(classic, false).map((entry) => entry.qid), [1, 5]);
+  assert.deepEqual(indexForLogicReasoning(classic, 'exclude').map((entry) => entry.qid), [1, 5]);
 
   const expanded = indexForLibraryMode(MIXED, 'hidden');
   assert.deepEqual(expanded.map((entry) => entry.qid), [3, 4]);
-  assert.deepEqual(indexForLogicReasoning(expanded, false).map((entry) => entry.qid), [4]);
+  assert.deepEqual(indexForLogicReasoning(expanded, 'exclude').map((entry) => entry.qid), [4]);
+});
+
+test('only-logic keeps exactly the tagged logic questions, and nothing else', () => {
+  assert.deepEqual(
+    indexForLogicReasoning(MIXED, 'only').map((entry) => entry.qid),
+    [2, 3],
+    '只留已标注的逻辑题：没打标的 1 / 5、打标了但非逻辑的 4、诊断集的 6 全部落选',
+  );
+
+  // 'only' 与 'exclude' 是同一条判据的两面，合起来正好是整份索引，不重不漏
+  assert.deepEqual(
+    [...indexForLogicReasoning(MIXED, 'only'), ...indexForLogicReasoning(MIXED, 'exclude')]
+      .map((entry) => entry.qid)
+      .sort((a, b) => a - b),
+    indexForLogicReasoning(MIXED, 'all').map((entry) => entry.qid),
+  );
+
+  // 一道都没打标的库，'only' 的结果就是空——这是打标口径的直接后果，不是 bug。
+  // 面板的显示条件（logic > 0）保证用户根本选不到这一档
+  const untaggedOnly = [
+    { qid: 7, db: 'MAT' },
+    { qid: 8, db: 'MAT' },
+  ];
+  assert.deepEqual(indexForLogicReasoning(untaggedOnly, 'only'), []);
+
+  // 复合同样成立：范围先滤，标签后滤
+  assert.deepEqual(
+    indexForLogicReasoning(indexForLibraryMode(MIXED, 'classic'), 'only').map((e) => e.qid),
+    [2],
+  );
+  assert.deepEqual(
+    indexForLogicReasoning(indexForLibraryMode(MIXED, 'hidden'), 'only').map((e) => e.qid),
+    [3],
+  );
 });
 
 test('coverage reports what the switch can actually reach in the chosen bank', () => {
@@ -244,8 +278,8 @@ test('coverage reports what the switch can actually reach in the chosen bank', (
   assert.deepEqual(logicCoverage(MIXED, 'ALL'), { logic: 2, tagged: 3, total: 6 });
 
   // 分母是「当前范围内的总题数」，所以它必须读收窄之前的池子。
-  // 若拿过滤后的池子去算，勾掉开关会让提示自己缩水成 0，用户永远看不明白
-  const narrowed = indexForLogicReasoning(MIXED, false);
+  // 若拿过滤后的池子去算，切到「排除」会让提示自己缩水成 0，用户永远看不明白
+  const narrowed = indexForLogicReasoning(MIXED, 'exclude');
   assert.equal(logicCoverage(narrowed, 'ALL').logic, 0);
   assert.notDeepEqual(logicCoverage(narrowed, 'ALL'), logicCoverage(MIXED, 'ALL'));
 
@@ -256,29 +290,40 @@ test('coverage reports what the switch can actually reach in the chosen bank', (
   }
 });
 
-test('the checkbox shows for any bank that has tagged logic questions, and hides otherwise', () => {
+test('the segmented control shows for any bank that has tagged logic questions, and hides otherwise', () => {
   // 显示条件就是 logic > 0：标签口径下每个库都可能有逻辑题，
   // 不再像卷别口径那样能预先写死是 TMUA 那几个库
   for (const db of ['TMUA', 'TMUA_MOCK', 'ALL']) {
-    assert.ok(logicCoverage(MIXED, db).logic > 0, `${db} 有已标注的逻辑题，开关要出现`);
+    assert.ok(logicCoverage(MIXED, db).logic > 0, `${db} 有已标注的逻辑题，这组按钮要出现`);
   }
-  assert.equal(logicCoverage(MIXED, 'MAT').logic, 0, 'MAT 一道标注过的逻辑题都没有，开关不该出现');
+  assert.equal(logicCoverage(MIXED, 'MAT').logic, 0, 'MAT 一道标注过的逻辑题都没有，这组按钮不该出现');
 
   const noLogic = [{ qid: 1, db: 'SMC', tagged: true }];
   assert.equal(logicCoverage(noLogic, 'SMC').logic, 0, '全标完但没有逻辑题时同样不出现');
 });
 
-test('every pick mode stops surfacing logic questions once the switch is off, and the pool shrinks with it', () => {
+test('every pick mode stops surfacing logic questions once excluded, and the pool shrinks with it', () => {
   const index = halfLogic(40);
   const records = createEmptyRecords();
-  const on = indexForLogicReasoning(indexForLibraryMode(index, 'classic'), true);
-  const off = indexForLogicReasoning(indexForLibraryMode(index, 'classic'), false);
+  const on = indexForLogicReasoning(indexForLibraryMode(index, 'classic'), 'all');
+  const off = indexForLogicReasoning(indexForLibraryMode(index, 'classic'), 'exclude');
+  const onlyLogic = indexForLogicReasoning(indexForLibraryMode(index, 'classic'), 'only');
 
   for (const db of ['TMUA', 'ALL']) {
     // 题数档位读的就是这个数（P0 已有机制），池子缩了它自然跟着缩
     assert.equal(availableCountForMode(on, db, 'random', records), index.length);
     assert.equal(availableCountForMode(off, db, 'random', records), off.length);
-    assert.ok(off.length < on.length, '关掉开关必须真的收窄池子');
+    assert.ok(off.length < on.length, '「排除」必须真的收窄池子');
+    // 「仅逻辑题」同样只收窄，且抽到的每一道都得是逻辑题
+    assert.equal(availableCountForMode(onlyLogic, db, 'random', records), onlyLogic.length);
+    assert.ok(onlyLogic.length < on.length, '「仅逻辑题」必须真的收窄池子');
+    assert.equal(
+      pickQidsForMode(onlyLogic, db, onlyLogic.length, 'random', records).every(
+        (qid) => qid % 2 === 0,
+      ),
+      true,
+      `${db} 的「仅逻辑题」抽到了非逻辑题`,
+    );
 
     for (const mode of ['random', 'wrong-and-new', 'new-only']) {
       const picked = pickQidsForMode(off, db, off.length, mode, records);
@@ -291,29 +336,29 @@ test('every pick mode stops surfacing logic questions once the switch is off, an
     }
   }
 
-  // 关掉之后错题优先那条支路也不该把逻辑题捞回来
+  // 切到「排除」之后，错题优先那条支路也不该把逻辑题捞回来
   const withWrong = createEmptyRecords();
   for (const qid of [2, 4, 6, 8]) withWrong.q[String(qid)] = { a: 1, w: 1, t: 1, c: 0 };
   const picked = pickQidsForMode(off, 'TMUA', 10, 'wrong-and-new', withWrong);
   assert.equal(picked.some((qid) => qid % 2 === 0), false, '错题里的逻辑题也不该回来');
 });
 
-test('the 365 unlock counts questions already answered, switch or no switch', () => {
+test('the 365 unlock counts questions already answered, whichever filter is chosen', () => {
   const index = halfLogic(HIDDEN_UNLOCK_COUNT);
   const records = answeredAll(index);
 
   assert.equal(validCompletedCount(index, records), HIDDEN_UNLOCK_COUNT);
   assert.equal(isHiddenModeUnlocked(index, records), true);
 
-  // 反面：口径若跟着开关走，这个已经解锁的用户会当场被打回去。
+  // 反面：口径若跟着这三档走，这个已经解锁的用户会当场被打回去。
   // 所以 ExamApp 必须把整份索引喂给解锁计数，而不是收窄后的抽题池
-  const narrowed = indexForLogicReasoning(index, false);
+  const narrowed = indexForLogicReasoning(index, 'exclude');
   assert.equal(validCompletedCount(narrowed, records), narrowed.length);
   assert.ok(narrowed.length < HIDDEN_UNLOCK_COUNT);
   assert.equal(isHiddenModeUnlocked(narrowed, records), false);
 });
 
-test('Grill picks from the bound set without passing through the switch', () => {
+test('Grill picks from the bound set without passing through the filter', () => {
   const index = [
     { qid: 11, db: 'GMAT', diag: true },
     { qid: 12, db: 'GMAT', diag: true },
@@ -326,13 +371,13 @@ test('Grill picks from the bound set without passing through the switch', () => 
   assert.deepEqual(pickGrillQids(index, records, 10, 'random').sort((a, b) => a - b), [11, 12, 13]);
 });
 
-test('without a window the preference reads as on and saving is a no-op', () => {
+test('without a window the preference reads as all and saving is a no-op', () => {
   assert.equal(typeof globalThis.window, 'undefined', '这条必须跑在没有 window 的环境里');
-  assert.equal(loadIncludeLogicReasoning(), true);
-  assert.doesNotThrow(() => saveIncludeLogicReasoning(false));
+  assert.equal(loadLogicFilter(), 'all');
+  assert.doesNotThrow(() => saveLogicFilter('exclude'));
 });
 
-test('the preference persists under a versioned key and defaults to checked', (t) => {
+test('the preference persists under a versioned key, defaults to all, and migrates old values', (t) => {
   const store = new Map();
   globalThis.window = {};
   globalThis.localStorage = {
@@ -345,44 +390,64 @@ test('the preference persists under a versioned key and defaults to checked', (t
     delete globalThis.window;
   });
 
+  // 键不许改：两态时代存的就是这个键，改了等于把存量用户的选择整批丢掉
   assert.equal(LOGIC_REASONING_KEY, 'mcq-test:logic-reasoning:v1');
-  assert.equal(loadIncludeLogicReasoning(), true, '没存过就是勾选');
+  assert.equal(loadLogicFilter(), 'all', '没存过就是「全部」');
 
-  saveIncludeLogicReasoning(false);
-  assert.equal(store.get(LOGIC_REASONING_KEY), '0');
-  assert.equal(loadIncludeLogicReasoning(), false);
+  for (const filter of ['all', 'only', 'exclude']) {
+    saveLogicFilter(filter);
+    assert.equal(store.get(LOGIC_REASONING_KEY), filter, '新值原样存字符串');
+    assert.equal(loadLogicFilter(), filter);
+  }
 
-  saveIncludeLogicReasoning(true);
-  assert.equal(loadIncludeLogicReasoning(), true);
+  // 两态时代的存量值：'1'（勾选）→ all、'0'（取消勾选）→ exclude
+  store.set(LOGIC_REASONING_KEY, '1');
+  assert.equal(loadLogicFilter(), 'all', "老值 '1' 是「含逻辑题」，迁到「全部」");
+  store.set(LOGIC_REASONING_KEY, '0');
+  assert.equal(loadLogicFilter(), 'exclude', "老值 '0' 是「不含逻辑题」，迁到「排除」");
 
   store.set(LOGIC_REASONING_KEY, 'maybe');
-  assert.equal(loadIncludeLogicReasoning(), true, '认不出来的值一律当勾选，不猜');
+  assert.equal(loadLogicFilter(), 'all', '认不出来的值一律当「全部」，不猜');
+  store.delete(LOGIC_REASONING_KEY);
+  assert.equal(loadLogicFilter(), 'all', '缺失同样是「全部」');
 });
 
-test('both dictionaries name the switch, and the maintainer-voiced disclosure is gone', () => {
+test('both dictionaries name all three choices, and the maintainer-voiced disclosure is gone', () => {
+  const keys = ['logicReasoning', 'logicAll', 'logicOnly', 'logicExclude'];
   for (const lang of ['zh', 'en']) {
-    const { logicReasoning } = DICT[lang].setup;
-    assert.ok(logicReasoning.trim().length > 0, `${lang} 的开关文案是空的`);
-    // 旧口径的措辞不该留在界面上：这个开关和 Paper 2 已经没有关系了
-    assert.doesNotMatch(logicReasoning, /Paper\s*2/i, `${lang} 的开关文案还写着 Paper 2`);
+    for (const key of keys) {
+      const text = DICT[lang].setup[key];
+      assert.equal(typeof text, 'string', `${lang} 缺 ${key}`);
+      assert.ok(text.trim().length > 0, `${lang} 的 ${key} 是空的`);
+      // 旧口径的措辞不该留在界面上：这组按钮和 Paper 2 已经没有关系了
+      assert.doesNotMatch(text, /Paper\s*2/i, `${lang} 的 ${key} 还写着 Paper 2`);
+    }
+    // 三项彼此不同，否则按钮上会出现两个一模一样的档位
+    assert.equal(
+      new Set(keys.slice(1).map((key) => DICT[lang].setup[key])).size,
+      3,
+      `${lang} 的三档文案有重复`,
+    );
     // 覆盖率披露已按用户裁定移除（2026-08-23）：那是维护者视角的
     // 打标进度报告，不该出现在学生的题库设置面板上
     assert.equal('logicCoverage' in DICT[lang].setup, false, `${lang} 还留着 logicCoverage 键`);
   }
-  assert.notEqual(
-    DICT.zh.setup.logicReasoning,
-    DICT.en.setup.logicReasoning,
-    '这条不是考试专名，两种语言必须真的翻过',
-  );
+  for (const key of keys) {
+    assert.notEqual(
+      DICT.zh.setup[key],
+      DICT.en.setup[key],
+      `${key} 不是考试专名，两种语言必须真的翻过`,
+    );
+  }
 });
 
-test('the setup panel wires the switch into the pick pool and nowhere else', () => {
+test('the setup panel wires the filter into the pick pool and nowhere else', () => {
   const exam = fs.readFileSync(examPath, 'utf8');
 
   // 抽题池 = 题库范围滤过之后再过这层
   assert.match(exam, /const scopedIndex = indexForLibraryMode\(/);
-  assert.match(exam, /indexForLogicReasoning\(scopedIndex, includeLogic\)/);
-  // 覆盖率读的是收窄之前那一层，否则勾掉开关后提示自己就变了
+  assert.match(exam, /indexForLogicReasoning\(scopedIndex, logicFilter\)/);
+  // 覆盖率读的是收窄之前那一层，否则切档之后提示自己就变了
   assert.match(exam, /logicCoverage\(scopedIndex, db\)/);
 
   // 解锁计数 / 卡面徽章 / Grill 拿的都是整份索引
@@ -402,20 +467,44 @@ test('the setup panel wires the switch into the pick pool and nowhere else', () 
     'isHiddenModeUnlocked(activeIndex',
     'pickGrillQids(activeIndex',
   ]) {
-    assert.equal(exam.includes(forbidden), false, `${forbidden} 会让开关漏进不该管的地方`);
+    assert.equal(exam.includes(forbidden), false, `${forbidden} 会让这个筛选漏进不该管的地方`);
   }
 
-  // 默认勾选，回读在 effect 里（首帧必须和静态导出的 HTML 一致），落盘写在 setter 里
-  assert.match(exam, /const \[includeLogic, setIncludeLogic\] = useState\(true\)/);
-  assert.match(exam, /useEffect\(\(\) => \{\s*setIncludeLogic\(loadIncludeLogicReasoning\(\)\);/);
-  assert.match(exam, /saveIncludeLogicReasoning\(next\)/);
+  // 显式指定 qid 的那条通道（重练错题 / Grill / 弱项图的「练这类题」都走它）
+  // 按整份 index 取题：那些 qid 是从别处挑好的，可能落在当前抽题池之外，
+  // 再过一次这层滤网就会当场少题——而用户点的是「重练我这道错题」
+  assert.match(
+    exam,
+    /override\?\.qids\s*\?\s*index\.filter\(/,
+    'override.qids 必须按整份索引取题',
+  );
+  assert.doesNotMatch(
+    exam,
+    /override\?\.qids\s*\?\s*activeIndex\.filter\(/,
+    '这条路改读 activeIndex 会让逻辑推理档位吃掉别人挑好的题',
+  );
 
-  // 面板上是一行勾选加一行覆盖率说明，挂在「题库」那一组下面，
+  // 默认「全部」，回读在 effect 里（首帧必须和静态导出的 HTML 一致），落盘写在 setter 里
+  assert.match(exam, /const \[logicFilter, setLogicFilter\] = useState<LogicFilter>\('all'\)/);
+  assert.match(exam, /useEffect\(\(\) => \{\s*setLogicFilter\(loadLogicFilter\(\)\);/);
+  assert.match(exam, /saveLogicFilter\(next\)/);
+
+  // 面板上是一组三档分段按钮，挂在「题库」那一组下面，
   // 且只在当前范围内真有已标注的逻辑题时才渲染
   assert.match(exam, /\{logicCov\.logic > 0 && \(/);
-  assert.match(exam, /type="checkbox"/);
-  assert.match(exam, /checked=\{includeLogic\}/);
-  assert.match(exam, /\{t\.setup\.logicReasoning\}/, '文案必须走字典');
+  assert.equal(exam.includes('type="checkbox"'), false, '两态的勾选框应当已经换掉');
+  for (const value of ["'all'", "'only'", "'exclude'"]) {
+    assert.ok(exam.includes(`[${value}, t.setup.logic`), `${value} 这一档没接上字典`);
+  }
+  assert.match(exam, /\{t\.setup\.logicReasoning\}/, '组标题必须走字典');
+  assert.match(exam, /t\.setup\.logicAll/, '文案必须走字典');
+  assert.match(exam, /t\.setup\.logicOnly/, '文案必须走字典');
+  assert.match(exam, /t\.setup\.logicExclude/, '文案必须走字典');
+  // 选中态得报出去。刻意**不**用 radiogroup / radio：没有 roving tabindex
+  // 与方向键，报出单选组却按键无反应比原生勾选框更糟；和同屏另外三组保持一致
+  assert.match(exam, /aria-pressed=\{logicFilter === value\}/);
+  assert.equal(exam.includes('role="radio"'), false, '没有方向键就别声称自己是单选组');
+  assert.equal(exam.includes('role="radiogroup"'), false, '同上');
   const switchAt = exam.indexOf('logicCov.logic > 0');
   assert.ok(
     exam.indexOf('t.setup.fieldBank') < switchAt && switchAt < exam.indexOf('t.setup.fieldMode'),
@@ -428,17 +517,24 @@ test('the setup panel wires the switch into the pick pool and nowhere else', () 
   }
 });
 
-test('the checkbox borrows the existing panel styling instead of inventing its own', () => {
+test('the segmented control borrows the existing panel styling instead of inventing its own', () => {
   const exam = fs.readFileSync(examPath, 'utf8');
   const css = fs.readFileSync(cssPath, 'utf8');
 
-  assert.match(exam, /styles\.segRow/);
-  assert.match(exam, /styles\.checkLabel.*styles\.segActive/s, '选中态复用 segActive');
-  // 边框/圆角/字号照抄 segBtn，用的还是同一套主题变量
-  assert.match(css, /\.checkLabel \{[^}]*border-radius: 8px;/s);
-  assert.match(css, /\.checkLabel \{[^}]*var\(--surface-alt\)/s);
-  assert.match(css, /\.checkBox \{[^}]*accent-color: var\(--accent\)/s);
-  // 说明文字独占一行，不跟勾选框挤在一排
+  // 和「模式」「抽题范围」同款：fieldLabel 起标题 + segRow 装 segBtn，选中态 segActive
+  assert.match(exam, /styles\.fieldLabel\}>\{t\.setup\.logicReasoning\}/);
+  assert.match(exam, /styles\.fieldLabel\}>\{t\.setup\.logicReasoning\}<\/div>\s*<div className=\{styles\.segRow\}>/);
+  assert.match(
+    exam,
+    /styles\.segBtn\} \$\{logicFilter === value \? styles\.segActive : ''\}/,
+    '选中态复用 segActive',
+  );
+  assert.match(css, /\.segBtn \{[^}]*border-radius: 8px;/s);
+  assert.match(css, /\.segBtn \{[^}]*var\(--surface-alt\)/s);
+  assert.match(css, /\.segActive \{[^}]*var\(--accent\)/s);
+  // 两态时代的勾选框样式不该留残——它已经没有任何使用者了
+  assert.doesNotMatch(css, /\.checkLabel/);
+  assert.doesNotMatch(css, /\.checkBox/);
   // 覆盖率披露已移除（用户裁定 2026-08-23），样式也不该留残
   assert.doesNotMatch(css, /\.checkNote/);
 });
@@ -486,16 +582,25 @@ test('the frontmatter parser keeps a block list alive across blank lines and com
 
 
 
-test('an empty pool points back at the switch that emptied it', () => {
+test('an empty pool points back at the exclude setting that emptied it', () => {
   const exam = fs.readFileSync(examPath, 'utf8');
 
-  // 「该题库没有可用题目」本身不指向开关，而开关就在同屏上方
-  assert.match(exam, /!includeLogic && logicCov\.logic > 0 &&/);
-  assert.match(exam, /t\.setup\.emptyBankLogicHint\(logicCov\.logic\)/);
+  // 「该题库没有可用题目」本身不指向那组按钮，而它就在同屏上方。
+  // 两档对称：显示条件与控件同源（logic > 0），只有 N 不同——
+  // 「排除」挡住的是已标注的逻辑题，「仅逻辑题」挡住的是当前范围里其余全部
+  assert.match(exam, /logicFilter !== 'all' &&\s*logicCov\.logic > 0 &&/);
+  assert.match(
+    exam,
+    /emptyBankLogicHint\(\s*logicFilter === 'only' \? logicCov\.total - logicCov\.logic : logicCov\.logic,\s*\)/,
+  );
   for (const dict of Object.values(DICT)) {
     const hint = dict.setup.emptyBankLogicHint(10);
-    assert.match(hint, /10/, '提示里要给出勾回来能多出多少题');
+    assert.match(hint, /10/, '提示里要给出切回「全部」能多出多少题');
   }
+
+  // 两档的 N 合起来正好是当前范围的总题数：谁也不会把对方那部分算进自己头上
+  const cov = logicCoverage(MIXED, 'ALL');
+  assert.equal(cov.logic + (cov.total - cov.logic), cov.total);
 
   // 覆盖率那行是开关的实话，读屏用户也得听得到
   assert.doesNotMatch(exam, /logic-coverage-note/);

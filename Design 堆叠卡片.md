@@ -207,6 +207,21 @@ aria-describedby 关联、空池提示指向开关。未采纳：`Proof` 标签�
 （in-index 影响 0 题）。数据侧待清：JZMaths_SetB-Mock-P2-Q8 的 subtopics
 有重复项 `[Proof, Proof, Trigonometry]`（在 vault 侧，需你确认后清）
 
+**2026-09-16 用户裁定**：改三档 **全部 / 仅逻辑题 / 排除**（勾选框换成与「模式」
+「抽题范围」同款的分段按钮组）；存储键 `mcq-test:logic-reasoning:v1` 不变，
+取值迁移 `'1'` → all、`'0'` → exclude，其余（含缺失）一律 all。其余裁定不变：
+判定口径、「排除」只排已标注的题、开关只收窄抽题池、显示条件仍是当前 db 的
+`logic > 0`。控件按 `styles.seg*` 裸按钮 + `aria-pressed` 写，**不**报 radiogroup：
+没有 roving tabindex 与方向键，报了也按不动；四组分段统一的可访问性另立任务。
+
+- 「仅逻辑题」在没打标的库里结果为空，这是打标口径的直接后果。显示条件只挡住
+  「同一个 db 且不叠加抽题范围」这一种情形：再叠「仅新题」照样能归零（Start 会
+  置灰，空池提示对「排除」「仅逻辑题」两档都给出「切回「全部」可再抽 N 道」，
+  N 分别是 `logicCov.logic` 与 `logicCov.total - logicCov.logic`）
+- 若将来某个区×库组合一道 `logic` 标注都没有，控件不渲染而用户存着的 `'only'`
+  仍生效，池子会是 0。现有数据每个组合都 > 0，当下不触发——这是**数据依赖**，
+  不是结构保证
+
 ## 13. P5 复盘弱项图（2026-08-15）
 
 §9 图纸落地 + 审查裁决。数据管线：独立 topics.json（12 词表 + alias 归并 +

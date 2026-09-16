@@ -53,13 +53,13 @@ import {
   indexForLibraryMode,
   indexForLogicReasoning,
   isHiddenModeUnlocked,
-  loadIncludeLogicReasoning,
+  loadLogicFilter,
   loadRecords,
   logicCoverage,
   overview,
   pickQidsForMode,
   reachableIndex,
-  saveIncludeLogicReasoning,
+  saveLogicFilter,
   saveRecords,
   validCompletedCount,
   wrongRanking,
@@ -68,6 +68,7 @@ import {
   recordDiagnostic,
   HIDDEN_UNLOCK_COUNT,
   type LibraryMode,
+  type LogicFilter,
   type PickMode,
   type Records,
 } from '@/lib/records';
@@ -221,18 +222,18 @@ export default function ExamApp() {
     setRecords(loadRecords());
   }, []);
 
-  // 逻辑推理题开关。默认勾选；回读放 effect 里，
+  // 逻辑推理题三档（全部 / 仅逻辑题 / 排除）。默认 'all'；回读放 effect 里，
   // 静态导出的首帧按默认值预渲染，同步读 localStorage 会水合不匹配（同 lang / zone）
-  const [includeLogic, setIncludeLogic] = useState(true);
+  const [logicFilter, setLogicFilter] = useState<LogicFilter>('all');
 
   useEffect(() => {
-    setIncludeLogic(loadIncludeLogicReasoning());
+    setLogicFilter(loadLogicFilter());
   }, []);
 
   /** 落盘写在 setter 里而不是 effect 里，免得上面那次回读被首帧的默认值盖掉 */
-  const chooseLogicReasoning = (next: boolean) => {
-    setIncludeLogic(next);
-    saveIncludeLogicReasoning(next);
+  const chooseLogicReasoning = (next: LogicFilter) => {
+    setLogicFilter(next);
+    saveLogicFilter(next);
   };
 
   // 这三个数都读整份索引，与开关无关：365 解锁算的是「做过的题」，
@@ -246,7 +247,7 @@ export default function ExamApp() {
   // 中间那层单独留个名字，因为覆盖率提示要读的正是「开关生效之前」的池子——
   // 提示说的是这个开关能做什么，不能自己跟着勾选状态变
   const scopedIndex = indexForLibraryMode(index || [], hiddenUnlocked ? libraryMode : 'classic');
-  const activeIndex = indexForLogicReasoning(scopedIndex, includeLogic);
+  const activeIndex = indexForLogicReasoning(scopedIndex, logicFilter);
 
   /** 转牌并落盘。写在 setter 里而不是 effect 里，免得首帧把回读结果覆盖掉 */
   const chooseZone = useCallback((id: ZoneId) => {
@@ -1300,23 +1301,41 @@ export default function ExamApp() {
             <p className={styles.zoneScopeNote}>{t.setup.trivialScopeNote}</p>
           )}
 
-          {/* 逻辑推理开关属于「题库」这一组，所以不另起 fieldLabel。
-              一道标注过的逻辑题都没有时整行不渲染——摆着也只是个按不动的开关。
+          {/* 逻辑推理三档（用户裁定 2026-09-16）：全部 / 仅逻辑题 / 排除。
+              当前 db 一道标注过的逻辑题都没有时整组不渲染——摆着也只是三个按不动的按钮。
+              注意这**不**等于「仅逻辑题」永远选不空池子：它只保证「同一个 db、
+              且不叠加抽题范围」这一种情形。叠上「仅新题」照样能归零（Start 会置灰，
+              下面那条提示负责指路）；而万一将来某个区×库组合一道 logic 标注都没有，
+              用户存着的 'only' 会配上一个隐藏了的控件——现有数据里每个组合都 > 0，
+              所以当下不触发，但这是**数据依赖**，不是结构保证。
               覆盖率披露已按用户裁定移除（2026-08-23）：那是维护者视角的打标
               进度报告，普通学生不需要读。抽题池的真实数字在题数档位里，
-              空池时另有「勾回可再抽 N 道」的操作提示兑底 */}
+              空池时另有「切回全部可再抽 N 道」的操作提示兑底。
+              刻意不按 ARIA 单选组来标（radiogroup / radio 那一套）：没有 roving
+              tabindex 和方向键，报出单选组却按不动比不报更糟。和同屏另外三组一致，
+              用裸按钮 + aria-pressed；四组统一的可访问性另立任务 */}
           {logicCov.logic > 0 && (
-            <div className={styles.segRow}>
-              <label className={`${styles.checkLabel} ${includeLogic ? styles.segActive : ''}`}>
-                <input
-                  className={styles.checkBox}
-                  type="checkbox"
-                  checked={includeLogic}
-                  onChange={(e) => chooseLogicReasoning(e.target.checked)}
-                />
-                {t.setup.logicReasoning}
-              </label>
-            </div>
+            <>
+              <div className={styles.fieldLabel}>{t.setup.logicReasoning}</div>
+              <div className={styles.segRow}>
+                {(
+                  [
+                    ['all', t.setup.logicAll],
+                    ['only', t.setup.logicOnly],
+                    ['exclude', t.setup.logicExclude],
+                  ] as [LogicFilter, string][]
+                ).map(([value, label]) => (
+                  <button
+                    key={value}
+                    aria-pressed={logicFilter === value}
+                    className={`${styles.segBtn} ${logicFilter === value ? styles.segActive : ''}`}
+                    onClick={() => chooseLogicReasoning(value)}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </>
           )}
 
           <div className={styles.fieldLabel}>{t.setup.fieldMode}</div>
@@ -1419,9 +1438,15 @@ export default function ExamApp() {
           {index && totalPool === 0 && (
             <div className={styles.errMsg}>
               {t.setup.emptyBank}
-              {/* 池子空掉时，若逻辑题正被开关挡在外面，直接说明勾回来能多出多少题——
-                  开关就在同屏上方，但「没有可用题目」这句话本身不指向它 */}
-              {!includeLogic && logicCov.logic > 0 && ` ${t.setup.emptyBankLogicHint(logicCov.logic)}`}
+              {/* 池子空掉时，若有题正被这组按钮挡在外面，直接说明切回「全部」能多出多少题——
+                  那组按钮就在同屏上方，但「没有可用题目」这句话本身不指向它。
+                  两档对称：「排除」挡住的是已标注的逻辑题，「仅逻辑题」挡住的是其余全部。
+                  条件与控件的显示条件同源，免得提示指向一个没渲染出来的控件 */}
+              {logicFilter !== 'all' &&
+                logicCov.logic > 0 &&
+                ` ${t.setup.emptyBankLogicHint(
+                  logicFilter === 'only' ? logicCov.total - logicCov.logic : logicCov.logic,
+                )}`}
             </div>
           )}
           <div className={styles.backLink}>{t.setup.keyboard}</div>
