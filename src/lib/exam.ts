@@ -26,7 +26,17 @@ export interface ExamQuestion {
 }
 
 export const EXAM_DATABASES = ['TMUA', 'TMUA_MOCK', 'MAT', 'SMC', 'ECAA', 'AMC'] as const;
-export type ExamDb = (typeof EXAM_DATABASES)[number] | 'ALL';
+
+/**
+ * 7.5+ Diagnostic 的备用题源（源侧的 `TMUA Addition/`），index 里 db 取这个值
+ * 并一律带 diag: true。
+ *
+ * 刻意**不**进 EXAM_DATABASES：那个数组是选区里那排题库按钮的清单，
+ * 进去就等于在面板上多一个永远 0 题的灰按钮。诊断专用库归属靠 diag 标记，
+ * 不靠库名——各池函数排除的也都是标记。
+ */
+export const DIAG75_DB = 'DIAG75';
+export type ExamDb = (typeof EXAM_DATABASES)[number] | typeof DIAG75_DB | 'ALL';
 
 /** 索引条目：只有能自动判分的题才会出现在索引里 */
 export interface IndexEntry {

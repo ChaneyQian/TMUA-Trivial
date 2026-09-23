@@ -27,7 +27,18 @@ const MIN_GRADEABLE = /^\d+$/.test(process.env.MIN_GRADEABLE || '')
 
 // 'TMUA Mock' 是题库源里的独立顶层库（原先嵌在 TMUA/Mock 下，2026-08 提升出来）。
 // 目录名带空格无妨：这里只拿它拼路径，题目落进 index 时统一叫 TMUA_MOCK
-const DATABASES = ['TMUA', 'TMUA Mock', 'MAT', 'SMC', 'ECAA', 'AMC', 'GMAT'];
+const DATABASES = ['TMUA', 'TMUA Mock', 'MAT', 'SMC', 'ECAA', 'AMC', 'GMAT', 'TMUA Addition'];
+
+// 7.5+ Diagnostic 的备用题源。目录名（源侧的顶层库）与它在 index 里的 db 名分开写：
+// 这批题的 frontmatter 各自写着 database: TMUA / MAT（决定用哪个选项解析器），
+// 而它们在站内属于哪个池子是另一件事——统一落成 DIAG75 并打 diag
+const ADDITION_DB = 'TMUA Addition';
+const DIAG75_DB = 'DIAG75';
+
+// 只开了一部分子目录的库。Addition 底下 Clarkson / Euclid Modification 等
+// 用户裁定「先不启用」，这里也得拦一道：sync-bank 不镜像它们只管 data\，
+// 而 BANK_PATH 可以直接指到 vault 上试跑，那条路绕过了 sync
+const DATABASE_SUBDIRS = { [ADDITION_DB]: ['SMT Skills', '野题'] };
 const ROMANS = ['i', 'ii', 'iii', 'iv', 'v', 'vi'];
 // 扩到 l：TMUA Mock 实测最多 12 选项（JZMaths SetB-P2-Q18 / SetC-P2-Q20，
 // 另有 7 道 10 选项、1 道 9 选项）。MAT / SMC 最多 5 选，括号解析器遇到
@@ -404,8 +415,14 @@ function detectCorruption(parsed, database) {
  * 格式上就该当 TMUA 认。不映射的话哪个分支都不匹配，整库会掉进
  * inlineFallback——选项按钮只剩字母，题面里还留着一整串原文
  */
-function choiceFormat(sourceDatabase) {
-  return sourceDatabase === 'TMUA Mock' ? 'TMUA' : sourceDatabase;
+function choiceFormat(sourceDatabase, data) {
+  if (sourceDatabase === 'TMUA Mock') return 'TMUA';
+  // Addition 是个混装目录：同一个 SMT Skills 里 TMUA style（$$\mathbf{A} \quad …$$）
+  // 与 MAT style（(a)…(e) 括号行）并存，体例只能按每题自己的 database 字段定。
+  // 按所在顶层目录定的话，56 道 MAT style 会被喂给 TMUA 解析器，
+  // 全库掉进 inlineFallback——选项按钮只剩字母、括号选项还原样留在题面里
+  if (sourceDatabase === ADDITION_DB) return String(data.database || '') === 'MAT' ? 'MAT' : 'TMUA';
+  return sourceDatabase;
 }
 
 function parseChoicesFor(database, statement, answer) {
@@ -485,9 +502,26 @@ function splitDiagnosticPaper(entries) {
   return sets;
 }
 
-/** 诊断集（GMAT）：入 index 但另作一池，体例同 hidden */
+/** 诊断集：入 index 但另作一池，体例同 hidden。GMAT 是现行 Diagnostic，DIAG75 是 7.5+ 的备用题源 */
 function isDiagnosticQuestion(database) {
-  return database === 'GMAT';
+  return database === 'GMAT' || database === DIAG75_DB;
+}
+
+/**
+ * 复核闸：Addition 这批题的答案多数取自书后解答、尚未独立复核，用户裁定
+ * 「先选复核正确的题入库」。vault 侧给复核通过的题在 frontmatter 加
+ * `answer_verified: true`，没有这一行或值不是 true 的整题不收。
+ *
+ * parseFrontmatter 不解析 YAML 标量类型，`true` 读出来是字符串 'true'；
+ * 大小写与引号都已被 unquote / 这里的 toLowerCase 吸收掉。
+ * 这道闸**只对 Addition 生效**——别的库里若有人写了这个字段，一律不受影响。
+ */
+function needsAnswerVerified(sourceDatabase) {
+  return sourceDatabase === ADDITION_DB;
+}
+
+function isAnswerVerified(data) {
+  return String(data.answer_verified ?? '').trim().toLowerCase() === 'true';
 }
 
 /**
@@ -514,6 +548,10 @@ function fullPaperLabel(paper, year) {
 }
 
 function indexDatabase(sourceDatabase, filePath, data) {
+  // 整个目录归 7.5+ Diagnostic 的备用池。刻意**不**看题目自己的 database 字段：
+  // 那个字段说的是「按谁的体例写的」（TMUA / MAT style），不是「属于哪个池子」。
+  // 认它的话这批题会混进 TMUA / MAT 的经典抽题池
+  if (sourceDatabase === ADDITION_DB) return DIAG75_DB;
   // 独立顶层库，整库都是 mock
   if (sourceDatabase === 'TMUA Mock') return 'TMUA_MOCK';
   if (sourceDatabase !== 'TMUA') return sourceDatabase;
@@ -663,7 +701,7 @@ function main() {
   // 卷面清单：键是「库 + 展示用卷号」，粒度就是题头上写的那一行
   const papers = new Map();
   let inlineCount = 0;
-  const skipped = { unreadable: 0, noQid: 0, duplicate: 0, noStatement: 0, todo: 0, badAnswer: 0, noChoices: 0, answerMismatch: 0, corrupted: 0 };
+  const skipped = { unreadable: 0, noQid: 0, duplicate: 0, unverified: 0, noStatement: 0, todo: 0, badAnswer: 0, noChoices: 0, answerMismatch: 0, corrupted: 0 };
   // 同一份跳过还按「库/子目录」记一遍。总数说明不了任何事——badAnswer 两百多题
   // 摊在哪几套卷上，刷新题库时得当场看见，否则没法挑出该去补答案的那一卷
   const skippedByDir = new Map();
@@ -677,7 +715,11 @@ function main() {
   };
 
   for (const sourceDb of DATABASES) {
-    for (const filePath of listQuestionFiles(path.join(BANK, sourceDb))) {
+    // 没登记过子目录白名单的库照旧整库扫；登记过的只扫白名单里那几个
+    const roots = (DATABASE_SUBDIRS[sourceDb] || ['']).map((sub) => path.join(BANK, sourceDb, sub));
+    const files = [];
+    for (const root of roots) listQuestionFiles(root, files);
+    for (const filePath of files) {
       let raw;
       // 读不出来的文件绝不能静默吞掉：权限、文件被占用、坏扇区、符号链接断了，
       // 都会走到这里。原先是裸 continue，一整批题凭空消失时日志里连个痕迹都没有
@@ -698,6 +740,13 @@ function main() {
         skip('duplicate', filePath);
         continue;
       }
+
+      // 复核闸（只对 Addition 生效，见 needsAnswerVerified）：没复核过的题
+      // 整题不收——不进 index、不产单题 JSON、引用的图也不跟着复制进来
+      if (needsAnswerVerified(sourceDb) && !isAnswerVerified(data)) {
+        skip('unverified', filePath);
+        continue;
+      }
       const db = indexDatabase(sourceDb, filePath, data);
 
       const sections = parseSections(body);
@@ -712,7 +761,7 @@ function main() {
       const answer = normalizeAnswer(sections['答案']);
       if (!answer) { skip('badAnswer', filePath); continue; }
 
-      const format = choiceFormat(sourceDb);
+      const format = choiceFormat(sourceDb, data);
       let parsed = parseChoicesFor(format, statement, answer);
       if (!parsed) { skip('noChoices', filePath); continue; }
       // 答案的体例以选项自己的标号为准：同一个 "i"，在 9 选项的 TMUA 题里是
@@ -777,10 +826,14 @@ function main() {
       // 诊断集：只给「Diagnostic Test 压力测试」用，不参与 classic / 9.0 随机抽题池
       if (isDiagnosticQuestion(db)) {
         indexEntry.diag = true;
-        // 固定卷只取 algebra 两套；用所在目录名认卷别
-        const folder = path.basename(path.dirname(filePath));
-        for (const [paper, dir] of Object.entries(DIAG_PAPER_DIRS)) {
-          if (folder === dir) diagCandidates[paper].push({ qid, rank: levelRank(data) });
+        // 固定卷仍然只由 GMAT 的 algebra 两套组成：7.5+ 那批题的组卷规则还没定，
+        // 一道都不许漏进现行 Diagnostic。目录名恰好也对不上，但「恰好」不是保证
+        if (db === 'GMAT') {
+          // 用所在目录名认卷别
+          const folder = path.basename(path.dirname(filePath));
+          for (const [paper, dir] of Object.entries(DIAG_PAPER_DIRS)) {
+            if (folder === dir) diagCandidates[paper].push({ qid, rank: levelRank(data) });
+          }
         }
       }
       index.push(indexEntry);

@@ -597,3 +597,104 @@ build_logicproof_compendium.py（commit a566420）与三本成品 PDF。
 LP1 数据管线（sync 拷贝 + 讲解转 Markdown + build-data 产出 + 测试：203 题全部归节、
 顺序与 PDF 一致、闸不漏）→ LP2 阅读器 UI（看板首页 + 节页 + 门禁态）。
 两期各自可发布；LP1 先上不影响任何现有页面。
+
+## 21. 7.5+ Diagnostic 题库数据通道〔已交付数据层 / 规则待定〕（2026-09-18）
+
+现行 Diagnostic（GMAT 两卷、`diag.json` 固定卷、36/40 通过、两次机会）保持原样运行。
+这一期**只做数据通道**，不动考试引擎、不动任何 UI：新题库先躺在 index 里，
+等用户把规则拍下来再接引擎。
+
+### 题源
+- 用户指定的 10 道难题（来自 2026-09-18 转来的一篇文章）：
+
+  | qid | 站内出处 | 所在区 |
+  | --- | --- | --- |
+  | 20132101203108 / 203115 / 203117 / 203120 | TMUA Mock Yotta P1 Q8 / Q15 / Q17 / Q20 | 9.0 Trivial |
+  | 20040300103 | MAT 2004 Q1C | 9.0 Trivial |
+  | 20050300102 / 20050300104 | MAT 2005 Q1B / Q1D | 9.0 Trivial |
+  | 20180211900 | TMUA 2018 P1 Q19 | 经典 |
+  | 20230300110 | MAT 2023 Q1J | 经典 |
+  | 99000200100 | 野题 Wild-Q01（全库唯一出处不明的一道，新建） | 新库 |
+
+  9 道已在常规库里，只有 Wild-Q01 是新入的。
+- `TMUA Addition/SMT Skills/` 117 题：Hodder 备考书章末 TMUA style / MAT style 题
+  （`SMT-Ch<N>-Q<n>.md`，61 道 TMUA style + 56 道 MAT style）
+- `TMUA Addition/野题/` 1 题（Wild-Q01）
+- 图片 33 张在 `TMUA Addition/Image/`，全部被上面两个子目录引用到
+
+### 复核闸：`answer_verified`
+SMT Skills 那 117 题的答案多数取自书后解答、尚未独立复核（已知书后至少错 5 处），
+用户裁定**「先选复核正确的题入库」**。
+
+- vault 侧给复核通过的题在 frontmatter 加 `answer_verified: true`
+- build-data 里没有这一行、或值不是 true 的，`skip('unverified', …)` **整题跳过**：
+  不进 index、不产单题 JSON、引用的图也不复制
+- 这道闸**只对 `TMUA Addition` 生效**。别的库里若写了这个字段一律不受影响——
+  钉了测试
+- 逐目录跳过报告会照常列出 `TMUA Addition/SMT Skills  unverified N`，
+  复核进度在每次构建日志里看得见
+- 2026-09-18 实测：118 题里 6 道已复核（SMT-Ch3-Q3 / Ch3-Q13 / Ch5-Q3 / Ch5-Q16 /
+  Ch6-Q9、Wild-Q01），112 道 unverified
+
+### Addition 只开两个子目录
+`TMUA Addition/` 下还有 Clarkson、Euclid Modification 等，用户此前裁定「先不启用」，
+这一期仍不启用。
+
+- sync-bank 新增「库/子目录」粒度的同步条目（`PARTIAL_BANKS`）：只镜像
+  `SMT Skills` 与 `野题` 两棵子树，其它子目录不碰、不镜像，也不会被镜像删除逻辑扫到
+- `Image/` 不整目录镜像（那里装着**所有**子目录的图）：只拷这两个子目录的题
+  真正引用到的（认 `![[Image/x.png]]`、`![[Image/x.png|宽度]]` 与 `![](Image/x.png)`
+  三种写法），目标侧多余的按既有镜像删除逻辑清掉
+- build-data 侧也拦一道（`DATABASE_SUBDIRS`）：`BANK_PATH` 可以直接指到 vault 上试跑，
+  那条路绕过 sync
+
+### 隔离方式：`DIAG75` + `diag: true`
+- index 条目 `{ qid, db: 'DIAG75', diag: true }`。`DIAG75` 在 `src/lib/exam.ts` 里
+  进了 `ExamDb`，但**不**进 `EXAM_DATABASES`——那个数组是选区里那排题库按钮的清单，
+  进去就是一个永远 0 题的灰按钮
+- 隔离全靠 `diag` 标记，不靠库名：经典池 / 9.0 Trivial 池（`indexForLibraryMode`）、
+  复盘可达范围（`reachableIndex`）、练习池（`practiceQids`，错题榜与「重练这些」）、
+  365 解锁计数（`validCompletedCount`）、知识点倒排与卷面墙（build-data 里的
+  `if (!indexEntry.diag)`）——逐个核过，一处也没有按 `db === 'GMAT'` 写死的
+- 测试侧倒有一处写死：`tests/gmat.test.mjs` 对真实产物断言「只有 GMAT 是诊断集」
+  （`entry.diag && entry.db !== 'GMAT'` 必须为 0）。sync 之后 Addition 进了 data\，
+  这条必红（模拟 sync 后实测确认），已改成 GMAT 与 DIAG75 两个来源
+- 留了一个数据依赖的雷：SMT Skills 的 `topics` 现在全空。日后若补打知识点标签
+  （尤其 Logic and Proof），`tests/logic-reasoning.test.mjs` 里两条断言会互相顶牛——
+  「每条 index 的 logic 标记与源标签逐条一致」要求 DIAG75 条目带上 logic，
+  「没有条目既是 logic 又是 diag」又不许。隔离本身不受影响（各池先滤 diag 再过逻辑开关），
+  但届时得定口径：诊断条目要不要带 logic / tagged
+- 选项体例按**每题自己的 `database` 字段**选解析器（TMUA style → 公式块解析器，
+  MAT style → 括号解析器），不按所在顶层目录。按目录选的话 56 道 MAT style
+  会整批掉进 inlineFallback
+- 站内归属（`indexDatabase`）则刻意**不**看 `database` 字段：那个字段说的是
+  「按谁的体例写的」，不是「属于哪个池子」
+- MIN_GRADEABLE 下限与其它闸（badAnswer / TODO / 重复题 / corrupted）照常生效。
+  把 118 题全标成已复核试跑，117 题正常解析，1 题（SMT-Ch8-Q5，源里选项标号
+  写成了 A B C D F E）被既有的「标号不连续」闸拦下——vault 侧待订正
+
+### 现行 Diagnostic 不受影响
+`diag.json` 的两套固定卷仍只由 GMAT 的 `algebra-ps` / `algebra-ds` 生成。
+除了目录名对不上，另加了一道 `db === 'GMAT'` 的显式闸——「恰好对不上」不是保证。
+测试钉死：有 Addition 题时 `diag.json` 与没有时**逐字节相同**；fixture 里还放了个诱饵
+（Addition 底下一个也叫 `algebra-ps` 的子目录），拿掉那道显式闸这条测试就红。
+
+真实数据上也核过（2026-09-23）：草稿区拷一份仓库，把 vault 的 Addition 拷成 sync 源
+跑一遍 sync-bank + build-data，产物与现行构建相比 `diag.json` / `papers.json` /
+`topics.json` 逐字节相同，index 只多了 6 条 DIAG75；全套测试在这个「sync 之后」的
+状态下照样全绿。
+
+### 待用户拍板（规则定了才接引擎）
+1. **每场题数与配比**：指定 10 题 + SMT Skills 抽多少？固定卷还是随机抽？
+2. **限时**：沿用现行的「每题基准秒数 + 时间银行」，还是整卷计时？
+3. **通过线**：现行是 36/40（90%）。7.5+ 是另一条线还是同一条？
+4. **机会次数**：现行两次、各用一套互不重题的卷。这里几次、几套？
+5. **是否仍解锁 9.0**：两条路（365 / Diagnostic Pass）之外再开第三条，
+   还是 7.5+ 与 9.0 解锁脱钩、只作水平判定？
+6. **那 9 道已在常规库里的指定题要不要抽出常规池**：抽出会让经典/Trivial 池
+   各少几题（其中 7 道在 9.0 Trivial、2 道在经典区），不抽则考前可能已经做过。
+   建议不抽（与「重复题」那条裁定的口径不同：那是同题两份，这是同一份题两种用途）
+7. **老用户记录的处置**：已经做过那 9 道题的人，记录里已有对错。诊断要求「全程不给
+   对错」，但这几题的对错早就在 `records.q` 里了
+8. **GMAT 复烤区题目的处置**：现行 Diagnostic 做过的题会进 Grill 绑定集。
+   7.5+ 也进同一个绑定集，还是另开一个？
