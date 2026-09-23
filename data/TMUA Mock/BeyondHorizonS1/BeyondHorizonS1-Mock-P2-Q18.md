@@ -15,11 +15,10 @@ status: 已入库
 
 ## 题目
 Consider the following statements:
-> (1) For all polygons, all angles being equal is not sufficient for the polygon to be regular.
->
-> (2) There exists some polygon such that being able to draw a circle around the polygon which touches all its corners is sufficient for the polygon to be regular.
->
-> (3) For all $n$ (where $n$ can take any value in $\{1,2,3,4\}$), there exists a hexagon with $n$ lines of symmetry.
+
+	(1) For all polygons, all angles being equal is not sufficient for the polygon to be regular.
+	(2) There exists some polygon such that being able to draw a circle around the polygon which touches all its corners is sufficient for the polygon to be regular.
+	(3) For all $n$ (where $n$ can take any value in $\{1,2,3,4\}$), there exists a hexagon with $n$ lines of symmetry.
 
 Which one of the following is/are true?
 $$\mathbf{A} \quad \text{None}$$

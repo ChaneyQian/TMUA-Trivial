@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 6
 topics: [Logic and Proof, Miscellaneous Pure, Polynomial, Algebra (Basic)]
 subtopics: [Logic, Inequalities, Polynomials, Algebra Manipulation]
-tags: [Iff, Inequalities]
+tags: [Iff, Iff, Inequalities]
 status: 已入库
 ---
 

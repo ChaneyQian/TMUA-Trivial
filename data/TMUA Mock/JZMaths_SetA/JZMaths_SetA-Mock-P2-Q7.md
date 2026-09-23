@@ -8,8 +8,8 @@ number: Q7
 section: Multiple Choice
 difficulty: 6.5
 topics: [Logic and Proof, Miscellaneous Pure]
-subtopics: [Logic, Proof, Inequalities]
-tags: [Truth-Value-List, Counterexample, Inequality-Manipulation, Inequalities]
+subtopics: [Logic, Proof, Proof, Inequalities]
+tags: [Truth-Value-Truth-Value-List, Cist, Counterexample, Inequalunterexample, Inequalityty-ManipManipulalation, Inequalities]
 status: 已入库
 ---
 
@@ -44,7 +44,8 @@ $$ \mathbf{J} \quad \mathbf{III} \text{ and } \mathbf{IV} \text{ only} $$
 ### AI备注
 
 
-ℹ️ 2026-09-14 Fable 复核：按 §2.4ter 并挂线调整 Proof。
+
+ℹ️ 2026-09-14 Fable 复核：按 §2.4ter 并挂线调整 Proof。ℹ️ 2026-09-14 Fable 复核：按 §2.4ter 并挂线调整 Proof。
 ## 答案
 H
 

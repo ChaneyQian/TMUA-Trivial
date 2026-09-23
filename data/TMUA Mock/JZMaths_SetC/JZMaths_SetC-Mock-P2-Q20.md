@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 8.5
 topics: [Logic and Proof, Geometry]
 subtopics: [Logic, Euclid Geometry]
-tags: [Sufficient-Condition, Counterexample]
+tags: [Sufficient-Condition, Counterexamplet-Condition, Counterexample]
 status: 已入库
 ---
 
@@ -20,11 +20,11 @@ Let $ABCD$ be a convex quadrilateral, with its vertices labelled in order. A qua
 
 Which of the following statements, taken individually, are **sufficient** to guarantee that $ABCD$ is a rhombus?
 
-1. $AB = AD$, and the diagonals $AC$ and $BD$ intersect at right angles.
-2. $AB = CD$, and the diagonals $AC$ and $BD$ divide $ABCD$ into four similar triangles.
-3. The diagonals $AC$ and $BD$ divide $ABCD$ into four similar triangles.
-4. The diagonal $AC$ divides $ABCD$ into two triangles, and the diagonal $BD$ divides $ABCD$ into two triangles, with all four of these triangles having the same area.
-5. $AB = BC = CD$, and the triangles $ABC$ and $BCD$ are congruent.
+	1. $AB = AD$, and the diagonals $AC$ and $BD$ intersect at right angles.
+	2. $AB = CD$, and the diagonals $AC$ and $BD$ divide $ABCD$ into four similar triangles.
+	3. The diagonals $AC$ and $BD$ divide $ABCD$ into four similar triangles.
+	4. The diagonal $AC$ divides $ABCD$ into two triangles, and the diagonal $BD$ divides $ABCD$ into two triangles, with all four of these triangles having the same area.
+	5. $AB = BC = CD$, and the triangles $ABC$ and $BCD$ are congruent.
 
 $$ \mathbf{A} \quad \text{Only 1.} $$
 $$ \mathbf{B} \quad \text{Only 2.} $$
@@ -46,7 +46,8 @@ $$ \mathbf{L} \quad \text{None of them.} $$
 ### AI备注
 
 
-ℹ️ 2026-09-14 Fable 复核：按 §2.4ter 并挂线调整 Proof。
+
+ℹ️ 2026-09-14 Fable 复核：按 §2.4ter 并挂线调整 Proof。ℹ️ 2026-09-14 Fable 复核：按 §2.4ter 并挂线调整 Proof。
 ## 答案
 B
 

@@ -15,10 +15,11 @@ status: 已入库
 
 ## 题目
 It is given that $\int u \frac{dv}{dx} \,dx = uv - \int v \frac{du}{dx} \,dx$. Here is an attempt to prove $0 = 1$:
-1. Let $u = \frac{1}{x}$ and $\frac{dv}{dx} = 1$
-2. $\frac{du}{dx} = -\frac{1}{x^2}$ and $v = x$
-3. $\int \frac{1}{x} \,dx = 1 + \int \frac{1}{x} \,dx$
-4. $\int \frac{1}{x} \,dx = 1 + \int \frac{1}{x} \,dx$. Therefore, $0 = 1$. QED.
+
+	1. Let $u = \frac{1}{x}$ and $\frac{dv}{dx} = 1$
+	2. $\frac{du}{dx} = -\frac{1}{x^2}$ and $v = x$
+	3. $\int \frac{1}{x} \,dx = 1 + \int \frac{1}{x} \,dx$
+	4. $\int \frac{1}{x} \,dx = 1 + \int \frac{1}{x} \,dx$. Therefore, $0 = 1$. QED.
 
 $$
 \mathbf{A} \quad \text{The proof is incorrect, and the first error is on line 1.}

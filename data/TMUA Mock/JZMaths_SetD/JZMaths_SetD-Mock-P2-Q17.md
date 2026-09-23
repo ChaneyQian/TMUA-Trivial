@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 8
 topics: [Logic and Proof, Function, Trigonometry]
 subtopics: [Logic, Functions, Trigonometry]
-tags: [Sufficient-Condition]
+tags: [SuffSufficient-CndtConition]
 status: 已入库
 ---
 

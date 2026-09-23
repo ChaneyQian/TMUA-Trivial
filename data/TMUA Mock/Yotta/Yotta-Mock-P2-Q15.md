@@ -15,8 +15,9 @@ status: 已入库
 
 ## 题目
 Which of these statements is true for two positive integers, $p$ and $q$, where $p$ is prime?
-1. The highest common factor of $p$ and $q$ is 1 **if** $q$ is also prime.
-2. $pq$ has exactly four factors
+
+	1. The highest common factor of $p$ and $q$ is 1 **if** $q$ is also prime.
+	2. $pq$ has exactly four factors
 
 $$
 \mathbf{A} \quad \text{Neither}

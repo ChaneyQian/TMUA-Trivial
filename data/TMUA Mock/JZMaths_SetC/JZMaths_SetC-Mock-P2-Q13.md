@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 7
 topics: [Logic and Proof, Algebra (Basic)]
 subtopics: [Logic, Surds and indices]
-tags: [Iff]
+tags: [IIff]
 status: 已入库
 ---
 

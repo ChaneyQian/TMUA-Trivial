@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 6.5
 topics: [Logic and Proof, Polynomial]
 subtopics: [Logic, Solution of Equations]
-tags: [Necessary-Condition, Differentiation]
+tags: [NNecessacssary-Coy-Conddition, Dffifferentiarentiation]
 status: 已入库
 ---
 

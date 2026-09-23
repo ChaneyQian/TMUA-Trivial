@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 7.5
 topics: [Logic and Proof, Function]
 subtopics: [Logic, Functions]
-tags: [Iff, Transformation-of-Graphs]
+tags: [IffIff, Transformation-of-Graphs]
 status: 已入库
 ---
 

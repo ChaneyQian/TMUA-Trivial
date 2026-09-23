@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 5.5
 topics: [Logic and Proof, Calculus, Function]
 subtopics: [Logic, Differentiation Application, Algebraic Functions]
-tags: [Iff, Differentiation]
+tags: [Iff, Iff, Differentia]
 status: 已入库
 ---
 

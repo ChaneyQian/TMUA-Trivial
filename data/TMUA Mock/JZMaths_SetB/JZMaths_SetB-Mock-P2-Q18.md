@@ -8,29 +8,26 @@ number: Q18
 section: Multiple Choice
 difficulty: 8.5
 topics: [Logic and Proof, Calculus]
-subtopics: [Logic, Proof, Integration]
-tags: [Truth-Value-List, Counterexample, Integration]
+subtopics: [Logic, Proof, Proof, Integration]
+tags: [TruthTrValue-Listh-Value-Lst, C, Couunterexampleterexample, Integration]
 status: 已入库
 ---
 
 ## 题目
 Let $f$ and $g$ be polynomials. Consider the following four statements.
 
-I: If $f'(x)\geq g'(x)$ for all $x\geq 0$ and $f(0)\geq g(0)$, then $f(x)\geq g(x)$ for all $x\geq 0$.
-
-II: If $f(x)\geq g(x)$ for all $x\geq 0$, then
-$$ \int_0^x t f(t)\,dt \geq \int_0^x t g(t)\,dt $$
-for all $x\geq 0$.
-
-III: If
-$$ \int_0^x f(t)\,dt \geq \int_0^x g(t)\,dt $$
-for all $x\geq 0$, then $f(x)\geq g(x)$ for all $x\geq 0$.
-
-IV: If
-$$ \int_0^x f(t)\,dt \geq \int_0^x g(t)\,dt $$
-for all $x\geq 0$, then
-$$ \int_0^x t^2 f(t)\,dt \geq \int_0^x t^2 g(t)\,dt $$
-for all $x\geq 0$.
+	I: If $f'(x)\geq g'(x)$ for all $x\geq 0$ and $f(0)\geq g(0)$, then $f(x)\geq g(x)$ for all $x\geq 0$.
+	II: If $f(x)\geq g(x)$ for all $x\geq 0$, then
+	$$ \int_0^x t f(t)\,dt \geq \int_0^x t g(t)\,dt $$
+	for all $x\geq 0$.
+	III: If
+	$$ \int_0^x f(t)\,dt \geq \int_0^x g(t)\,dt $$
+	for all $x\geq 0$, then $f(x)\geq g(x)$ for all $x\geq 0$.
+	IV: If
+	$$ \int_0^x f(t)\,dt \geq \int_0^x g(t)\,dt $$
+	for all $x\geq 0$, then
+	$$ \int_0^x t^2 f(t)\,dt \geq \int_0^x t^2 g(t)\,dt $$
+	for all $x\geq 0$.
 
 Which of the statements are true?
 
@@ -54,6 +51,7 @@ $$ \mathbf{L} \quad \text{all except IV} $$
 ### AI备注
 
 
+ℹ️ 2026-09-14 Fable 复核：按 §2.4ter 并挂线调整 Proof。
 ℹ️ 2026-09-14 Fable 复核：按 §2.4ter 并挂线调整 Proof。
 ## 答案
 F

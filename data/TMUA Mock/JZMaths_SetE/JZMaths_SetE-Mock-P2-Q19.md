@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 8.5
 topics: [Logic and Proof]
 subtopics: [Logic]
-tags: [Truth-Value-Puzzle, Deduction]
+tags: [TruthTruth-Value-Value-Puzzle, Puzzle, Deduction]
 status: 已入库
 ---
 

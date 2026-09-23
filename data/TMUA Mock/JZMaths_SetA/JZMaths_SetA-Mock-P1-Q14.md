@@ -16,11 +16,9 @@ status: 已入库
 ## 题目
 The following sequence of transformations is applied, in the order listed, to the curve $y = 2x^2 - 3x + 1$.
 
-(1) translation by $\binom{-1}{4}$;
-
-(2) reflection in the line $y = 2$;
-
-(3) stretch parallel to the $x$-axis with scale factor $\frac{1}{2}$.
+	(1) translation by $\binom{-1}{4}$;
+	(2) reflection in the line $y = 2$;
+	(3) stretch parallel to the $x$-axis with scale factor $\frac{1}{2}$.
 
 What is the equation of the resulting curve?
 

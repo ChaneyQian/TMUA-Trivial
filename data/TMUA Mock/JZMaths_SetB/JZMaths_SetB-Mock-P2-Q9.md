@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 7
 topics: [Logic and Proof, Algebra (Basic), Function]
 subtopics: [Logic, Systems Of Linear Equations, Exponentials and Logarithms]
-tags: [Iff, Exponentials-and-Logarithms, Linear-Equations]
+tags: [Iff, Iff, Exponentials-and-Logarithms, Linear-Equations]
 status: 已入库
 ---
 

@@ -9,20 +9,20 @@ section: Multiple Choice
 difficulty: 8
 topics: [Logic and Proof]
 subtopics: [Logic]
-tags: [Exactly-k-True, If-Then, Deduction]
+tags: [ExaExactlytly-k-k-TruTrue, IfIf-ThThen, DeduDedcttioon]
 status: 已入库
 ---
 
 ## 题目
 Let $f$ be a function defined on the real numbers. Consider the following seven statements, each intended to hold for all real values of $a$:
 
-(1) $f(a) > 0$ if $a > 0$.
-(2) $a > 0$ is necessary for $f(a) > 0$.
-(3) $a \le 0$ only if $f(a) \le 0$.
-(4) If $f(a) \le 0$, then $a \le 0$.
-(5) $f(a) > 0$ whenever $a \le 0$.
-(6) $a > 0$ is sufficient for $f(a) > 0$.
-(7) $f(a) \le 0$ is sufficient and necessary for $a > 0$.
+	(1) $f(a) > 0$ if $a > 0$.
+	(2) $a > 0$ is necessary for $f(a) > 0$.
+	(3) $a \le 0$ only if $f(a) \le 0$.
+	(4) If $f(a) \le 0$, then $a \le 0$.
+	(5) $f(a) > 0$ whenever $a \le 0$.
+	(6) $a > 0$ is sufficient for $f(a) > 0$.
+	(7) $f(a) \le 0$ is sufficient and necessary for $a > 0$.
 
 Given that **exactly one** of these seven statements is true for the particular function $f$ in question, which one is it?
 

@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 6
 topics: [Logic and Proof, Calculus]
 subtopics: [Logic, Differentiation Application]
-tags: [Iff, Counterexample, Differentiation]
+tags: [IIff, Counterexampl, Couterexample, Differentia]
 status: 已入库
 ---
 

@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 7
 topics: [Logic and Proof, Function]
 subtopics: [Proof, Functional Equations]
-tags: [Counterexample, If-Then, Graphs-of-Functions]
+tags: [Counterexample, If-Then, If-Then, Graphs-of-Functions]
 status: 已入库
 ---
 

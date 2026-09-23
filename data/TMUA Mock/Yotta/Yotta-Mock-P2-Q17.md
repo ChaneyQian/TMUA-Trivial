@@ -15,11 +15,12 @@ status: 已入库
 
 ## 题目
 For how many of these functions is $f'(x)$ strictly increasing for all real $x$?
-1. $\ln(x)$
-2. $\sin(x)$
-3. $-\ln(x)$
-4. $x^2$
-5. $x^3$
+
+	1. $\ln(x)$
+	2. $\sin(x)$
+	3. $-\ln(x)$
+	4. $x^2$
+	5. $x^3$
 
 $$
 \mathbf{A} \quad 0

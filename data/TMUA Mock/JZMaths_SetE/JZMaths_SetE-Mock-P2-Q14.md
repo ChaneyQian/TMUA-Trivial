@@ -8,8 +8,8 @@ number: Q14
 section: Multiple Choice
 difficulty: 7
 topics: [Logic and Proof, Geometry]
-subtopics: [Logic, Proof, Euclid Geometry, Vectors]
-tags: [Truth-Value-List, Counterexample, Geometry]
+subtopics: [Logic, Proof, Proof, Euclid Geometry, Vectors]
+tags: [TruthValuTr-Listh-Value-Lst, C, Couunterexampleterexample, Geometry]
 status: 已入库
 ---
 
@@ -18,13 +18,10 @@ The two diagonals of the convex quadrilateral $Q$ have equal length. A quadrilat
 
 Consider the following statements.
 
-(I) The four midpoints of the sides of $Q$ are the vertices of a rhombus.
-
-(II) At least one pair of opposite sides of $Q$ is parallel.
-
-(III) $Q$ has at least one line of symmetry.
-
-(IV) Let $A, B, C, D$ be the vertices of $Q$, labelled in order, then $AB^2 + CD^2 = BC^2 + DA^2$.
+	(I) The four midpoints of the sides of $Q$ are the vertices of a rhombus.
+	(II) At least one pair of opposite sides of $Q$ is parallel.
+	(III) $Q$ has at least one line of symmetry.
+	(IV) Let $A, B, C, D$ be the vertices of $Q$, labelled in order, then $AB^2 + CD^2 = BC^2 + DA^2$.
 
 Which of these statements is/are **necessarily** true for the quadrilateral $Q$?
 $$ \mathbf{A} \quad \text{(I) only} $$
@@ -45,6 +42,7 @@ $$ \mathbf{J} \quad \text{none of them} $$
 ### AI备注
 
 
+ℹ️ 2026-09-14 Fable 复核：按 §2.4ter 并挂线调整 Proof。
 ℹ️ 2026-09-14 Fable 复核：按 §2.4ter 并挂线调整 Proof。
 ## 答案
 A

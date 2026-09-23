@@ -15,9 +15,11 @@ status: 已入库
 
 ## 题目
 Let $f(x) = 3 - 2x$. A differentiable function $g$ satisfies $g'(x) = f(x)f'(x)(x - 3)$. For this question, take "$g$ is increasing at $x$" to mean $g'(x) \geq 0$. Decide which of the following statements are true.
-1. $x \leq \frac{3}{2}$ is a **sufficient** condition for $g$ to be increasing at $x$.
-2. $x \geq 3$ is a **necessary** condition for $g$ to be increasing at $x$.
-3. $x \leq \frac{3}{2}$ or $x \geq 3$ is a **necessary and sufficient** condition for $g$ to be increasing at $x$.
+
+	1. $x \leq \frac{3}{2}$ is a **sufficient** condition for $g$ to be increasing at $x$.
+	2. $x \geq 3$ is a **necessary** condition for $g$ to be increasing at $x$.
+	3. $x \leq \frac{3}{2}$ or $x \geq 3$ is a **necessary and sufficient** condition for $g$ to be increasing at $x$.
+
 How many of the statements 1-3 are true?
 
 $$

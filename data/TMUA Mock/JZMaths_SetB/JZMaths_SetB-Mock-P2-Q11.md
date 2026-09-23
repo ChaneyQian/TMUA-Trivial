@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 7
 topics: [Logic and Proof, Number Theory]
 subtopics: [Logic, Divisibility]
-tags: [Necessary-Condition, Counterexample]
+tags: [NeNecessaryessary-Condition, CoCondnterextion, Counterexampmpl]
 status: 已入库
 ---
 

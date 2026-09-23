@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 6
 topics: [Logic and Proof]
 subtopics: [Logic]
-tags: [Exactly-k-True, Deduction]
+tags: [ExaExactlytly-k-True, k-True, Deduction]
 status: 已入库
 ---
 

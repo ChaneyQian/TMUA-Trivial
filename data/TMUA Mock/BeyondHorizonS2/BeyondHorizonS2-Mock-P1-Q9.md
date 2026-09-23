@@ -16,9 +16,9 @@ status: 已入库
 ## 题目
 This sequence of transformations is applied to the curve $y = 3x^2$:
 
-1. Translation by $\begin{pmatrix} 2 \\ -4 \end{pmatrix}$
-2. Reflection in the $y$-axis
-3. Stretch parallel to the $y$-axis with scale factor 3
+	1. Translation by $\begin{pmatrix} 2 \\ -4 \end{pmatrix}$
+	2. Reflection in the $y$-axis
+	3. Stretch parallel to the $y$-axis with scale factor 3
 
 What is the equation of the resulting curve?
 $$\mathbf{A} \quad y = -3x^2 + 8x - 12$$

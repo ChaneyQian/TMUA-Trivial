@@ -8,8 +8,8 @@ number: Q10
 section: Multiple Choice
 difficulty: 7
 topics: [Logic and Proof, Function]
-subtopics: [Logic, Proof, Exponentials and Logarithms]
-tags: [Could-Be-True, Existence-Construction, Exponentials-and-Logarithms]
+subtopics: [Logic, Proof, Proof, Exponentials and Logarithms]
+tags: [CCould-Be-True, Exuld-Be-True, Existenstencee-ConstrConstruction, Exponentials-and-Logarithms]
 status: 已入库
 ---
 
@@ -19,13 +19,10 @@ $$ f(0) = 1, \qquad f(2) > a^2, \qquad f(-1) < a^{-1}. $$
 
 Consider the following four statements.
 
-I. $\quad f(x) = b^x$ for some real number $b$ with $b > a$.
-
-II. $\quad f(x) = b^x$ for some real number $b$ with $0 < b < a$.
-
-III. $\quad f(x) = a^{kx}$ for some real number $k$.
-
-IV. $\quad f(x) = b^{x^2}$ for some positive real number $b$.
+	I. $\quad f(x) = b^x$ for some real number $b$ with $b > a$.
+	II. $\quad f(x) = b^x$ for some real number $b$ with $0 < b < a$.
+	III. $\quad f(x) = a^{kx}$ for some real number $k$.
+	IV. $\quad f(x) = b^{x^2}$ for some positive real number $b$.
 
 Which of the statements **might** be true?
 
@@ -45,6 +42,7 @@ $$ \mathbf{H} \quad \text{All four statements.} $$
 ### AI备注
 
 
+ℹ️ 2026-09-14 Fable 复核：按 §2.4ter 并挂线调整 Proof。
 ℹ️ 2026-09-14 Fable 复核：按 §2.4ter 并挂线调整 Proof。
 ## 答案
 C

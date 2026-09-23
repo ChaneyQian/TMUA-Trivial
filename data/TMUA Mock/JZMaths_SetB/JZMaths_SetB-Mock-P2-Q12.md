@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 7.5
 topics: [Logic and Proof]
 subtopics: [Logic]
-tags: [Exactly-k-True, Contrapositive, Deduction]
+tags: [Exactly-k-True, ContrapsitExatlyve, k-TrueCntrapost, Dedution]
 status: 已入库
 ---
 

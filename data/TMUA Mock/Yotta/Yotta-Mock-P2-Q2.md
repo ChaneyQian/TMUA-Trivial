@@ -15,8 +15,9 @@ status: 已入库
 
 ## 题目
 Which of these statements is true for positive integers $n$:
-1. $n$ is prime **if** $n = 6k + 1$ **or** $n = 6k - 1$ for some integer $k$
-2. $n$ is prime **only if** $n = 6k + 1$ **or** $n = 6k - 1$ for some integer $k$
+
+	1. $n$ is prime **if** $n = 6k + 1$ **or** $n = 6k - 1$ for some integer $k$
+	2. $n$ is prime **only if** $n = 6k + 1$ **or** $n = 6k - 1$ for some integer $k$
 
 $$
 \mathbf{A} \quad \text{Neither}

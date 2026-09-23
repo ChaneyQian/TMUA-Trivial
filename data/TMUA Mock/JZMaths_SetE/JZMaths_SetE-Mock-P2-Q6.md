@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 6
 topics: [Logic and Proof, Geometry, Function, Algebra (Basic)]
 subtopics: [Logic, Coordinate Geometry, Algebraic Functions, Algebra Manipulation]
-tags: [Truth-Value-List, Transformation-of-Graphs]
+tags: [Truth-Value-List, Truth-Value-List, Transformation-of-Graphs]
 status: 已入库
 ---
 
@@ -21,11 +21,9 @@ and let $P_b$ denote the vertex of the graph $y = f_b(x)$. As $b$ varies over th
 
 Consider the following three statements.
 
-(I) The curve $\Gamma$ has equation $y = c + x^2$.
-
-(II) For all real numbers $b_1 < b_2$, the point $P_{b_2}$ lies strictly to the right of, and strictly below, the point $P_{b_1}$.
-
-(III) There is a unique real value of $b$ for which $f_b$ has a repeated root.
+	(I) The curve $\Gamma$ has equation $y = c + x^2$.
+	(II) For all real numbers $b_1 < b_2$, the point $P_{b_2}$ lies strictly to the right of, and strictly below, the point $P_{b_1}$.
+	(III) There is a unique real value of $b$ for which $f_b$ has a repeated root.
 
 Which of the statements are necessarily true?
 

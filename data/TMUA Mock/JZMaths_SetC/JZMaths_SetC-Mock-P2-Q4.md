@@ -9,20 +9,17 @@ section: Multiple Choice
 difficulty: 6
 topics: [Logic and Proof, Calculus]
 subtopics: [Logic, Differentiation Application, Integration]
-tags: [Necessary-Condition, Counterexample, Differentiation]
+tags: [NeNecessaryssary-ConCondiition, Counterexample, Counterexample, Differentiation]
 status: 已入库
 ---
 
 ## 题目
 Consider the following statements about the polynomial $f(x)$, where $a < b$:
 
-(1) $f(a) > f(b)$;
-
-(2) $f'(x) \leq 0$ for all $x \in [a, b]$;
-
-(3) $\int_a^b f(x) \, dx \leq 0$;
-
-(4) $f(a) + f(b) \leq 2f\left(\frac{a+b}{2}\right)$.
+	(1) $f(a) > f(b)$;
+	(2) $f'(x) \leq 0$ for all $x \in [a, b]$;
+	(3) $\int_a^b f(x) \, dx \leq 0$;
+	(4) $f(a) + f(b) \leq 2f\left(\frac{a+b}{2}\right)$.
 
 Which of these statements is a **necessary** condition for $f(x)$ to be decreasing for $a \leq x \leq b$? Here, decreasing means that $x_1 \leq x_2$ implies $f(x_1) \geq f(x_2)$.
 $$ \mathbf{A} \quad \text{none of them} $$

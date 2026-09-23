@@ -15,9 +15,10 @@ status: 已入库
 
 ## 题目
 A *squarefree* integer is a positive integer which isn't divisible by the square of a prime. Which of these statements about squarefree integers is correct?
-1. A squarefree integer with $n$ prime factors has $2^n$ factors.
-2. The product of two squarefree integers is always squarefree
-3. A squarefree integer cannot be a power of 36.
+
+	1. A squarefree integer with $n$ prime factors has $2^n$ factors.
+	2. The product of two squarefree integers is always squarefree
+	3. A squarefree integer cannot be a power of 36.
 
 $$
 \mathbf{A} \quad \text{None of them}

@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 9
 topics: [Logic and Proof, Miscellaneous Pure]
 subtopics: [Logic, Combinatorics]
-tags: [Truth-Value-Puzzle, Deduction]
+tags: [Truth-ValueTruth-Puzzle, Value-Puzzle, Deduction]
 status: 已入库
 ---
 

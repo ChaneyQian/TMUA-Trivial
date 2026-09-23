@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 6.5
 topics: [Logic and Proof, Calculus, Function]
 subtopics: [Proof, Differentiation Application, Algebraic Functions]
-tags: [Deduction, Error-Spotting, Division-by-Zero, Inequalities]
+tags: [Deduction, Error-Spotting, Division-by-Zero, Error-Spotting, Division-by-Zero, Inequalities]
 status: 已入库
 ---
 
@@ -21,17 +21,12 @@ A student attempts to find the values of $x$ for which the curve is increasing.
 
 Their working is shown below.
 
-**I.** $f'(x) = x^{4/3} + x^{1/3} - 2x^{-2/3}$
-
-**II.** $f'(x) = x^{-2/3}(x^2 + x - 2)$
-
-**III.** $x^{-2/3}(x^2 + x - 2) \geq 0$
-
-**IV.** $x^2 + x - 2 \geq 0$
-
-**V.** $(x - 1)(x + 2) \geq 0$
-
-**VI.** $x \leq -2$ or $x \geq 1$
+	I. $f'(x) = x^{4/3} + x^{1/3} - 2x^{-2/3}$
+	II. $f'(x) = x^{-2/3}(x^2 + x - 2)$
+	III. $x^{-2/3}(x^2 + x - 2) \geq 0$
+	IV. $x^2 + x - 2 \geq 0$
+	V. $(x - 1)(x + 2) \geq 0$
+	VI. $x \leq -2$ or $x \geq 1$
 
 Which of the following is true?
 

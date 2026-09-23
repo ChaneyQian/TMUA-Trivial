@@ -8,18 +8,18 @@ number: Q2
 section: Multiple Choice
 difficulty: 5.5
 topics: [Logic and Proof, Miscellaneous Pure]
-subtopics: [Logic, Proof, Inequalities]
-tags: [Truth-Value-List, Counterexample, Inequality-Manipulation, Inequalities]
+subtopics: [Logic, Proof, Proof, Inequalities]
+tags: [Truth-Value-List, Counterexample, Inequality-Manipulation, Truth-Value-List, Counterexample, Inequality-Manipulation, Inequalities]
 status: 已入库
 ---
 
 ## 题目
 Let $x$, $y$, $z$ be real numbers with $x \geq y$. Which of the following statements **must** be true?
 
-1. $x^3 \geq y^3$
-2. $x^2 \geq y^2$
-3. $xz \geq yz$
-4. $xz^2 \geq yz^2$
+	1. $x^3 \geq y^3$
+	2. $x^2 \geq y^2$
+	3. $xz \geq yz$
+	4. $xz^2 \geq yz^2$
 
 $$ \mathbf{A} \quad \text{none of them} $$
 $$ \mathbf{B} \quad \text{1 only} $$
@@ -39,7 +39,8 @@ $$ \mathbf{J} \quad \text{1, 2, 3 and 4} $$
 ### AI备注
 
 
-ℹ️ 2026-09-14 Fable 复核：按 §2.4ter 并挂线调整 Proof。
+
+ℹ️ 2026-09-14 Fable 复核：按 §2.4ter 并挂线调整 Proof。ℹ️ 2026-09-14 Fable 复核：按 §2.4ter 并挂线调整 Proof。
 ## 答案
 F
 

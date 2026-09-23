@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 6
 topics: [Logic and Proof, Number Theory]
 subtopics: [Proof, Modular Arithmetic and Congruences]
-tags: [Proof-by-Contradiction, Error-Spotting, Boundary-Case]
+tags: [ProProf-byof-Contraby-Contradiiction, Error-Spotting, Boundary-Case, Error-Spotting, Boundary-Case]
 status: 已入库
 ---
 
@@ -20,15 +20,15 @@ For every positive integer $n$, if $n^2 + 2$ is prime, then $n$ is a multiple of
 
 The student's argument is given line by line below.
 
-I. Suppose $n$ is a positive integer such that $n^2 + 2$ is prime, but $n$ is not a multiple of $3$.
-II. Then the remainder of $n$ on division by $3$ is $1$ or $2$.
-III. In either case, $n^2$ leaves remainder $1$ when divided by $3$.
-IV. Therefore $n^2 + 2$ leaves remainder $0$ when divided by $3$.
-V. So $3$ divides $n^2 + 2$.
-VI. Hence $n^2 + 2 = 3k$ for some integer $k$.
-VII. It follows that $n^2 + 2$ is composite and not prime.
-VIII. This contradicts the assumption in (I) that $n^2 + 2$ is prime.
-IX. Therefore $n$ is a multiple of $3$.
+	I. Suppose $n$ is a positive integer such that $n^2 + 2$ is prime, but $n$ is not a multiple of $3$.
+	II. Then the remainder of $n$ on division by $3$ is $1$ or $2$.
+	III. In either case, $n^2$ leaves remainder $1$ when divided by $3$.
+	IV. Therefore $n^2 + 2$ leaves remainder $0$ when divided by $3$.
+	V. So $3$ divides $n^2 + 2$.
+	VI. Hence $n^2 + 2 = 3k$ for some integer $k$.
+	VII. It follows that $n^2 + 2$ is composite and not prime.
+	VIII. This contradicts the assumption in (I) that $n^2 + 2$ is prime.
+	IX. Therefore $n$ is a multiple of $3$.
 
 Which one of the following statements about the argument is correct?
 

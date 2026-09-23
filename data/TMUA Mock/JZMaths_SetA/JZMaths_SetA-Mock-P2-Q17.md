@@ -20,23 +20,15 @@ In this question, $n$ is a positive integer.
 
 The following is an attempted proof of the statement:
 
-(1) Assume $n$ does not divide $k!$ for any positive integer $k$ with $k < n$.
-
-(2) Suppose for contradiction that $n$ is composite, so $n = ab$ for some integers $a$, $b$ with $1 < a \le b < n$.
-
-(3) Case 1: $a < b$. Then $a$ and $b$ are distinct integers, each in the set $\{2, 3, \ldots, n - 1\}$.
-
-(4) Therefore $a$ and $b$ both appear as factors in the product $(n - 1)! = 1 \cdot 2 \cdots (n - 1)$, so $ab = n$ divides $(n - 1)!$.
-
-(5) Case 2: $a = b$, so $n = a^2$.
-
-(6) Since $a \ge 2$, the integers $a$ and $2a$ both satisfy $a \ge 2$ and $2a \ge 4$, so they are positive integers.
-
-(7) Since $a \ge 2$, we have $a < a^2 = n$ and $2a < a^2 = n$, so $a$ and $2a$ are distinct integers in the set $\{2, 3, \ldots, n - 1\}$.
-
-(8) Therefore $a$ and $2a$ both appear as factors in $(n - 1)!$, so $a \cdot 2a = 2a^2 = 2n$ divides $(n - 1)!$, and in particular $n$ divides $(n - 1)!$.
-
-(9) In both cases $n$ divides $(n - 1)!$, contradicting the assumption in line 1. Hence $n$ is prime.
+	(1) Assume $n$ does not divide $k!$ for any positive integer $k$ with $k < n$.
+	(2) Suppose for contradiction that $n$ is composite, so $n = ab$ for some integers $a$, $b$ with $1 < a \le b < n$.
+	(3) Case 1: $a < b$. Then $a$ and $b$ are distinct integers, each in the set $\{2, 3, \ldots, n - 1\}$.
+	(4) Therefore $a$ and $b$ both appear as factors in the product $(n - 1)! = 1 \cdot 2 \cdots (n - 1)$, so $ab = n$ divides $(n - 1)!$.
+	(5) Case 2: $a = b$, so $n = a^2$.
+	(6) Since $a \ge 2$, the integers $a$ and $2a$ both satisfy $a \ge 2$ and $2a \ge 4$, so they are positive integers.
+	(7) Since $a \ge 2$, we have $a < a^2 = n$ and $2a < a^2 = n$, so $a$ and $2a$ are distinct integers in the set $\{2, 3, \ldots, n - 1\}$.
+	(8) Therefore $a$ and $2a$ both appear as factors in $(n - 1)!$, so $a \cdot 2a = 2a^2 = 2n$ divides $(n - 1)!$, and in particular $n$ divides $(n - 1)!$.
+	(9) In both cases $n$ divides $(n - 1)!$, contradicting the assumption in line 1. Hence $n$ is prime.
 
 $$ \mathbf{A} \quad \text{First mistake appears in line 1 and the statement is false.} $$
 $$ \mathbf{B} \quad \text{First mistake appears in line 2 and the statement is false.} $$

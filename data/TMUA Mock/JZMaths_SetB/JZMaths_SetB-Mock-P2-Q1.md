@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 5.5
 topics: [Logic and Proof, Number Theory]
 subtopics: [Proof, Number Theory]
-tags: [Counterexample, If-Then]
+tags: [Counterexample, If-Then, If-Then]
 status: 已入库
 ---
 
@@ -19,13 +19,10 @@ $$ 1729 = 1^3 + 12^3 = 9^3 + 10^3 = 7 \times 13 \times 19. $$
 
 Consider the following four statements.
 
-(1) Every positive integer that can be written as a sum of two positive cubes in two different ways is prime.
-
-(2) If a prime $p > 5$ can be written as $p = a^3 + b^3$ for some positive integers $a, b$, then $p$ has remainder of $1$ when divided by $6$.
-
-(3) No product of three distinct odd primes is one more than a perfect cube.
-
-(4) Every positive integer of the form $a^3 + b^3$, where $a$ and $b$ are positive integers, has prime factors all of which are at least $3$.
+	(1) Every positive integer that can be written as a sum of two positive cubes in two different ways is prime.
+	(2) If a prime $p > 5$ can be written as $p = a^3 + b^3$ for some positive integers $a, b$, then $p$ has remainder of $1$ when divided by $6$.
+	(3) No product of three distinct odd primes is one more than a perfect cube.
+	(4) Every positive integer of the form $a^3 + b^3$, where $a$ and $b$ are positive integers, has prime factors all of which are at least $3$.
 
 The fact above can be used to provide a counterexample to which of these statements?
 

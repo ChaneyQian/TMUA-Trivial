@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 7
 topics: [Logic and Proof]
 subtopics: [Logic]
-tags: [Negation, Quantifiers]
+tags: [Negation, Quantifiers, Quantifiers]
 status: 已入库
 ---
 

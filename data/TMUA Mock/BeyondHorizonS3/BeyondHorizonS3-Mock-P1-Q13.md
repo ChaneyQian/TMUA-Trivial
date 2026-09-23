@@ -16,8 +16,8 @@ status: 已入库
 ## 题目
 A club with $x$ members is organized into four committees according to the following rules:
 
-1. Each member belongs to exactly two committees.
-2. Each pair of committees has exactly one member in common.
+	1. Each member belongs to exactly two committees.
+	2. Each pair of committees has exactly one member in common.
 
 Then
 $$\mathbf{A} \quad x = 4$$

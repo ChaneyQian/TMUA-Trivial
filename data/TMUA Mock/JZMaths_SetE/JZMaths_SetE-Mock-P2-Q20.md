@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 9
 topics: [Logic and Proof, Geometry]
 subtopics: [Logic, Euclid Geometry]
-tags: [Truth-Value-List, Necessary-vs-Sufficient, Counterexample]
+tags: [Truth-Value-Truth-Value-List, Nest, Necessary-vs-Sssary-vs-Suffifficienient, C, Couunterexampleterexample]
 status: 已入库
 ---
 
@@ -20,15 +20,11 @@ Statement $P$: $ABC$ is a right-angled triangle.
 
 Which of the following statements are true?
 
-(1) Statement $P$ is true if and only if triangle $ABC$ can be divided by a line segment into two smaller triangles, each of which is similar to triangle $ABC$.
-
-(2) Statement $P$ is necessary for triangle $ABC$ to be divisible by a line segment into two smaller triangles whose areas, together with the area of triangle $ABC$, can be arranged to form a geometric sequence with common ratio not equal to 1.
-
-(3) $P$ is a necessary condition, that must be satisfied by all the triangles made when a convex kite is divided into four triangles by its diagonals.
-
-(4) Statement $P$ is sufficient for every SSA specification of triangle $ABC$ to determine it uniquely up to congruence.
-
-(5) Statement $P$ is true if and only if four congruent copies of triangle $ABC$ can be assembled edge-to-edge, without gaps or overlaps, so that their union is exactly a rhombus.
+	(1) Statement $P$ is true if and only if triangle $ABC$ can be divided by a line segment into two smaller triangles, each of which is similar to triangle $ABC$.
+	(2) Statement $P$ is necessary for triangle $ABC$ to be divisible by a line segment into two smaller triangles whose areas, together with the area of triangle $ABC$, can be arranged to form a geometric sequence with common ratio not equal to 1.
+	(3) $P$ is a necessary condition, that must be satisfied by all the triangles made when a convex kite is divided into four triangles by its diagonals.
+	(4) Statement $P$ is sufficient for every SSA specification of triangle $ABC$ to determine it uniquely up to congruence.
+	(5) Statement $P$ is true if and only if four congruent copies of triangle $ABC$ can be assembled edge-to-edge, without gaps or overlaps, so that their union is exactly a rhombus.
 
 $$ \mathbf{A} \quad \text{Statements (1), (3), (5) only.} $$
 $$ \mathbf{B} \quad \text{Statements (3), (5) only.} $$

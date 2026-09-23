@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 7.5
 topics: [Logic and Proof, Calculus, Function]
 subtopics: [Logic, Differentiation Application, Algebraic Functions]
-tags: [Necessary-Condition]
+tags: [NeNecessaryssary-ConCondiition]
 status: 已入库
 ---
 

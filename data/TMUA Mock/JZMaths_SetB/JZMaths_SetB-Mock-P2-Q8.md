@@ -9,7 +9,7 @@ section: Multiple Choice
 difficulty: 7
 topics: [Logic and Proof, Trigonometry]
 subtopics: [Proof, Trigonometry]
-tags: [Counterexample, Error-Spotting, Inequality-Manipulation, General-Trigonometry]
+tags: [Counterexample, Error-SpCounterexample, Error-Spottintting, Inequal, Inequalityty-ManipManipulalation, General-Trigonometry]
 status: 已入库
 ---
 

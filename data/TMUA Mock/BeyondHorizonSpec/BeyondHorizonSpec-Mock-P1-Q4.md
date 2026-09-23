@@ -16,9 +16,9 @@ status: 已入库
 ## 题目
 The following sequence of transformations is applied to the curve $y = 3x^2$:
 
-1. Translation by $\begin{pmatrix} 3 \\ -1 \end{pmatrix}$
-2. Reflection in the $y$-axis
-3. Stretch parallel to the $x$-axis with scale factor 5
+	1. Translation by $\begin{pmatrix} 3 \\ -1 \end{pmatrix}$
+	2. Reflection in the $y$-axis
+	3. Stretch parallel to the $x$-axis with scale factor 5
 
 What is the equation of the resulting curve?
 $$\mathbf{A} \quad y = \frac{3}{25}x^2 + \frac{18}{5}x + 26$$

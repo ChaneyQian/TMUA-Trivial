@@ -8,8 +8,8 @@ number: Q16
 section: Multiple Choice
 difficulty: 7.5
 topics: [Logic and Proof, Miscellaneous Pure, Calculus]
-subtopics: [Logic, Proof, Numerical Methods, Differentiation Application, Integral Identity]
-tags: [Truth-Value-List, Counterexample, Integration, Differentiation]
+subtopics: [Logic, Proof, Proof, Numerical Methods, Differentiation Application, Integral Identity]
+tags: [Truth-Value-TruthValse-List, C, Couunterexampleterexample, Integration, Differentiation]
 status: 已入库
 ---
 
@@ -18,10 +18,12 @@ Let $f$ be a positive function defined on $[0, \infty)$ and twice differentiable
 $$ I = \int_0^4 f(x) \,dx, $$
 and let $J_n$ be the trapezium rule estimate of $I$ using $n$ strips of equal width, where $n$ is a positive integer.
 Which of the following statements are necessarily true?
-(1) If $f''(x) > 0$ for all $0 < x < 4$, then $J_n > I$ for every positive integer $n$.
-(2) If $f''(x) \ge 0$ and $f'(x) > 0$ for all $0 < x < 4$, then $J_{n+1} < J_n$ for every positive integer $n$.
-(3) If $I < J_n$ for some positive integer $n$, then
-$$ \int_0^4 f(4 - x) \,dx < J_{n+1}. $$
+
+	(1) If $f''(x) > 0$ for all $0 < x < 4$, then $J_n > I$ for every positive integer $n$.
+	(2) If $f''(x) \ge 0$ and $f'(x) > 0$ for all $0 < x < 4$, then $J_{n+1} < J_n$ for every positive integer $n$.
+	(3) If $I < J_n$ for some positive integer $n$, then
+	$$ \int_0^4 f(4 - x) \,dx < J_{n+1}. $$
+
 $$ \mathbf{A} \quad \text{(1) only.} $$
 $$ \mathbf{B} \quad \text{(2) only.} $$
 $$ \mathbf{C} \quad \text{(3) only.} $$
@@ -38,6 +40,7 @@ $$ \mathbf{H} \quad \text{all of them} $$
 ### AI备注
 
 
+ℹ️ 2026-09-14 Fable 复核：按 §2.4ter 并挂线调整 Proof。
 ℹ️ 2026-09-14 Fable 复核：按 §2.4ter 并挂线调整 Proof。
 ## 答案
 A

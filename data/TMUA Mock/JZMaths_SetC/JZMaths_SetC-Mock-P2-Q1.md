@@ -8,19 +8,17 @@ number: Q1
 section: Multiple Choice
 difficulty: 5.5
 topics: [Logic and Proof, Number Theory]
-subtopics: [Logic, Proof, Divisibility]
-tags: [Truth-Value-List, Counterexample]
+subtopics: [Logic, Proof, Proof, Divisibility]
+tags: [TruthValuTr-Listh-Value-Lst, C, Couunterexampleterexample]
 status: 已入库
 ---
 
 ## 题目
 Let $n$ denote a positive integer. Consider the following three statements.
 
-I. For every $n$, if $n^2$ is divisible by $12$, then $n$ is divisible by $6$.
-
-II. For every $n$, if $n^2$ is divisible by $12$, then $n$ is divisible by $12$.
-
-III. There exists an $n$ such that $n^2$ is divisible by $12$ but $n$ is not divisible by $12$.
+	I. For every $n$, if $n^2$ is divisible by $12$, then $n$ is divisible by $6$.
+	II. For every $n$, if $n^2$ is divisible by $12$, then $n$ is divisible by $12$.
+	III. There exists an $n$ such that $n^2$ is divisible by $12$ but $n$ is not divisible by $12$.
 
 Which of the statements are true?
 
@@ -39,6 +37,7 @@ $$ \mathbf{G} \quad \text{all of them} $$
 ### AI备注
 
 
+ℹ️ 2026-09-14 Fable 复核：按 §2.4ter 并挂线调整 Proof。
 ℹ️ 2026-09-14 Fable 复核：按 §2.4ter 并挂线调整 Proof。
 ## 答案
 F
