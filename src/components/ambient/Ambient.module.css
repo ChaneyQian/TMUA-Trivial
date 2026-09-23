@@ -1,0 +1,258 @@
+/* 设置页环境光。只在 setup / loading 相挂载，考试与 Diagnostic 一律没有。
+   三层：区色光晕 → 坐标纸网格 → 光标聚光。
+   动效只走 transform / opacity（合成器层）；不用 filter: blur，不用 backdrop-filter。
+   页面原有的 body / .wrap 背景色照旧在最底下兜底，这一层本身不铺底色。 */
+
+.backdrop {
+  /* 主题强弱。浅色：淡彩；深色：更亮，出光感；护眼（sepia）另见下方，压到最弱 */
+  --spot-a: 0.26;
+  --spot-b: 0.22;
+  --spot-c: 0.18;
+  --grid-minor: rgb(38 48 92 / 4.5%);
+  --grid-major: rgb(38 48 92 / 8.5%);
+  /* 聚光下被照亮的网格线取当前区色。--tint 由组件按当前区写在这一层上 */
+  --lit-minor: color-mix(in srgb, var(--tint) 42%, transparent);
+  --lit-major: color-mix(in srgb, var(--tint) 68%, transparent);
+
+  /* z-index 0 + 挂在 .stage 之前：按树序画在全部内容之下、.wrap 的底色之上 */
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  contain: strict;
+}
+
+:global([data-theme='dark']) .backdrop {
+  --spot-a: 0.46;
+  --spot-b: 0.4;
+  --spot-c: 0.34;
+  --grid-minor: rgb(200 208 255 / 4%);
+  --grid-major: rgb(200 208 255 / 7.5%);
+  --lit-minor: color-mix(in srgb, color-mix(in srgb, var(--tint) 78%, white) 50%, transparent);
+  --lit-major: color-mix(in srgb, color-mix(in srgb, var(--tint) 78%, white) 80%, transparent);
+}
+
+/* 护眼主题：只留很弱的一点暖光，网格用墨色，聚光也换成墨褐 */
+:global([data-theme='sepia']) .backdrop {
+  --spot-a: 0.15;
+  --spot-b: 0.1;
+  --spot-c: 0.09;
+  --grid-minor: rgb(61 50 38 / 5.5%);
+  --grid-major: rgb(61 50 38 / 9.5%);
+  --lit-minor: rgb(139 94 47 / 24%);
+  --lit-major: rgb(139 94 47 / 38%);
+}
+
+/* ---- a) 区色光晕 ---- */
+
+/* 每区一层。不在场的层 visibility: hidden（淡出走完才藏），既不绘制也不占合成 */
+.glow {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity 900ms cubic-bezier(0.4, 0, 0.2, 1),
+    visibility 0s linear 900ms;
+}
+
+.glowOn {
+  opacity: 1;
+  visibility: visible;
+  transition:
+    opacity 900ms cubic-bezier(0.4, 0, 0.2, 1),
+    visibility 0s;
+}
+
+/* 光斑：静态 radial-gradient 从区色渐隐到全透明，多停几个色标把衰减做软，
+   不靠 blur。尺寸按 vmax 走、封顶，免得 4K 屏上合成层大得离谱 */
+.spot {
+  position: absolute;
+  left: calc(var(--cx) - var(--size) / 2);
+  top: calc(var(--cy) - var(--size) / 2);
+  width: var(--size);
+  height: var(--size);
+  border-radius: 50%;
+  background: radial-gradient(
+    closest-side,
+    var(--c) 0%,
+    color-mix(in srgb, var(--c) 74%, transparent) 20%,
+    color-mix(in srgb, var(--c) 44%, transparent) 44%,
+    color-mix(in srgb, var(--c) 16%, transparent) 70%,
+    transparent 100%
+  );
+}
+
+/* 漂移：30–60s 一个来回（alternate，单程 19–29s），幅度几个百分点。
+   要的是「呼吸」，不是「跳舞」 */
+.spotA {
+  --c: var(--tint);
+  --size: min(84vmax, 1500px);
+  --cx: 10%;
+  --cy: 4%;
+  opacity: var(--spot-a);
+  animation: driftA 23s ease-in-out infinite alternate;
+}
+
+.spotB {
+  --c: var(--tint2);
+  --size: min(70vmax, 1250px);
+  --cx: 96%;
+  --cy: 34%;
+  opacity: var(--spot-b);
+  animation: driftB 29s ease-in-out infinite alternate;
+}
+
+.spotC {
+  --c: color-mix(in srgb, var(--tint) 55%, var(--tint2));
+  --size: min(76vmax, 1350px);
+  --cx: 34%;
+  --cy: 106%;
+  opacity: var(--spot-c);
+  animation: driftC 19s ease-in-out infinite alternate;
+}
+
+:global([data-theme='sepia']) .spotA {
+  --c: color-mix(in srgb, var(--tint) 18%, #d08a3e);
+}
+
+:global([data-theme='sepia']) .spotB {
+  --c: color-mix(in srgb, var(--tint2) 14%, #e2ab62);
+}
+
+:global([data-theme='sepia']) .spotC {
+  --c: color-mix(in srgb, var(--tint) 10%, #c97b3c);
+}
+
+/* 不在场的层暂停漂移；特异性压过上面三条 animation 简写（它会把 play-state 重置成 running） */
+.glow .spot {
+  animation-play-state: paused;
+}
+
+.glowOn .spot {
+  animation-play-state: running;
+}
+
+@keyframes driftA {
+  from { transform: translate3d(0, 0, 0) scale(1); }
+  to { transform: translate3d(5%, 4%, 0) scale(1.06); }
+}
+
+@keyframes driftB {
+  from { transform: translate3d(0, 0, 0) scale(1.04); }
+  to { transform: translate3d(-6%, 3%, 0) scale(0.96); }
+}
+
+@keyframes driftC {
+  from { transform: translate3d(0, 0, 0) scale(0.98); }
+  to { transform: translate3d(4%, -5%, 0) scale(1.05); }
+}
+
+/* ---- b) 坐标纸网格 ---- */
+
+/* 30px 一格、每 5 格（150px）一条稍深的主线。主线与细线同一个原点，
+   150 是 30 的整数倍，主线正好压在细线上。原点钉在左上角而不是居中：
+   聚光那层要与这层逐像素对齐，居中会被滚动条宽度（100vw 与 inset: 0 之差）带偏 */
+.grid,
+.lensGrid {
+  background-image:
+    linear-gradient(var(--line-major) 1px, transparent 1px),
+    linear-gradient(90deg, var(--line-major) 1px, transparent 1px),
+    linear-gradient(var(--line-minor) 1px, transparent 1px),
+    linear-gradient(90deg, var(--line-minor) 1px, transparent 1px);
+  background-size:
+    150px 150px,
+    150px 150px,
+    30px 30px,
+    30px 30px;
+  background-position: -1px -1px;
+}
+
+/* 像摊在桌上的方格纸：中间实、四周渐隐 */
+.grid {
+  --line-minor: var(--grid-minor);
+  --line-major: var(--grid-major);
+  position: absolute;
+  inset: 0;
+  mask-image: radial-gradient(
+    ellipse 74% 70% at 50% 42%,
+    #000 26%,
+    rgb(0 0 0 / 55%) 58%,
+    transparent 92%
+  );
+}
+
+/* ---- c) 光标聚光 ---- */
+
+/* 透镜：一个 2r 见方的窗，radial mask 画成圆形光圈，transform 跟到指针处；
+   里层是一整屏同款网格（换成区色线），反向平移抵消透镜的位移，线就钉在原地不动。
+   两层都只改 transform，mask 相对透镜是静止的——跟手全程不触发重绘 */
+.lens {
+  --r: 190px;
+  --mx: -1000px;
+  --my: -1000px;
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: none;
+  width: calc(var(--r) * 2);
+  height: calc(var(--r) * 2);
+  overflow: hidden;
+  opacity: 0;
+  transform: translate3d(calc(var(--mx) - var(--r)), calc(var(--my) - var(--r)), 0);
+  mask-image: radial-gradient(
+    closest-side,
+    #000 0%,
+    rgb(0 0 0 / 62%) 40%,
+    rgb(0 0 0 / 18%) 72%,
+    transparent 100%
+  );
+  transition: opacity 360ms ease;
+  will-change: transform;
+}
+
+.lens[data-lit] {
+  opacity: 1;
+}
+
+.lensGrid {
+  --line-minor: var(--lit-minor);
+  --line-major: var(--lit-major);
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100vw;
+  height: 100vh;
+  transform: translate3d(calc(var(--r) - var(--mx)), calc(var(--r) - var(--my)), 0);
+  will-change: transform;
+}
+
+/* 只有能悬停的精确指针才有聚光；组件那边同一条媒体查询不成立就不挂监听 */
+@media (hover: hover) and (pointer: fine) {
+  .lens {
+    display: block;
+  }
+}
+
+/* 放在文件最末：同特异性下要压过上面每一条动效声明（含 hover 媒体查询里的 display） */
+@media (prefers-reduced-motion: reduce) {
+  /* 光斑静止在原位；换区瞬时切换；聚光整个不开（跟手移动本身就是交互触发的动效） */
+  .spotA,
+  .spotB,
+  .spotC,
+  .glow .spot,
+  .glowOn .spot {
+    animation: none;
+  }
+
+  .glow,
+  .glowOn,
+  .lens {
+    transition: none;
+  }
+
+  .lens {
+    display: none;
+  }
+}

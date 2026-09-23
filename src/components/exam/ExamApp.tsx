@@ -4,6 +4,7 @@
 // 练习=点选项后 Enter 批改;Mock=倒计时交卷统一批改
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import AmbientBackdrop from '@/components/ambient/AmbientBackdrop';
 import IdBadge from '@/components/badge/IdBadge';
 import LangToggle from '@/components/LangToggle';
 import CardDeck from '@/components/deck/CardDeck';
@@ -1119,6 +1120,10 @@ export default function ExamApp() {
   if (phase === 'setup' || phase === 'loading') {
     return (
       <div className={styles.wrap}>
+        {/* 环境光只属于设置页：挂在这个分支里，考试 / Diagnostic / 成绩页的
+            返回体里一律没有。必须排在 .stage 之前——它是 z-index 0 的 fixed 层，
+            靠树序画在全部内容之下 */}
+        <AmbientBackdrop zone={frontZone} />
         <div
           className={styles.stage}
           onKeyDown={(e) => {

@@ -148,6 +148,37 @@ test('every animated rule is really beaten by the reduced-motion block, not just
   );
 });
 
+/** 这份 CSS 在减动效块之外有没有开过动效（口径与 uncoveredMotion 相同） */
+function declaresMotion(css) {
+  return parseRules(stripComments(css)).some(
+    (rule) =>
+      !rule.inReduced &&
+      declarations(rule.body).some(([prop, value]) => {
+        if (value === 'none' || value.startsWith('none')) return false;
+        if (prop === 'animation' || prop.startsWith('animation-')) return true;
+        return (prop === 'transition' || prop.startsWith('transition-')) && MOTION.test(value);
+      }),
+  );
+}
+
+test('a stylesheet that moves at all must carry a reduced-motion block', () => {
+  // uncoveredMotion 拿「降级块里的规则」去比对，一条降级规则都没有的文件它直接放行——
+  // 于是新写一个带动效的 CSS Module、忘了写降级块，上一条测试照样全绿。
+  // 这里把那道口子堵上：动了就必须有块，块里盖没盖住再交给上一条逐条查
+  const offenders = cssFiles(SRC)
+    .filter((file) => declaresMotion(fs.readFileSync(file, 'utf8')))
+    .filter((file) => !parseRules(stripComments(fs.readFileSync(file, 'utf8'))).some((rule) => rule.inReduced))
+    .map((file) => path.relative(SRC, file));
+  assert.deepEqual(offenders, [], `这些样式表开了动效却没有 prefers-reduced-motion 降级块：${offenders.join(', ')}`);
+
+  // 新加的模块确实在这道闸的扫描范围里（按目录递归扫，不靠白名单）
+  const scanned = cssFiles(SRC).map((file) => path.relative(SRC, file).replace(/\\/g, '/'));
+  assert.ok(scanned.includes('components/ambient/Ambient.module.css'), '环境光的样式表没被扫到');
+  assert.ok(declaresMotion(fs.readFileSync('src/components/ambient/Ambient.module.css', 'utf8')));
+  assert.equal(declaresMotion('.a { transition: color 200ms; }'), false, '配色补间不算动效');
+  assert.equal(declaresMotion('.a { animation: spin 1s infinite; }'), true);
+});
+
 test('the specificity guard has teeth', () => {
   // 反面：降级块只写基础类名，而动效开在「父类 + 基础类」上——正是充电条那盏灯的原形
   const weak = `

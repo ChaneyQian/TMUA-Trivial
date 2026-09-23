@@ -29,6 +29,13 @@ export interface ZoneDef {
   cover: string;
   /** CSS 渐变占位，垫在封面 <img> 底下 */
   grad: string;
+  /**
+   * 区色：设置页环境光的主光斑、前牌的彩色投影、光标聚光的网格线都取它。
+   * 从 grad 的主色相里挑出来的一个饱和色，主题（深浅 / 护眼）只调强弱，不换色相
+   */
+  tint: string;
+  /** 副光斑的第二色相（9.0 是「深空青 + 靛」两色，其余区取同色系的浅一档） */
+  tint2: string;
   panel: ZonePanel;
   unlockPath: ZoneUnlockPath;
   comingSoon: boolean;
@@ -43,6 +50,8 @@ export const ZONES: ZoneDef[] = [
     cover: 'classic.jpg',
     grad:
       'radial-gradient(120% 92% at 18% 10%, #f2f5ff 0%, #dde5ff 46%, #b8c8f6 100%)',
+    tint: '#4a6cf7',
+    tint2: '#8fa4ff',
     panel: 'full',
     unlockPath: 'free',
     comingSoon: false,
@@ -54,6 +63,8 @@ export const ZONES: ZoneDef[] = [
     cover: 'grill.jpg',
     grad:
       'radial-gradient(120% 100% at 50% 116%, #ffc46b 0%, #f2762e 38%, #6f2a12 100%)',
+    tint: '#f2762e',
+    tint2: '#ffb54d',
     panel: 'countOnly',
     unlockPath: 'free',
     comingSoon: false,
@@ -65,6 +76,9 @@ export const ZONES: ZoneDef[] = [
     cover: 'trivial.jpg',
     grad:
       'radial-gradient(130% 100% at 74% 18%, #33459c 0%, #1a2354 46%, #0a0f28 100%)',
+    // 封面是深空底，区色取 9.0 充电条满格的那道青（#00c8c2），副色取封面的靛
+    tint: '#00c8c2',
+    tint2: '#4054c4',
     panel: 'full',
     unlockPath: 'progress',
     comingSoon: false,
@@ -81,6 +95,8 @@ export const ZONES: ZoneDef[] = [
     cover: 'board.jpg',
     grad:
       'radial-gradient(120% 96% at 30% 14%, #eef4ee 0%, #b8cfba 44%, #5a8a6a 100%)',
+    tint: '#5a8a6a',
+    tint2: '#9cc4a3',
     panel: 'none',
     unlockPath: 'free',
     comingSoon: true,
