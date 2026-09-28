@@ -2,7 +2,11 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import test from 'node:test';
 
+import { createElement } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
+
 import { TILT_MAX_DEG, tiltPose } from '../src/lib/tilt.ts';
+import { REDUCED_MOTION, installFakeDom, restoreGlobals } from './helpers/fake-dom.mjs';
 
 // 卡片随指针倾斜（P8-A2 前牌；P8-B 工牌会共用）。
 //   1. lib/tilt.ts 的换算：纯函数，直接算
@@ -79,78 +83,17 @@ test('degenerate input never leaks NaN or a runaway angle into the styles', () =
 });
 
 // ---------------------------------------------------------------------------
-// 挂载逻辑：最小假 DOM
+// 挂载逻辑：最小假 DOM（tests/helpers/fake-dom.mjs，环境光的聚光测试也用这一套）
 
-class FakeTarget {
-  constructor() {
-    this.listeners = new Map();
-  }
-  addEventListener(type, fn) {
-    if (!this.listeners.has(type)) this.listeners.set(type, new Set());
-    this.listeners.get(type).add(fn);
-  }
-  removeEventListener(type, fn) {
-    this.listeners.get(type)?.delete(fn);
-  }
-  emit(type, event = {}) {
-    for (const fn of [...(this.listeners.get(type) || [])]) fn({ type, ...event });
-  }
-  count() {
-    return [...this.listeners.values()].reduce((sum, set) => sum + set.size, 0);
-  }
-}
-
-function fakeDom({ fine = true, reduced = false } = {}) {
-  const frames = new Map();
-  let nextFrame = 1;
-  const queries = {
-    '(hover: hover) and (pointer: fine)': Object.assign(new FakeTarget(), { matches: fine }),
-    '(prefers-reduced-motion: reduce)': Object.assign(new FakeTarget(), { matches: reduced }),
-  };
-  const win = Object.assign(new FakeTarget(), {
-    matchMedia: (query) => {
-      assert.ok(queries[query], `意外的媒体查询 ${query}`);
-      return queries[query];
-    },
-    requestAnimationFrame: (fn) => {
-      const id = nextFrame++;
-      frames.set(id, fn);
-      return id;
-    },
-    cancelAnimationFrame: (id) => frames.delete(id),
-  });
-  const doc = Object.assign(new FakeTarget(), { hidden: false });
-
-  const props = new Map();
-  let reads = 0;
-  const node = Object.assign(new FakeTarget(), {
-    dataset: {},
-    style: {
-      setProperty: (name, value) => props.set(name, value),
-      removeProperty: (name) => props.delete(name),
-    },
-    getBoundingClientRect: () => {
-      reads++;
-      return RECT;
-    },
-  });
-
-  globalThis.window = win;
-  globalThis.document = doc;
+/** 装好假 DOM，再造一张挂在 RECT 位置的「前牌」 */
+function fakeDom(options) {
+  const dom = installFakeDom(options);
+  const node = dom.element(RECT);
   return {
+    ...dom,
     node,
-    props,
-    doc,
-    win,
-    queries,
-    reads: () => reads,
-    pending: () => frames.size,
-    /** 跑完当前排着的所有帧 */
-    flush() {
-      const due = [...frames.values()];
-      frames.clear();
-      for (const fn of due) fn(0);
-    },
+    props: node.props,
+    reads: node.reads,
     /** 在卡面相对位置 (fx, fy) 处来一下 pointermove */
     move(fx, fy, pointerType = 'mouse') {
       node.emit('pointermove', {
@@ -162,12 +105,7 @@ function fakeDom({ fine = true, reduced = false } = {}) {
   };
 }
 
-function restoreGlobals() {
-  delete globalThis.window;
-  delete globalThis.document;
-}
-
-const { attachCardTilt, TILT_VARS } = await import('../src/components/fx/useCardTilt.ts');
+const { attachCardTilt, useCardTilt, TILT_VARS } = await import('../src/components/fx/useCardTilt.ts');
 
 test('pointer moves are rAF-throttled into one write per frame, on CSS variables only', (t) => {
   t.after(restoreGlobals);
@@ -231,12 +169,15 @@ test('only a fine, hovering mouse tilts; touch, coarse pointers and reduced moti
   dom.move(0.9, 0.1);
   dom.flush();
   assert.equal(dom.node.dataset.tilting, '');
-  const rm = dom.queries['(prefers-reduced-motion: reduce)'];
-  rm.matches = true;
-  rm.emit('change');
+  dom.setMedia(REDUCED_MOTION, true);
   assert.equal('tilting' in dom.node.dataset, false);
   dom.move(0.2, 0.2);
   assert.equal(dom.pending(), 0);
+  // 关掉减动效：下一下移动就接着跟，不用重新挂
+  dom.setMedia(REDUCED_MOTION, false);
+  dom.move(0.2, 0.2);
+  dom.flush();
+  assert.equal(dom.node.dataset.tilting, '');
   detach();
 });
 
@@ -274,7 +215,7 @@ test('leaving settles the card: angles go, the glare stays put to fade out in pl
   detach();
 });
 
-test('detaching removes every listener and every trace on the element', (t) => {
+test('detaching removes every listener and the pose, but leaves the glare where it was', (t) => {
   t.after(restoreGlobals);
   const dom = fakeDom();
   const targets = [dom.node, dom.win, dom.doc, ...Object.values(dom.queries)];
@@ -285,10 +226,11 @@ test('detaching removes every listener and every trace on the element', (t) => {
     targets.every((target, k) => target.count() > before[k]),
     '指针 / 离开 / 失焦 / 可见性 / 两条媒体查询都要有监听',
   );
-  dom.move(0.7, 0.7);
+  dom.move(0.7, 0.2);
   dom.flush();
   dom.move(0.2, 0.2); // 摘除时还排着一帧
 
+  // 换牌：ref 从旧前牌上摘下
   detach();
   assert.deepEqual(
     targets.map((target) => target.count()),
@@ -296,13 +238,58 @@ test('detaching removes every listener and every trace on the element', (t) => {
     '加了几个监听就摘几个',
   );
   assert.equal(dom.pending(), 0, '排着的帧一并撤掉');
-  assert.equal(dom.props.size, 0, '这个元素接下来可能是一张后牌，不许留着前牌的姿态');
-  assert.equal('tilting' in dom.node.dataset, false);
+  assert.equal('tilting' in dom.node.dataset, false, '这张牌接下来是后牌，不许留着前牌的姿态');
+  // 倾角与开关摘掉；高光坐标留下——旧前牌的高光在原地淡出，而不是先跳回正中再淡
+  assert.deepEqual([...dom.props.keys()].sort(), ['--glare-x', '--glare-y']);
+  assert.equal(dom.props.get('--glare-x'), '70.0%');
+  assert.equal(dom.props.get('--glare-y'), '20.0%');
 
   // 幂等：再摘一次、或摘完再来事件，都不出错、不复活
   detach();
   dom.move(0.9, 0.9);
   assert.equal(dom.pending(), 0);
+  assert.equal(dom.props.get('--glare-x'), '70.0%');
+});
+
+test('useCardTilt hands maxDeg and enabled through to the element', (t) => {
+  t.after(restoreGlobals);
+  // 真跑一遍钩子（服务端渲染里 useCallback 照常返回回调），拿到它交给 ref 的那个函数
+  const refs = {};
+  function Probe() {
+    refs.badge = useCardTilt({ maxDeg: 8 }); // P8-B 工牌要 ±8°
+    refs.plain = useCardTilt();
+    refs.off = useCardTilt({ enabled: false });
+    return null;
+  }
+  renderToStaticMarkup(createElement(Probe));
+
+  // ±8°：指针在右下角，两个轴都到 8
+  let dom = fakeDom();
+  let cleanup = refs.badge(dom.node);
+  dom.move(1, 1);
+  dom.flush();
+  assert.equal(dom.props.get('--tilt-rx'), '8.00deg');
+  assert.equal(dom.props.get('--tilt-ry'), '-8.00deg');
+  cleanup();
+
+  // 不传就是 ±6°
+  dom = fakeDom();
+  cleanup = refs.plain(dom.node);
+  dom.move(0, 0);
+  dom.flush();
+  assert.equal(dom.props.get('--tilt-rx'), '-6.00deg');
+  assert.equal(dom.props.get('--tilt-ry'), '6.00deg');
+  cleanup();
+
+  // 停用：一个监听都不挂，也没有清理函数
+  dom = fakeDom();
+  const targets = [dom.node, dom.win, dom.doc, ...Object.values(dom.queries)];
+  assert.equal(refs.off(dom.node), undefined);
+  assert.equal(targets.reduce((sum, target) => sum + target.count(), 0), 0);
+  dom.move(1, 1);
+  assert.equal(dom.pending(), 0);
+  // React 卸载时用 null 调 ref：什么也不做
+  assert.equal(refs.badge(null), undefined);
 });
 
 test('the hook is a stable ref callback that stays out of React state', () => {

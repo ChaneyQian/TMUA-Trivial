@@ -35,8 +35,11 @@ import { TILT_MAX_DEG, tiltPose } from '../../lib/tilt.ts';
 export const FINE_POINTER = '(hover: hover) and (pointer: fine)';
 export const REDUCED_MOTION = '(prefers-reduced-motion: reduce)';
 
-/** 钩子会写的全部 CSS 变量；卸载时逐个摘掉 */
+/** 钩子会写的全部 CSS 变量 */
 export const TILT_VARS = ['--tilt-rx', '--tilt-ry', '--glare-x', '--glare-y', '--tilt-on'] as const;
+
+/** 摘除时要清掉的：姿态与开关。高光坐标不在其中，见 attachCardTilt 的摘除函数 */
+const POSE_VARS = ['--tilt-rx', '--tilt-ry', '--tilt-on'] as const;
 
 export interface CardTiltOptions {
   /** 最大倾角（度），默认 6 */
@@ -64,8 +67,8 @@ export function useCardTilt<T extends HTMLElement>({
 
 /**
  * 不经 React 直接挂上倾斜：返回摘除函数（即 React 19 的 ref 清理）。
- * 摘除后元素上不留任何变量与属性，重复摘是幂等的；同一个元素只挂一次
- * （React 的 ref 本来就是一挂一摘，自己手动调用时别叠挂）。
+ * 摘除后元素上只留高光坐标（--glare-x / --glare-y），重复摘是幂等的；
+ * 同一个元素只挂一次（React 的 ref 本来就是一挂一摘，自己手动调用时别叠挂）。
  */
 export function attachCardTilt(node: HTMLElement, maxDeg: number = TILT_MAX_DEG): () => void {
   const fine = window.matchMedia(FINE_POINTER);
@@ -143,7 +146,9 @@ export function attachCardTilt(node: HTMLElement, maxDeg: number = TILT_MAX_DEG)
     fine.removeEventListener('change', onMedia);
     reduced.removeEventListener('change', onMedia);
     settle();
-    // 摘干净：这个元素接下来可能是一张后牌，身上不该留着前牌的姿态
-    for (const name of TILT_VARS) node.style.removeProperty(name);
+    // 这个元素接下来可能是一张后牌：姿态与开关摘干净。高光坐标留着——换牌时旧前牌的
+    // 高光要在原地淡出，摘了它就先跳回正中再淡（高光只过渡 opacity，不过渡位移）。
+    // 留下的坐标无害：再挂上时第一帧就会被覆盖，没挂时高光是透明的
+    for (const name of POSE_VARS) node.style.removeProperty(name);
   };
 }
