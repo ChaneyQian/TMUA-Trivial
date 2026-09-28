@@ -37,6 +37,17 @@ export function boundCount(records: Records): number {
   return records.grill?.length || 0;
 }
 
+/**
+ * 复烤区卡面徽章上的题数：绑定集 ∪ 错题榜，去重。
+ *
+ * 两个集合会重叠：7.5+ 卷里有 7 道是 9.0 区的练习题，考完绑进复烤区，
+ * 在复烤区练错了又会上错题榜——直接相加会把同一道题数两遍。
+ * missedQids 是错题榜那批（历史错过、在练习池里），与复烤区面板上的榜同源
+ */
+export function grillBadgeCount(records: Records, missedQids: Iterable<number>): number {
+  return new Set([...(records.grill || []), ...missedQids]).size;
+}
+
 /** 题库里已经找不到、只能丢掉的绑定 qid 数量 */
 export function danglingCount(index: IndexEntry[] | null, records: Records): number {
   if (!index) return 0;

@@ -14,7 +14,7 @@ import DiagnosticRunner from '@/components/diagnostic/DiagnosticRunner';
 import DiagnosticResult from '@/components/diagnostic/DiagnosticResult';
 import GrillPanel from '@/components/grill/GrillPanel';
 import NoticeBoard from '@/components/notice/NoticeBoard';
-import { pickGrillQids } from '@/lib/grill';
+import { grillBadgeCount, pickGrillQids } from '@/lib/grill';
 import { countedQids, historyFor, practiceOverview, practiceQids } from '@/lib/progress';
 import {
   cachedPapers,
@@ -554,13 +554,14 @@ export default function ExamApp() {
   const practiceStats = practiceOverview(records, countedPool, practicePool);
   // 复烤区卡面的错题数必须与面板里那张榜同源：榜用的是「历史错过（w>0）」，
   // 而 wrongNow 是「最近一次做错」——错过后改对的题仍在榜上，卡面却报 0，
-  // 两处会当面打臉
-  const grillMissedCount = useMemo(
+  // 两处会当面打臉。留着 qid 而不只是个数：卡面徽章要和绑定集求并集去重
+  const grillMissedQids = useMemo(
     () =>
       wrongRanking(records, Number.POSITIVE_INFINITY).filter((row) => practicePool.has(row.qid))
-        .length,
+        .map((row) => row.qid),
     [records, practicePool],
   );
+  const grillMissedCount = grillMissedQids.length;
 
   const downloadWorkbook = async (data: Records) => {
     const blob = await exportRecordsWorkbook(data);
@@ -1142,9 +1143,10 @@ export default function ExamApp() {
               onOpen={openZone}
               badges={{
                 classic: t.cardBadge.questions(classicCount),
-                // 复烤区的池子是「绑定题 + 当前错题」，两者不相交（诊断题不进错题榜）。
-                // 只报绑定数会让卡面写着「0 题」而副文写着「21 道错题」，自相矛盾
-                grill: t.cardBadge.questions(grillCount(records) + grillMissedCount),
+                // 复烤区的池子是「绑定题 ∪ 错题榜」，取并集去重：两者会重叠——7.5+ 卷里
+                // 9.0 区那几道考完绑进来，在复烤区练错了又会上榜，直接相加就数了两遍。
+                // 只报绑定数又会让卡面写着「0 题」而副文写着「21 道错题」，自相矛盾
+                grill: t.cardBadge.questions(grillBadgeCount(records, grillMissedQids)),
                 trivial: hiddenUnlocked
                   ? t.cardBadge.expanded(expandedCount)
                   : t.cardBadge.charging,

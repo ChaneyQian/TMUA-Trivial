@@ -9,10 +9,12 @@ import {
   boundCount,
   danglingCount,
   grillAvailable,
+  grillBadgeCount,
   grillCountOptions,
   grillEntries,
   pickGrillQids,
 } from '../src/lib/grill.ts';
+import { practiceQids } from '../src/lib/progress.ts';
 import {
   addSession,
   createEmptyRecords,
@@ -20,6 +22,7 @@ import {
   importRecordsWorkbook,
   mergeDiagnostic,
   recordDiagnostic,
+  wrongRanking,
 } from '../src/lib/records.ts';
 import * as recordsModule from '../src/lib/records.ts';
 
@@ -178,8 +181,10 @@ test('the grill zone is open, with an empty state that points at the diagnostic'
     exam,
     /wrongRanking\(records, Number\.POSITIVE_INFINITY\)\.filter\(\(row\) => practicePool\.has\(row\.qid\)\)/,
   );
-  // 徽章跟着同一个池子走：只报绑定数会让卡面写「0 题」而副文写「21 道错题」
-  assert.match(exam, /t\.cardBadge\.questions\(grillCount\(records\) \+ grillMissedCount\)/);
+  // 徽章跟着同一个池子走：只报绑定数会让卡面写「0 题」而副文写「21 道错题」。
+  // 7.5+ 之后绑定集与错题榜会重叠，徽章取并集去重（行为测试见下面那条）
+  assert.match(exam, /t\.cardBadge\.questions\(grillBadgeCount\(records, grillMissedQids\)\)/);
+  assert.match(exam, /const grillMissedCount = grillMissedQids\.length;/);
 
   // 面板挂在 grill 前位上，且悬空数如实显示
   assert.match(exam, /frontZone === 'grill' \? \(/);
@@ -344,6 +349,47 @@ test('a Diagnostic sheet with a wrong header is skipped whole, not misread by co
   assert.equal(fromExtended.diag.passed, true);
   // 第五列起不是 7.5+ 那三列的表头：只丢追加列，前四列照读
   assert.equal(fromExtended.diag75, undefined);
+});
+
+test('the grill badge counts the bound set and the missed list once each, never twice', () => {
+  // 纯函数：并集去重
+  assert.equal(grillBadgeCount({ v: 1, q: {}, s: [], grill: [1, 2, 3] }, [3, 4]), 4);
+  assert.equal(grillBadgeCount({ v: 1, q: {}, s: [] }, [5, 5, 6]), 2);
+  assert.equal(grillBadgeCount(createEmptyRecords(), []), 0);
+
+  // 真实场景：7.5+ 考完 10 道绑进复烤区，其中 9.0 区的一道在复烤区里练错了——
+  // 它既在绑定集、又上了错题榜；另有一道绑定集外的普通错题。
+  // 徽章报 11（10 道绑定 + 1 道集外错题），而不是直接相加的 12
+  const index = [
+    ...Array.from({ length: 7 }, (_, i) => ({ qid: 100 + i, db: 'TMUA_MOCK', hidden: true })),
+    { qid: 200, db: 'TMUA', reserved: true },
+    { qid: 201, db: 'MAT', reserved: true },
+    { qid: 300, db: 'DIAG75', diag: true },
+    { qid: 400, db: 'TMUA' },
+  ];
+  const exam = [100, 101, 102, 103, 104, 105, 106, 200, 201, 300];
+  let records = recordDiagnostic(createEmptyRecords(), exam, false, { now: 1 });
+  records = addSession(
+    records,
+    [
+      { qid: 100, selected: 'A', answer: 'B', correct: false, answered: true },
+      // reserved 与诊断题在复烤区练错也不上榜（不在练习池），本来就不会重复
+      { qid: 200, selected: 'A', answer: 'B', correct: false, answered: true },
+      { qid: 300, selected: 'A', answer: 'B', correct: false, answered: true },
+      // 普通练习里错的一道，不在绑定集里
+      { qid: 400, selected: 'A', answer: 'B', correct: false, answered: true },
+    ],
+    { db: 'ALL', mode: 'practice', n: 4, right: 0, answered: 4, sec: 60 },
+    { now: 2 },
+  );
+  const practice = practiceQids(index);
+  const missed = wrongRanking(records, Number.POSITIVE_INFINITY)
+    .filter((row) => practice.has(row.qid))
+    .map((row) => row.qid)
+    .sort((a, b) => a - b);
+  assert.deepEqual(missed, [100, 400]);
+  assert.equal(grillBadgeCount(records, missed), 11, '10 bound + 1 missed outside the bound set');
+  assert.notEqual(grillBadgeCount(records, missed), records.grill.length + missed.length, 'plain addition double-counts 100');
 });
 
 test('the count choice follows the pool when a narrower strategy shrinks it', () => {
