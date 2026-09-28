@@ -22,7 +22,7 @@
 //   - pointermove 走 rAF 节流，一帧最多写一次变量，不进 React：pointermove 与刷新率
 //     同频，每帧 setState 就是每帧重渲染整棵子树
 //   - 量的是 ref 元素（不倾斜的外层）的包围盒。量正在倾斜的那层的话，
-//     它一歪包围盒就变，倾角会追着自己跑
+//     它一歪包围盒就变，倾角会追着自己跑。在输入阶段量、一帧一次，rAF 里只写不读
 //   - 离开 / 失焦 / 页面隐藏 / 停用 / 卸载即收手；收手只摘变量，回正的补间交给 CSS
 //
 // 换算本身（指针 → 角度 / 高光坐标）是 lib/tilt.ts 里的纯函数。这里用带扩展名的
@@ -63,7 +63,8 @@ export function useCardTilt<T extends HTMLElement>({
 
 /**
  * 不经 React 直接挂上倾斜：返回摘除函数（即 React 19 的 ref 清理）。
- * 摘除后元素上不留任何变量与属性；重复挂 / 摘都是幂等的。
+ * 摘除后元素上不留任何变量与属性，重复摘是幂等的；同一个元素只挂一次
+ * （React 的 ref 本来就是一挂一摘，自己手动调用时别叠挂）。
  */
 export function attachCardTilt(node: HTMLElement, maxDeg: number = TILT_MAX_DEG): () => void {
   const fine = window.matchMedia(FINE_POINTER);
@@ -72,11 +73,13 @@ export function attachCardTilt(node: HTMLElement, maxDeg: number = TILT_MAX_DEG)
   let live = false;
   let x = 0;
   let y = 0;
+  let rect: DOMRect | null = null;
 
+  /** rAF 里只写不读：包围盒在输入阶段已经量好 */
   const apply = () => {
     frame = 0;
-    // 先读后写：一帧里只量一次包围盒，量完再写变量，不来回触发样式计算
-    const pose = tiltPose(x, y, node.getBoundingClientRect(), maxDeg);
+    if (!rect) return;
+    const pose = tiltPose(x, y, rect, maxDeg);
     const style = node.style;
     style.setProperty('--tilt-rx', `${pose.rx.toFixed(2)}deg`);
     style.setProperty('--tilt-ry', `${pose.ry.toFixed(2)}deg`);
@@ -106,8 +109,14 @@ export function attachCardTilt(node: HTMLElement, maxDeg: number = TILT_MAX_DEG)
     if (e.pointerType !== 'mouse' || !fine.matches || reduced.matches) return;
     x = e.clientX;
     y = e.clientY;
-    // 页面隐藏时不排帧：后台标签页的 rAF 本来就会被冻住，排了也只是悬着
-    if (!frame && !document.hidden) frame = window.requestAnimationFrame(apply);
+    // 这一帧已经排上了：只记下最新的坐标。页面隐藏时不排帧——
+    // 后台标签页的 rAF 本来就会被冻住，排了也只是悬着
+    if (frame || document.hidden) return;
+    // 一帧只量一次包围盒，而且在输入阶段量：这时上一帧的样式刚算完、这一帧
+    // 还没人写过。挪到 rAF 里量，会撞上同一帧里先跑的写入（跟手补间、
+    // 环境光透镜的变量），逼出一次同步样式计算——实测每帧多算一遍样式
+    rect = node.getBoundingClientRect();
+    frame = window.requestAnimationFrame(apply);
   };
 
   const onVisibility = () => {

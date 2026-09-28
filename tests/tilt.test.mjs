@@ -323,5 +323,10 @@ test('the hook is a stable ref callback that stays out of React state', () => {
   assert.doesNotMatch(src, /\.style\.transform|setProperty\('transform'|--drag/);
   // 换算走 lib 里那个纯函数，不在钩子里另写一份
   assert.match(src, /from '\.\.\/\.\.\/lib\/tilt\.ts'/);
-  assert.match(src, /tiltPose\(x, y, node\.getBoundingClientRect\(\), maxDeg\)/);
+  assert.match(src, /tiltPose\(x, y, rect, maxDeg\)/);
+  // 量包围盒在输入阶段、一帧一次；rAF 回调里只写不读（不逼出同步样式计算）
+  const apply = src.slice(src.indexOf('const apply = () => {'), src.indexOf('const settle = () => {'));
+  assert.doesNotMatch(apply, /getBoundingClientRect|offsetWidth|offsetHeight|getComputedStyle/);
+  const onMove = src.slice(src.indexOf('const onMove = (e: PointerEvent) => {'), src.indexOf('const onVisibility'));
+  assert.match(onMove, /if \(frame \|\| document\.hidden\) return;\s*rect = node\.getBoundingClientRect\(\);/);
 });
