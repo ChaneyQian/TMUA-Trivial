@@ -524,15 +524,17 @@ test('the glare lights the cover only, never the text or the buttons', () => {
   assert.match(spot, /radial-gradient\(\s*circle closest-side/);
   assert.doesNotMatch(css, /inset: -50%/);
 
-  // 静止时 2D translate、不挂 will-change：四张牌的高光平时不各自常驻合成层
+  // 2D translate、哪儿都不挂 will-change：四张牌的高光平时不各自常驻合成层；跟手时靠补间
+  // 临时提层，指针停下就撤——常驻一层会把压在上面的编号徽章连带提层、随倾斜重采样发虚
   assert.match(
     rule('.glare'),
     /transform: translate\(calc\(var\(--glare-x, 50%\) - 50%\), calc\(var\(--glare-y, 50%\) - 50%\)\)/,
   );
-  assert.doesNotMatch(rule('.glare'), /translate3d|will-change/);
+  assert.doesNotMatch(rule('.glare'), /translate3d/);
+  assert.doesNotMatch(css.replace(/\/\*[\s\S]*?\*\//g, ''), /will-change\s*:/);
   const live = rule('.slotFront[data-tilting] .glare');
   assert.match(live, /opacity: 1/);
-  assert.match(live, /will-change: transform/);
+  assert.match(live, /transform 160ms/);
 
   // 混合模式按主题分：浅色 / 护眼 soft-light、深色 screen
   assert.match(rule('.glare'), /mix-blend-mode: soft-light/);

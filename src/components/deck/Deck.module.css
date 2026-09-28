@@ -216,7 +216,7 @@
    几何：层本身与卡面同尺寸（包含块只有封面高，层高按封面占比放大回卡面高），
    translate 的百分比按它自身解析，恰好是卡面的宽高，不用换算；光斑画在 ::after 上——
    以卡面中心为心、边长 2 倍卡宽的正方形，渐变半径就是卡宽（closest-side），刚好装下。
-   静止时是 2D translate、不挂 will-change：平时四张牌的高光都不另起合成层 */
+   用 2D translate、不挂 will-change：平时四张牌的高光都不另起合成层 */
 .glare {
   --glare-core: rgb(255 255 255 / 72%);
   --glare-mid: rgb(255 255 255 / 22%);
@@ -249,10 +249,12 @@
   content: '';
 }
 
-/* 跟手期间：显出来、单独成层（逐帧只挪不重绘），位移与倾斜同一条补间 */
+/* 跟手期间：显出来，位移与倾斜同一条补间。
+   不挂 will-change：补间进行时浏览器自会把它提成合成层（逐帧只挪不重绘），指针停下、
+   补间走完就撤层。常驻一层的话，压在它上面的编号与徽章会被连带提层、随倾斜重采样，
+   正停下来读字的时候反而发虚（实测光心停在徽章上，浅色 --text-muted 4.50 → 3.91:1） */
 .slotFront[data-tilting] .glare {
   opacity: 1;
-  will-change: transform;
   transition:
     opacity 280ms ease,
     transform 160ms cubic-bezier(0.2, 0.7, 0.2, 1);
