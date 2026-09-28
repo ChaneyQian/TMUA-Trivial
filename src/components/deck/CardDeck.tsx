@@ -7,7 +7,8 @@
 // 全部卡面数据来自 zones.ts，这里不写单卡分支——卡的张数也一样，
 // 槽位是按环形位次算出来的，加一张卡不需要动这个组件。
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, type CSSProperties } from 'react';
+import { useCardTilt } from '@/components/fx/useCardTilt';
 import { useLang } from '@/lib/LangContext';
 import examStyles from '../exam/Exam.module.css';
 import styles from './Deck.module.css';
@@ -84,6 +85,10 @@ export default function CardDeck({
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const stackRef = useRef<HTMLDivElement | null>(null);
   const touchRef = useRef<{ x: number; y: number; t: number; axis: Axis } | null>(null);
+  // 前牌随鼠标轻微倾斜（见 components/fx/useCardTilt）。ref 只挂在前牌的外层上：
+  // 转牌时 React 把它从旧前牌摘下（那张就地回正）、挂到新前牌上，后牌永远不倾斜。
+  // deck 退场的 280ms 里停用，展开动画期间牌面不再跟手
+  const tiltRef = useCardTilt<HTMLDivElement>({ enabled: !leaving });
 
   useEffect(() => {
     if (autoFocus) viewportRef.current?.focus();
@@ -214,116 +219,129 @@ export default function CardDeck({
             const isFront = offset === 0;
             const openable = !zone.comingSoon && !locked[zone.id] && zone.quickStart;
             return (
-              <div key={zone.id} className={`${styles.card} ${slot}`}>
-                {/* 用 backgroundImage 而不是 background 简写：简写会把样式表里的
-                    background-size: cover 一并重置掉 */}
-                <div className={styles.coverBox} style={{ backgroundImage: zone.grad }}>
-                  {/* 图缺失时 alt="" 的 img 不渲染任何东西，底下的渐变直接透出 */}
-                  <img
-                    className={styles.cover}
-                    src={`${BASE_PATH}/cards/${zone.cover}`}
-                    alt=""
-                    fetchPriority={isFront ? 'high' : 'auto'}
-                    loading={isFront ? 'eager' : 'lazy'}
-                    decoding="async"
-                  />
-                  <span className={styles.no} aria-hidden="true">
-                    {zone.no}
-                  </span>
-                  <span
-                    className={`${styles.badge} ${locked[zone.id] ? styles.badgeLocked : ''}`}
-                  >
-                    {badges[zone.id]}
-                  </span>
-                </div>
-
-                <div className={styles.body}>
-                  <div className={styles.title}>{t.zone.title[zone.id]}</div>
-                  <div className={styles.sub}>{subs?.[zone.id] || t.zone.sub[zone.id]}</div>
-                  <span className={styles.spacer} />
-
-                  {zone.unlockPath === 'progress' && (
-                    <div className={styles.charge}>
-                      {/* 视觉沿用 9.0 流光充电条；切库职责交给 deck 后，
-                          它不再是按钮，降为纯展示（内层保留 progressbar 语义） */}
-                      {/* Ready=已充满（流光 fill + 呼吸灯），Active=当前选中的题库范围。
-                          改版后「选中」由前位表达，所以 Active 绑前位而不是解锁态，
-                          两态才不会压成一态：在后位是「满电待命」，转到前位才整条亮起来。 */}
-                      <div
-                        className={`${examStyles.libraryCharge} ${
-                          charge.unlocked ? examStyles.libraryChargeReady : ''
-                        } ${charge.unlocked && isFront ? examStyles.libraryChargeActive : ''}`}
+              <div
+                key={zone.id}
+                ref={isFront ? tiltRef : undefined}
+                className={`${styles.card} ${slot}`}
+                // 区色：前牌那圈彩色投影取它。投影本身不补间，只过渡一层伪元素的 opacity
+                style={{ '--tint': zone.tint } as CSSProperties}
+              >
+                {/* 倾斜只作用在 .tilt 这一层（连同两圈投影），外层 .card 的槽位
+                    transform（转牌、横滑跟手）一个字都不动；.face 是卡面本体
+                    （边框、底色、圆角裁切、跟手高光） */}
+                <div className={styles.tilt}>
+                  <div className={styles.face}>
+                    {/* 用 backgroundImage 而不是 background 简写：简写会把样式表里的
+                        background-size: cover 一并重置掉 */}
+                    <div className={styles.coverBox} style={{ backgroundImage: zone.grad }}>
+                      {/* 图缺失时 alt="" 的 img 不渲染任何东西，底下的渐变直接透出 */}
+                      <img
+                        className={styles.cover}
+                        src={`${BASE_PATH}/cards/${zone.cover}`}
+                        alt=""
+                        fetchPriority={isFront ? 'high' : 'auto'}
+                        loading={isFront ? 'eager' : 'lazy'}
+                        decoding="async"
+                      />
+                      <span className={styles.no} aria-hidden="true">
+                        {zone.no}
+                      </span>
+                      <span
+                        className={`${styles.badge} ${locked[zone.id] ? styles.badgeLocked : ''}`}
                       >
-                        <span className={examStyles.libraryChargeLabel}>
-                          <span className={examStyles.chargeLight} aria-hidden="true" />
-                          {charge.unlocked
-                            ? '9.0 Trivial'
-                            : t.deck.chargeLabel(charge.value, charge.max)}
-                        </span>
-                        <span
-                          className={examStyles.libraryChargeTrack}
-                          role="progressbar"
-                          aria-label={t.deck.chargeAria}
-                          aria-valuemin={0}
-                          aria-valuemax={charge.max}
-                          aria-valuenow={Math.min(charge.value, charge.max)}
+                        {badges[zone.id]}
+                      </span>
+                    </div>
+
+                    <div className={styles.body}>
+                      <div className={styles.title}>{t.zone.title[zone.id]}</div>
+                      <div className={styles.sub}>{subs?.[zone.id] || t.zone.sub[zone.id]}</div>
+                      <span className={styles.spacer} />
+
+                      {zone.unlockPath === 'progress' && (
+                        <div className={styles.charge}>
+                          {/* 视觉沿用 9.0 流光充电条；切库职责交给 deck 后，
+                              它不再是按钮，降为纯展示（内层保留 progressbar 语义） */}
+                          {/* Ready=已充满（流光 fill + 呼吸灯），Active=当前选中的题库范围。
+                              改版后「选中」由前位表达，所以 Active 绑前位而不是解锁态，
+                              两态才不会压成一态：在后位是「满电待命」，转到前位才整条亮起来。 */}
+                          <div
+                            className={`${examStyles.libraryCharge} ${
+                              charge.unlocked ? examStyles.libraryChargeReady : ''
+                            } ${charge.unlocked && isFront ? examStyles.libraryChargeActive : ''}`}
+                          >
+                            <span className={examStyles.libraryChargeLabel}>
+                              <span className={examStyles.chargeLight} aria-hidden="true" />
+                              {charge.unlocked
+                                ? '9.0 Trivial'
+                                : t.deck.chargeLabel(charge.value, charge.max)}
+                            </span>
+                            <span
+                              className={examStyles.libraryChargeTrack}
+                              role="progressbar"
+                              aria-label={t.deck.chargeAria}
+                              aria-valuemin={0}
+                              aria-valuemax={charge.max}
+                              aria-valuenow={Math.min(charge.value, charge.max)}
+                            >
+                              <span
+                                className={examStyles.libraryChargeFill}
+                                style={{ width: `${charge.progress * 100}%` }}
+                              />
+                            </span>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* 快速开始：跳过配置面板，直接用当前配置起考。
+                          即将开放 / 锁定的区不给这个入口。用 visibility 而不是条件渲染，
+                          同一张卡在前位和后位的高度才一致，转牌时不会有布局跳动；
+                          visibility: hidden 也顺带把它移出 tab 序、挡掉点击。 */}
+                      {openable && (
+                        <div
+                          className={`${styles.quick} ${isFront ? '' : styles.quickIdle}`}
+                          aria-hidden={isFront ? undefined : true}
                         >
-                          <span
-                            className={examStyles.libraryChargeFill}
-                            style={{ width: `${charge.progress * 100}%` }}
-                          />
-                        </span>
-                      </div>
+                          <div className={styles.quickSummary}>{quickStart.summary}</div>
+                          <button
+                            type="button"
+                            className={styles.quickBtn}
+                            disabled={quickStart.disabled}
+                            aria-label={t.deck.quickAria(quickStart.summary)}
+                            onClick={(e) => {
+                              // 命中层是兄弟节点、不是祖先，本来也收不到这一下；
+                              // 写出来是防止日后有人把按钮挪进 .hit 里
+                              e.stopPropagation();
+                              // 直调，不包任何异步：requestFullscreen 认的是同步手势链
+                              quickStart.onStart();
+                            }}
+                          >
+                            {quickStart.label}
+                          </button>
+                        </div>
+                      )}
                     </div>
-                  )}
 
-                  {/* 快速开始：跳过配置面板，直接用当前配置起考。
-                      即将开放 / 锁定的区不给这个入口。用 visibility 而不是条件渲染，
-                      同一张卡在前位和后位的高度才一致，转牌时不会有布局跳动；
-                      visibility: hidden 也顺带把它移出 tab 序、挡掉点击。 */}
-                  {openable && (
-                    <div
-                      className={`${styles.quick} ${isFront ? '' : styles.quickIdle}`}
-                      aria-hidden={isFront ? undefined : true}
-                    >
-                      <div className={styles.quickSummary}>{quickStart.summary}</div>
-                      <button
-                        type="button"
-                        className={styles.quickBtn}
-                        disabled={quickStart.disabled}
-                        aria-label={t.deck.quickAria(quickStart.summary)}
-                        onClick={(e) => {
-                          // 命中层是兄弟节点、不是祖先，本来也收不到这一下；
-                          // 写出来是防止日后有人把按钮挪进 .hit 里
-                          e.stopPropagation();
-                          // 直调，不包任何异步：requestFullscreen 认的是同步手势链
-                          quickStart.onStart();
-                        }}
-                      >
-                        {quickStart.label}
-                      </button>
-                    </div>
-                  )}
+                    <button
+                      type="button"
+                      className={styles.hit}
+                      tabIndex={-1}
+                      aria-label={
+                        !isFront
+                          ? t.deck.frontAria(zone.no, t.zone.title[zone.id])
+                          : // 锁定的 9.0 展开的是 Diagnostic 介绍页，不是配置面板，
+                            // 读屏念出来的就该是它真正会做的事
+                            zone.unlockPath === 'progress' && locked[zone.id]
+                            ? t.deck.diagnosticAria(zone.no, t.zone.title[zone.id])
+                            : // comingSoon 卡按 Enter 只会弹「即将开放」，念「展开配置」就是骗读屏
+                              zone.comingSoon
+                              ? t.block.comingSoon(t.zone.title[zone.id])
+                              : t.deck.openAria(zone.no, t.zone.title[zone.id])
+                      }
+                      onClick={() => (isFront ? onOpen(zone.id) : onFront(zone.id))}
+                    />
+                  </div>
                 </div>
-
-                <button
-                  type="button"
-                  className={styles.hit}
-                  tabIndex={-1}
-                  aria-label={
-                    !isFront
-                      ? t.deck.frontAria(zone.no, t.zone.title[zone.id])
-                      : // 锁定的 9.0 展开的是 Diagnostic 介绍页，不是配置面板，
-                        // 读屏念出来的就该是它真正会做的事
-                        zone.unlockPath === 'progress' && locked[zone.id]
-                        ? t.deck.diagnosticAria(zone.no, t.zone.title[zone.id])
-                        : // comingSoon 卡按 Enter 只会弹「即将开放」，念「展开配置」就是骗读屏
-                          zone.comingSoon
-                          ? t.block.comingSoon(t.zone.title[zone.id])
-                          : t.deck.openAria(zone.no, t.zone.title[zone.id])
-                  }
-                  onClick={() => (isFront ? onOpen(zone.id) : onFront(zone.id))}
-                />
               </div>
             );
           })}

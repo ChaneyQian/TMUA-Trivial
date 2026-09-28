@@ -405,3 +405,106 @@ test('the deck is a setup-phase sub-state that leaves the exam runtime alone', (
   // deck 与面板同格叠放，只在过渡窗口内共存
   assert.match(examCss, /\.stage > \*\s*\{[\s\S]*?grid-area: 1 \/ 1/);
 });
+
+test('the front card tilts on an inner layer and never touches the slot transform', () => {
+  const deck = fs.readFileSync(deckPath, 'utf8');
+  const css = fs.readFileSync(deckCssPath, 'utf8');
+  const escapeRe = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  /** 顶格书写的那条规则的声明体（选择器列表、媒体查询里的同名规则都不算） */
+  const rule = (selector) => css.match(new RegExp(`\\n${escapeRe(selector)} \\{[^}]*\\}`))?.[0] ?? '';
+  const card = rule('.card');
+  const tilt = rule('.tilt');
+  const face = rule('.face');
+  assert.ok(card && tilt && face, '三层规则都得在');
+
+  // 共用 components/fx 里那一个钩子，deck 目录下不留自己的一份
+  assert.equal(fs.existsSync('src/components/deck/useCardTilt.ts'), false);
+  assert.match(deck, /import \{ useCardTilt \} from '@\/components\/fx\/useCardTilt';/);
+  // 退场（展开动画）期间停用；ref 只挂前牌——后牌永远不倾斜
+  assert.match(deck, /const tiltRef = useCardTilt<HTMLDivElement>\(\{ enabled: !leaving \}\);/);
+  assert.match(deck, /ref=\{isFront \? tiltRef : undefined\}/);
+  // 跟手不走 React 的逐次事件回调
+  assert.doesNotMatch(deck, /onPointerMove|onPointerLeave/);
+
+  // 三层：.card（槽位） > .tilt（只有它转，投影挂在它身上） > .face（卡面）
+  assert.match(deck, /<div className=\{styles\.tilt\}>\s*<div className=\{styles\.face\}>/);
+  assert.match(card, /perspective: 900px/, '景深挂在槽位层，.tilt 只转角度');
+  assert.doesNotMatch(card, /overflow: hidden/, '抬起的一侧会探出原盒子，外两层不能裁');
+  assert.doesNotMatch(tilt, /overflow: hidden/);
+  assert.match(face, /overflow: hidden/);
+  // 倾斜只在跟手时挂上，且只认前牌；静止时不挂 3D transform（前牌不常驻合成层）
+  assert.doesNotMatch(tilt, /\n\s*transform:/);
+  assert.match(
+    css,
+    /\n\.slotFront\[data-tilting\] > \.tilt \{[^}]*transform: rotateX\(var\(--tilt-rx, 0deg\)\) rotateY\(var\(--tilt-ry, 0deg\)\)/,
+  );
+  // 收手带回弹地回正
+  assert.match(tilt, /transition: transform 560ms cubic-bezier\(0\.34, 1\.56, 0\.64, 1\)/);
+  // 投影随牌一起歪：挂在 .tilt 上，槽位层自己不投影（否则抬起的一侧与投影之间漏缝）
+  assert.match(tilt, /box-shadow:/);
+  assert.doesNotMatch(card, /box-shadow:/);
+
+  // 跟手高光：伪元素上的静态径向渐变，只用 transform 挪；混合模式按主题分
+  assert.doesNotMatch(deck, /styles\.glare/, '高光是 .face 的伪元素，不再是一个节点');
+  assert.match(css, /\n\.face::after \{[^}]*radial-gradient\(/);
+  assert.match(
+    css,
+    /\n\.face::after \{[^}]*transform: translate3d\(\s*calc\(\(var\(--glare-x, 50%\) - 50%\) \/ 2\),\s*calc\(\(var\(--glare-y, 50%\) - 50%\) \/ 2\)/,
+  );
+  assert.match(css, /\n\.face::after \{[^}]*mix-blend-mode: soft-light/);
+  assert.match(css, /:global\(\[data-theme='dark'\]\) \.face::after \{[^}]*mix-blend-mode: screen/);
+  assert.match(css, /:global\(\[data-theme='sepia'\]\) \.face::after \{/);
+  assert.match(css, /\n\.slotFront\[data-tilting\] \.face::after \{[^}]*opacity: 1/);
+
+  // 前牌的区色投影：颜色取 zones.ts 的区色，换前牌只过渡 opacity，不补间 box-shadow
+  assert.match(deck, /'--tint': zone\.tint/);
+  assert.match(css, /\n\.tilt::before \{[^}]*color-mix\(in srgb, var\(--tint\)/);
+  assert.match(css, /\n\.tilt::before \{[^}]*transition: opacity 350ms/);
+  assert.match(css, /\n\.slotFront > \.tilt::before \{\s*opacity: 1;/);
+
+  // 伪元素的补间要单列进降级块：.card / .tilt 的 transition: none 管不到它们
+  const reduced = css.slice(css.lastIndexOf('@media (prefers-reduced-motion: reduce)'));
+  for (const selector of [
+    '.tilt',
+    '.tilt::before',
+    '.card::after',
+    '.face::after',
+    '.slotFront[data-tilting] .face::after',
+  ]) {
+    assert.match(
+      reduced,
+      new RegExp(`\\n\\s*${escapeRe(selector)}(,|\\s*\\{)`),
+      `${selector} 没进减动效降级块`,
+    );
+  }
+});
+
+test('the tilt maps the pointer to at most ±6° and lifts the side under it', async () => {
+  const deck = fs.readFileSync(deckPath, 'utf8');
+  const { tiltPose, TILT_MAX_DEG } = await import('../src/lib/tilt.ts');
+
+  // 前牌用共享的默认最大角，不自己另传一个
+  assert.doesNotMatch(deck, /maxDeg/);
+  assert.equal(TILT_MAX_DEG, 6);
+
+  const rect = { left: 0, top: 0, width: 340, height: 486 };
+  // 正中不倾斜
+  assert.deepEqual(tiltPose(170, 243, rect), { rx: 0, ry: 0, gx: 50, gy: 50 });
+  // 指针在右缘：右缘朝观者抬起（rotateY 为负）；左缘反之
+  assert.equal(tiltPose(340, 243, rect).ry, -6);
+  assert.equal(tiltPose(0, 243, rect).ry, 6);
+  // 指针在下缘：下缘抬起（rotateX 为正）；上缘反之
+  assert.equal(tiltPose(170, 486, rect).rx, 6);
+  assert.equal(tiltPose(170, 0, rect).rx, -6);
+
+  // 越界（指针在卡外一点点、或补间中的包围盒）一律夹紧，永远不超过 ±6°
+  for (const [x, y] of [
+    [-900, 2000],
+    [3000, -50],
+    [60, 900],
+    [343, -2],
+  ]) {
+    const { rx, ry } = tiltPose(x, y, rect);
+    assert.ok(Math.abs(rx) <= 6 && Math.abs(ry) <= 6, `${x},${y} 越过了 ±6°`);
+  }
+});
