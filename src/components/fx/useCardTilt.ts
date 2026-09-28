@@ -14,12 +14,12 @@
 //   --glare-x / --glare-y   高光圆心，占元素宽 / 高的百分比
 //   --tilt-on               1 = 正在跟手，0 = 已收手；纯数字，可以进 calc
 //   data-tilting            跟手期间存在。CSS 靠它切「跟手」与「回弹」两套过渡，也靠它
-//                           只在跟手时给倾斜层挂 transform、给高光挂 will-change——
-//                           静止时这两层都不另起合成层
+//                           只在跟手时给倾斜层挂 transform——静止时倾斜层不另起合成层
 //
 // 纪律：
-//   - 只认鼠标，且只在 (hover: hover) and (pointer: fine)、非减动效时启用：
-//     触屏没有悬停；减动效下由交互触发的动效一概不做。媒体条件中途变了也跟着收手
+//   - 只认鼠标，且只在 (hover: hover) and (pointer: fine)、非减动效、光效开着时启用：
+//     触屏没有悬停；减动效下由交互触发的动效一概不做；光效关着（lib/fx）一个监听都不挂。
+//     媒体条件或光效开关中途变了，都走同一条收手路径
 //   - pointermove 走 rAF 节流，一帧最多写一次变量，不进 React：pointermove 与刷新率
 //     同频，每帧 setState 就是每帧重渲染整棵子树
 //   - 量的是 ref 元素（不倾斜的外层）的包围盒。量正在倾斜的那层的话，
@@ -30,7 +30,9 @@
 // 相对路径引它（同 lib 里的写法），整个模块在 node --test 里也能直接加载。
 
 import { useCallback, type RefCallback } from 'react';
+import { currentFx, subscribeFx } from '../../lib/fx.ts';
 import { TILT_MAX_DEG, tiltPose } from '../../lib/tilt.ts';
+import { useFx } from '../../lib/useFx.ts';
 
 export const FINE_POINTER = '(hover: hover) and (pointer: fine)';
 export const REDUCED_MOTION = '(prefers-reduced-motion: reduce)';
@@ -51,26 +53,36 @@ export interface CardTiltOptions {
 /**
  * 返回一个 ref 回调，挂到「不倾斜的外层」上。选项变了回调才换身份
  * （React 会先摘旧的、再挂新的），所以每次渲染都传字面量对象也没关系。
+ * 光效开关也折进「是否启用」：关着时回调什么都不挂；运行中切换，回调换身份，
+ * React 随即摘掉（收手复位）或重新挂上——用它的组件（前牌、工牌）不必各自再接开关
  */
 export function useCardTilt<T extends HTMLElement>({
   maxDeg = TILT_MAX_DEG,
   enabled = true,
 }: CardTiltOptions = {}): RefCallback<T> {
+  // 钩子无条件调用（不能写进 && 的右边：enabled 一变，钩子的调用顺序就跟着变）
+  const fx = useFx();
+  const active = enabled && fx === 'on';
   return useCallback(
     (node: T | null) => {
-      if (!node || !enabled) return;
+      if (!node || !active) return;
       return attachCardTilt(node, maxDeg);
     },
-    [enabled, maxDeg],
+    [active, maxDeg],
   );
 }
+
+const NOOP = () => {};
 
 /**
  * 不经 React 直接挂上倾斜：返回摘除函数（即 React 19 的 ref 清理）。
  * 摘除后元素上只留高光坐标（--glare-x / --glare-y），重复摘是幂等的；
  * 同一个元素只挂一次（React 的 ref 本来就是一挂一摘，自己手动调用时别叠挂）。
+ * 光效关着时什么都不挂（返回空的摘除函数）；挂着期间光效被关掉，立刻收手——
+ * 恢复靠调用方重新挂（useCardTilt 已经跟着开关重挂）。
  */
 export function attachCardTilt(node: HTMLElement, maxDeg: number = TILT_MAX_DEG): () => void {
+  if (currentFx() === 'off') return NOOP;
   const fine = window.matchMedia(FINE_POINTER);
   const reduced = window.matchMedia(REDUCED_MOTION);
   let frame = 0;
@@ -108,9 +120,12 @@ export function attachCardTilt(node: HTMLElement, maxDeg: number = TILT_MAX_DEG)
     delete node.dataset.tilting;
   };
 
+  /** 此刻不该跟手：没有精确指针、开着减动效、或光效被关了——三者同一条收手路径 */
+  const blocked = () => !fine.matches || reduced.matches || currentFx() === 'off';
+
   const onMove = (e: PointerEvent) => {
     // 触屏横滑归 CardDeck 的 touch 那一套；这里只认鼠标
-    if (e.pointerType !== 'mouse' || !fine.matches || reduced.matches) return;
+    if (e.pointerType !== 'mouse' || blocked()) return;
     x = e.clientX;
     y = e.clientY;
     // 这一帧已经排上了：只记下最新的坐标。页面隐藏时不排帧——
@@ -128,7 +143,7 @@ export function attachCardTilt(node: HTMLElement, maxDeg: number = TILT_MAX_DEG)
   };
 
   const onMedia = () => {
-    if (!fine.matches || reduced.matches) settle();
+    if (blocked()) settle();
   };
 
   node.addEventListener('pointermove', onMove, { passive: true });
@@ -137,6 +152,7 @@ export function attachCardTilt(node: HTMLElement, maxDeg: number = TILT_MAX_DEG)
   document.addEventListener('visibilitychange', onVisibility);
   fine.addEventListener('change', onMedia);
   reduced.addEventListener('change', onMedia);
+  const unsubscribeFx = subscribeFx(onMedia);
 
   return () => {
     node.removeEventListener('pointermove', onMove);
@@ -145,6 +161,7 @@ export function attachCardTilt(node: HTMLElement, maxDeg: number = TILT_MAX_DEG)
     document.removeEventListener('visibilitychange', onVisibility);
     fine.removeEventListener('change', onMedia);
     reduced.removeEventListener('change', onMedia);
+    unsubscribeFx();
     settle();
     // 这个元素接下来可能是一张后牌：姿态与开关摘干净。高光坐标留着——换牌时旧前牌的
     // 高光要在原地淡出，摘了它就先跳回正中再淡（高光只过渡 opacity，不过渡位移）。

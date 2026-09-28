@@ -249,3 +249,11 @@
     transition: none;
   }
 }
+
+/* 光效关（<html data-fx="off">，见 lib/fx）：药丸上的呼吸灯与大标题的流光是纯装饰的无限循环，停掉。
+   大标题的上浮入场也一并不放：它和流光写在同一条 animation 里，只留入场的话，
+   这条规则就成了减动效块压不住的「新动效」（特异性高过减动效块里的 .headline） */
+:global(:root[data-fx='off']) .pillDot,
+:global(:root[data-fx='off']) .headline {
+  animation: none;
+}

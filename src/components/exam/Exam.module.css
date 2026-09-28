@@ -179,6 +179,16 @@
   }
 }
 
+/* 光效关（<html data-fx="off">，见 lib/fx）：充电条的呼吸灯与满格流光都是纯装饰的无限循环，停掉。
+   前缀 :root[data-fx] 比这些规则多出 (0,2,0)，压得过「父类 + 子类」那几条（同减动效块的教训）；
+   满格的配色、渐变与光晕照留，只是不再流动 */
+:global(:root[data-fx='off']) .chargeLight,
+:global(:root[data-fx='off']) .libraryChargeReady .chargeLight,
+:global(:root[data-fx='off']) .libraryChargeReady .libraryChargeFill,
+:global(:root[data-fx='off']) .libraryChargeActive .libraryChargeLabel {
+  animation: none;
+}
+
 .libraryChargeReady:hover {
   background: color-mix(in srgb, var(--surface-alt) 86%, #00a8ad);
   box-shadow: 0 0 0 1px rgb(0 168 173 / 18%), 0 0 24px rgb(0 168 173 / 20%);
@@ -1405,6 +1415,12 @@
   .finishTitle {
     animation: none;
   }
+}
+
+/* 光效关：完卷横幅的竖标与标题流光停掉（入场的上浮是一次性的反馈，留着） */
+:global(:root[data-fx='off']) .finishMark,
+:global(:root[data-fx='off']) .finishTitle {
+  animation: none;
 }
 
 /* 从复烤区「重练这些」进来的场次才有这一句 */

@@ -73,6 +73,7 @@ import {
   type Records,
 } from '@/lib/records';
 import { useLang } from '@/lib/LangContext';
+import { useFx } from '@/lib/useFx';
 import styles from './Exam.module.css';
 
 /**
@@ -208,6 +209,8 @@ export default function ExamApp() {
   // ---- 堆叠卡片：setup 相的两个子态（选区 deck ↔ 展开的配置面板）----
   // phase 仍是四相；deck/panel 只是 setup 相内部的分支，exam 运行时完全不受影响。
   const [frontZone, setFrontZone] = useState<ZoneId>('classic');
+  // 光效开关（lib/fx）：关着时环境光整个不渲染——不是透明，是省下它的显存与合成层
+  const fx = useFx();
   // deck = 选区一级页；zone = 展开的配置面板；progress = 成绩回顾面板。
   // 三者共用 .stage 的同一个 grid 格，只在 280ms 过渡窗口内和 deck 交叠。
   const [stageView, setStageView] = useState<StageView>('deck');
@@ -1122,8 +1125,8 @@ export default function ExamApp() {
       <div className={styles.wrap}>
         {/* 环境光只属于设置页：挂在这个分支里，考试 / Diagnostic / 成绩页的
             返回体里一律没有。必须排在 .stage 之前——它是 z-index 0 的 fixed 层，
-            靠树序画在全部内容之下 */}
-        <AmbientBackdrop zone={frontZone} />
+            靠树序画在全部内容之下。光效关着时整个不渲染 */}
+        {fx === 'on' && <AmbientBackdrop zone={frontZone} />}
         <div
           className={styles.stage}
           onKeyDown={(e) => {

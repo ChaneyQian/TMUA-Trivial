@@ -5,6 +5,7 @@
 // 用带扩展名的相对路径引依赖（同 lib 里的写法），整个模块在 node 里也能直接加载。
 
 import type { CSSProperties } from 'react';
+import { currentFx, subscribeFx } from '../../lib/fx.ts';
 import { zoneById, type ZoneId } from '../deck/zones.ts';
 import { FINE_POINTER, REDUCED_MOTION } from '../fx/useCardTilt.ts';
 
@@ -16,17 +17,22 @@ export function tintVars(id: ZoneId): TintVars {
   return { '--tint': zone.tint, '--tint2': zone.tint2 };
 }
 
+const NOOP = () => {};
+
 /**
  * 光标聚光：透镜整体 transform 到指针处（CSS 那边读 --mx / --my），亮起时挂 data-lit。
  *
- * - 只认鼠标，且只在 (hover: hover) and (pointer: fine)、非减动效时亮：每一下移动都现判，
+ * - 只认鼠标，且只在 (hover: hover) and (pointer: fine)、非减动效、光效开着时亮：每一下移动都现判，
  *   媒体条件中途变了（接上 / 拔掉鼠标、打开减动效）也订阅着——变得不满足就熄，
- *   恢复后下一下移动自然重新亮起
+ *   恢复后下一下移动自然重新亮起；光效被关掉同一条路径熄灯
+ * - 光效关着时什么都不挂（返回空的摘除函数）：关着时 AmbientBackdrop 整个不渲染，
+ *   开回来时组件重新挂载、重新挂上这里
  * - pointermove 走 rAF 节流，一帧最多写一次；页面隐藏时不排帧
  * - 指针离开窗口 / 窗口失焦 / 页面隐藏即熄
  * 返回摘除函数：监听一一摘掉、排着的帧撤掉、熄灯。
  */
 export function attachSpotlight(lens: HTMLElement): () => void {
+  if (currentFx() === 'off') return NOOP;
   const fine = window.matchMedia(FINE_POINTER);
   const reduced = window.matchMedia(REDUCED_MOTION);
   let frame = 0;
@@ -52,8 +58,11 @@ export function attachSpotlight(lens: HTMLElement): () => void {
     delete lens.dataset.lit;
   };
 
+  /** 此刻不该亮：没有精确指针、开着减动效、或光效被关了——三者同一条熄灯路径 */
+  const blocked = () => !fine.matches || reduced.matches || currentFx() === 'off';
+
   const onMove = (e: PointerEvent) => {
-    if (e.pointerType !== 'mouse' || !fine.matches || reduced.matches) return;
+    if (e.pointerType !== 'mouse' || blocked()) return;
     x = e.clientX;
     y = e.clientY;
     // 页面隐藏时不排帧：后台标签页的 rAF 本来就会被冻住，排了也只是悬着
@@ -68,7 +77,7 @@ export function attachSpotlight(lens: HTMLElement): () => void {
     if (document.hidden) dim();
   };
   const onMedia = () => {
-    if (!fine.matches || reduced.matches) dim();
+    if (blocked()) dim();
   };
 
   window.addEventListener('pointermove', onMove, { passive: true });
@@ -77,6 +86,7 @@ export function attachSpotlight(lens: HTMLElement): () => void {
   document.addEventListener('visibilitychange', onVisibility);
   fine.addEventListener('change', onMedia);
   reduced.addEventListener('change', onMedia);
+  const unsubscribeFx = subscribeFx(onMedia);
 
   return () => {
     window.removeEventListener('pointermove', onMove);
@@ -85,6 +95,7 @@ export function attachSpotlight(lens: HTMLElement): () => void {
     document.removeEventListener('visibilitychange', onVisibility);
     fine.removeEventListener('change', onMedia);
     reduced.removeEventListener('change', onMedia);
+    unsubscribeFx();
     dim();
   };
 }

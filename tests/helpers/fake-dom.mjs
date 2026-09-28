@@ -45,11 +45,15 @@ function fakeElement(rect) {
   });
 }
 
+/** lib/fx.ts 在 window 上广播的切换事件名（照抄，不从源码引：测试要能发现源码改了名） */
+export const FX_EVENT = 'mcq-test:fx-change';
+
 /**
  * 把假的 window / document 装到 globalThis 上（测试结束记得 restoreGlobals）。
- * 两条媒体查询的初值可配，中途用 setMedia 改并发 change 事件。
+ * 两条媒体查询的初值可配，中途用 setMedia 改并发 change 事件；
+ * 光效开关（<html data-fx>）初值可配，中途用 setFx 改并广播切换事件。
  */
-export function installFakeDom({ fine = true, reduced = false } = {}) {
+export function installFakeDom({ fine = true, reduced = false, fx = 'on' } = {}) {
   const frames = new Map();
   let nextFrame = 1;
   const queries = {
@@ -68,7 +72,7 @@ export function installFakeDom({ fine = true, reduced = false } = {}) {
     },
     cancelAnimationFrame: (id) => frames.delete(id),
   });
-  const doc = Object.assign(new FakeTarget(), { hidden: false });
+  const doc = Object.assign(new FakeTarget(), { hidden: false, documentElement: { dataset: { fx } } });
   globalThis.window = win;
   globalThis.document = doc;
 
@@ -88,6 +92,11 @@ export function installFakeDom({ fine = true, reduced = false } = {}) {
     setMedia(query, matches) {
       queries[query].matches = matches;
       queries[query].emit('change', { matches });
+    },
+    /** 像 lib/fx 的 setFx 那样切光效：改 <html data-fx>，在 window 上广播 */
+    setFx(value) {
+      doc.documentElement.dataset.fx = value;
+      win.emit(FX_EVENT);
     },
     element(rect = { left: 0, top: 0, width: 0, height: 0 }) {
       return fakeElement(rect);

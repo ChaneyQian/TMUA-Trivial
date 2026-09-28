@@ -303,8 +303,9 @@ test('the hook is a stable ref callback that stays out of React state', () => {
     /export function useCardTilt<T extends HTMLElement>\(\{\s*maxDeg = TILT_MAX_DEG,\s*enabled = true,\s*\}: CardTiltOptions = \{\}\): RefCallback<T>/,
   );
   assert.match(src, /useCallback\(/);
-  assert.match(src, /\[enabled, maxDeg\]/);
-  assert.match(src, /if \(!node \|\| !enabled\) return;/);
+  // 「是否启用」= enabled 且光效开着（lib/useFx）；选项或开关一变，回调换身份、React 摘了重挂
+  assert.match(src, /\[active, maxDeg\]/);
+  assert.match(src, /if \(!node \|\| !active\) return;/);
   // 跟手路径不许有 React state；也不许自己去写 transform
   assert.doesNotMatch(src, /useState|useReducer|forceUpdate/);
   assert.doesNotMatch(src, /\.style\.transform|setProperty\('transform'|--drag/);

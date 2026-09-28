@@ -223,6 +223,11 @@
     color-mix(in srgb, color-mix(in srgb, var(--tint) 40%, #8b5e2f) 30%, transparent);
 }
 
+/* 光效关（lib/fx）：区色投影不画，前牌只留 .tilt 上那圈静态的中性阴影，换牌时也没有交叉淡变 */
+:global(:root[data-fx='off']) .tilt::before {
+  display: none;
+}
+
 /* 后牌降亮用一层遮罩的 opacity，而不是 filter：filter 强制离屏合成，移动端掉帧 */
 .card::after {
   position: absolute;

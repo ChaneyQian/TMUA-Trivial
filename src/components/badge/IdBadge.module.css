@@ -694,3 +694,12 @@
     transition: none;
   }
 }
+
+/* 光效关（<html data-fx="off">，见 lib/fx）：丝带的摆动与卡头小灯的呼吸是纯装饰的无限循环，停掉。
+   前缀 :root[data-fx] 多出 (0,2,0)，连 hover / 焦点时改节奏的那两条也一并压住 */
+:global(:root[data-fx='off']) .ribbonTail,
+:global(:root[data-fx='off']) .ribbon:hover .ribbonTail,
+:global(:root[data-fx='off']) .ribbon:focus-visible .ribbonTail,
+:global(:root[data-fx='off']) .dot {
+  animation: none;
+}

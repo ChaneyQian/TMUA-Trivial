@@ -262,6 +262,22 @@
   }
 }
 
+/* 光效关（<html data-fx="off">，见 lib/fx）：环境光整个不画。组件那边关着时本来就不渲染它；
+   这条管的是水合之前那一瞬——静态导出的 HTML 按「开」预渲染，带着这一层，
+   首帧脚本已经写好 data-fx，这里从第一帧起就把它藏掉，不闪一下。
+   光斑的无限漂移也单列一条：display: none 已经让它不跑，写明是给「无限动画都有关闭开关」的守卫看的 */
+:global(:root[data-fx='off']) .backdrop {
+  display: none;
+}
+
+:global(:root[data-fx='off']) .spotA,
+:global(:root[data-fx='off']) .spotB,
+:global(:root[data-fx='off']) .spotC,
+:global(:root[data-fx='off']) .glow .spot,
+:global(:root[data-fx='off']) .glowOn .spot {
+  animation: none;
+}
+
 /* 放在文件最末：同特异性下要压过上面每一条动效声明（含 hover 媒体查询里的 display） */
 @media (prefers-reduced-motion: reduce) {
   /* 光斑静止在原位；换区瞬时切换；进场不淡入；
