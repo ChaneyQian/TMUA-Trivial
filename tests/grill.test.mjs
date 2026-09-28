@@ -131,14 +131,15 @@ test('a grill session is a normal practice session: it writes q and s', () => {
   // 但一场普通练习绝不能顺手把绑定集和解锁抹掉：
   // addSession 重新构造对象时漏掉这两个可选字段，就等于每练一场撤销一次 9.0 解锁
   assert.deepEqual(after.grill, [101, 102], 'a session must not drop the grill bindings');
-  assert.equal(after.diag.attempts, 1, 'a session must not drop the diagnostic record');
+  // 诊断战绩记在 diag75（7.5+；GMAT 下线后考试只有这一场），练习不许把它冲掉
+  assert.equal(after.diag75.attempts, 1, 'a session must not drop the diagnostic record');
   const passedThenPractised = addSession(
     recordDiagnostic(createEmptyRecords(), [7], true, { now: 1 }),
     [{ qid: 7, selected: 'A', answer: 'A', correct: true, answered: true }],
     { db: 'TMUA', mode: 'practice', n: 1, right: 1, answered: 1, sec: 10 },
     { now: 2 },
   );
-  assert.equal(passedThenPractised.diag.passed, true, 'practising must never revoke the unlock');
+  assert.equal(passedThenPractised.diag75.passed, true, 'practising must never revoke the unlock');
 
   // 组卷走既有的 start({ qids }) 通道 + practice 模式，考试引擎零改动
   const exam = fs.readFileSync(examPath, 'utf8');
@@ -258,20 +259,29 @@ test('the workbook carries the grill bindings, and old files still import', asyn
   const diagSheet = sheets.find((s) => s.sheet === recordsModule.DIAGNOSTIC_SHEET_NAME);
   assert.ok(diagSheet, 'the workbook must carry a Diagnostic sheet');
   assert.equal(recordsModule.DIAGNOSTIC_SHEET_NAME, 'Diagnostic');
-  assert.deepEqual(diagSheet.data[0], [...recordsModule.DIAGNOSTIC_HEADERS]);
+  // 前四列（绑定集 + 旧 GMAT 战绩）一个字没动，7.5+ 的三列追加在后面
+  assert.deepEqual(diagSheet.data[0], [
+    ...recordsModule.DIAGNOSTIC_HEADERS,
+    ...recordsModule.DIAGNOSTIC75_HEADERS,
+  ]);
+  assert.deepEqual([...recordsModule.DIAGNOSTIC_HEADERS], ['QID', 'Passed', 'Attempts', 'Last Attempt']);
   assert.equal(diagSheet.data.length, 4, 'header plus one row per bound qid');
   assert.deepEqual(
     diagSheet.data.slice(1).map((row) => row[0]),
     [901, 902, 903],
   );
-  assert.equal(diagSheet.data[1][1], 'Yes');
-  assert.equal(diagSheet.data[1][2], 1);
+  // 这份记录只考过 7.5+：旧 GMAT 三格是「No / 0」，7.5+ 三格才是战绩
+  assert.equal(diagSheet.data[1][1], 'No');
+  assert.equal(diagSheet.data[1][2], 0);
+  assert.equal(diagSheet.data[1][4], 'Yes');
+  assert.equal(diagSheet.data[1][5], 1);
 
   // 往返：导入还原绑定集与战绩
   const back = await importRecordsWorkbook(await file.arrayBuffer(), new Set([901, 902, 903]));
   assert.deepEqual(back.grill, [901, 902, 903]);
-  assert.equal(back.diag.passed, true);
-  assert.equal(back.diag.attempts, 1);
+  assert.equal(back.diag75.passed, true);
+  assert.equal(back.diag75.attempts, 1);
+  assert.equal(back.diag, undefined, '没考过旧诊断，就不凭空造出一份旧战绩');
   assert.equal(back.s.length, 0, 'session history still does not travel in the file');
 
   // 老文件（只有主表，没有 Diagnostic 表）照常导入，不因为缺表报错
@@ -285,6 +295,7 @@ test('the workbook carries the grill bindings, and old files still import', asyn
   const fromLegacy = await importRecordsWorkbook(await legacyFile.arrayBuffer(), new Set([901]));
   assert.equal(fromLegacy.grill, undefined, 'an old file simply carries no bindings');
   assert.equal(fromLegacy.diag, undefined);
+  assert.equal(fromLegacy.diag75, undefined);
   assert.equal(Object.keys(fromLegacy.q).length, 1);
 });
 
@@ -309,6 +320,7 @@ test('a Diagnostic sheet with a wrong header is skipped whole, not misread by co
   const imported = await importRecordsWorkbook(await shuffled.arrayBuffer(), new Set([901]));
   assert.equal(imported.grill, undefined, 'a misaligned sheet must contribute nothing');
   assert.equal(imported.diag, undefined);
+  assert.equal(imported.diag75, undefined);
   assert.equal(Object.keys(imported.q).length, 1, 'the main sheet still imports as usual');
 
   // 反向钉住：前四列匹配即可，之后追加的列不碍事——给未来的格式演进留缝
@@ -330,6 +342,8 @@ test('a Diagnostic sheet with a wrong header is skipped whole, not misread by co
   const fromExtended = await importRecordsWorkbook(await extended.arrayBuffer(), new Set([901]));
   assert.deepEqual(fromExtended.grill, [901]);
   assert.equal(fromExtended.diag.passed, true);
+  // 第五列起不是 7.5+ 那三列的表头：只丢追加列，前四列照读
+  assert.equal(fromExtended.diag75, undefined);
 });
 
 test('the count choice follows the pool when a narrower strategy shrinks it', () => {
@@ -378,6 +392,27 @@ test('importing merges diagnostic progress instead of overwriting it', () => {
   const nothing = mergeDiagnostic({ v: 1, q: {}, s: [] }, { v: 1, q: {}, s: [] });
   assert.equal(nothing.grill, undefined);
   assert.equal(nothing.diag, undefined);
+  assert.equal(nothing.diag75, undefined);
+
+  // 7.5+ 的战绩（diag75）与旧 GMAT 的（diag）各合各的，互不串门。
+  // attempts 取 max：本机用掉的机会，导一份更早的文件进来也换不回
+  const local75 = {
+    v: 1,
+    q: {},
+    s: [],
+    diag: { passed: false, attempts: 2, lastTs: 1 },
+    diag75: { passed: false, attempts: 1, lastTs: 300 },
+  };
+  const older = mergeDiagnostic(local75, { v: 1, q: {}, s: [], diag75: { passed: false, attempts: 0, lastTs: 0 } });
+  assert.deepEqual(older.diag75, { passed: false, attempts: 1, lastTs: 300 });
+  assert.deepEqual(older.diag, { passed: false, attempts: 2, lastTs: 1 }, '旧战绩原样留着，不与新考试相加');
+  const passedElsewhere = mergeDiagnostic(local75, {
+    v: 1,
+    q: {},
+    s: [],
+    diag75: { passed: true, attempts: 2, lastTs: 400 },
+  });
+  assert.deepEqual(passedElsewhere.diag75, { passed: true, attempts: 2, lastTs: 400 });
 
   const exam = fs.readFileSync(examPath, 'utf8');
   assert.match(exam, /mergeDiagnostic\(records, imported\)/);

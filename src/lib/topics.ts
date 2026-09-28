@@ -201,7 +201,8 @@ export function topicReach(
   let analysed = 0;
   const missing = new Map<string, number>();
   for (const entry of index || []) {
-    if (entry.diag) continue;
+    // 与 topicRows 的练习池（practiceQids）同一个口径：诊断题与 reserved 都不算
+    if (entry.diag || entry.reserved) continue;
     const stat = records.q[String(entry.qid)];
     if (!stat || stat.a <= 0) continue;
     attempted++;
@@ -229,7 +230,9 @@ export function topicReach(
  *
  * scope 由调用方按 9.0 的状态划好（indexForLibraryMode），这里不自己判——
  * 面板不该知道解锁规则，但也绝不能成为绕过它的后门：还没拿到 9.0 的人
- * 从这条路同样摸不到扩展池的题。diag 再挡一道，虽然诊断题本就没有知识点标签。
+ * 从这条路同样摸不到扩展池的题。diag 再挡一道，虽然诊断题本就没有知识点标签；
+ * reserved（7.5+ 卷一征用的经典区题）同理再挡一道——它们在 topics.json 里照样有标签，
+ * 「练这类题」不能成为考前练到考题的后门
  */
 export function topicEntries(
   data: TopicsData,
@@ -238,7 +241,7 @@ export function topicEntries(
 ): IndexEntry[] {
   const qids = new Set(data.byTopic[topic] || []);
   if (qids.size === 0) return [];
-  return scope.filter((entry) => !entry.diag && qids.has(entry.qid));
+  return scope.filter((entry) => !entry.diag && !entry.reserved && qids.has(entry.qid));
 }
 
 /**

@@ -26,7 +26,7 @@ export interface SessionRecord {
   sec: number;
 }
 
-/** Diagnostic Test 的战绩。passed 一旦为真就不再翻回去——解锁不可撤销 */
+/** 一场诊断考试的战绩。passed 一旦为真就不再翻回去——解锁不可撤销 */
 export interface DiagState {
   passed: boolean;
   attempts: number;
@@ -37,9 +37,15 @@ export interface Records {
   v: 1;
   q: Record<string, QuestionStat>;
   s: SessionRecord[];
-  /** Grill 绑定集：诊断里出现过的 qid，去重。P3 才会拿它组卷 */
+  /** Grill 绑定集：诊断里出现过的 qid，去重。GMAT 与 7.5+ 两场考试共用这一个集合 */
   grill?: number[];
+  /**
+   * 旧 GMAT 诊断的战绩（2026-09 下线）。只读保留：passed 仍算 9.0 解锁，
+   * attempts 不再有任何用处——新考试单独记在 diag75，从 0 次开始
+   */
   diag?: DiagState;
+  /** 7.5+ Diagnostic 的战绩：两次机会、passed 即解锁 9.0 */
+  diag75?: DiagState;
 }
 
 export interface SessionResult {
@@ -63,9 +69,25 @@ export function createEmptyRecords(): Records {
   return { v: 1, q: {}, s: [] };
 }
 
+/** 一份诊断战绩的脏值清洗；不是对象就当没有 */
+function normalizeDiag(value: unknown): DiagState | undefined {
+  const diag = value as Partial<DiagState> | undefined;
+  if (!diag || typeof diag !== 'object') return undefined;
+  return {
+    passed: diag.passed === true,
+    attempts: Number.isSafeInteger(diag.attempts) && diag.attempts! > 0 ? diag.attempts! : 0,
+    lastTs: Number.isFinite(diag.lastTs) ? Number(diag.lastTs) : 0,
+  };
+}
+
 /**
- * 存量档案没有 grill / diag 两个字段，读到就地补默认即可——
+ * 存量档案没有 grill / diag / diag75 这几个字段，读到就地补默认即可——
  * 版本号仍是 1，不做迁移：加可选字段而已，旧版本读新档案也只是看不见它们。
+ *
+ * 7.5+ 取代 GMAT 诊断时也不改写旧字段（用户裁定 2026-09-28）：
+ * diag 原样留着——通过过的人凭它保持解锁；新考试记在 diag75，
+ * 没有这个字段就是 0 次，于是每个人在新考试上都从完整的两次机会起步。
+ * 「迁移」就是分开记，不需要一行转换代码
  */
 export function normalizeRecords(parsed: unknown): Records {
   const raw = (parsed ?? {}) as Partial<Records> & { q?: unknown; s?: unknown };
@@ -78,14 +100,10 @@ export function normalizeRecords(parsed: unknown): Records {
     ? [...new Set(raw.grill.filter((qid): qid is number => Number.isSafeInteger(qid) && qid > 0))]
     : [];
   if (grill.length > 0) out.grill = grill;
-  const diag = raw.diag as Partial<DiagState> | undefined;
-  if (diag && typeof diag === 'object') {
-    out.diag = {
-      passed: diag.passed === true,
-      attempts: Number.isSafeInteger(diag.attempts) && diag.attempts! > 0 ? diag.attempts! : 0,
-      lastTs: Number.isFinite(diag.lastTs) ? Number(diag.lastTs) : 0,
-    };
-  }
+  const diag = normalizeDiag(raw.diag);
+  if (diag) out.diag = diag;
+  const diag75 = normalizeDiag(raw.diag75);
+  if (diag75) out.diag75 = diag75;
   return out;
 }
 
@@ -130,16 +148,20 @@ export function addSession(
     };
   }
   const s = [{ ts: now, ...session }, ...records.s].slice(0, MAX_SESSIONS);
-  // 必须摊开 records：grill / diag 是后加的可选字段，重新构造对象会把它们丢掉——
+  // 必须摊开 records：grill / diag / diag75 是后加的可选字段，重新构造对象会把它们丢掉——
   // 那等于每做一场普通练习就撤销一次 9.0 解锁
   return { ...records, v: 1, q, s };
 }
 
 /**
- * 诊断交卷。刻意**不碰** q 和 s：
+ * 7.5+ Diagnostic 交卷（GMAT 诊断已下线，考试只有这一场）。只落两件事：
+ * 本场的题并入 Grill 绑定集（与 GMAT 时代同一个集合），diag75 记一次尝试。
+ *
+ * 刻意**不碰** q 和 s：
  *   - 写 q 会让这批题出现在错题榜、成绩页历史里，等于把对错泄出去；
  *   - 写 s 会让 right 数经 Sessions 导出表泄出去。
  * 「全程不给对错」得贯穿到落盘这一层，只留下「练过、通没通过」这两件事实。
+ * 旧的 diag（GMAT 战绩）也不碰：通过过的人凭它保持解锁
  */
 export function recordDiagnostic(
   records: Records,
@@ -149,11 +171,11 @@ export function recordDiagnostic(
 ): Records {
   const now = identity.now ?? Date.now();
   const grill = [...new Set([...(records.grill || []), ...qids])];
-  const previous = records.diag;
+  const previous = records.diag75;
   return {
     ...records,
     grill,
-    diag: {
+    diag75: {
       // 通过一次就永久算通过：解锁不该因为后面考砸而被收回
       passed: previous?.passed === true || passed,
       attempts: (previous?.attempts || 0) + 1,
@@ -169,15 +191,17 @@ export function grillCount(records: Records): number {
 
 /**
  * 清空做题记录。
- * diag 与 grill 刻意留下并回写：Diagnostic 通过一次就永久解锁 9.0 是结构性承诺，
- * 不该被「清空练习记录」这个按钮顺手撤销——导入那条路径也是同样的保底。
+ * grill 与两场诊断的战绩（diag / diag75）刻意留下并回写：Diagnostic 通过一次就永久解锁 9.0
+ * 是结构性承诺，不该被「清空练习记录」这个按钮顺手撤销——导入那条路径也是同样的保底。
+ * 机会次数同理：清空练习记录不是重新领两次机会的后门
  */
 export function clearRecords(previous?: Records): Records {
   const kept = createEmptyRecords();
   if (previous?.grill && previous.grill.length > 0) kept.grill = [...previous.grill];
   if (previous?.diag) kept.diag = { ...previous.diag };
+  if (previous?.diag75) kept.diag75 = { ...previous.diag75 };
   try {
-    if (kept.grill || kept.diag) localStorage.setItem(KEY, JSON.stringify(kept));
+    if (kept.grill || kept.diag || kept.diag75) localStorage.setItem(KEY, JSON.stringify(kept));
     else localStorage.removeItem(KEY);
   } catch {}
   return kept;
@@ -221,8 +245,12 @@ export type PickMode = 'random' | 'wrong-and-new' | 'new-only';
 export type LibraryMode = 'classic' | 'hidden';
 
 export function validCompletedCount(index: IndexEntry[], records: Records): number {
-  // 365 题解锁进度只认练习池的题；diag（诊断集）另有自己的解锁路径（Pass ≥90%），
-  // 两条路不互相漏水
+  // 365 题解锁进度不认 diag（诊断集）：它们另有自己的解锁路径（通过诊断），
+  // 两条路不互相漏水。
+  //
+  // reserved 刻意**照算**（用户裁定 2026-09-28）：那两道经典区的题被 7.5+ 卷一征用后
+  // 只是抽不到了，已有的作答记录不作废——不能让任何人因为这次改动从 365 掉下去、
+  // 丢掉已经拿到的解锁
   const validQids = new Set(index.filter((entry) => !entry.diag).map((entry) => entry.qid));
   return Object.entries(records.q).filter(
     ([qid, stat]) => validQids.has(Number(qid)) && stat.a >= 1,
@@ -230,11 +258,11 @@ export function validCompletedCount(index: IndexEntry[], records: Records): numb
 }
 
 /**
- * 9.0 Trivial 的两条解锁路：练满 365 题，**或**通过一次 Diagnostic Test。
- * 任一达成即可，互不依赖。
+ * 9.0 Trivial 的解锁：练满 365 题，**或**通过 7.5+ Diagnostic，**或**当年通过了
+ * 旧的 GMAT 诊断（下线不收回）。任一达成即可，互不依赖。
  */
 export function isHiddenModeUnlocked(index: IndexEntry[], records: Records): boolean {
-  if (records.diag?.passed) return true;
+  if (records.diag?.passed || records.diag75?.passed) return true;
   return validCompletedCount(index, records) >= HIDDEN_UNLOCK_COUNT;
 }
 
@@ -250,11 +278,18 @@ export function hiddenUnlockProgress(index: IndexEntry[], records: Records): num
  * 「经典池再加点料」——9.0 里抽 20 题，十有八九抽到的还是 TMUA 真题。
  * 互斥之后进哪个区就练哪批题，卡面徽章报的也是这个区自己的题量。
  *
- * diag（GMAT 诊断集）两个区都不进：那批题只属于 Diagnostic Test，
+ * diag（诊断集）两个区都不进：那批题只属于 Diagnostic，
  * 设计上全程不给对错，混进任一随机池都会破坏「诊断不泄题」的前提。
+ *
+ * reserved（7.5+ 卷一里原本在经典区的两道）同样两个区都不进：还没考诊断的人
+ * 不该在经典区先把它们练一遍、看过答案再进考场。抽题范围三档、逻辑推理开关、
+ * 卡面题数都建在这一层之上，所以一并生效
  */
 export function indexForLibraryMode(index: IndexEntry[], mode: LibraryMode): IndexEntry[] {
-  return index.filter((entry) => !entry.diag && (mode === 'hidden' ? !!entry.hidden : !entry.hidden));
+  return index.filter(
+    (entry) =>
+      !entry.diag && !entry.reserved && (mode === 'hidden' ? !!entry.hidden : !entry.hidden),
+  );
 }
 
 /**
@@ -267,9 +302,13 @@ export function indexForLibraryMode(index: IndexEntry[], mode: LibraryMode): Ind
  *
  * 但它同样不是后门：还没拿到 9.0 的人，这里一道扩展池的题也摸不到，
  * 连卷名都不会出现在卷面进度墙上（不剧透）。
+ *
+ * reserved 也不算「够得着」：「练这类题」从这里取池子，不能成为练到考题的后门；
+ * 卷面进度墙与完卷横幅也从这里取分母——那两套卷（TMUA 2018 P1、MAT 2023）
+ * 于是按剩下的题算，不用那道再也抽不到的题也能做满，墙与横幅口径一致
  */
 export function reachableIndex(index: IndexEntry[], unlocked: boolean): IndexEntry[] {
-  return index.filter((entry) => !entry.diag && (unlocked || !entry.hidden));
+  return index.filter((entry) => !entry.diag && !entry.reserved && (unlocked || !entry.hidden));
 }
 
 // ---- 逻辑推理题开关 ----
@@ -458,7 +497,16 @@ const RESULT_WRONG = 'Wrong';
 // 带上 Grill 绑定集与诊断战绩，好让记录文件换台机器也能续上。
 // 老文件没有这张表，导入时跳过即可（向后兼容）。
 export const DIAGNOSTIC_SHEET_NAME = 'Diagnostic';
+/** 前四列：绑定集 + 旧 GMAT 诊断的战绩。线格式冻结，一个字都不许动 */
 export const DIAGNOSTIC_HEADERS = ['QID', 'Passed', 'Attempts', 'Last Attempt'] as const;
+/**
+ * 7.5+ Diagnostic 的战绩：诊断表**追加**三列（2026-09）。导入端的表头校验
+ * 只查前四列（前缀匹配、追加列留缝），这三列另查，于是：
+ *   - 旧站读新文件：照旧只读前四列，绑定集与旧战绩一样不少，追加列不看；
+ *   - 新站读旧文件：没有这三列，diag75 就是空的（新考试从 0 次起步）；
+ *   - 追加列的表头对不上（被 Excel 挪过列，或将来又追加了别的）：只丢这三列，前四列照读
+ */
+export const DIAGNOSTIC75_HEADERS = ['7.5+ Passed', '7.5+ Attempts', '7.5+ Last Attempt'] as const;
 const DIAG_YES = 'Yes';
 const DIAG_NO = 'No';
 
@@ -527,20 +575,24 @@ export async function exportRecordsWorkbook(records: Records): Promise<Blob> {
     ]),
   ];
 
-  // 诊断表：每行自带完整战绩，合并时逐行取 OR / max 即可，不依赖行序
-  const diag = records.diag;
-  const passedLabel = diag?.passed ? DIAG_YES : DIAG_NO;
-  const attempts = diag?.attempts || 0;
-  const lastTs = diag?.lastTs ? new Date(diag.lastTs) : null;
+  // 诊断表：每行自带完整战绩（旧 GMAT 三格 + 7.5+ 三格），合并时逐行取 OR / max 即可，
+  // 不依赖行序。没有的那场写成「No / 0 / 空」，导入端据此认出「没考过」
+  const statusCells = (diag?: DiagState) => [
+    diag?.passed ? DIAG_YES : DIAG_NO,
+    diag?.attempts || 0,
+    diag?.lastTs ? new Date(diag.lastTs) : null,
+  ];
+  const legacy = statusCells(records.diag);
+  const current = statusCells(records.diag75);
   const boundQids = records.grill || [];
   const diagBody =
     boundQids.length > 0
-      ? boundQids.map((qid) => [qid, passedLabel, attempts, lastTs])
+      ? boundQids.map((qid) => [qid, ...legacy, ...current])
       : // 有战绩但没绑定题（正常流程走不到，防守而已）：留一行只带状态
-        diag
-        ? [[null, passedLabel, attempts, lastTs]]
+        records.diag || records.diag75
+        ? [[null, ...legacy, ...current]]
         : [];
-  const diagRows = [DIAGNOSTIC_HEADERS.map(headerCell), ...diagBody];
+  const diagRows = [[...DIAGNOSTIC_HEADERS, ...DIAGNOSTIC75_HEADERS].map(headerCell), ...diagBody];
 
   return writeExcelFile(
     [
@@ -554,7 +606,15 @@ export async function exportRecordsWorkbook(records: Records): Promise<Blob> {
       {
         data: diagRows,
         sheet: DIAGNOSTIC_SHEET_NAME,
-        columns: [{ width: 18 }, { width: 10 }, { width: 12 }, { width: 22 }],
+        columns: [
+          { width: 18 },
+          { width: 10 },
+          { width: 12 },
+          { width: 22 },
+          { width: 14 },
+          { width: 16 },
+          { width: 22 },
+        ],
         stickyRowsCount: 1,
         dateFormat: 'yyyy-mm-dd hh:mm:ss',
       },
@@ -653,62 +713,89 @@ export async function importRecordsWorkbook(
   const diagSheet = sheets.find((item) => item.sheet === DIAGNOSTIC_SHEET_NAME);
   // 下面按列序硬读，所以表头对不上就整表跳过——宁可少读一张附表，
   // 也别把陌生列吞进 grill/diag。文件身份已由主表校验，这里的跳过
-  // 与「老文件没有这张表」走同一语义。只查前四列，之后追加的列不管，
-  // 给未来的格式演进留缝
-  const diagHeaderOk = (rows: ImportedCell[][]): boolean => {
-    const header = rows[0] || [];
-    return DIAGNOSTIC_HEADERS.every((name, i) => String(header[i] ?? '') === name);
-  };
-  if (diagSheet && diagHeaderOk(diagSheet.data as unknown as ImportedCell[][])) {
+  // 与「老文件没有这张表」走同一语义。整表的去留只看前四列，之后追加的列
+  // 各查各的表头（7.5+ 那三列见 DIAGNOSTIC75_HEADERS），给格式演进留缝
+  const headerMatches = (header: ImportedCell[], names: readonly string[], from: number): boolean =>
+    names.every((name, i) => String(header[from + i] ?? '') === name);
+  if (
+    diagSheet &&
+    headerMatches((diagSheet.data as unknown as ImportedCell[][])[0] || [], DIAGNOSTIC_HEADERS, 0)
+  ) {
     const diagRows = diagSheet.data as unknown as ImportedCell[][];
+    // 7.5+ 那三列是追加的：表头对得上才读，对不上（旧文件没有、或列被挪过）只丢这三列
+    const has75 = headerMatches(diagRows[0] || [], DIAGNOSTIC75_HEADERS, DIAGNOSTIC_HEADERS.length);
     const grill: number[] = [];
-    let passed = false;
-    let attempts = 0;
-    let lastTs = 0;
+    const legacy = emptyTally();
+    const current = emptyTally();
     for (const row of diagRows.slice(1)) {
       if (!row || row.every((value) => value === null)) continue;
       const qid = row[0];
       if (typeof qid === 'number' && Number.isSafeInteger(qid) && qid > 0) grill.push(qid);
-      if (String(row[1] ?? '') === DIAG_YES) passed = true;
-      if (typeof row[2] === 'number' && Number.isSafeInteger(row[2])) {
-        attempts = Math.max(attempts, row[2]);
-      }
-      try {
-        lastTs = Math.max(lastTs, timeValue(row[3]));
-      } catch {
-        // 时间列坏了不至于让整份记录导不进来，它只是个展示字段
-      }
+      absorbTally(legacy, row, 1);
+      if (has75) absorbTally(current, row, DIAGNOSTIC_HEADERS.length);
     }
     const unique = [...new Set(grill)];
     if (unique.length > 0) imported.grill = unique;
-    if (passed || attempts > 0 || lastTs > 0) imported.diag = { passed, attempts, lastTs };
+    if (tallyPresent(legacy)) imported.diag = legacy;
+    if (tallyPresent(current)) imported.diag75 = current;
   }
 
   return imported;
 }
 
+// ---- 诊断表里一段战绩列（Passed / Attempts / Last Attempt）的逐行累加 ----
+// 每行都带着完整战绩，逐行取 OR / max 即可，不依赖行序。旧 GMAT 与 7.5+ 两段同一套读法
+
+function emptyTally(): DiagState {
+  return { passed: false, attempts: 0, lastTs: 0 };
+}
+
+function absorbTally(acc: DiagState, row: ImportedCell[], at: number): void {
+  if (String(row[at] ?? '') === DIAG_YES) acc.passed = true;
+  const attempts = row[at + 1];
+  if (typeof attempts === 'number' && Number.isSafeInteger(attempts)) {
+    acc.attempts = Math.max(acc.attempts, attempts);
+  }
+  try {
+    acc.lastTs = Math.max(acc.lastTs, timeValue(row[at + 2]));
+  } catch {
+    // 时间列坏了不至于让整份记录导不进来，它只是个展示字段
+  }
+}
+
+/** 「No / 0 / 空」就是没考过：不凭空造出一个字段 */
+function tallyPresent(acc: DiagState): boolean {
+  return acc.passed || acc.attempts > 0 || acc.lastTs > 0;
+}
+
+/** 两份同一场考试的战绩取并：passed 取 OR、attempts 取 max、lastTs 取新；两边都没有就没有 */
+function mergeDiagState(a?: DiagState, b?: DiagState): DiagState | undefined {
+  if (!a && !b) return undefined;
+  return {
+    passed: a?.passed === true || b?.passed === true,
+    attempts: Math.max(a?.attempts || 0, b?.attempts || 0),
+    lastTs: Math.max(a?.lastTs || 0, b?.lastTs || 0),
+  };
+}
+
 /**
- * 把导入的诊断战绩与本机现有的合并：绑定集取并集、passed 取 OR、
- * attempts 取 max、lastTs 取新。
+ * 把导入的诊断战绩与本机现有的合并：绑定集取并集，两场考试（旧 GMAT 的 diag、
+ * 7.5+ 的 diag75）各合各的——passed 取 OR、attempts 取 max、lastTs 取新。
  * 两边都是「做过就算数」的单调量，合并只会往前不会倒退——
- * 换台机器导入不该把已经拿到的解锁弄丢，也不该把对方的成果盖掉。
+ * 换台机器导入不该把已经拿到的解锁弄丢，也不该把对方的成果盖掉；
+ * attempts 取 max 也保证导一份旧文件进来，换不回已经用掉的机会。
  */
 export function mergeDiagnostic(local: Records, imported: Records): Records {
   const grill = [...new Set([...(local.grill || []), ...(imported.grill || [])])];
-  const a = local.diag;
-  const b = imported.diag;
   const merged: Records = { ...imported };
   if (grill.length > 0) merged.grill = grill;
   else delete merged.grill;
 
-  if (a || b) {
-    merged.diag = {
-      passed: a?.passed === true || b?.passed === true,
-      attempts: Math.max(a?.attempts || 0, b?.attempts || 0),
-      lastTs: Math.max(a?.lastTs || 0, b?.lastTs || 0),
-    };
-  } else {
-    delete merged.diag;
-  }
+  const diag = mergeDiagState(local.diag, imported.diag);
+  if (diag) merged.diag = diag;
+  else delete merged.diag;
+  const diag75 = mergeDiagState(local.diag75, imported.diag75);
+  if (diag75) merged.diag75 = diag75;
+  else delete merged.diag75;
   return merged;
 }

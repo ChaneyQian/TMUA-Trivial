@@ -227,15 +227,18 @@ test('there are exactly two attempts, and each uses its own set', () => {
   assert.match(intro, /allowed \? \(/);
 });
 
-test('submitting a diagnostic writes grill and diag only — never q or s', () => {
-  const base = createEmptyRecords();
+test('submitting a diagnostic writes grill and diag75 only — never q or s', () => {
+  // GMAT 下线后考试只有 7.5+ 这一场，战绩记在 diag75；旧的 diag 一个字都不碰
+  const legacy = { passed: false, attempts: 2, lastTs: 7 };
+  const base = { ...createEmptyRecords(), diag: legacy };
   const first = recordDiagnostic(base, [5, 7, 7, 9], false, { now: 1000 });
 
   assert.deepEqual(first.grill, [5, 7, 9]);
   assert.equal(grillCount(first), 3);
-  assert.equal(first.diag.attempts, 1);
-  assert.equal(first.diag.passed, false);
-  assert.equal(first.diag.lastTs, 1000);
+  assert.equal(first.diag75.attempts, 1);
+  assert.equal(first.diag75.passed, false);
+  assert.equal(first.diag75.lastTs, 1000);
+  assert.deepEqual(first.diag, legacy, 'the retired GMAT record is left exactly as it was');
 
   // 对错一个字都不许落进 q / s：落了就会经错题榜和 Sessions 导出表泄出去
   assert.deepEqual(first.q, {}, 'diagnostic answers must not enter the question stats');
@@ -243,15 +246,15 @@ test('submitting a diagnostic writes grill and diag only — never q or s', () =
 
   const second = recordDiagnostic(first, [9, 11], true, { now: 2000 });
   assert.deepEqual(second.grill, [5, 7, 9, 11]);
-  assert.equal(second.diag.attempts, 2);
-  assert.equal(second.diag.passed, true);
+  assert.equal(second.diag75.attempts, 2);
+  assert.equal(second.diag75.passed, true);
   assert.deepEqual(second.q, {});
   assert.deepEqual(second.s, []);
 
   // 通过之后再考砸也不收回解锁
   const third = recordDiagnostic(second, [13], false, { now: 3000 });
-  assert.equal(third.diag.passed, true);
-  assert.equal(third.diag.attempts, 3);
+  assert.equal(third.diag75.passed, true);
+  assert.equal(third.diag75.attempts, 3);
 });
 
 test('clearing practice records never revokes the 9.0 unlock', () => {
@@ -261,6 +264,7 @@ test('clearing practice records never revokes the 9.0 unlock', () => {
     s: [{ ts: 1, db: 'TMUA', mode: 'practice', n: 5, right: 3, answered: 5, sec: 60 }],
     grill: [101, 102],
     diag: { passed: true, attempts: 2, lastTs: 99 },
+    diag75: { passed: false, attempts: 1, lastTs: 120 },
   };
 
   const cleared = clearRecords(withUnlock);
@@ -271,6 +275,10 @@ test('clearing practice records never revokes the 9.0 unlock', () => {
   assert.deepEqual(cleared.diag, { passed: true, attempts: 2, lastTs: 99 });
   assert.deepEqual(cleared.grill, [101, 102]);
   assert.equal(isHiddenModeUnlocked([{ qid: 1, db: 'TMUA' }], cleared), true);
+  // 7.5+ 的战绩同样留着：清空练习记录不是重新领两次机会的后门
+  assert.deepEqual(cleared.diag75, { passed: false, attempts: 1, lastTs: 120 });
+  const passed75 = clearRecords({ v: 1, q: {}, s: [], diag75: { passed: true, attempts: 1, lastTs: 5 } });
+  assert.equal(isHiddenModeUnlocked([{ qid: 1, db: 'TMUA' }], passed75), true);
 
   // 没有诊断战绩时行为不变：清成一份干净档案
   const plain = clearRecords({ v: 1, q: { 1: { a: 1, w: 0, t: 0, c: 1 } }, s: [] });
@@ -282,28 +290,43 @@ test('clearing practice records never revokes the 9.0 unlock', () => {
   assert.match(exam, /clearRecords\(records\)/);
 });
 
-test('9.0 unlocks by either route, and old archives still load', () => {
+test('9.0 unlocks by any of three routes, and old archives still load', () => {
   const index = Array.from({ length: 400 }, (_, i) => ({ qid: i + 1, db: 'TMUA' }));
 
   const q = {};
   for (let i = 1; i <= HIDDEN_UNLOCK_COUNT; i++) q[String(i)] = { a: 1, w: 0, t: 0, c: 1 };
   assert.equal(isHiddenModeUnlocked(index, { v: 1, q, s: [] }), true);
 
-  // 诊断通过，一道练习题都没做也算解锁
+  // 诊断通过，一道练习题都没做也算解锁：旧 GMAT 通过的下线不收回，7.5+ 通过的同样算
   assert.equal(
     isHiddenModeUnlocked(index, { v: 1, q: {}, s: [], diag: { passed: true, attempts: 1, lastTs: 0 } }),
+    true,
+  );
+  assert.equal(
+    isHiddenModeUnlocked(index, { v: 1, q: {}, s: [], diag75: { passed: true, attempts: 1, lastTs: 0 } }),
     true,
   );
   assert.equal(
     isHiddenModeUnlocked(index, { v: 1, q: {}, s: [], diag: { passed: false, attempts: 2, lastTs: 0 } }),
     false,
   );
+  assert.equal(
+    isHiddenModeUnlocked(index, {
+      v: 1,
+      q: {},
+      s: [],
+      diag: { passed: false, attempts: 2, lastTs: 0 },
+      diag75: { passed: false, attempts: 2, lastTs: 0 },
+    }),
+    false,
+  );
 
-  // v:1 不变、不做迁移：老档案没有这两个字段，读进来补默认即可
+  // v:1 不变、不做迁移：老档案没有这几个字段，读进来补默认即可
   const old = normalizeRecords({ v: 1, q: { 1: { a: 1, w: 0, t: 0, c: 1 } }, s: [] });
   assert.equal(old.v, 1);
   assert.equal(old.grill, undefined);
   assert.equal(old.diag, undefined);
+  assert.equal(old.diag75, undefined);
 
   // 脏字段不该炸
   const dirty = normalizeRecords({
@@ -312,9 +335,11 @@ test('9.0 unlocks by either route, and old archives still load', () => {
     s: [],
     grill: [3, 3, 'x', -1, 4],
     diag: { passed: 'yes', attempts: -2 },
+    diag75: { passed: 1, attempts: 1.5, lastTs: 'x' },
   });
   assert.deepEqual(dirty.grill, [3, 4]);
   assert.deepEqual(dirty.diag, { passed: false, attempts: 0, lastTs: 0 });
+  assert.deepEqual(dirty.diag75, { passed: false, attempts: 0, lastTs: 0 });
 });
 
 test('the runner is one-way: no navigator, no back, no marking', () => {
@@ -446,7 +471,7 @@ test('diagnostic is its own phase, so practice and mock are untouched', () => {
   // 场次表本身仍只写场次；绑定集与战绩走 P3 新加的独立 Diagnostic 表
   const sessionRowsBlock = records.slice(
     records.indexOf('const sessionRows = ['),
-    records.indexOf('const diag = records.diag;'),
+    records.indexOf('const statusCells = '),
   );
   assert.ok(sessionRowsBlock.length > 0, 'the session rows block must exist');
   assert.doesNotMatch(sessionRowsBlock, /grill|diag/);

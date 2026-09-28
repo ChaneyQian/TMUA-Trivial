@@ -43,8 +43,14 @@ export interface IndexEntry {
   qid: number;
   db: string;
   hidden?: true;
-  /** 诊断集（GMAT）：只给 Diagnostic Test 压力测试用，不进 classic / 9.0 随机池 */
+  /** 诊断集（DIAG75 与下线了的 GMAT）：只给 Diagnostic 用，不进 classic / 9.0 随机池 */
   diag?: true;
+  /**
+   * 7.5+ Diagnostic 卷里落在经典区的题（构建期打，见 scripts/diag75-papers.mjs）。
+   * 移出所有练习抽题路径，但它**不是** diag：作答记录照常计入 365，
+   * 复烤区（诊断考过之后）也照常取得到
+   */
+  reserved?: true;
   /** 题库把它标成了逻辑推理题（topics 含 Logic and Proof，或 subtopics 是 Logic） */
   logic?: true;
   /**

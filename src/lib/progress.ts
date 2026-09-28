@@ -12,12 +12,17 @@ export const TREND_LIMIT = 30;
 export const MISSED_LIMIT = 10;
 
 /**
- * 练习池的 qid 集合。diag（GMAT 诊断集）永远排除——那批题按设计全程不显示对错，
+ * 练习池的 qid 集合。diag（诊断集）永远排除——那批题按设计全程不显示对错，
  * 一旦漏进错题榜或「重练这些」，就等于把诊断答案泄出去了。
+ *
+ * reserved（7.5+ 卷一征用的两道经典区题）也排除：「重练这些」练的就是榜上列出来的那几行，
+ * 它们留在榜上就等于留了一条考前练到考题的路。统计块、deck 统计条、复烤区卡面的错题数
+ * 都读这同一个池子——榜上少了它们，「N 道当前错题」也得跟着少，两处不许对不上。
+ * 365 解锁计数不走这里（validCompletedCount 照算 reserved），所以谁也不会因此掉出解锁
  */
 export function practiceQids(index: IndexEntry[] | null): Set<number> {
   const out = new Set<number>();
-  for (const entry of index || []) if (!entry.diag) out.add(entry.qid);
+  for (const entry of index || []) if (!entry.diag && !entry.reserved) out.add(entry.qid);
   return out;
 }
 

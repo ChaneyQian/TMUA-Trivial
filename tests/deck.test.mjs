@@ -329,10 +329,11 @@ test('the two zones are exclusive, so the 9.0 badge and its bank buttons report 
   const classic = indexForLibraryMode(index, 'classic');
   const expanded = indexForLibraryMode(index, 'hidden');
   assert.ok(expanded.length > 0 && classic.length > 0, '两个池子都得真有题，这条才有负载');
+  // reserved（7.5+ 卷一征用的两道经典区题）两个池子都不进：它们只在诊断与复烤区露面
   assert.equal(
     expanded.length + classic.length,
-    index.filter((entry) => !entry.diag).length,
-    '两池不相交、合起来是全部非诊断题',
+    index.filter((entry) => !entry.diag && !entry.reserved).length,
+    '两池不相交、合起来是全部非诊断、非 reserved 的题',
   );
   assert.equal(
     expanded.some((entry) => !entry.hidden),

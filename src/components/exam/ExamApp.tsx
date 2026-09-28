@@ -633,7 +633,7 @@ export default function ExamApp() {
     pickMode?: PickMode;
     count?: number;
     qids?: number[];
-    /** 只有 Grill 用：它的池子本来就是诊断题 */
+    /** 只有 Grill 用：它的池子本来就是诊断考过的题（diag 与 reserved 都在里面） */
     allowDiag?: boolean;
     /** 本场从复烤区哪一块开出来的；不传＝不是复烤区来的（见 GrillOrigin） */
     origin?: GrillOrigin;
@@ -658,11 +658,13 @@ export default function ExamApp() {
       if (qids.length === 0) throw new Error(t.errors.emptySelection);
       const selected = new Set(qids);
       // 显式指定 qid 时按整份索引取：错题可能落在当前题库范围之外。
-      // diag 默认仍然排除（错题重练那条路不该混进诊断题），只有 Grill 例外——
-      // 复烤区的池子本来就是诊断题，事后把它们烤明白正是这个区的分工。
+      // diag 与 reserved 默认仍然排除（重练错题、练这类题那两条路不该混进诊断考题——
+      // reserved 是 7.5+ 卷一征用的经典区题），只有 Grill 例外：复烤区的绑定集本来就是
+      // 诊断考过的题，事后把它们烤明白正是这个区的分工。
       const pool = override?.qids
         ? index.filter(
-            (entry) => (override.allowDiag || !entry.diag) && selected.has(entry.qid),
+            (entry) =>
+              (override.allowDiag || (!entry.diag && !entry.reserved)) && selected.has(entry.qid),
           )
         : activeIndex.filter((entry) => selected.has(entry.qid));
       if (pool.length === 0) throw new Error(t.errors.emptySelection);

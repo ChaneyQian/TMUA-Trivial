@@ -188,7 +188,8 @@ test('diagnostic questions are filtered out of both the missed list and the retr
   assert.match(grill, /practiceQids/);
   assert.match(grill, /practice\.has\(row\.qid\)/);
   const lib = fs.readFileSync(libPath, 'utf8');
-  assert.match(lib, /if \(!entry\.diag\) out\.add\(entry\.qid\)/);
+  // reserved（7.5+ 卷一征用的经典区题）同样不进：「重练这些」练的就是榜上列的那几行
+  assert.match(lib, /if \(!entry\.diag && !entry\.reserved\) out\.add\(entry\.qid\)/);
 
   // 正：重练的池子是 activeIndex，而 indexForLibraryMode 同样排除 diag；
   // 复盘视图走 reachableIndex，那一层也一样不放 diag 过去
