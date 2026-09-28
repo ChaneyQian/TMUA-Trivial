@@ -57,7 +57,9 @@
   --surface-alt: #f0e8d0;
   --border: #d8ccae;
   --text: #3d3226;
-  --text-muted: #8a7a5f;
+  /* 次要文字在护眼主题全部 9 种底色上都要 ≥ 4.5:1（原 #8a7a5f 只有 3.20–3.83），
+     同时与正文 #3d3226 拉开层次（亮度比 2.05） */
+  --text-muted: #706048;
   --accent: #8b5e2f;
   --accent-light: #ede0c8;
   --warning: #9a7b00;
