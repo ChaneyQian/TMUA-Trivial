@@ -153,7 +153,9 @@ test('the fourth card gets a slot of its own instead of piling onto the left one
   // 跟手位移也要作用到第三层，否则横滑时它会呆在原地
   assert.match(css, /\.slotBack\s*\{[\s\S]*?var\(--drag, 0px\)/);
   // 第三层往上退出去的那截要有 padding 接着，不然它挤进 .head 的外边距里
-  assert.match(css, /\.viewport\s*\{[\s\S]*?padding-top:\s*30px/);
+  // 窄屏 30px；中宽屏第三层退得更多，接它的内边距按卡宽取（见下一条几何测试）
+  assert.match(css, /\.viewport\s*\{[\s\S]*?padding-top:\s*var\(--viewport-pad\)/);
+  assert.match(css, /\n\.deck \{[^}]*--viewport-pad: 30px;/);
 });
 
 test('the board card is a coming-soon skeleton: it turns to the front but never opens', () => {
@@ -224,17 +226,87 @@ test('deck motion stays on the compositor and degrades to instant', () => {
 test('the deck geometry is derived from the viewport, never from scale', () => {
   const css = fs.readFileSync(deckCssPath, 'utf8');
 
-  // 卡宽由视口倒推（露边 0.16 卡宽 → 容器 1.32 卡宽），scale 只做视觉修饰。
+  // 卡宽由视口倒推（容器 = 跨度 × 卡宽，跨度按屏宽分档），scale 只做视觉修饰。
   // transform 不改布局盒子，靠 scale 定尺寸必然在窄屏溢出加偏心。
-  assert.match(css, /--card-w:\s*min\(340px, calc\(\(100vw - 2rem\) \/ 1\.32\)\)/);
-  assert.match(css, /width:\s*min\(calc\(var\(--card-w\) \* 1\.32\), 100%\)/);
+  assert.match(css, /--card-w:\s*min\(var\(--card-max\), calc\(\(100vw - 2rem\) \/ var\(--deck-span\)\)\)/);
+  assert.match(css, /--deck-w:\s*calc\(var\(--card-w\) \* var\(--deck-span\)\)/);
   assert.match(css, /\.stack\s*\{[\s\S]*?width:\s*var\(--card-w\)/);
   assert.match(css, /--slot-x:/, 'the side-card offset must stay tunable as a variable');
+  // 跨度只在 --deck-span 一处定义：用到牌堆总宽的地方一律读 --deck-w，不再各写一个 1.32
+  const code = css.replace(/\/\*[\s\S]*?\*\//g, '');
+  assert.equal((code.match(/1\.32/g) || []).length, 1, '1.32 只该出现在 --deck-span 的定义里');
+  for (const block of ['.head', '.progressRow', '.hintRow']) {
+    assert.match(code, new RegExp(`\\n\\${block} \\{[^}]*width: min\\(var\\(--deck-w\\), 100%\\)`), block);
+  }
+  // .viewport 就是牌堆总宽；宽于舞台时两侧等量外扩（负外边距），不偏向右边
+  assert.match(code, /\n\.viewport \{[^}]*width: var\(--deck-w\);\s*margin: 0 calc\(\(100% - var\(--deck-w\)\) \/ 2\);/);
+  // 不许它的内容宽度把舞台的网格列撑开
+  assert.match(code, /\n\.deck \{[^}]*min-width: 0;/);
 
   // 兜底裁剪：clip 不建立滚动容器，配 overflow-y: visible 才不切掉侧牌下移的 8px
   assert.match(css, /overflow-x:\s*clip/);
   assert.match(css, /overflow-y:\s*visible/);
   assert.match(css, /touch-action:\s*pan-y/);
+});
+
+test('the deck spreads out in three width tiers, and each container holds exactly its fan', () => {
+  const css = fs.readFileSync(deckCssPath, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+
+  /** .deck 块里的变量；media 为 null 时取顶格那条，否则取对应媒体查询里的 .deck */
+  const deckVars = (media) => {
+    let scope = css;
+    if (media) {
+      const at = css.indexOf(`@media ${media} {`);
+      assert.ok(at >= 0, `缺媒体查询 ${media}`);
+      scope = css.slice(at, css.indexOf('\n}', at));
+    }
+    const block = scope.match(media ? /\.deck \{([^}]*)\}/ : /\n\.deck \{([^}]*)\}/)?.[1] ?? '';
+    return Object.fromEntries([...block.matchAll(/(--[\w-]+):\s*([^;]+);/g)].map((m) => [m[1], m[2].trim()]));
+  };
+  const narrow = deckVars(null);
+  const medium = { ...narrow, ...deckVars('(min-width: 640px)') };
+  const wide = { ...medium, ...deckVars('(min-width: 1024px)') };
+
+  // 侧牌 scale(s) + rotate(θ) 后包围盒半宽 = s·(0.5·cosθ + (10/7)/2·sinθ)，
+  // 露出前牌之外 = slot-x + 半宽 − 0.5；容器跨度 = 1 + 2 × 露边（容器正好装下整把扇子）
+  const geometry = (vars) => {
+    const s = Number(vars['--slot-scale']);
+    const theta = (Number.parseFloat(vars['--slot-rot']) * Math.PI) / 180;
+    const x = Number.parseFloat(vars['--slot-x']) / 100;
+    const half = s * (0.5 * Math.cos(theta) + (10 / 7 / 2) * Math.sin(theta));
+    const peek = x + half - 0.5;
+    return { peek, span: Number(vars['--deck-span']), rotDeg: Number.parseFloat(vars['--slot-rot']), s };
+  };
+  const tiers = { narrow: geometry(narrow), medium: geometry(medium), wide: geometry(wide) };
+  for (const [name, g] of Object.entries(tiers)) {
+    assert.ok(Math.abs(g.span - (1 + 2 * g.peek)) < 0.01, `${name}：跨度 ${g.span} 与露边 ${g.peek.toFixed(3)} 对不上`);
+  }
+  // 窄屏保持现状；中屏露约 0.35W、4° 左右、0.9；宽屏露约 0.6W（大半张）、3–4°、0.88
+  assert.ok(Math.abs(tiers.narrow.peek - 0.16) < 0.01);
+  assert.equal(narrow['--slot-rot'], '6deg');
+  assert.equal(narrow['--slot-scale'], '0.92');
+  assert.equal(narrow['--card-max'], '340px');
+  assert.ok(Math.abs(tiers.medium.peek - 0.35) < 0.01);
+  assert.ok(tiers.medium.rotDeg >= 3.5 && tiers.medium.rotDeg <= 4.5);
+  assert.ok(Math.abs(tiers.medium.s - 0.9) < 0.011);
+  assert.ok(Math.abs(tiers.wide.peek - 0.6) < 0.01);
+  assert.ok(tiers.wide.rotDeg >= 3 && tiers.wide.rotDeg <= 4);
+  assert.ok(Math.abs(tiers.wide.s - 0.88) < 0.011);
+  // 越宽越舒展
+  assert.ok(tiers.narrow.span < tiers.medium.span && tiers.medium.span < tiers.wide.span);
+
+  // 宽屏的侧牌往下沉成一道弧；卡宽只在大屏且够高时放到 360
+  assert.match(wide['--slot-y'], /^\d+(\.\d+)?%$/);
+  assert.ok(Number.parseFloat(wide['--slot-y']) > 0);
+  assert.equal(deckVars('(min-width: 1280px) and (min-height: 860px)')['--card-max'], '360px');
+
+  // 第三层：中宽屏往上退得更多（净露 = 位移 − (1 − 缩放)/2），接它的上内边距按卡宽取、装得下那截
+  const strip = (vars) => -Number.parseFloat(vars['--slot-back-y']) / 100 - (1 - Number(vars['--slot-back-scale'])) / 2;
+  assert.ok(Math.abs(strip(narrow) - 0.06) < 0.001, '窄屏净露 6% 卡高');
+  assert.ok(strip(wide) > strip(narrow), '宽屏第三层要退得更明显');
+  const pad = wide['--viewport-pad'].match(/^calc\(var\(--card-w\) \* ([\d.]+)\)$/);
+  assert.ok(pad, '中宽屏的上内边距按卡宽取');
+  assert.ok(Number(pad[1]) >= strip(wide) * (10 / 7), '上内边距接不住第三层退出去的那截');
 });
 
 test('the deck owns its keyboard and touch handling without global listeners', () => {

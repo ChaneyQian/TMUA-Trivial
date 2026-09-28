@@ -5,27 +5,35 @@
 /* 展开/收起的伪 FLIP：deck 放大淡出、面板缩放淡入，两者在同一 grid 格里
    交叠 280ms。不做 getBoundingClientRect 测量——首屏组件一旦中断就会留下
    没清干净的 transform，且非等比缩放会把 3:2 封面拉花。 */
-/* 露边几何：卡宽 W，左右各露 peek≈0.16W，故容器宽 = 1.32W。
-   侧牌 scale(0.92)+rotate(6°) 后包围盒半宽 ≈ 0.522W，
-   要露出 0.16W 需 translateX ≈ 0.16W − 0.022W ≈ 13.5%（百分比按卡片自身宽解析，自缩放）。
+/* 露边几何（按屏宽分三档，变量全在 .deck 上切换）。卡宽 W、卡高 H = 10/7 W。
+   侧牌 scale(s) + rotate(θ) 绕自身中心，包围盒半宽 hw = s·(0.5·cosθ + 0.714·sinθ)·W；
+   translateX 的百分比按卡片自身宽解析，所以侧牌中心在 slot-x·W 处，
+   露出前牌之外的宽度 peek = slot-x + hw − 0.5（单位 W），容器宽 = 跨度 · W，跨度 = 1 + 2·peek。
+     窄屏 < 640   s 0.92 θ 6°    hw 0.526  slot-x 13.4% → peek 0.16  跨度 1.32（紧凑叠放、露边、横滑）
+     中屏 640–1023 s 0.90 θ 4°    hw 0.494  slot-x 35.6% → peek 0.35  跨度 1.70
+     宽屏 ≥ 1024  s 0.88 θ 3.5°  hw 0.478  slot-x 62.2% → peek 0.60  跨度 2.20（扇形：侧牌下沉成弧）
+   第三层（四张牌起才会用到）：居中、更小、往上退，不旋转。位移用百分比——按卡片自身高解析，
+   缩放 0.88 留下的 (1−0.88)/2 = 6% 内缩也随卡高变，两者同步才能在各档露出同一比例的那道边：
+   窄屏 −12% 净露 6% 卡高（375px 约 22px 命中带；−9% 时只剩 11px，手指根本点不中），
+   中屏 / 宽屏 −14% 净露 8% 卡高（340px 卡宽约 39px），往上退出去的那截由 .viewport 的上内边距接着。
    变量必须声明在 .deck 上：.head / .hintRow 是 .viewport 的兄弟，自定义属性只向下继承，
    挂在 .viewport 上它们读不到，width 会在计算值阶段整体失效、静默回落 auto。 */
 .deck {
-  --card-w: min(340px, calc((100vw - 2rem) / 1.32));
-  /* 卡片 7/10 时侧牌旋转后包围盒半宽 ≈ 0.526W，露 0.16W 需 0.16 − 0.026 ≈ 13.4% */
+  --deck-span: 1.32;
+  --card-max: 340px;
+  --card-w: min(var(--card-max), calc((100vw - 2rem) / var(--deck-span)));
+  /* 牌堆（含两侧露边）的总宽；宽屏上它比 .stage（640px）宽，由 .viewport 两侧等量外扩 */
+  --deck-w: calc(var(--card-w) * var(--deck-span));
   --slot-x: 13.4%;
   --slot-y: 8px;
   --slot-scale: 0.92;
   --slot-rot: 6deg;
-  /* 第三层（四张牌起才会用到）：居中、更小、往上退。
-     位移用百分比而不是像素——百分比按卡片自身尺寸解析，
-     缩放留下的内缩边距也随卡宽变，两者同步才能在 375px 和 340px 下
-     露出同一比例的那道边。-9% 减去 (1−0.88)/2 = 6% 的内缩，净露 3% 卡高。 */
-  /* 净露出卡高的 6%（扣除 scale 0.88 的内缩）：375px 约 22px 命中带。
-     -9% 时只剩 11px，手指根本点不中第三层卡 */
   --slot-back-y: -12%;
   --slot-back-scale: 0.88;
+  --viewport-pad: 30px;
 
+  /* 宽屏上 .viewport 比舞台宽：不许它的内容宽度把舞台的网格列撑开（列一宽，整块就偏右了） */
+  min-width: 0;
   font-family: var(--font-ui);
   animation: deckIn 280ms cubic-bezier(0.2, 0.7, 0.2, 1);
   transition:
@@ -37,6 +45,37 @@
   transform: scale(1.04);
   opacity: 0;
   pointer-events: none;
+}
+
+/* 中屏：侧牌露出约 0.35W，转角收到 4°、略下沉 */
+@media (min-width: 640px) {
+  .deck {
+    --deck-span: 1.7;
+    --slot-x: 35.6%;
+    --slot-y: 3%;
+    --slot-scale: 0.9;
+    --slot-rot: 4deg;
+    --slot-back-y: -14%;
+    --viewport-pad: calc(var(--card-w) * 0.12);
+  }
+}
+
+/* 宽屏：扇形展开，侧牌露出大半张（0.6W），转 3.5°、下沉成一道弧 */
+@media (min-width: 1024px) {
+  .deck {
+    --deck-span: 2.2;
+    --slot-x: 62.2%;
+    --slot-y: 4%;
+    --slot-scale: 0.88;
+    --slot-rot: 3.5deg;
+  }
+}
+
+/* 大屏且够高才把卡放大到 360px：1280×800 的笔记本上放大会顶出一截纵向滚动 */
+@media (min-width: 1280px) and (min-height: 860px) {
+  .deck {
+    --card-max: 360px;
+  }
 }
 
 @keyframes deckIn {
@@ -52,7 +91,7 @@
 
 .head {
   margin: 0 auto 0.9rem;
-  width: min(calc(var(--card-w) * 1.32), 100%);
+  width: min(var(--deck-w), 100%);
   text-align: center;
 }
 
@@ -69,16 +108,19 @@
 }
 
 /* overflow-x: clip 只是兜底，正常几何下不该裁到牌；配 overflow-y: visible
-   才不会切掉侧牌下移的 8px，且 clip 不建立滚动容器。 */
+   才不会切掉侧牌下移的那一截，且 clip 不建立滚动容器。
+   宽度就是牌堆总宽；两侧外边距取 (100% − 总宽) / 2：窄于舞台时等于 auto 居中，
+   宽于舞台（宽屏扇形）时变成等量负值，向两侧对称外扩而不偏向右边。
+   各档的总宽都 ≤ 100vw − 2rem（--card-w 的算式保证），不会顶出横向滚动 */
 .viewport {
   position: relative;
   box-sizing: border-box;
-  width: min(calc(var(--card-w) * 1.32), 100%);
-  margin: 0 auto;
-  /* 第三层往上退 3% 卡高（340px 卡宽时约 15px），留出的就是这段 padding：
+  width: var(--deck-w);
+  margin: 0 calc((100% - var(--deck-w)) / 2);
+  /* 第三层往上退出卡顶的那截（窄屏 6% 卡高，中宽屏 8%），留出的就是这段 padding：
      不留的话它会溢到 .head 的外边距里，虽然 overflow-y: visible 不裁，
      但两块东西挤在一起就没有「牌叠得更深」那个读法了 */
-  padding-top: 30px;
+  padding-top: var(--viewport-pad);
   overflow-x: clip;
   overflow-y: visible;
   /* 纵向滚动交还浏览器、横向留给我们；因此手势逻辑里不需要（也不能）preventDefault */
@@ -503,7 +545,7 @@
 .progressRow {
   display: flex;
   justify-content: center;
-  width: min(calc(var(--card-w) * 1.32), 100%);
+  width: min(var(--deck-w), 100%);
   margin: 0.9rem auto 0;
 }
 
@@ -533,7 +575,7 @@
 }
 
 .hintRow {
-  width: min(calc(var(--card-w) * 1.32), 100%);
+  width: min(var(--deck-w), 100%);
   margin: 0.85rem auto 0;
   text-align: center;
 }
