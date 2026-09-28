@@ -20,11 +20,12 @@ function sourceFiles(dir) {
 test('every browser-storage key is registered in one place, namespaced and versioned', () => {
   const keys = Object.entries(storage).filter(([name]) => name.endsWith('_KEY'));
 
-  // 9 个键 + 一个待迁移的旧裸键
-  assert.equal(keys.length, 10, `storage.ts 登记了 ${keys.length} 个键，预期 10 个`);
+  // 10 个键 + 一个待迁移的旧裸键（2026-10 加了光效开关 FX_KEY）
+  assert.equal(keys.length, 11, `storage.ts 登记了 ${keys.length} 个键，预期 11 个`);
 
   const namespaced = keys.filter(([name]) => name !== 'LEGACY_THEME_KEY');
-  assert.equal(namespaced.length, 9);
+  assert.equal(namespaced.length, 10);
+  assert.equal(storage.FX_KEY, 'mcq-test:fx:v1');
   for (const [name, value] of namespaced) {
     // GitHub Pages 上同 origin 住着这个账号的其他项目，localStorage 是共享的：
     // 裸键随时会和邻居撞上
@@ -38,9 +39,9 @@ test('every browser-storage key is registered in one place, namespaced and versi
   assert.equal(storage.LEGACY_THEME_KEY, 'theme');
   assert.equal(storage.THEME_KEY, 'mcq-test:theme:v1');
 
-  // pet-command 是 CustomEvent 的事件名，从来没写进过存储，不许混进这张表
+  // pet-command / fx-change 是事件名，从来没写进过存储，不许混进这张表
   assert.equal(
-    Object.values(storage).some((value) => String(value).includes('pet-command')),
+    Object.values(storage).some((value) => /pet-command|fx-change/.test(String(value))),
     false,
   );
 });
@@ -95,8 +96,9 @@ test('no component keeps a storage key literal of its own', () => {
     const source = fs.readFileSync(file, 'utf8');
     for (const hit of source.match(/'mcq-test:[^']+'/g) || []) {
       // 事件名不是存储键；首屏内联脚本没法 import，键名在那里只能是字面量
-      if (hit.includes('pet-command')) continue;
+      if (hit.includes('pet-command') || hit.includes('fx-change')) continue;
       if (normalized.endsWith(layoutPath) && hit === `'${storage.THEME_KEY}'`) continue;
+      if (normalized.endsWith(layoutPath) && hit === `'${storage.FX_KEY}'`) continue;
       strays.push(`${normalized}  ${hit}`);
     }
   }

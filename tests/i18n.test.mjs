@@ -229,6 +229,6 @@ test('the inner layers keep their original Chinese copy', () => {
   assert.match(exam, /你已窥见更多的可能性/, 'the unlock overlay stays Chinese');
   assert.match(badge, /title: '数学爱好者'/, 'the badge identity stays Chinese');
   assert.match(pet, /idle: '正在待机'/, 'the companion stays Chinese');
-  // 页面主体仍是中文，html lang 不跟着切换
-  assert.match(layout, /<html lang="zh-CN">/);
+  // 页面主体仍是中文，html lang 不跟着切换（首帧脚本写 data-theme / data-fx，那一层压了属性比对告警）
+  assert.match(layout, /<html lang="zh-CN"( suppressHydrationWarning)?>/);
 });

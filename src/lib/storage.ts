@@ -29,6 +29,13 @@ export const LEGACY_THEME_KEY = 'theme';
 /** 上次停在哪张卡（卡组的四个区） */
 export const ZONE_KEY = 'mcq-test:zone:v1';
 
+/**
+ * 光效开关（'on' / 'off'）。只在用户手动切过之后才有值；没有值时按设备推断默认，
+ * 推断结果不写回（见 lib/fx.ts）。和配色一样要在首帧前生效，读它的那段内联脚本在
+ * app/layout.tsx，键名在那里是字面量，靠测试钉住两边一致
+ */
+export const FX_KEY = 'mcq-test:fx:v1';
+
 /** 9.0 解锁横幅是否已经放过一次 */
 export const UNLOCK_SEEN_KEY = 'mcq-test:hidden-unlock-seen:v1';
 

@@ -17,11 +17,19 @@ export const metadata: Metadata = {
 // 存储被禁用或配额满了也只是拿不到偏好，最后那句赋值照常执行。
 const THEME_INIT = `(function(){var K='mcq-test:theme:v1',t=null;try{t=localStorage.getItem(K);var o=localStorage.getItem('theme');if(o!==null){if(t===null){t=o;localStorage.setItem(K,o);}localStorage.removeItem('theme');}}catch(e){}document.documentElement.dataset.theme=(t==='dark'||t==='sepia')?t:'light';})()`;
 
+// 光效开关同理首帧前定下来（<html data-fx="on|off">），环境光和装饰动画从第一帧起就按它来，不闪。
+// 有存值（用户手动切过）用存值；没有就按设备推断——开了省流量、≤ 2 核、≤ 2GB 内存默认关——
+// 推断结果不写回，用户一旦手动切换才落盘。判据与 lib/fx.ts 的 inferFx 是同一套，测试逐条对拍。
+const FX_INIT = `(function(){var K='mcq-test:fx:v1',v=null;try{v=localStorage.getItem(K);}catch(e){}if(v!=='on'&&v!=='off'){var n=navigator,c=n.connection,h=n.hardwareConcurrency,m=n.deviceMemory;v=(c&&c.saveData===true)||(typeof h==='number'&&h>0&&h<=2)||(typeof m==='number'&&m>0&&m<=2)?'off':'on';}document.documentElement.dataset.fx=v;})()`;
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="zh-CN">
+    // 两段首帧脚本会在水合前往 <html> 上写 data-theme / data-fx，服务端预渲染的 HTML 里没有，
+    // 这是有意的不一致：只压这一层的属性比对告警，子树照常比对
+    <html lang="zh-CN" suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT }} />
+        <script dangerouslySetInnerHTML={{ __html: FX_INIT }} />
       </head>
       <body>{children}</body>
     </html>
