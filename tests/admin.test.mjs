@@ -21,6 +21,45 @@ test('the admin page exists, gates by password, and is honest about being decora
   assert.match(page, /回到出厂/);
 });
 
+test('the two diagnostic switches act on the 7.5+ record and leave the GMAT one alone', async () => {
+  const {
+    createEmptyRecords,
+    isHiddenModeUnlocked,
+    markDiagnosticPassed,
+    resetDiagnosticRecord,
+  } = await import('../src/lib/records.ts');
+  const legacy = { passed: false, attempts: 2, lastTs: 3 };
+  const base = { ...createEmptyRecords(), diag: legacy, grill: [7, 8] };
+
+  // 设为诊断通过：写 diag75、解锁 9.0；旧 GMAT 战绩原样
+  const passed = markDiagnosticPassed(base, 1000);
+  assert.deepEqual(passed.diag75, { passed: true, attempts: 1, lastTs: 1000 });
+  assert.deepEqual(passed.diag, legacy);
+  assert.equal(isHiddenModeUnlocked([{ qid: 1, db: 'TMUA' }], passed), true);
+  // 已经考过的次数保留，不被改写成 1
+  const tried = markDiagnosticPassed({ ...base, diag75: { passed: false, attempts: 2, lastTs: 5 } }, 9);
+  assert.deepEqual(tried.diag75, { passed: true, attempts: 2, lastTs: 9 });
+
+  // 重置诊断/Grill：7.5+ 战绩与绑定集清掉，回到「从没考过 7.5+」；旧 GMAT 战绩原样
+  const reset = resetDiagnosticRecord(passed);
+  assert.equal(reset.diag75, undefined);
+  assert.equal(reset.grill, undefined);
+  assert.deepEqual(reset.diag, legacy);
+  // 旧 GMAT 已通过的人重置 7.5+ 之后仍然解锁：那条迁移规则不能被调试按钮弄脏
+  const oldPass = resetDiagnosticRecord({ ...createEmptyRecords(), diag: { passed: true, attempts: 1, lastTs: 1 } });
+  assert.equal(isHiddenModeUnlocked([{ qid: 1, db: 'TMUA' }], oldPass), true);
+
+  // 页面上的两个按钮走的就是这两个函数，且不再直接改写 diag
+  const page = fs.readFileSync(pagePath, 'utf8');
+  assert.match(page, /apply\(markDiagnosticPassed\(records\), /);
+  assert.match(page, /apply\(resetDiagnosticRecord\(records\), /);
+  assert.doesNotMatch(page, /delete next\.diag\b/);
+  assert.doesNotMatch(page, /\bdiag: \{ passed/);
+  // 两份战绩都摆出来，旧的标明只读
+  assert.match(page, /describeDiag\(records\.diag75\)/);
+  assert.match(page, /describeDiag\(records\.diag\)/);
+});
+
 test('the main site never links to the admin page', () => {
   // 入口只靠手输 URL。主站任何可见组件都不该出现 admin 字样
   for (const file of [

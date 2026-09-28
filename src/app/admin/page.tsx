@@ -14,14 +14,23 @@ import {
   createEmptyRecords,
   grillCount,
   loadRecords,
+  markDiagnosticPassed,
   overview,
+  resetDiagnosticRecord,
   saveRecords,
+  type DiagState,
   type Records,
 } from '@/lib/records';
 import { ADMIN_SESSION_KEY as ADMIN_KEY } from '@/lib/storage';
 import styles from './admin.module.css';
 
 const ADMIN_PASSWORD = 'admin123';
+
+/** 一场诊断的战绩读成一句话 */
+function describeDiag(diag?: DiagState): string {
+  if (!diag) return '未考过';
+  return `${diag.passed ? '已通过' : '未通过'} / 用了 ${diag.attempts} 次`;
+}
 
 interface QuestionJson {
   qid: number;
@@ -144,20 +153,24 @@ function AdminPanel() {
     fetch(`${EXAM_DATA}/index.json`)
       .then((r) => r.json())
       .then((index: IndexEntry[]) => {
-        const per = new Map<string, { total: number; hidden: number; diag: number; logic: number }>();
+        const per = new Map<
+          string,
+          { total: number; hidden: number; diag: number; logic: number; reserved: number }
+        >();
         for (const entry of index) {
-          const row = per.get(entry.db) ?? { total: 0, hidden: 0, diag: 0, logic: 0 };
+          const row = per.get(entry.db) ?? { total: 0, hidden: 0, diag: 0, logic: 0, reserved: 0 };
           row.total++;
           if (entry.hidden) row.hidden++;
           if (entry.diag) row.diag++;
           if (entry.logic) row.logic++;
+          if (entry.reserved) row.reserved++;
           per.set(entry.db, row);
         }
         const lines = [...per.entries()]
           .sort((a, b) => b[1].total - a[1].total)
           .map(
             ([db, r]) =>
-              `${db}: ${r.total} 题${r.hidden ? ` · hidden ${r.hidden}` : ''}${r.diag ? ` · diag ${r.diag}` : ''}${r.logic ? ` · logic ${r.logic}` : ''}`,
+              `${db}: ${r.total} 题${r.hidden ? ` · hidden ${r.hidden}` : ''}${r.diag ? ` · diag ${r.diag}` : ''}${r.logic ? ` · logic ${r.logic}` : ''}${r.reserved ? ` · reserved ${r.reserved}（7.5+ 考题，不进练习池）` : ''}`,
           );
         lines.push(`合计 ${index.length} 题`);
         setBankStats(lines);
@@ -178,36 +191,27 @@ function AdminPanel() {
         <h2 className={styles.head}>做题记录</h2>
         <p className={styles.mono}>
           已做 {stats.seen} 题 · {stats.attempts} 次作答 · 当前错 {stats.wrongNow} · 场次{' '}
-          {records.s.length} · Grill 绑定 {grillCount(records)} · 诊断{' '}
-          {records.diag
-            ? `${records.diag.passed ? '已通过' : '未通过'} / 用了 ${records.diag.attempts} 次`
-            : '未考过'}
+          {records.s.length} · Grill 绑定 {grillCount(records)}
+        </p>
+        <p className={styles.mono}>
+          7.5+ 诊断：{describeDiag(records.diag75)} · 旧 GMAT 诊断（已下线，只读）：
+          {describeDiag(records.diag)}
         </p>
         <div className={styles.row}>
           <button
             type="button"
             className={styles.btn}
-            onClick={() =>
-              apply(
-                {
-                  ...records,
-                  diag: { passed: true, attempts: records.diag?.attempts ?? 1, lastTs: Date.now() },
-                },
-                '已设为诊断通过（9.0 解锁）',
-              )
-            }
+            // 两个诊断开关只动 7.5+（diag75）。旧 GMAT 的战绩是已下线考试的历史，一律不碰
+            onClick={() => apply(markDiagnosticPassed(records), '已设为 7.5+ 诊断通过（9.0 解锁）')}
           >
             设为诊断通过
           </button>
           <button
             type="button"
             className={styles.btn}
-            onClick={() => {
-              const next = { ...records };
-              delete next.diag;
-              delete next.grill;
-              apply(next, '已重置诊断与 Grill 绑定');
-            }}
+            onClick={() =>
+              apply(resetDiagnosticRecord(records), '已重置 7.5+ 诊断与 Grill 绑定（旧 GMAT 战绩未动）')
+            }
           >
             重置诊断/Grill
           </button>

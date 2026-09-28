@@ -189,6 +189,26 @@ export function grillCount(records: Records): number {
   return records.grill?.length || 0;
 }
 
+// ---- 管理调试页的两个开关（只有 /admin 用）----
+// 作用于 7.5+ 的 diag75。旧 GMAT 的 diag 一个字都不碰：那是已下线考试的历史，
+// 调试新考试用不着改它，改了反而会把「旧通过者保持解锁」这条迁移规则弄脏
+
+/** 设为 7.5+ 诊断通过（9.0 解锁）。attempts 保留已有值，没有就记 1 次 */
+export function markDiagnosticPassed(records: Records, now: number = Date.now()): Records {
+  return {
+    ...records,
+    diag75: { passed: true, attempts: records.diag75?.attempts ?? 1, lastTs: now },
+  };
+}
+
+/** 重置 7.5+ 诊断战绩与 Grill 绑定集：回到「从没考过 7.5+」 */
+export function resetDiagnosticRecord(records: Records): Records {
+  const next = { ...records };
+  delete next.diag75;
+  delete next.grill;
+  return next;
+}
+
 /**
  * 清空做题记录。
  * grill 与两场诊断的战绩（diag / diag75）刻意留下并回写：Diagnostic 通过一次就永久解锁 9.0
