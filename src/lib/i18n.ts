@@ -173,10 +173,10 @@ const zh = {
     // 只讲了三分之一——现在普通练习做错的题同样会自己走进来，不说就是漏了半条路
     emptyTitle: '还没有可复盘的东西',
     emptyHint:
-      '做几场练习，做错的题会自动出现在这里；考一次 Diagnostic，考过的那 40 道题也会绑进来。',
+      '做几场练习，做错的题会自动出现在这里；考一次 Diagnostic，考过的那 10 道题也会绑进来。',
     goDiagnostic: '去看 Diagnostic',
     boundTitle: '诊断绑定题',
-    boundEmpty: '还没考过 Diagnostic —— 考完之后，那 40 道题会绑到这里，答案和解析一起放出来。',
+    boundEmpty: '还没考过 Diagnostic —— 考完之后，那 10 道题会绑到这里，答案和解析一起放出来。',
     bound: (n: number) => `已绑定 ${n} 道题`,
     dangling: (n: number) => `其中 ${n} 道已随题库更新移除，不计入可用`,
     fieldCount: (n: number) => `题目数量（可用 ${n} 题）`,
@@ -224,30 +224,36 @@ const zh = {
         : `这里只算整理过知识点的题：你做过的 ${attempted} 道里有 ${analysed} 道，其余的还没整理进知识点。`,
   },
 
+  // 7.5+ Diagnostic（2026-09-28 起取代 GMAT 诊断）。规则一条一句大白话；
+  // 数字全从 lib/diagnostic 的常量传进来，改规则不必改文案
   diagnostic: {
-    title: 'Diagnostic Test',
-    lead: '一场限时测试。通过就解锁 9.0 Trivial —— 和做满 365 题并列的另一条路。',
+    title: '7.5+ Diagnostic',
+    lead: '一场 10 道题的限时小测，题目都不简单。通过就解锁 9.0 Trivial。',
     rulesTitle: '怎么考',
-    rulePapers: '两卷，各 20 题，中间可以休息。',
-    ruleTime: '每题 2 分钟。提前答完，剩下的时间自动加给下一题。',
-    ruleTimeout: '时间用完自动跳下一题，不能回头改。',
+    rulePaper: (n: number) => `一卷，一共 ${n} 道题。`,
+    ruleTime: (minutes: number) => `每题 ${minutes} 分钟。提前答完，剩下的时间顺延给下一题。`,
+    ruleOneWay: '时间到了会自动进入下一题。答过的题不能回头改。',
     ruleNoFeedback: '全程不告诉你对错。',
-    rulePass: (mark: number, total: number) => `答对 ${mark} 题（共 ${total} 题）算通过，考完只显示通过或未通过。`,
-    ruleChances: (n: number) => `一共 ${n} 次机会，每次用的是不同的题。`,
-    start: '开始 Diagnostic',
+    rulePass: (mark: number, total: number) =>
+      `答对 ${mark} 题就通过（共 ${total} 题）。考完只显示「通过」或「未通过」。`,
+    ruleChances: (n: number) => `一共 ${n} 次机会，每次的题都不一样。`,
+    ruleUnlock: '通过就解锁 9.0 Trivial。它和做满 365 题是并列的两条路，走通一条就行。',
+    start: '开始 7.5+ Diagnostic',
     starting: '准备中…',
     chance: (nth: number, total: number) => `第 ${nth} / ${total} 次机会`,
     exhausted: '两次机会都用完了',
     exhaustedHint: '不过 9.0 Trivial 还有另一条路：继续练习，做满 365 题同样解锁。',
+    // 第二次机会要考的卷二还没出齐：不能开始，但机会不扣，原因要说清楚
+    pendingTitle: '卷二还在准备中',
+    pendingHint:
+      '第二次机会用的是另一套新题，这套题还没出齐，所以现在还不能开始。你的第二次机会先留着，不会被扣掉；题出齐了回来就能考。',
+    // 考过旧 GMAT 诊断的人读到的一句：新考试的机会从头算
+    legacyNote: '旧版 Diagnostic 已经下线，换成了这场 7.5+ Diagnostic。以前考过的次数不算，你有完整的 2 次机会。',
+    passedNote: '你已经通过了 7.5+ Diagnostic。',
     unavailable: '诊断题库尚未就绪',
     orPractice: '也可以继续练习，做满 365 题同样解锁',
     grillBound: (n: number) => `${n} 道题已绑定`,
     paper: (n: number) => `Paper ${n}`,
-    paperOf: (n: number, idx: number, total: number) => `Paper ${n} · 第 ${idx} / ${total} 题`,
-    breakTitle: 'Paper 1 完成 · 休息一下',
-    breakLine: '接下来是 Paper 2，同样 20 题。',
-    breakNote: '休息不限时。点开始后计时重新从每题 2 分钟算起，上一卷剩下的时间不带过来。',
-    breakStart: '开始 Paper 2',
     abandon: '放弃',
     abandonConfirm: '放弃本次诊断？本次不计入尝试次数。',
     abandonNote: '倒计时不会暂停。',
@@ -435,11 +441,11 @@ const en: Strings = {
     sub: (bound: number, wrong: number) => `${bound} bound · ${wrong} wrong now`,
     emptyTitle: 'Nothing to review yet',
     emptyHint:
-      'Practise a few sessions and anything you get wrong turns up here. Sit a Diagnostic and its 40 questions get bound in too.',
+      'Practise a few sessions and anything you get wrong turns up here. Sit a Diagnostic and its 10 questions get bound in too.',
     goDiagnostic: 'See the Diagnostic',
     boundTitle: 'Diagnostic questions',
     boundEmpty:
-      'No Diagnostic yet — once you sit one, its 40 questions land here, answers and solutions included.',
+      'No Diagnostic yet — once you sit one, its 10 questions land here, answers and solutions included.',
     bound: (n: number) => `${n} questions bound`,
     dangling: (n: number) => `${n} of them were dropped by a bank update and are not available`,
     fieldCount: (n: number) => `Number of Questions (${n} available)`,
@@ -479,32 +485,35 @@ const en: Strings = {
   },
 
   diagnostic: {
-    title: 'Diagnostic Test',
-    lead: 'A timed test. Pass it to unlock 9.0 Trivial — the other route alongside answering 365 questions.',
+    title: '7.5+ Diagnostic',
+    lead: 'A short timed test: 10 questions, none of them easy. Pass it and 9.0 Trivial unlocks.',
     rulesTitle: 'How it works',
-    rulePapers: 'Two papers, 20 questions each, with a break in between.',
-    ruleTime: '2 minutes per question. Finish early and the spare time is added to your next question.',
-    ruleTimeout: 'When time runs out you move on automatically, and you cannot go back.',
+    rulePaper: (n: number) => `One paper, ${n} questions.`,
+    ruleTime: (minutes: number) =>
+      `${minutes} minutes per question. Finish early and the time left carries over to the next one.`,
+    ruleOneWay: 'When time runs out you move on automatically. You cannot go back to change an answer.',
     ruleNoFeedback: 'You are never told whether an answer was right.',
     rulePass: (mark: number, total: number) =>
-      `Get ${mark} of ${total} right to pass. At the end you only see pass or fail.`,
-    ruleChances: (n: number) => `You get ${n} attempts, and each one uses different questions.`,
-    start: 'Start Diagnostic',
+      `Get ${mark} of the ${total} right to pass. At the end you only see "pass" or "fail".`,
+    ruleChances: (n: number) => `You get ${n} attempts, each with different questions.`,
+    ruleUnlock:
+      'Passing unlocks 9.0 Trivial. It is one of two routes, alongside answering 365 questions — either one is enough.',
+    start: 'Start the 7.5+ Diagnostic',
     starting: 'Preparing…',
     chance: (nth: number, total: number) => `Attempt ${nth} of ${total}`,
     exhausted: 'You have used both attempts',
     exhaustedHint:
       'There is still the other route to 9.0 Trivial: keep practising and 365 questions unlocks it.',
+    pendingTitle: 'Paper 2 is not ready yet',
+    pendingHint:
+      'Your second attempt uses a new set of questions, and that set is not finished yet, so it cannot start now. Your second attempt is saved and will not be used up — come back once the questions are ready.',
+    legacyNote:
+      'The old Diagnostic has been retired and replaced by this 7.5+ Diagnostic. Earlier attempts do not count — you get the full 2 attempts.',
+    passedNote: 'You have already passed the 7.5+ Diagnostic.',
     unavailable: 'The diagnostic bank is not ready yet',
     orPractice: 'You can also keep practising — 365 questions unlocks it too',
     grillBound: (n: number) => `${n} questions bound`,
     paper: (n: number) => `Paper ${n}`,
-    paperOf: (n: number, idx: number, total: number) => `Paper ${n} · ${idx} of ${total}`,
-    breakTitle: 'Paper 1 done — take a break',
-    breakLine: 'Paper 2 is next, another 20 questions.',
-    breakNote:
-      'The break is untimed. When you start, the clock resets to 2 minutes per question — spare time from Paper 1 does not carry over.',
-    breakStart: 'Start Paper 2',
     abandon: 'Abandon',
     abandonConfirm: 'Abandon this diagnostic? It will not count as an attempt.',
     abandonNote: 'The clock keeps running.',

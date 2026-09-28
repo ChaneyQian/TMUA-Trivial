@@ -1,11 +1,12 @@
 'use client';
 
-// Diagnostic Test 的运行时。刻意和 practice/mock 那套分开：
+// 7.5+ Diagnostic 的运行时。刻意和 practice/mock 那套分开：
 // 单向、无批改、无解析、逐题倒计时 + 时间银行，和普通考试没有一行共享逻辑，
 // 免得为了这场特例去改动已经稳定的 exam 运行时。
 //
-// 两卷制：Paper 1 → 中场休息（不限时）→ Paper 2。银行只在卷内滚存，
-// Paper 2 开场把计时和银行一起清零。
+// 单卷 10 题，没有中场休息（用户裁定 2026-09-28）：一卷一只钟，
+// 银行从第一题一路滚到最后一题。选项 4–12 个（A–L）、MAT 体例的小写标号、
+// 选项留在题面里的内联题（按钮只显标号）、题图，全按题目自己的数据渲染。
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import MathText from '@/components/MathText';
@@ -16,6 +17,7 @@ import {
   DIAGNOSTIC_WARN_SECONDS,
   bankAfter,
   budgetFor,
+  choiceForKey,
   deadlineFrom,
   fmtCountdown,
   remainingSeconds,
@@ -24,9 +26,11 @@ import examStyles from '../exam/Exam.module.css';
 import styles from './Diagnostic.module.css';
 
 interface Props {
-  /** 按卷分好的题目，卷内顺序即出题顺序（难度升序，不洗牌） */
-  papers: ExamQuestion[][];
-  /** 交卷：全场答对几题、本场都考了哪些 qid */
+  /** 这一卷的题，数组顺序就是出题顺序（固定卷，不洗牌） */
+  questions: ExamQuestion[];
+  /** 第几次机会（1 起），题头显示 Paper 1 / Paper 2 */
+  nth: number;
+  /** 交卷：答对几题、本场都考了哪些 qid */
   onFinish: (result: { right: number; qids: number[] }) => void;
   /** 放弃：语义等同刷新页面，什么都不落盘 */
   onAbandon: () => void;
@@ -36,15 +40,12 @@ function sameLabel(a: string | null, b: string): boolean {
   return !!a && a.toLowerCase() === b.toLowerCase();
 }
 
-export default function DiagnosticRunner({ papers, onFinish, onAbandon }: Props) {
+export default function DiagnosticRunner({ questions, nth, onFinish, onAbandon }: Props) {
   const { t } = useLang();
   const [confirmAbandon, setConfirmAbandon] = useState(false);
-  /** run = 正在答卷；break = 中场休息（不计时） */
-  const [stage, setStage] = useState<'run' | 'break'>('run');
-  const [paperIdx, setPaperIdx] = useState(0);
   const [idx, setIdx] = useState(0);
-  const [answers, setAnswers] = useState<(string | null)[][]>(() =>
-    papers.map((paper) => new Array(paper.length).fill(null)),
+  const [answers, setAnswers] = useState<(string | null)[]>(() =>
+    new Array(questions.length).fill(null),
   );
   const [bank, setBank] = useState(0);
   const [left, setLeft] = useState(() => budgetFor(0));
@@ -59,17 +60,12 @@ export default function DiagnosticRunner({ papers, onFinish, onAbandon }: Props)
   answersRef.current = answers;
   const idxRef = useRef(idx);
   idxRef.current = idx;
-  const paperIdxRef = useRef(paperIdx);
-  paperIdxRef.current = paperIdx;
-  const stageRef = useRef(stage);
-  stageRef.current = stage;
   /** 交卷只能发生一次：归零和手动确认可能挤在同一帧 */
   const doneRef = useRef(false);
   const abandonOpenRef = useRef(confirmAbandon);
   abandonOpenRef.current = confirmAbandon;
 
-  const paper = papers[paperIdx] || [];
-  const q = paper[idx];
+  const q = questions[idx];
 
   /** 从截止时间戳现算剩余秒数并同步到界面 */
   const syncLeft = useCallback(() => {
@@ -81,84 +77,56 @@ export default function DiagnosticRunner({ papers, onFinish, onAbandon }: Props)
   const finishAll = useCallback(() => {
     doneRef.current = true;
     let right = 0;
-    const qids: number[] = [];
-    papers.forEach((items, p) => {
-      items.forEach((question, i) => {
-        qids.push(question.qid);
-        if (sameLabel(answersRef.current[p]?.[i] ?? null, question.answer)) right++;
-      });
+    questions.forEach((question, i) => {
+      if (sameLabel(answersRef.current[i] ?? null, question.answer)) right++;
     });
-    onFinish({ right, qids });
-  }, [onFinish, papers]);
+    onFinish({ right, qids: questions.map((question) => question.qid) });
+  }, [onFinish, questions]);
 
-  /** 确认当题：剩余秒数滚存进银行，然后单向前进一题 */
+  /** 确认当题：剩余秒数滚存进银行，然后单向前进一题；最后一题确认即交卷 */
   const confirmCurrent = useCallback(() => {
-    if (doneRef.current || stageRef.current !== 'run') return;
+    if (doneRef.current) return;
     // 用截止时间现算，不读 left state：state 最多落后一个 tick，
     // 那点误差会被 bankAfter 原样滚进下一题
     const nextBank = bankAfter(remainingSeconds(deadlineRef.current));
-    const current = papers[paperIdxRef.current] || [];
-
-    if (idxRef.current < current.length - 1) {
+    if (idxRef.current < questions.length - 1) {
       setBank(nextBank);
       setIdx((i) => i + 1);
       deadlineRef.current = deadlineFrom(nextBank);
       setLeft(budgetFor(nextBank));
       return;
     }
-    // 本卷答完
-    if (paperIdxRef.current < papers.length - 1) {
-      setStage('break');
-      return;
-    }
     finishAll();
-  }, [finishAll, papers]);
+  }, [finishAll, questions]);
 
   const confirmRef = useRef(confirmCurrent);
   confirmRef.current = confirmCurrent;
 
-  /** 开下一卷：计时与银行一起归零，上一卷剩的时间不带过来 */
-  const startNextPaper = useCallback(() => {
-    setPaperIdx((p) => p + 1);
-    setIdx(0);
-    setBank(0);
-    deadlineRef.current = deadlineFrom(0);
-    setLeft(budgetFor(0));
-    setStage('run');
-  }, []);
-
-  // 逐题倒计时。每次都拿 Date.now() 和截止时间戳比，不累减；
-  // 休息期间不计时，所以 stage 变了就把 interval 撤掉
+  // 逐题倒计时。每次都拿 Date.now() 和截止时间戳比，不累减
   useEffect(() => {
-    if (stage !== 'run') return;
     const timer = window.setInterval(syncLeft, DIAGNOSTIC_TICK_MS);
     return () => window.clearInterval(timer);
-  }, [stage, syncLeft]);
+  }, [syncLeft]);
 
   // 回到前台立刻重算一次：限流期间 tick 可能一次都没跑，
   // 界面上那个数字必须马上对上真实流逝的时间
   useEffect(() => {
     const onVisible = () => {
-      if (!document.hidden && stageRef.current === 'run') syncLeft();
+      if (!document.hidden) syncLeft();
     };
     document.addEventListener('visibilitychange', onVisible);
     return () => document.removeEventListener('visibilitychange', onVisible);
   }, [syncLeft]);
 
   useEffect(() => {
-    if (left > 0 || stage !== 'run') return;
+    if (left > 0) return;
     // 归零：自动确认当前所选（没选就是未答），继续下一题
     confirmRef.current();
-  }, [left, stage]);
+  }, [left]);
 
   const select = useCallback((label: string) => {
-    setAnswers((prev) =>
-      prev.map((paperAnswers, p) =>
-        p === paperIdxRef.current
-          ? paperAnswers.map((value, i) => (i === idxRef.current ? label : value))
-          : paperAnswers,
-      ),
-    );
+    if (doneRef.current) return;
+    setAnswers((prev) => prev.map((value, i) => (i === idxRef.current ? label : value)));
   }, []);
 
   // 诊断的键盘只有两件事：选项与确认。
@@ -172,29 +140,24 @@ export default function DiagnosticRunner({ papers, onFinish, onAbandon }: Props)
         if (e.key === 'Escape') setConfirmAbandon(false);
         return;
       }
-      if (stageRef.current !== 'run') return;
-      const current = (papers[paperIdxRef.current] || [])[idxRef.current];
+      const current = questions[idxRef.current];
       if (!current) return;
       if (e.key === 'Enter') {
         e.preventDefault();
         confirmRef.current();
         return;
       }
-      if (/^[1-9]$/.test(e.key)) {
-        const choice = current.choices[Number(e.key) - 1];
-        if (choice) select(choice.label);
-        return;
-      }
-      if (/^[a-zA-Z]$/.test(e.key)) {
-        const choice = current.choices.find(
-          (item) => item.label.toLowerCase() === e.key.toLowerCase(),
-        );
-        if (choice) select(choice.label);
-      }
+      // Ctrl+C / Cmd+R 这类组合键不是在选选项
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      const label = choiceForKey(
+        current.choices.map((choice) => choice.label),
+        e.key,
+      );
+      if (label) select(label);
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [papers, select]);
+  }, [questions, select]);
 
   const abandonDialog = confirmAbandon && (
     /* 自绘弹窗，不用 window.confirm：那玩意会阻塞事件循环，
@@ -234,41 +197,23 @@ export default function DiagnosticRunner({ papers, onFinish, onAbandon }: Props)
     </div>
   );
 
-  // ---- 中场休息：不限时，且一个成绩字样都不给 ----
-  if (stage === 'break') {
-    return (
-      <div className={examStyles.wrap}>
-        <div className={examStyles.resultWrap}>
-          <div className={styles.breakCard}>
-            <h2 className={styles.breakTitle}>{t.diagnostic.breakTitle}</h2>
-            <p className={styles.breakLine}>{t.diagnostic.breakLine}</p>
-            <p className={styles.breakNote}>{t.diagnostic.breakNote}</p>
-            <button type="button" className={styles.startBtn} onClick={startNextPaper}>
-              {t.diagnostic.breakStart}
-            </button>
-          </div>
-        </div>
-        {abandonDialog}
-      </div>
-    );
-  }
-
   if (!q) return null;
 
   const warn = left <= DIAGNOSTIC_WARN_SECONDS;
+  const last = idx === questions.length - 1;
 
   return (
     <div className={examStyles.exam}>
       <div className={examStyles.cbtHeader}>
         <div className={examStyles.cbtTitle}>
-          {t.diagnostic.title} · {t.diagnostic.paper(paperIdx + 1)}
+          {t.diagnostic.title} · {t.diagnostic.paper(nth)}
         </div>
         <div className={examStyles.cbtHeaderRight}>
           <div className={warn ? examStyles.timeWarn : undefined}>
             🕐 Time Remaining {fmtCountdown(left)}
           </div>
           <div>
-            {idx + 1} of {paper.length}
+            {idx + 1} of {questions.length}
           </div>
           {/* 误开一场就得枯坐很久不合理，给个不显眼的出口。
               语义和刷新页面完全一致：什么都不落盘 */}
@@ -303,14 +248,21 @@ export default function DiagnosticRunner({ papers, onFinish, onAbandon }: Props)
           <div className={examStyles.choiceList}>
             {q.choices.map((c) => {
               // 选中只有「选中」一种状态：不着对错色，不给任何反馈
+              const selected = sameLabel(answers[idx] ?? null, c.label);
               const cls = [examStyles.choiceRow];
-              if (sameLabel(answers[paperIdx]?.[idx] ?? null, c.label)) {
-                cls.push(examStyles.optSelected);
-              }
+              if (selected) cls.push(examStyles.optSelected);
               return (
-                <button key={c.label} className={cls.join(' ')} onClick={() => select(c.label)}>
+                <button
+                  key={c.label}
+                  type="button"
+                  className={cls.join(' ')}
+                  aria-pressed={selected}
+                  onClick={() => select(c.label)}
+                >
                   <span className={examStyles.radio} />
+                  {/* 标号统一大写显示，与练习、复烤区同一套体例；比对一律不分大小写 */}
                   <span className={examStyles.choiceLabel}>{c.label.toUpperCase()}</span>
+                  {/* 内联题（选项留在题面里）的 text 是空串，按钮只显标号 */}
                   {c.text && (
                     <span className={examStyles.choiceText}>
                       <MathText text={c.text} />
@@ -322,6 +274,7 @@ export default function DiagnosticRunner({ papers, onFinish, onAbandon }: Props)
           </div>
 
           <button
+            type="button"
             className={examStyles.enterBtn}
             onClick={(e) => {
               e.currentTarget.blur();
@@ -329,15 +282,13 @@ export default function DiagnosticRunner({ papers, onFinish, onAbandon }: Props)
             }}
             aria-keyshortcuts="Enter"
           >
-            {idx < paper.length - 1
-              ? '确认并进入下一题'
-              : paperIdx < papers.length - 1
-                ? '确认并结束本卷'
-                : '确认并交卷'}
+            {last ? '确认并交卷' : '确认并进入下一题'}
             <span className={examStyles.enterBtnKey}>Enter</span>
           </button>
           <div className={styles.hint}>
             提前确认可把剩下的时间滚存到下一题；归零会自动确认当前所选。
+            <br />
+            键盘：A–L / 1–9 选项 · Enter 确认
           </div>
         </div>
       </div>

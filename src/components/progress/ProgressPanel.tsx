@@ -72,7 +72,8 @@ export default function ProgressPanel({
   const [pickedTs, setPickedTs] = useState<number | null>(null);
   const pickedIndex = pickedTs === null ? -1 : points.findIndex((p) => p.session.ts === pickedTs);
 
-  // diag（GMAT 诊断集）必须挡在统计之外：那批题设计上全程不显示对错。
+  // diag（诊断集）必须挡在统计之外：那批题设计上全程不显示对错；reserved 也不算
+  // （它们不上错题榜，统计块跟着榜走，见 practiceQids）。
   // 统计块与 deck 上那条统计条共用同一个池子，否则两处数字会对不上
   const practice = useMemo(() => practiceQids(index), [index]);
   const stats = useMemo(() => practiceOverview(records, practice), [records, practice]);

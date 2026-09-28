@@ -24,12 +24,11 @@ import {
 } from '@/lib/papers';
 import {
   attemptsLeft,
-  canAttempt,
-  fetchDiagnosticSets,
+  diagnosticStatus,
+  fetchDiagnosticPapers,
   isPass,
   remainingSeconds,
-  setIndexForAttempt,
-  type DiagnosticSets,
+  type DiagnosticPapers,
 } from '@/lib/diagnostic';
 import MathText from '@/components/MathText';
 // 存储键一律从 lib/storage.ts 取，组件里不再散落字面量（见那份登记表）
@@ -462,8 +461,8 @@ export default function ExamApp() {
    * 限时卷的截止时间戳。剩余秒数一律拿它现算，绝不靠 tick 累减——
    * 后台标签页的 setInterval 会被浏览器限流甚至冻住，数 tick 等于把 Alt-Tab
    * 变成一个免费暂停键（与 Diagnostic 同一条理由，见 lib/diagnostic.ts 的
-   * remainingSeconds）。那边的 deadlineFrom 不复用：它加的是诊断逐题的 120s
-   * 基础时长 + 时间银行，跟整卷时限不是一回事；共用的是 remainingSeconds 这个算法。
+   * remainingSeconds）。那边的 deadlineFrom 不复用：它加的是诊断逐题的基础时长
+   * （240s）+ 时间银行，跟整卷时限不是一回事；共用的是 remainingSeconds 这个算法。
    */
   const deadlineRef = useRef(0);
   const [elapsed, setElapsed] = useState(0);
@@ -764,51 +763,50 @@ export default function ExamApp() {
     setPhase('setup');
   };
 
-  // ---- Diagnostic Test ----
-  const [diagPapers, setDiagPapers] = useState<ExamQuestion[][]>([]);
+  // ---- 7.5+ Diagnostic ----
+  // GMAT 两卷制已下线（2026-09-28）：diag.json 只有 7.5+ 的两卷，入口也只有这一场
+  /** 本场这一卷的题，按固定顺序；不在考就是空数组 */
+  const [diagQuestions, setDiagQuestions] = useState<ExamQuestion[]>([]);
+  /** 本场是第几次机会（1 起），题头据此显示 Paper 1 / Paper 2 */
+  const [diagNth, setDiagNth] = useState(1);
   const [diagPassed, setDiagPassed] = useState(false);
   const [diagBound, setDiagBound] = useState(0);
-  const [diagSets, setDiagSets] = useState<DiagnosticSets | null>(null);
+  const [diagPapers, setDiagPapers] = useState<DiagnosticPapers | null>(null);
 
-  // 固定卷定义只在 9.0 还锁着（也就是真有可能要考）时才取，不占冷启动
+  // 卷定义只在 9.0 还锁着（也就是真有可能要考）时才取，不占冷启动。
+  // 取不到（或形状闸拒收，比如撞上旧的 v1 缓存）就一直是 null，介绍页按「尚未就绪」处理
   useEffect(() => {
-    if (hiddenUnlocked || diagSets) return;
+    if (hiddenUnlocked || diagPapers) return;
     let alive = true;
-    fetchDiagnosticSets()
-      .then((sets) => {
-        if (alive) setDiagSets(sets);
+    fetchDiagnosticPapers()
+      .then((papers) => {
+        if (alive) setDiagPapers(papers);
       })
       .catch(() => {});
     return () => {
       alive = false;
     };
-  }, [hiddenUnlocked, diagSets]);
+  }, [hiddenUnlocked, diagPapers]);
 
   /** 介绍页的 Start。和 start() 一样必须是同步手势链，全屏才批准 */
   const startDiagnostic = async () => {
-    // 机会闸的第二道：介绍页只是不渲染按钮（展示层），真正的拦截在这里。
-    // 「仅两次机会」是本功能最重的规则，不能只押在一个三元表达式上。
-    if (!index || !canAttempt(records.diag)) return;
+    // 开考闸的第二道：介绍页不给按钮只是展示层，真正的拦截在这里。
+    // 「仅两次机会」「卷二没出齐不能开考」都落在 diagnosticStatus 这一个判据上，
+    // 与介绍页同一个函数——不能只押在一个三元表达式上。
+    const status = diagnosticStatus(diagPapers, records.diag75);
+    if (!index || status.kind !== 'ready') return;
     setError('');
     // 一场诊断也是「新的上一场」：不清的话，考完回到复烤区顶上还挂着更早那场的回执
     setGrillReceipt(null);
     setPhase('loading');
     document.documentElement.requestFullscreen?.().catch(() => {});
     try {
-      const sets = diagSets || (await fetchDiagnosticSets());
-      if (!diagSets) setDiagSets(sets);
-      // 第 N 次机会固定用第 N 套卷，零随机；越界时 setIndexForAttempt 返回 -1，
-      // 落到下面的 !chosen 硬失败，不会静默重发套二
-      const chosen = sets.sets[setIndexForAttempt(records.diag)];
-      if (!chosen || chosen.p1.length === 0 || chosen.p2.length === 0) {
-        throw new Error(t.errors.emptySelection);
-      }
-      // 卷内顺序就是难度升序，必须原样取回，不能走会洗牌的 buildExam
-      const [p1, p2] = await Promise.all([
-        fetchQuestions(chosen.p1),
-        fetchQuestions(chosen.p2),
-      ]);
-      setDiagPapers([p1, p2]);
+      // 第 N 次机会固定考第 N 卷、零随机；卷内顺序就是出题顺序，
+      // 必须原样取回，不能走会洗牌的 buildExam
+      const questions = await fetchQuestions(status.qids);
+      if (questions.length === 0) throw new Error(t.errors.emptySelection);
+      setDiagQuestions(questions);
+      setDiagNth(status.nth);
       setPhase('diagnostic');
     } catch (e) {
       if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
@@ -818,17 +816,18 @@ export default function ExamApp() {
   };
 
   /**
-   * 诊断交卷。只落三件事：Grill 绑定集、attempts、passed。
+   * 诊断交卷。只落两件事：Grill 绑定集、diag75（attempts / passed）。
    * q 和 s 一个都不写——写了对错就会经错题榜 / Sessions 导出表泄出去。
+   * 机会在这里、也只在这里消耗：放弃与刷新都走不到这一步
    */
   const finishDiagnostic = ({ right, qids }: { right: number; qids: number[] }) => {
     const passed = isPass(right, qids.length);
     const next = recordDiagnostic(records, qids, passed);
     saveRecords(next);
     setRecords(next);
-    setDiagPassed(next.diag?.passed === true);
+    setDiagPassed(next.diag75?.passed === true);
     setDiagBound(qids.length);
-    setDiagPapers([]);
+    setDiagQuestions([]);
     setPhase('diagResult');
     if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
   };
@@ -844,7 +843,7 @@ export default function ExamApp() {
    * attempts 不 +1、qid 不进 Grill、passed 不动。
    */
   const abandonDiagnostic = () => {
-    setDiagPapers([]);
+    setDiagQuestions([]);
     if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
     leaveDiagnostic();
   };
@@ -1236,12 +1235,14 @@ export default function ExamApp() {
             ))}
           </div>
 
-          {/* 9.0 还没解锁时，展开动作给的是 Diagnostic 介绍页而不是抽题配置 */}
+          {/* 9.0 还没解锁时，展开动作给的是 7.5+ Diagnostic 介绍页而不是抽题配置 */}
           {frontZone === 'trivial' && !hiddenUnlocked ? (
             <>
               <DiagnosticIntro
-                ready={!!diagSets && diagSets.sets.length > 0}
-                diag={records.diag}
+                papers={diagPapers}
+                diag={records.diag75}
+                // 旧 GMAT 诊断考过几次：只用来决定要不要说一句「以前的次数不算」
+                legacyAttempts={records.diag?.attempts ?? 0}
                 busy={phase === 'loading' || !index}
                 onStart={() => void startDiagnostic()}
                 charge={{
@@ -1470,11 +1471,12 @@ export default function ExamApp() {
     );
   }
 
-  // ================= Diagnostic Test =================
+  // ================= 7.5+ Diagnostic =================
   if (phase === 'diagnostic') {
     return (
       <DiagnosticRunner
-        papers={diagPapers}
+        questions={diagQuestions}
+        nth={diagNth}
         onFinish={finishDiagnostic}
         onAbandon={abandonDiagnostic}
       />
@@ -1486,7 +1488,9 @@ export default function ExamApp() {
       <DiagnosticResult
         passed={diagPassed}
         bound={diagBound}
-        attemptsLeft={attemptsLeft(records.diag)}
+        attemptsLeft={attemptsLeft(records.diag75)}
+        // 交卷已落盘，records 是新的：没过、还有机会、但卷二没出齐时，文案要先说「现在还考不了」
+        nextPaperPending={diagnosticStatus(diagPapers, records.diag75).kind === 'pending'}
         onBack={leaveDiagnostic}
         onGoGrill={goToGrillFromResult}
       />

@@ -2,23 +2,32 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import test from 'node:test';
 
+// 7.5+ Diagnostic（2026-09-28 起取代 GMAT 两卷制）的引擎与界面约束。
+// 旧 GMAT 时代的每一条都还在，按新规则改写成对应的不变量：
+// 两卷 40 题 → 单卷 10 题；120s → 240s；36/40 → 8/10；中场休息 → 没有休息。
+
 import {
   DIAGNOSTIC_BASE_SECONDS,
+  DIAGNOSTIC_EXAM,
   DIAGNOSTIC_MAX_ATTEMPTS,
   DIAGNOSTIC_PAPER_SIZE,
-  DIAGNOSTIC_TOTAL,
+  DIAGNOSTIC_PASS_RIGHT,
   allowedMisses,
   attemptsLeft,
   bankAfter,
   budgetFor,
   canAttempt,
+  choiceForKey,
   deadlineFrom,
-  fetchDiagnosticSets,
+  diagnosticStatus,
+  fetchDiagnosticPapers,
   isPass,
+  paperIndexForAttempt,
+  parseDiagnosticPapers,
   passMark,
   remainingSeconds,
-  setIndexForAttempt,
 } from '../src/lib/diagnostic.ts';
+import { DICT } from '../src/lib/i18n.ts';
 import {
   clearRecords,
   createEmptyRecords,
@@ -28,7 +37,7 @@ import {
   recordDiagnostic,
   HIDDEN_UNLOCK_COUNT,
 } from '../src/lib/records.ts';
-import { readExamIndex, readExamJson } from './helpers/exam-data.mjs';
+import { readExamIndex, readExamJson, readExamQuestion } from './helpers/exam-data.mjs';
 
 /**
  * 结构断言要看的是真正渲染的东西，不是注释。
@@ -49,15 +58,35 @@ const cssPath = 'src/components/diagnostic/Diagnostic.module.css';
 const examPath = 'src/components/exam/ExamApp.tsx';
 const recordsPath = 'src/lib/records.ts';
 
+/** 两卷都在 / 卷二准备中，两份合法的 diag.json */
+const PAPERS = {
+  v: 2,
+  exam: '7.5+',
+  papers: [
+    { id: 'p1', qids: [11, 12, 13] },
+    { id: 'p2', qids: [21, 22, 23] },
+  ],
+};
+const P2_PENDING = {
+  v: 2,
+  exam: '7.5+',
+  papers: [
+    { id: 'p1', qids: [11, 12, 13] },
+    { id: 'p2', qids: null },
+  ],
+};
+
 test('the diagnostic ships fixed 7.5+ papers, not a random draw', () => {
   // v2 起是 7.5+ 的卷结构（scripts\diag75-papers.mjs 组卷）：两次机会各一卷，
   // 卷一固定 10 道，卷二凑不满 10 道已复核 SMT 时是 null（准备中）
   const diag = readExamJson('diag.json', (d) => d?.v === 2 && Array.isArray(d.papers));
-  assert.equal(diag.exam, '7.5+');
+  // 真实产物必须过得了前端的形状闸
+  assert.deepEqual(parseDiagnosticPapers(diag), diag);
+  assert.equal(diag.exam, DIAGNOSTIC_EXAM);
   assert.equal(diag.papers.length, DIAGNOSTIC_MAX_ATTEMPTS, 'one fixed paper per attempt');
   const [p1, p2] = diag.papers.map((paper) => paper.qids);
-  assert.equal(p1.length, 10, 'paper 1 is the ten fixed questions');
-  assert.ok(p2 === null || p2.length === 10, 'paper 2 is either ready in full or not at all');
+  assert.equal(p1.length, DIAGNOSTIC_PAPER_SIZE, 'paper 1 is the ten fixed questions');
+  assert.ok(p2 === null || p2.length === DIAGNOSTIC_PAPER_SIZE, 'paper 2 is either ready in full or not at all');
   // 两卷互不重题
   if (p2) {
     assert.equal(p2.filter((qid) => p1.includes(qid)).length, 0, 'the two papers must not share a question');
@@ -70,10 +99,9 @@ test('the diagnostic ships fixed 7.5+ papers, not a random draw', () => {
   assert.equal([...p1, ...(p2 || [])].some((qid) => gmat.has(qid)), false, 'GMAT is retired from the papers');
 
   // 前端按固定顺序原样取回，不能走会洗牌的 buildExam
-  const exam = fs.readFileSync(examPath, 'utf8');
-  assert.match(exam, /fetchQuestions\(chosen\.p1\)/);
-  assert.match(exam, /fetchQuestions\(chosen\.p2\)/);
-  assert.doesNotMatch(exam, /buildExam\([^)]*chosen/);
+  const exam = codeOnly(fs.readFileSync(examPath, 'utf8'));
+  assert.match(exam, /const questions = await fetchQuestions\(status\.qids\);/);
+  assert.doesNotMatch(exam, /buildExam\([^)]*status/);
   const examLib = fs.readFileSync('src/lib/exam.ts', 'utf8');
   assert.match(examLib, /export async function fetchQuestions/);
   // 卷定义单独一个文件，index 形状仍然冻结。
@@ -92,33 +120,49 @@ test('the diagnostic ships fixed 7.5+ papers, not a random draw', () => {
 
 test('a malformed diag.json is rejected instead of crashing the intro card', async (t) => {
   // 与 topics.ts / papers.ts 同款形状闸：只校 res.ok 挡不住代理/CDN 返回 200 的
-  // 错误体，也挡不住将来 v2 改结构撞上旧缓存。畸形数据进了 state，
-  // 介绍页那句 diagSets.sets.length 就是一条 TypeError 白屏路径
+  // 错误体，也挡不住改了结构撞上旧缓存。畸形数据进了 state，介绍页里
+  // diagnosticStatus 读 papers.papers[i].qids 就是一条 TypeError 白屏路径
   const realFetch = globalThis.fetch;
   t.after(() => {
     globalThis.fetch = realFetch;
   });
 
-  const good = { v: 1, sets: [{ p1: [1], p2: [2] }] };
-  globalThis.fetch = async () => ({ ok: true, status: 200, json: async () => good });
-  assert.deepEqual(await fetchDiagnosticSets(), good);
+  for (const good of [PAPERS, P2_PENDING]) {
+    globalThis.fetch = async () => ({ ok: true, status: 200, json: async () => good });
+    assert.deepEqual(await fetchDiagnosticPapers(), good);
+  }
 
-  for (const junk of [{ sets: [] }, { v: 2, sets: [] }, { v: 1, sets: 'x' }, { v: 1 }, null]) {
+  const junks = [
+    // 下线了的 GMAT 两卷制（v1）：一份旧缓存不能让它死灰复燃
+    { v: 1, sets: [{ p1: [1], p2: [2] }] },
+    { v: 2, exam: 'GMAT', papers: PAPERS.papers },
+    { v: 2, papers: PAPERS.papers },
+    // 卷一必须是满的；只有卷二可以是 null
+    { v: 2, exam: '7.5+', papers: [{ id: 'p1', qids: null }, { id: 'p2', qids: [21] }] },
+    { v: 2, exam: '7.5+', papers: [{ id: 'p1', qids: [] }, { id: 'p2', qids: null }] },
+    { v: 2, exam: '7.5+', papers: [{ id: 'p2', qids: [21] }, { id: 'p1', qids: [11] }] },
+    { v: 2, exam: '7.5+', papers: [PAPERS.papers[0]] },
+    { v: 2, exam: '7.5+', papers: [{ id: 'p1', qids: [11, 'x'] }, { id: 'p2', qids: null }] },
+    { v: 2, exam: '7.5+', papers: [{ id: 'p1', qids: [11, -3] }, { id: 'p2', qids: null }] },
+    { v: 2, exam: '7.5+', papers: 'x' },
+    { v: 2, exam: '7.5+' },
+    null,
+  ];
+  for (const junk of junks) {
+    assert.throws(() => parseDiagnosticPapers(junk), /shape/, `畸形负载 ${JSON.stringify(junk)} 不该被放进来`);
     globalThis.fetch = async () => ({ ok: true, status: 200, json: async () => junk });
-    await assert.rejects(
-      fetchDiagnosticSets(),
-      /shape/,
-      `畸形负载 ${JSON.stringify(junk)} 不该被放进来`,
-    );
+    await assert.rejects(fetchDiagnosticPapers(), /shape/);
   }
 
   // 非 200 仍然是非 200
-  globalThis.fetch = async () => ({ ok: false, status: 404, json: async () => good });
-  await assert.rejects(fetchDiagnosticSets(), /404/);
+  globalThis.fetch = async () => ({ ok: false, status: 404, json: async () => PAPERS });
+  await assert.rejects(fetchDiagnosticPapers(), /404/);
 
-  // 前端那条 ready 断言拿的是 sets.length——形状闸不在，它就是 TypeError 的落点
+  // 前端：取不到就一直是 null，介绍页按「尚未就绪」处理，不白屏
+  assert.equal(diagnosticStatus(null, undefined).kind, 'unavailable');
   const exam = codeOnly(fs.readFileSync(examPath, 'utf8'));
-  assert.match(exam, /ready=\{!!diagSets && diagSets\.sets\.length > 0\}/);
+  assert.match(exam, /fetchDiagnosticPapers\(\)[\s\S]{0,200}\.catch\(\(\) => \{\}\)/);
+  assert.match(exam, /papers=\{diagPapers\}/);
 });
 
 test('the countdown is driven by a deadline, never by counting ticks', () => {
@@ -138,93 +182,131 @@ test('the countdown is driven by a deadline, never by counting ticks', () => {
   // 银行也按截止时间现算，不读可能落后一个 tick 的 state
   assert.match(runner, /bankAfter\(remainingSeconds\(deadlineRef\.current\)\)/);
 
-  // 纯函数层：Date.now() 参与计算，且不会给出负数
+  // 纯函数层：每题基准 240 秒；Date.now() 参与计算，且不会给出负数
+  assert.equal(DIAGNOSTIC_BASE_SECONDS, 240);
   const now = 1_000_000;
   assert.equal(remainingSeconds(now + 30_000, now), 30);
   assert.equal(remainingSeconds(now - 5_000, now), 0);
   assert.equal(remainingSeconds(now, now), 0);
-  assert.equal(deadlineFrom(0, now), now + DIAGNOSTIC_BASE_SECONDS * 1000);
-  assert.equal(deadlineFrom(45, now), now + (DIAGNOSTIC_BASE_SECONDS + 45) * 1000);
+  assert.equal(deadlineFrom(0, now), now + 240 * 1000);
+  assert.equal(deadlineFrom(45, now), now + (240 + 45) * 1000);
   // 切后台 20 秒回来，剩余就该少 20 秒——时间是墙钟走的，不是 tick 走的
   const deadline = deadlineFrom(0, now);
-  assert.equal(remainingSeconds(deadline, now + 20_000), DIAGNOSTIC_BASE_SECONDS - 20);
+  assert.equal(remainingSeconds(deadline, now + 20_000), 240 - 20);
 });
 
-test('the time bank rolls unused seconds into the next question, within a paper', () => {
-  assert.equal(budgetFor(0), DIAGNOSTIC_BASE_SECONDS);
+test('the time bank rolls unused seconds forward through the whole paper', () => {
+  assert.equal(budgetFor(0), 240);
 
-  const leftAfterFirst = DIAGNOSTIC_BASE_SECONDS - 45;
-  const bank = bankAfter(leftAfterFirst);
-  assert.equal(bank, 75);
-  assert.equal(budgetFor(bank), DIAGNOSTIC_BASE_SECONDS + 75);
+  // 第一题用了 45 秒：剩下的 195 秒滚进第二题
+  const bank = bankAfter(240 - 45);
+  assert.equal(bank, 195);
+  assert.equal(budgetFor(bank), 240 + 195);
 
+  // 第二题又只用了 20 秒：银行接着滚，不设上限、不在中途清零
   const bank2 = bankAfter(budgetFor(bank) - 20);
-  assert.equal(budgetFor(bank2), DIAGNOSTIC_BASE_SECONDS * 2 + 55);
+  assert.equal(budgetFor(bank2), 240 * 3 - 65);
 
   // 归零跳题：银行清空，拖满时间的人攒不到时间
   assert.equal(bankAfter(0), 0);
   assert.equal(bankAfter(-30), 0);
   assert.equal(bankAfter(12.7), 12);
-  assert.equal(budgetFor(-5), DIAGNOSTIC_BASE_SECONDS);
+  assert.equal(budgetFor(-5), 240);
 
-  // Paper 2 开场，计时和银行一起清零，上一卷剩的时间不带过来
+  // 单卷：只在开考那一刻起算一次，确认一题就把银行滚进下一题，直到交卷
   const runner = codeOnly(fs.readFileSync(runnerPath, 'utf8'));
-  assert.match(runner, /const startNextPaper = useCallback\(\(\) => \{[\s\S]*?setBank\(0\)/);
-  assert.match(runner, /startNextPaper = useCallback\(\(\) => \{[\s\S]*?deadlineRef\.current = deadlineFrom\(0\)/);
-  assert.match(runner, /startNextPaper = useCallback\(\(\) => \{[\s\S]*?setLeft\(budgetFor\(0\)\)/);
-  // 休息期间不跑计时器
-  assert.match(runner, /if \(stage !== 'run'\) return;\s*\n\s*const timer = window\.setInterval/);
+  assert.match(runner, /const nextBank = bankAfter\(remainingSeconds\(deadlineRef\.current\)\);/);
+  assert.match(runner, /setBank\(nextBank\);\s*\n\s*setIdx\(\(i\) => i \+ 1\);\s*\n\s*deadlineRef\.current = deadlineFrom\(nextBank\);/);
+  // 没有「换卷清零」那一步了
+  assert.doesNotMatch(runner, /setBank\(0\)|deadlineFrom\(0\)/);
 });
 
-test('pass is 36 of 40 and nothing else', () => {
-  assert.equal(passMark(DIAGNOSTIC_TOTAL), 36);
-  assert.equal(allowedMisses(DIAGNOSTIC_TOTAL), 4);
-  assert.equal(isPass(36, 40), true);
-  assert.equal(isPass(40, 40), true);
-  assert.equal(isPass(35, 40), false);
-  assert.equal(isPass(0, 40), false);
+test('pass is 8 of 10 and nothing else', () => {
+  assert.equal(DIAGNOSTIC_PAPER_SIZE, 10);
+  assert.equal(DIAGNOSTIC_PASS_RIGHT, 8);
+  assert.equal(passMark(), 8);
+  assert.equal(passMark(DIAGNOSTIC_PAPER_SIZE), 8);
+  assert.equal(allowedMisses(DIAGNOSTIC_PAPER_SIZE), 2);
+  assert.equal(isPass(8, 10), true);
+  assert.equal(isPass(10, 10), true);
+  assert.equal(isPass(7, 10), false);
+  assert.equal(isPass(0, 10), false);
   // 空场次不算通过，别让 0/0 变成 NaN 或 true
   assert.equal(isPass(0, 0), false);
+  // 交卷用的正是这个判据
+  const exam = fs.readFileSync(examPath, 'utf8');
+  assert.match(exam, /const passed = isPass\(right, qids\.length\);/);
 });
 
-test('there are exactly two attempts, and each uses its own set', () => {
+test('there are exactly two attempts, each on its own paper, and a missing paper 2 neither starts nor costs one', () => {
   assert.equal(DIAGNOSTIC_MAX_ATTEMPTS, 2);
 
+  // 第一次机会：卷一
   assert.equal(attemptsLeft(undefined), 2);
   assert.equal(canAttempt(undefined), true);
-  assert.equal(setIndexForAttempt(undefined), 0);
+  assert.equal(paperIndexForAttempt(undefined), 0);
+  assert.deepEqual(diagnosticStatus(PAPERS, undefined), { kind: 'ready', nth: 1, paper: 'p1', qids: [11, 12, 13] });
+  // 卷二有没有出齐，都不影响第一次考卷一
+  assert.equal(diagnosticStatus(P2_PENDING, undefined).kind, 'ready');
 
+  // 第二次机会：卷二
   const once = { passed: false, attempts: 1, lastTs: 0 };
   assert.equal(attemptsLeft(once), 1);
-  assert.equal(canAttempt(once), true);
-  assert.equal(setIndexForAttempt(once), 1, 'the second attempt uses the second set');
+  assert.equal(paperIndexForAttempt(once), 1, 'the second attempt uses the second paper');
+  assert.deepEqual(diagnosticStatus(PAPERS, once), { kind: 'ready', nth: 2, paper: 'p2', qids: [21, 22, 23] });
 
-  // 第三次进不去；越界时 setIndexForAttempt 硬失败（-1），
-  // 不许静默降级重发套二——那会把「仅两次机会」架空
+  // 卷二没出齐：不能开始（pending），而且判定本身不动记录——机会只在交卷时消耗
+  const snapshot = structuredClone(once);
+  assert.deepEqual(diagnosticStatus(P2_PENDING, once), { kind: 'pending', nth: 2, paper: 'p2' });
+  assert.deepEqual(once, snapshot, 'looking at a pending paper must not spend the attempt');
+  assert.equal(attemptsLeft(once), 1);
+  // 卷二一出齐，同一份记录就能开考
+  assert.equal(diagnosticStatus(PAPERS, once).kind, 'ready');
+
+  // 第三次进不去；越界时 paperIndexForAttempt 硬失败（-1），
+  // 不许静默降级重发卷二——那会把「仅两次机会」架空
   const twice = { passed: false, attempts: 2, lastTs: 0 };
   assert.equal(attemptsLeft(twice), 0);
   assert.equal(canAttempt(twice), false);
-  assert.equal(setIndexForAttempt(twice), -1);
+  assert.equal(paperIndexForAttempt(twice), -1);
+  assert.equal(diagnosticStatus(PAPERS, twice).kind, 'exhausted');
+  assert.equal(diagnosticStatus(null, twice).kind, 'exhausted', 'exhausted wins even without the papers');
 
   // 通过之后也不必再考
-  assert.equal(canAttempt({ passed: true, attempts: 1, lastTs: 0 }), false);
-  assert.equal(setIndexForAttempt({ passed: true, attempts: 1, lastTs: 0 }), -1);
+  const passed = { passed: true, attempts: 1, lastTs: 0 };
+  assert.equal(canAttempt(passed), false);
+  assert.equal(paperIndexForAttempt(passed), -1);
+  assert.equal(diagnosticStatus(PAPERS, passed).kind, 'passed');
 
-  // 机会闸必须有两道：介绍页不渲染按钮只是展示层，
-  // startDiagnostic 里的 canAttempt 才是真拦截
-  const examApp = fs.readFileSync(examPath, 'utf8');
-  assert.match(examApp, /startDiagnostic[\s\S]{0,200}canAttempt\(records\.diag\)/);
+  // 取回的 qids 是副本，改它不会改坏卷定义
+  const ready = diagnosticStatus(PAPERS, undefined);
+  ready.qids.push(99);
+  assert.deepEqual(PAPERS.papers[0].qids, [11, 12, 13]);
 
-  // 介绍页据此换成「机会已用完」态，并把 365 那条路指清楚；
-  // 判据必须吃整个 diag（只挑 attempts 会把 passed 丢在半路）
-  const intro = fs.readFileSync(introPath, 'utf8');
-  assert.match(intro, /canAttempt\(diag\)/);
-  assert.doesNotMatch(intro, /canAttempt\(\{ attempts \}\)/);
+  // 开考闸必须有两道：介绍页不给按钮只是展示层，
+  // startDiagnostic 里同一个 diagnosticStatus 才是真拦截，而且拦在任何状态改动之前
+  const examApp = codeOnly(fs.readFileSync(examPath, 'utf8'));
+  assert.match(
+    examApp,
+    /const status = diagnosticStatus\(diagPapers, records\.diag75\);\s*\n\s*if \(!index \|\| status\.kind !== 'ready'\) return;/,
+  );
+  // 机会只在交卷时消耗：记录诊断的调用只有一处，在 finishDiagnostic 里
+  assert.equal((examApp.match(/recordDiagnostic\(/g) || []).length, 1);
+  assert.match(examApp, /const finishDiagnostic = [\s\S]{0,200}recordDiagnostic\(records, qids, passed\)/);
+
+  // 介绍页：判据吃整个 diag（只挑 attempts 会把 passed 丢在半路），
+  // 用完换成「机会已用完」态并把 365 那条路指清楚；卷二没出齐单独一态、说清原因
+  const intro = codeOnly(fs.readFileSync(introPath, 'utf8'));
+  assert.match(intro, /const status = diagnosticStatus\(papers, diag\);/);
   assert.match(intro, /t\.diagnostic\.exhausted\b/);
   assert.match(intro, /t\.diagnostic\.exhaustedHint/);
+  assert.match(intro, /t\.diagnostic\.pendingTitle/);
+  assert.match(intro, /t\.diagnostic\.pendingHint/);
   assert.match(intro, /t\.diagnostic\.chance\(/);
-  // 用完机会就不该再渲染开始按钮
-  assert.match(intro, /allowed \? \(/);
+  // 开始按钮只活在 ready / unavailable 那一支里，且只有 ready 才可按
+  assert.match(intro, /status\.kind === 'ready' \|\| status\.kind === 'unavailable' \? \(/);
+  assert.match(intro, /disabled=\{busy \|\| status\.kind !== 'ready'\}/);
+  assert.equal((intro.match(/onClick=\{onStart\}/g) || []).length, 1);
 });
 
 test('submitting a diagnostic writes grill and diag75 only — never q or s', () => {
@@ -355,33 +437,36 @@ test('the runner is one-way: no navigator, no back, no marking', () => {
   assert.doesNotMatch(runner, /feedback|fbOk|fbBad/);
   assert.doesNotMatch(runner, /graded|gradeCurrent/);
 
-  // 键盘只留选项与确认；←→ 和 F 在诊断里没有意义
+  // 键盘只留选项与确认；←→ 和 F 在诊断里没有意义。
+  // 选项键的映射抽成了纯函数 choiceForKey（1–9 / A–L，见下面那条行为测试）
   assert.doesNotMatch(runner, /ArrowLeft|ArrowRight|ArrowUp|ArrowDown/);
   assert.match(source, /e\.key === 'Enter'/);
-  assert.match(source, /\/\^\[1-9\]\$\//);
+  assert.match(runner, /choiceForKey\(/);
 
   // 归零自动确认，确认后单向推进
-  assert.match(source, /if \(left > 0 \|\| stage !== 'run'\) return;/);
+  assert.match(source, /if \(left > 0\) return;/);
   assert.match(source, /confirmRef\.current\(\);/);
   assert.match(source, /setIdx\(\(i\) => i \+ 1\)/);
   assert.match(source, /doneRef/);
 });
 
-test('the break page carries no score information at all', () => {
-  const source = fs.readFileSync(runnerPath, 'utf8');
-  const breakBlock = source.slice(
-    source.indexOf("if (stage === 'break')"),
-    source.indexOf("if (!q) return null;"),
-  );
-  assert.ok(breakBlock.length > 0, 'the break stage must render its own page');
+test('there is no break page: one paper, one clock, one bank', () => {
+  // GMAT 两卷制有中场休息（计时与银行清零）；7.5+ 单卷，这一整页连同它的文案一起退场
+  const runner = codeOnly(fs.readFileSync(runnerPath, 'utf8'));
+  assert.doesNotMatch(runner, /stage|break|startNextPaper|paperIdx/i);
+  // 计时器不再被「是否在休息」挡着：开场即走，一直走到交卷
+  assert.match(runner, /useEffect\(\(\) => \{\s*\n\s*const timer = window\.setInterval\(syncLeft, DIAGNOSTIC_TICK_MS\);/);
+  // 只收一卷题
+  assert.match(runner, /questions: ExamQuestion\[\];/);
+  assert.doesNotMatch(runner, /papers: ExamQuestion\[\]\[\]/);
+  const exam = codeOnly(fs.readFileSync(examPath, 'utf8'));
+  assert.match(exam, /<DiagnosticRunner\s+questions=\{diagQuestions\}/);
 
-  // 休息页只说下一卷的事，一个成绩字样都不给
-  assert.match(breakBlock, /t\.diagnostic\.breakTitle/);
-  assert.match(breakBlock, /t\.diagnostic\.breakStart/);
-  assert.doesNotMatch(breakBlock, /right|score|correct|accuracy|answers\[/i);
-  assert.doesNotMatch(breakBlock, /passMark|isPass/);
-  // 休息不限时
-  assert.doesNotMatch(breakBlock, /fmtCountdown|Time Remaining/);
+  // 休息页的文案也不留残：两种语言的字典里都没有 break* 了
+  for (const lang of ['zh', 'en']) {
+    const keys = Object.keys(DICT[lang].diagnostic);
+    assert.deepEqual(keys.filter((key) => /^break/.test(key)), [], `${lang} still carries break copy`);
+  }
 });
 
 test('abandoning is a real exit that persists nothing', () => {
@@ -421,6 +506,11 @@ test('the verdict page gives two states and nothing else', () => {
   assert.doesNotMatch(result, /reviewCard|choiceRow/);
   assert.doesNotMatch(result, /right|accuracy|%|\/ questions\.length/);
   assert.match(result, /已加入 Grill/);
+  // 没过、还有机会、但卷二没出齐：文案先说「现在还考不了」，别让人回去对着灰按钮发愣
+  assert.match(result, /nextPaperPending/);
+  const exam = codeOnly(fs.readFileSync(examPath, 'utf8'));
+  assert.match(exam, /nextPaperPending=\{diagnosticStatus\(diagPapers, records\.diag75\)\.kind === 'pending'\}/);
+  assert.match(exam, /attemptsLeft=\{attemptsLeft\(records\.diag75\)\}/);
 });
 
 test('the locked 9.0 card opens the diagnostic intro, charge bar and all', () => {
@@ -430,20 +520,25 @@ test('the locked 9.0 card opens the diagnostic intro, charge bar and all', () =>
 
   assert.match(exam, /frontZone === 'trivial' && !hiddenUnlocked \? \(/);
   assert.match(exam, /<DiagnosticIntro/);
+  // 介绍页读的是 7.5+ 的战绩；旧 GMAT 的次数只用来决定要不要说「以前的不算」
+  assert.match(exam, /diag=\{records\.diag75\}/);
+  assert.match(exam, /legacyAttempts=\{records\.diag\?\.attempts \?\? 0\}/);
 
-  // 规则是大白话短句，六条
-  for (const key of [
-    'rulePapers',
-    'ruleTime',
-    'ruleTimeout',
-    'ruleNoFeedback',
-    'rulePass',
-    'ruleChances',
+  // 规则是大白话短句，七条：数字全从常量来，改规则不用改文案
+  for (const call of [
+    't.diagnostic.rulePaper(DIAGNOSTIC_PAPER_SIZE)',
+    't.diagnostic.ruleTime(DIAGNOSTIC_BASE_SECONDS / 60)',
+    't.diagnostic.ruleOneWay',
+    't.diagnostic.ruleNoFeedback',
+    't.diagnostic.rulePass(passMark(), DIAGNOSTIC_PAPER_SIZE)',
+    't.diagnostic.ruleChances(DIAGNOSTIC_MAX_ATTEMPTS)',
+    't.diagnostic.ruleUnlock',
   ]) {
-    assert.ok(intro.includes(`t.diagnostic.${key}`), `intro must show ${key}`);
+    assert.ok(intro.includes(call), `intro must show ${call}`);
   }
   assert.match(intro, /examStyles\.libraryChargeFill/);
   assert.match(intro, /t\.diagnostic\.orPractice/);
+  assert.match(intro, /t\.diagnostic\.legacyNote/);
   assert.match(intro, /useLang\(\)/);
 
   // 读屏念出来的要是它真正会做的事
@@ -452,6 +547,96 @@ test('the locked 9.0 card opens the diagnostic intro, charge bar and all', () =>
   // 全屏只认同步手势链
   assert.match(exam, /onStart=\{\(\) => void startDiagnostic\(\)\}/);
   assert.match(exam, /document\.documentElement\.requestFullscreen\?\.\(\)/);
+});
+
+test('the intro says every rule in plain words, in both languages', () => {
+  for (const lang of ['zh', 'en']) {
+    const d = DICT[lang].diagnostic;
+    assert.equal(d.title, '7.5+ Diagnostic');
+    // 一卷 10 题
+    assert.match(d.rulePaper(DIAGNOSTIC_PAPER_SIZE), /10/);
+    // 每题 4 分钟，提前答完余时顺延
+    assert.match(d.ruleTime(DIAGNOSTIC_BASE_SECONDS / 60), lang === 'zh' ? /4 分钟[\s\S]*顺延/ : /4 minutes[\s\S]*carries over/);
+    // 不能回头、全程不告诉对错
+    assert.match(d.ruleOneWay, lang === 'zh' ? /不能回头/ : /cannot go back/);
+    assert.match(d.ruleNoFeedback, lang === 'zh' ? /不告诉你对错/ : /never told/);
+    // 对 8 题通过
+    assert.match(d.rulePass(passMark(), DIAGNOSTIC_PAPER_SIZE), /8[\s\S]*10/);
+    // 两次机会，每次不同的题
+    assert.match(d.ruleChances(DIAGNOSTIC_MAX_ATTEMPTS), lang === 'zh' ? /2 次机会[\s\S]*不一样/ : /2 attempts[\s\S]*different/);
+    // 通过即解锁 9.0，与做满 365 并列
+    assert.match(d.ruleUnlock, /9\.0/);
+    assert.match(d.ruleUnlock, /365/);
+    // 卷二没出齐时要说清楚原因，且说明机会不扣
+    assert.match(d.pendingTitle, lang === 'zh' ? /卷二/ : /Paper 2/);
+    assert.match(d.pendingHint, lang === 'zh' ? /不会被扣掉/ : /will not be used up/);
+    // 大白话短句：每条规则一句话说完，不写成一段
+    for (const rule of [d.ruleOneWay, d.ruleNoFeedback, d.ruleUnlock, d.rulePaper(10), d.ruleChances(2)]) {
+      assert.ok(rule.length <= 120, `rule too long for a short plain sentence: ${rule}`);
+    }
+  }
+  // 两种语言真的翻过
+  assert.notEqual(DICT.zh.diagnostic.pendingHint, DICT.en.diagnostic.pendingHint);
+  assert.notEqual(DICT.zh.diagnostic.ruleUnlock, DICT.en.diagnostic.ruleUnlock);
+});
+
+test('the runner takes 4–12 options, lowercase MAT labels and inline options', () => {
+  // 纯函数：1–9 按序号，字母按选项自己的标号（大小写不敏感）
+  const twelve = 'ABCDEFGHIJKL'.split('');
+  assert.equal(choiceForKey(twelve, '1'), 'A');
+  assert.equal(choiceForKey(twelve, '9'), 'I');
+  assert.equal(choiceForKey(twelve, 'l'), 'L', 'the twelfth option is reachable by letter');
+  assert.equal(choiceForKey(twelve, 'L'), 'L');
+  assert.equal(choiceForKey(twelve, 'm'), null);
+  assert.equal(choiceForKey(twelve, '0'), null);
+  assert.equal(choiceForKey(twelve, 'Enter'), null);
+  assert.equal(choiceForKey(twelve, 'F1'), null);
+
+  const mat = ['a', 'b', 'c', 'd'];
+  assert.equal(choiceForKey(mat, 'A'), 'a', 'MAT labels are lower case; the key matches either way');
+  assert.equal(choiceForKey(mat, 'd'), 'd');
+  assert.equal(choiceForKey(mat, 'e'), null);
+  assert.equal(choiceForKey(mat, '4'), 'd');
+  assert.equal(choiceForKey(mat, '5'), null);
+
+  const roman = ['i', 'ii', 'iii', 'iv'];
+  assert.equal(choiceForKey(roman, 'i'), 'i');
+  assert.equal(choiceForKey(roman, '4'), 'iv');
+  assert.equal(choiceForKey(roman, 'v'), null);
+
+  // 真实卷一：6/7/8 选项的 Yotta、(a)–(d) 的 MAT、6 选项的 TMUA 与野题——
+  // 每一道的每一个选项都按得到，答案也都落在某个标号上
+  const diag = readExamJson('diag.json', (d) => d?.v === 2 && Array.isArray(d.papers));
+  const sizes = new Set();
+  let lowercase = 0;
+  for (const qid of diag.papers[0].qids) {
+    const q = readExamQuestion(qid);
+    const labels = q.choices.map((c) => c.label);
+    assert.ok(labels.length >= 4 && labels.length <= 12, `${q.id} has ${labels.length} options`);
+    sizes.add(labels.length);
+    if (labels[0] === labels[0].toLowerCase()) lowercase++;
+    labels.forEach((label, i) => {
+      if (i < 9) assert.equal(choiceForKey(labels, String(i + 1)), label, `${q.id} digit ${i + 1}`);
+      if (label.length === 1) {
+        assert.equal(choiceForKey(labels, label.toUpperCase()), label, `${q.id} key ${label}`);
+        assert.equal(choiceForKey(labels, label.toLowerCase()), label, `${q.id} key ${label}`);
+      }
+    });
+    assert.ok(labels.some((label) => label.toLowerCase() === q.answer.toLowerCase()), `${q.id} answer`);
+  }
+  assert.ok(sizes.size >= 3, 'paper 1 really mixes option counts');
+  assert.ok(lowercase >= 3, 'paper 1 really carries lowercase MAT labels');
+
+  // 运行时：选项按题目自己的数据渲染——标号统一大写显示、比对不分大小写、
+  // 内联题（text 为空）按钮只显标号、题面与选项都走 MathText（题图在那里渲染）
+  const runner = codeOnly(fs.readFileSync(runnerPath, 'utf8'));
+  assert.match(runner, /current\.choices\.map\(\(choice\) => choice\.label\)/);
+  assert.match(runner, /\{c\.label\.toUpperCase\(\)\}/);
+  assert.match(runner, /\{c\.text && \(/);
+  assert.match(runner, /<MathText text=\{q\.statement\} \/>/);
+  assert.match(runner, /aria-pressed=\{selected\}/);
+  // 组合键不是在选选项（Ctrl+C 不该选中 C）
+  assert.match(runner, /if \(e\.ctrlKey \|\| e\.metaKey \|\| e\.altKey\) return;/);
 });
 
 test('diagnostic is its own phase, so practice and mock are untouched', () => {
@@ -492,4 +677,6 @@ test('diagnostic motion stays on the compositor', () => {
   }
   assert.match(css, /@media \(prefers-reduced-motion: reduce\)/);
   assert.doesNotMatch(css, /backdrop-filter/);
+  // 休息页的样式随休息页一起退场
+  assert.doesNotMatch(css, /\.break/);
 });

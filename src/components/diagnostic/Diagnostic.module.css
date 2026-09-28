@@ -1,4 +1,4 @@
-/* Diagnostic Test：介绍页（外层，跟随语言）+ 运行时补丁 + Pass/Fail 结果页。
+/* 7.5+ Diagnostic：介绍页（外层，跟随语言）+ 运行时补丁 + Pass/Fail 结果页。
    CBT chrome 复用 Exam.module.css，这里只补诊断特有的几块。
    动效只走 transform / opacity。 */
 
@@ -25,6 +25,18 @@
   margin-top: 0.4rem;
   color: var(--text-muted);
   font-size: 0.85rem;
+  line-height: 1.6;
+}
+
+/* 考过旧 GMAT 诊断的人：一句「之前的次数不算」，和规则列表分开放 */
+.legacyNote {
+  margin-top: 0.7rem;
+  padding: 0.55rem 0.75rem;
+  border-left: 3px solid var(--accent);
+  border-radius: 4px;
+  background: var(--accent-light);
+  color: var(--text);
+  font-size: 0.8rem;
   line-height: 1.6;
 }
 
@@ -132,45 +144,6 @@
   line-height: 1.6;
 }
 
-/* ---- 中场休息 ---- */
-
-.breakCard {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.6rem;
-  padding: 2.4rem 1.4rem;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  background: var(--surface);
-  font-family: var(--font-ui);
-  text-align: center;
-}
-
-.breakTitle {
-  font-family: var(--font-content);
-  font-size: 1.5rem;
-  color: var(--text);
-}
-
-.breakLine {
-  color: var(--text);
-  font-size: 0.92rem;
-}
-
-.breakNote {
-  max-width: 26rem;
-  color: var(--text-muted);
-  font-size: 0.8rem;
-  line-height: 1.6;
-}
-
-.breakCard .startBtn {
-  width: auto;
-  min-width: 12rem;
-  margin-top: 0.6rem;
-}
-
 .altRoute {
   margin-top: 1.3rem;
   padding-top: 1rem;
@@ -249,6 +222,14 @@
   border-radius: 12px;
   background: var(--surface);
   text-align: center;
+}
+
+/* 结果卡顶上那行小字：告诉人这是哪场考试的结果 */
+.verdictExam {
+  color: var(--text-muted);
+  font-family: var(--font-ui);
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
 }
 
 .verdictBig {

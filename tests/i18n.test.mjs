@@ -85,7 +85,11 @@ test('parameterised entries interpolate their arguments in both languages', () =
     assert.match(t.deck.chargeLabel(3, 365), /3.*365/, `${lang} charge label must show both numbers`);
     // block.unlockNeed 已随「锁定 9.0 改进 Diagnostic 介绍页」删掉，
     // 换成诊断这边的参数化文案
-    assert.match(t.diagnostic.rulePass(36, 40), /36.*40/, `${lang} rulePass must show both numbers`);
+    // 7.5+ 的规则文案全是参数化的：数字从 lib/diagnostic 的常量来
+    assert.match(t.diagnostic.rulePass(8, 10), /8.*10/, `${lang} rulePass must show both numbers`);
+    assert.match(t.diagnostic.rulePaper(10), /10/, `${lang} rulePaper must show the paper size`);
+    assert.match(t.diagnostic.ruleTime(4), /4/, `${lang} ruleTime must show the minutes`);
+    assert.match(t.diagnostic.ruleChances(2), /2/, `${lang} ruleChances must show the attempts`);
     assert.match(t.diagnostic.chance(1, 2), /1.*2/, `${lang} chance must show which attempt`);
     assert.match(t.diagnostic.grillBound(12), /12/, `${lang} grillBound must show the count`);
     assert.match(
