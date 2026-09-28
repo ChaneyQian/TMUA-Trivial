@@ -8,11 +8,15 @@
   --spot-a: 0.26;
   --spot-b: 0.22;
   --spot-c: 0.18;
-  --grid-minor: rgb(38 48 92 / 4.5%);
-  --grid-major: rgb(38 48 92 / 8.5%);
-  /* 聚光下被照亮的网格线取当前区色。--tint 由组件按当前区写在这一层上 */
-  --lit-minor: color-mix(in srgb, var(--tint) 42%, transparent);
-  --lit-major: color-mix(in srgb, var(--tint) 68%, transparent);
+  /* 网格是「极淡」的底纹：细线几乎只在留白处读得出，主线比细线深一档 */
+  --grid-minor: rgb(38 48 92 / 3.5%);
+  --grid-major: rgb(38 48 92 / 6.5%);
+  /* 聚光下被照亮的网格线取当前区色（--tint 由组件按当前区写在这一层上），
+     外加一片很淡的区色光晕垫底——只描线读起来像一块墨迹，垫一层光才像「照亮」。
+     强度只比底纹高两三倍：是「微亮」，不是换一张网格 */
+  --lit-minor: color-mix(in srgb, var(--tint) 16%, transparent);
+  --lit-major: color-mix(in srgb, var(--tint) 30%, transparent);
+  --lit-fill: color-mix(in srgb, var(--tint) 7%, transparent);
 
   /* z-index 0 + 挂在 .stage 之前：按树序画在全部内容之下、.wrap 的底色之上 */
   position: fixed;
@@ -21,27 +25,38 @@
   overflow: hidden;
   pointer-events: none;
   contain: strict;
+  /* 从考试 / 成绩页回到设置页时，光是慢慢亮起来的，而不是随页面一起啪地出现 */
+  animation: ambientIn 900ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes ambientIn {
+  from {
+    opacity: 0;
+  }
 }
 
 :global([data-theme='dark']) .backdrop {
   --spot-a: 0.46;
   --spot-b: 0.4;
   --spot-c: 0.34;
-  --grid-minor: rgb(200 208 255 / 4%);
-  --grid-major: rgb(200 208 255 / 7.5%);
-  --lit-minor: color-mix(in srgb, color-mix(in srgb, var(--tint) 78%, white) 50%, transparent);
-  --lit-major: color-mix(in srgb, color-mix(in srgb, var(--tint) 78%, white) 80%, transparent);
+  --grid-minor: rgb(200 208 255 / 3.5%);
+  --grid-major: rgb(200 208 255 / 6.5%);
+  /* 深色底上线条往白里提一点，读作发光而不是换色 */
+  --lit-minor: color-mix(in srgb, color-mix(in srgb, var(--tint) 70%, white) 22%, transparent);
+  --lit-major: color-mix(in srgb, color-mix(in srgb, var(--tint) 70%, white) 38%, transparent);
+  --lit-fill: color-mix(in srgb, var(--tint) 12%, transparent);
 }
 
-/* 护眼主题：只留很弱的一点暖光，网格用墨色，聚光也换成墨褐 */
+/* 护眼主题：只留很弱的一点暖光；网格用墨色，聚光换成琥珀暖光，不再是一块更深的墨 */
 :global([data-theme='sepia']) .backdrop {
   --spot-a: 0.15;
   --spot-b: 0.1;
   --spot-c: 0.09;
-  --grid-minor: rgb(61 50 38 / 5.5%);
-  --grid-major: rgb(61 50 38 / 9.5%);
-  --lit-minor: rgb(139 94 47 / 24%);
-  --lit-major: rgb(139 94 47 / 38%);
+  --grid-minor: rgb(61 50 38 / 4%);
+  --grid-major: rgb(61 50 38 / 7%);
+  --lit-minor: rgb(176 112 40 / 14%);
+  --lit-major: rgb(176 112 40 / 24%);
+  --lit-fill: rgb(214 150 70 / 8%);
 }
 
 /* ---- a) 区色光晕 ---- */
@@ -187,7 +202,8 @@
 
 /* 透镜：一个 2r 见方的窗，radial mask 画成圆形光圈，transform 跟到指针处；
    里层是一整屏同款网格（换成区色线），反向平移抵消透镜的位移，线就钉在原地不动。
-   两层都只改 transform，mask 相对透镜是静止的——跟手全程不触发重绘 */
+   两层都只改 transform，mask 相对透镜是静止的——跟手全程不触发重绘。
+   透镜自己的底色（--lit-fill）被同一个 mask 修成一团软光，垫在亮起的线下面 */
 .lens {
   --r: 190px;
   --mx: -1000px;
@@ -199,6 +215,7 @@
   width: calc(var(--r) * 2);
   height: calc(var(--r) * 2);
   overflow: hidden;
+  background: var(--lit-fill);
   opacity: 0;
   transform: translate3d(calc(var(--mx) - var(--r)), calc(var(--my) - var(--r)), 0);
   mask-image: radial-gradient(
@@ -237,7 +254,9 @@
 
 /* 放在文件最末：同特异性下要压过上面每一条动效声明（含 hover 媒体查询里的 display） */
 @media (prefers-reduced-motion: reduce) {
-  /* 光斑静止在原位；换区瞬时切换；聚光整个不开（跟手移动本身就是交互触发的动效） */
+  /* 光斑静止在原位；换区瞬时切换；进场不淡入；
+     聚光整个不开（跟手移动本身就是交互触发的动效） */
+  .backdrop,
   .spotA,
   .spotB,
   .spotC,

@@ -205,10 +205,33 @@ test('three themes get three strengths: pastel, luminous, and barely-there sepia
     assert.ok(s < l && s <= 0.16, `护眼 ${name} = ${s} 要压到最弱`);
   }
 
-  // 护眼主题：光斑换暖色，网格与聚光用墨色
+  // 护眼主题：光斑换暖色，网格用墨色，聚光是一团琥珀暖光（不是一块更深的墨）
   assert.match(css, /:global\(\[data-theme='sepia'\]\) \.spotA \{\s*--c: color-mix\(in srgb, var\(--tint\) \d+%, #[0-9a-f]{6}\)/);
   assert.match(sepia, /--grid-minor: rgb\(61 50 38/);
-  assert.match(sepia, /--lit-minor: rgb\(139 94 47/);
+  assert.match(sepia, /--lit-minor: rgb\(176 112 40/);
+
+  // 网格是「极淡」的底纹，聚光是「微亮」：三套主题的线都压在低位，
+  // 聚光下的线只比底纹高两三倍，外加一团同 mask 修出来的软光垫底
+  /** 取一条颜色变量的不透明度：rgb(… / N%) 或 color-mix(…, N%, transparent) 两种写法 */
+  const alpha = (block, name) => {
+    const value = block.match(new RegExp(`--${name}: ([^;]+);`))?.[1].trim();
+    assert.ok(value, `缺 --${name}`);
+    const hit = value.match(/\/ ([\d.]+)%\)$/) || value.match(/([\d.]+)%, transparent\)$/);
+    assert.ok(hit, `--${name} 的写法认不出不透明度：${value}`);
+    return Number(hit[1]);
+  };
+  for (const [label, block] of [
+    ['浅色', light],
+    ['深色', dark],
+    ['护眼', sepia],
+  ]) {
+    assert.ok(alpha(block, 'grid-minor') <= 4, `${label}细线 ${alpha(block, 'grid-minor')}%`);
+    assert.ok(alpha(block, 'grid-major') <= 7, `${label}主线 ${alpha(block, 'grid-major')}%`);
+    assert.ok(alpha(block, 'lit-minor') <= 24, `${label}聚光细线 ${alpha(block, 'lit-minor')}%`);
+    assert.ok(alpha(block, 'lit-major') <= 40, `${label}聚光主线 ${alpha(block, 'lit-major')}%`);
+    assert.ok(alpha(block, 'lit-fill') <= 12, `${label}聚光光晕 ${alpha(block, 'lit-fill')}%`);
+  }
+  assert.match(ruleBody('.lens'), /background: var\(--lit-fill\)/);
 });
 
 test('every zone carries the tints the backdrop and the front card read', () => {
