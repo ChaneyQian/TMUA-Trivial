@@ -15,6 +15,7 @@ import {
   attemptsLeft,
   diagnosticStatus,
   passMark,
+  showLegacyNote,
   type DiagnosticPapers,
 } from '@/lib/diagnostic';
 import type { DiagState } from '@/lib/records';
@@ -67,7 +68,7 @@ export default function DiagnosticIntro({
       <p className={styles.lead}>{t.diagnostic.lead}</p>
       {/* 考过旧 GMAT 诊断、还没碰过新考试的人：先把「之前那几次不算」说破，
           免得他看着「两次机会用完」的旧印象不敢点开始 */}
-      {legacyAttempts > 0 && !diag?.attempts && (
+      {showLegacyNote(legacyAttempts, diag) && (
         <p className={styles.legacyNote}>{t.diagnostic.legacyNote}</p>
       )}
 

@@ -7,6 +7,9 @@
 // 单卷 10 题，没有中场休息（用户裁定 2026-09-28）：一卷一只钟，
 // 银行从第一题一路滚到最后一题。选项 4–12 个（A–L）、MAT 体例的小写标号、
 // 选项留在题面里的内联题（按钮只显标号）、题图，全按题目自己的数据渲染。
+//
+// 规则本身（确认一题、超时自动确认、银行结算、按键路由、双击防抖）都是
+// lib/diagnostic 里的纯函数，这里只负责把它们接到 React 上。
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import MathText from '@/components/MathText';
@@ -15,12 +18,16 @@ import type { ExamQuestion } from '@/lib/exam';
 import {
   DIAGNOSTIC_TICK_MS,
   DIAGNOSTIC_WARN_SECONDS,
-  bankAfter,
+  acceptManualConfirm,
   budgetFor,
-  choiceForKey,
-  deadlineFrom,
+  confirmQuestion,
+  countRight,
   fmtCountdown,
+  isTimedOut,
   remainingSeconds,
+  runnerKeyAction,
+  startClock,
+  type RunnerClock,
 } from '@/lib/diagnostic';
 import examStyles from '../exam/Exam.module.css';
 import styles from './Diagnostic.module.css';
@@ -43,64 +50,68 @@ function sameLabel(a: string | null, b: string): boolean {
 export default function DiagnosticRunner({ questions, nth, onFinish, onAbandon }: Props) {
   const { t } = useLang();
   const [confirmAbandon, setConfirmAbandon] = useState(false);
-  const [idx, setIdx] = useState(0);
+  /**
+   * 逐题的钟（第几题 / 银行 / 截止时间戳 / 这题出现的时刻）。ref 是真源：
+   * 确认时要同步读写，不能等下一次渲染；state 只是给界面的一份拷贝。
+   * 剩余秒数一律拿截止时间戳现算，不靠 tick 累减——后台标签页的 setInterval
+   * 会被浏览器限流甚至冻住，数 tick 等于把 Alt-Tab 变成免费暂停键
+   */
+  const [clock, setClock] = useState<RunnerClock>(() => startClock());
+  const clockRef = useRef(clock);
+  const [left, setLeft] = useState(() => budgetFor(0));
   const [answers, setAnswers] = useState<(string | null)[]>(() =>
     new Array(questions.length).fill(null),
   );
-  const [bank, setBank] = useState(0);
-  const [left, setLeft] = useState(() => budgetFor(0));
-  /**
-   * 当题的截止时间戳。剩余秒数一律由它现算，不靠 tick 累减——
-   * 后台标签页的 setInterval 会被浏览器限流甚至冻住，数 tick 等于把 Alt-Tab
-   * 变成免费暂停键，冻住的 left 还会被原样滚进时间银行。
-   */
-  const deadlineRef = useRef(Date.now() + budgetFor(0) * 1000);
 
   const answersRef = useRef(answers);
   answersRef.current = answers;
-  const idxRef = useRef(idx);
-  idxRef.current = idx;
   /** 交卷只能发生一次：归零和手动确认可能挤在同一帧 */
   const doneRef = useRef(false);
   const abandonOpenRef = useRef(confirmAbandon);
   abandonOpenRef.current = confirmAbandon;
 
+  const idx = clock.idx;
   const q = questions[idx];
 
   /** 从截止时间戳现算剩余秒数并同步到界面 */
   const syncLeft = useCallback(() => {
-    const remaining = remainingSeconds(deadlineRef.current);
+    const remaining = remainingSeconds(clockRef.current.deadline);
     setLeft(remaining);
     return remaining;
   }, []);
 
   const finishAll = useCallback(() => {
     doneRef.current = true;
-    let right = 0;
-    questions.forEach((question, i) => {
-      if (sameLabel(answersRef.current[i] ?? null, question.answer)) right++;
+    onFinish({
+      right: countRight(questions, answersRef.current),
+      qids: questions.map((question) => question.qid),
     });
-    onFinish({ right, qids: questions.map((question) => question.qid) });
   }, [onFinish, questions]);
 
-  /** 确认当题：剩余秒数滚存进银行，然后单向前进一题；最后一题确认即交卷 */
+  /** 确认当题：银行结算、单向前进一题；最后一题确认即交卷（手动与超时共用） */
   const confirmCurrent = useCallback(() => {
     if (doneRef.current) return;
-    // 用截止时间现算，不读 left state：state 最多落后一个 tick，
-    // 那点误差会被 bankAfter 原样滚进下一题
-    const nextBank = bankAfter(remainingSeconds(deadlineRef.current));
-    if (idxRef.current < questions.length - 1) {
-      setBank(nextBank);
-      setIdx((i) => i + 1);
-      deadlineRef.current = deadlineFrom(nextBank);
-      setLeft(budgetFor(nextBank));
+    const outcome = confirmQuestion(clockRef.current, questions.length);
+    if (outcome.kind === 'finish') {
+      finishAll();
       return;
     }
-    finishAll();
-  }, [finishAll, questions]);
+    clockRef.current = outcome.clock;
+    setClock(outcome.clock);
+    setLeft(budgetFor(outcome.clock.bank));
+  }, [finishAll, questions.length]);
 
   const confirmRef = useRef(confirmCurrent);
   confirmRef.current = confirmCurrent;
+
+  /**
+   * 用户手动确认（Enter / 点确认按钮）。多过一道时间闸：新题刚换上来的那一小段
+   * 时间里不接——双击或连按两下时，第二下会把新题空着交掉
+   */
+  const confirmByUser = useCallback(() => {
+    if (!acceptManualConfirm(clockRef.current.shownAt, Date.now())) return;
+    confirmRef.current();
+  }, []);
 
   // 逐题倒计时。每次都拿 Date.now() 和截止时间戳比，不累减
   useEffect(() => {
@@ -120,44 +131,44 @@ export default function DiagnosticRunner({ questions, nth, onFinish, onAbandon }
 
   useEffect(() => {
     if (left > 0) return;
+    // left 是上一次 tick 的快照：手动确认可能已经把题换走了，拿当前这题的截止时间复核，
+    // 免得归零那一下把刚换上来的新题也一并确认掉
+    if (!isTimedOut(clockRef.current)) return;
     // 归零：自动确认当前所选（没选就是未答），继续下一题
     confirmRef.current();
   }, [left]);
 
   const select = useCallback((label: string) => {
     if (doneRef.current) return;
-    setAnswers((prev) => prev.map((value, i) => (i === idxRef.current ? label : value)));
+    const at = clockRef.current.idx;
+    setAnswers((prev) => prev.map((value, i) => (i === at ? label : value)));
   }, []);
 
-  // 诊断的键盘只有两件事：选项与确认。
-  // ←→ 和 F 在这里没有意义（单向、无旗标），一律不接。
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement | null;
-      if (target && ['INPUT', 'SELECT', 'TEXTAREA'].includes(target.tagName)) return;
-      // 确认框开着时按键归弹窗；倒计时照常走，弹窗不是暂停后门
-      if (abandonOpenRef.current) {
-        if (e.key === 'Escape') setConfirmAbandon(false);
-        return;
-      }
-      const current = questions[idxRef.current];
+      const current = questions[clockRef.current.idx];
       if (!current) return;
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        confirmRef.current();
-        return;
-      }
-      // Ctrl+C / Cmd+R 这类组合键不是在选选项
-      if (e.ctrlKey || e.metaKey || e.altKey) return;
-      const label = choiceForKey(
-        current.choices.map((choice) => choice.label),
-        e.key,
-      );
-      if (label) select(label);
+      const action = runnerKeyAction({
+        key: e.key,
+        repeat: e.repeat,
+        ctrlKey: e.ctrlKey,
+        metaKey: e.metaKey,
+        altKey: e.altKey,
+        inField: !!target && ['INPUT', 'SELECT', 'TEXTAREA'].includes(target.tagName),
+        dialogOpen: abandonOpenRef.current,
+        labels: current.choices.map((choice) => choice.label),
+      });
+      // Enter 的默认动作（激活焦点所在的按钮）一律拦下，按住不放补发的那一串也拦——
+      // 否则焦点停在某个选项上时会被反复点击。弹窗开着时例外：Enter 留给弹窗里的按钮
+      if (e.key === 'Enter' && !abandonOpenRef.current) e.preventDefault();
+      if (action.kind === 'closeDialog') setConfirmAbandon(false);
+      else if (action.kind === 'confirm') confirmByUser();
+      else if (action.kind === 'select') select(action.label);
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [questions, select]);
+  }, [questions, select, confirmByUser]);
 
   const abandonDialog = confirmAbandon && (
     /* 自绘弹窗，不用 window.confirm：那玩意会阻塞事件循环，
@@ -236,7 +247,7 @@ export default function DiagnosticRunner({ questions, nth, onFinish, onAbandon }
       {/* 单向流：没有 Navigator、没有 Back、没有旗标，footer 只剩确认 */}
       <div className={examStyles.cbtSubbar}>
         <span className={styles.oneWay}>单向作答 · 不可回看 · 全程不显示对错</span>
-        {bank > 0 && <span className={styles.bank}>含滚存 +{bank}s</span>}
+        {clock.bank > 0 && <span className={styles.bank}>含滚存 +{clock.bank}s</span>}
       </div>
 
       <div className={examStyles.cbtBody}>
@@ -278,7 +289,8 @@ export default function DiagnosticRunner({ questions, nth, onFinish, onAbandon }
             className={examStyles.enterBtn}
             onClick={(e) => {
               e.currentTarget.blur();
-              confirmRef.current();
+              // 点按钮同样过时间闸：快速双击时第二下落在新题上，不该把它空着交掉
+              confirmByUser();
             }}
             aria-keyshortcuts="Enter"
           >

@@ -88,6 +88,15 @@ export function attemptsLeft(diag?: DiagnosticProgress): number {
   return Math.max(0, DIAGNOSTIC_MAX_ATTEMPTS - (diag?.attempts || 0));
 }
 
+/**
+ * 介绍页要不要多说一句「旧版下线了、以前的次数不算」：只给考过旧 GMAT 诊断
+ * （legacyAttempts > 0）、还没碰过 7.5+ 的人。考过一次 7.5+ 之后，这句话就不再是新消息了；
+ * 旧 GMAT 通过的人已经解锁，本来也看不到介绍页
+ */
+export function showLegacyNote(legacyAttempts: number, diag75?: DiagnosticProgress): boolean {
+  return legacyAttempts > 0 && !diag75?.attempts;
+}
+
 /** 还能不能考（不看卷有没有出齐，那是 diagnosticStatus 的事）。通过之后就不必再考了 */
 export function canAttempt(diag?: DiagnosticProgress): boolean {
   if (diag?.passed) return false;
@@ -216,6 +225,125 @@ export function choiceForKey(labels: readonly string[], key: string): string | n
     return labels.find((label) => label.toLowerCase() === key.toLowerCase()) ?? null;
   }
   return null;
+}
+
+export type RunnerKeyAction =
+  | { kind: 'none' }
+  /** 关掉放弃确认框 */
+  | { kind: 'closeDialog' }
+  /** 手动确认当题（还要再过 acceptManualConfirm 那道时间闸） */
+  | { kind: 'confirm' }
+  | { kind: 'select'; label: string };
+
+export interface RunnerKeyInput {
+  key: string;
+  /** keydown.repeat：按住不放时浏览器补发的那一串 */
+  repeat?: boolean;
+  ctrlKey?: boolean;
+  metaKey?: boolean;
+  altKey?: boolean;
+  /** 焦点在输入框里：按键归输入框 */
+  inField?: boolean;
+  /** 放弃确认框开着 */
+  dialogOpen?: boolean;
+  /** 当题选项的标号 */
+  labels: readonly string[];
+}
+
+const NO_KEY_ACTION: RunnerKeyAction = { kind: 'none' };
+
+/**
+ * 做题页的一次按键该做什么。诊断的键盘只有两件事：选项与确认；
+ * ←→ 和 F 在这里没有意义（单向、无旗标），一律不接。
+ *
+ * - 放弃确认框开着时，按键全归弹窗：Esc 关掉它，其余一律吞掉——选项与确认都不许
+ *   穿透到底下的题上（倒计时照走，弹窗不是暂停后门）
+ * - 按住 Enter 的自动重复不算确认：否则约 30 次/秒连续确认，一路空题交卷、白扣一次机会
+ * - Ctrl+C / Cmd+R 这类组合键不是在选选项
+ */
+export function runnerKeyAction(input: RunnerKeyInput): RunnerKeyAction {
+  if (input.inField) return NO_KEY_ACTION;
+  if (input.dialogOpen) return input.key === 'Escape' ? { kind: 'closeDialog' } : NO_KEY_ACTION;
+  if (input.key === 'Enter') return input.repeat ? NO_KEY_ACTION : { kind: 'confirm' };
+  if (input.ctrlKey || input.metaKey || input.altKey) return NO_KEY_ACTION;
+  const label = choiceForKey(input.labels, input.key);
+  return label ? { kind: 'select', label } : NO_KEY_ACTION;
+}
+
+// ---- 逐题计时的状态机 ----
+//
+// 确认一题、超时自动确认、时间银行结算都在这里算，DiagnosticRunner 只负责把它接到
+// React 上（一个 ref 当真源、一份 state 给渲染）。抽出来是为了让测试真的执行这段逻辑，
+// 而不是拿正则去对源码。
+
+/**
+ * 换上新题之后多久内不接手动确认（毫秒）。挡的是快速双击 / 连按两下：
+ * 第二下落在刚换上来的题上，会把它空着交掉
+ */
+export const DIAGNOSTIC_CONFIRM_GUARD_MS = 300;
+
+export interface RunnerClock {
+  /** 当前第几题（0 起） */
+  idx: number;
+  /** 滚进当前这题的银行秒数 */
+  bank: number;
+  /** 当前这题的截止时间戳（ms）。剩余秒数一律由它现算，不靠 tick 累减 */
+  deadline: number;
+  /** 当前这题出现的时刻（ms），手动确认的时间闸从这里算 */
+  shownAt: number;
+}
+
+/** 开考：第一题、银行为零，从此刻起算基准时长 */
+export function startClock(now: number = Date.now()): RunnerClock {
+  return { idx: 0, bank: 0, deadline: deadlineFrom(0, now), shownAt: now };
+}
+
+export type ConfirmOutcome = { kind: 'next'; clock: RunnerClock } | { kind: 'finish' };
+
+/**
+ * 确认当题。手动确认与超时自动确认走同一条路：当题剩下的秒数（按截止时间现算，
+ * 不读可能落后一个 tick 的界面数字）整个滚进下一题的银行，下一题从此刻起算
+ * 「基准 + 银行」；最后一题确认即交卷。超时的那一题剩 0 秒，银行自然清空
+ */
+export function confirmQuestion(
+  clock: RunnerClock,
+  total: number,
+  now: number = Date.now(),
+): ConfirmOutcome {
+  if (clock.idx >= total - 1) return { kind: 'finish' };
+  const bank = bankAfter(remainingSeconds(clock.deadline, now));
+  return {
+    kind: 'next',
+    clock: { idx: clock.idx + 1, bank, deadline: deadlineFrom(bank, now), shownAt: now },
+  };
+}
+
+/** 当题时间用完没有——超时自动确认的判据 */
+export function isTimedOut(clock: RunnerClock, now: number = Date.now()): boolean {
+  return remainingSeconds(clock.deadline, now) <= 0;
+}
+
+/**
+ * 手动确认（Enter / 点确认按钮）接不接。两层闸：
+ *   1. 按住 Enter 的自动重复不算（键盘路由那层已经挡过一次，这里再兜一次）；
+ *   2. 新题出现后 DIAGNOSTIC_CONFIRM_GUARD_MS 内不算——双击或连按时第二下的余波。
+ * 超时自动确认不过这道闸：时间到了就得往前走
+ */
+export function acceptManualConfirm(shownAt: number, now: number, repeat = false): boolean {
+  return !repeat && now - shownAt >= DIAGNOSTIC_CONFIRM_GUARD_MS;
+}
+
+/** 一卷答对几题。标号比对不分大小写：MAT 体例的标号是小写，答案字段也可能是大写 */
+export function countRight(
+  questions: readonly { answer: string }[],
+  answers: readonly (string | null | undefined)[],
+): number {
+  let right = 0;
+  questions.forEach((question, i) => {
+    const picked = answers[i];
+    if (picked && picked.toLowerCase() === question.answer.toLowerCase()) right++;
+  });
+  return right;
 }
 
 /** 倒计时显示。一卷 10 题 × 240 秒，银行滚满也不过 40 分钟，m:ss 够用 */

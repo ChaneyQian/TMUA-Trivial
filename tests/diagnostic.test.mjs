@@ -8,24 +8,32 @@ import test from 'node:test';
 
 import {
   DIAGNOSTIC_BASE_SECONDS,
+  DIAGNOSTIC_CONFIRM_GUARD_MS,
   DIAGNOSTIC_EXAM,
   DIAGNOSTIC_MAX_ATTEMPTS,
   DIAGNOSTIC_PAPER_SIZE,
   DIAGNOSTIC_PASS_RIGHT,
+  acceptManualConfirm,
   allowedMisses,
   attemptsLeft,
   bankAfter,
   budgetFor,
   canAttempt,
   choiceForKey,
+  confirmQuestion,
+  countRight,
   deadlineFrom,
   diagnosticStatus,
   fetchDiagnosticPapers,
   isPass,
+  isTimedOut,
   paperIndexForAttempt,
   parseDiagnosticPapers,
   passMark,
   remainingSeconds,
+  runnerKeyAction,
+  showLegacyNote,
+  startClock,
 } from '../src/lib/diagnostic.ts';
 import { DICT } from '../src/lib/i18n.ts';
 import {
@@ -170,17 +178,17 @@ test('the countdown is driven by a deadline, never by counting ticks', () => {
   const runner = codeOnly(source);
 
   // 剩余秒数现算：后台标签页被限流时 setInterval 会被拉长甚至冻住，
-  // 数 tick 等于把 Alt-Tab 变成免费暂停键，冻住的 left 还会被滚进时间银行
-  assert.match(runner, /deadlineRef/);
-  assert.match(runner, /remainingSeconds\(deadlineRef\.current\)/);
-  assert.match(runner, /deadlineRef\.current = deadlineFrom\(/);
+  // 数 tick 等于把 Alt-Tab 变成免费暂停键，冻住的 left 还会被滚进时间银行。
+  // 截止时间戳住在 lib/diagnostic 的 RunnerClock 里（ref 是真源），运行时只负责现算
+  assert.match(runner, /remainingSeconds\(clockRef\.current\.deadline\)/);
   assert.doesNotMatch(runner, /prev - 1|left - 1|\(prev\) => prev > 0/);
   // 回前台立刻重算一次
   assert.match(runner, /addEventListener\('visibilitychange'/);
   assert.match(runner, /removeEventListener\('visibilitychange'/);
   assert.match(runner, /document\.hidden/);
-  // 银行也按截止时间现算，不读可能落后一个 tick 的 state
-  assert.match(runner, /bankAfter\(remainingSeconds\(deadlineRef\.current\)\)/);
+  // 确认与银行结算交给纯函数（下一条测试真的执行它），运行时不自己算
+  assert.match(runner, /confirmQuestion\(clockRef\.current, questions\.length\)/);
+  assert.doesNotMatch(runner, /bankAfter\(/);
 
   // 纯函数层：每题基准 240 秒；Date.now() 参与计算，且不会给出负数
   assert.equal(DIAGNOSTIC_BASE_SECONDS, 240);
@@ -213,12 +221,148 @@ test('the time bank rolls unused seconds forward through the whole paper', () =>
   assert.equal(bankAfter(12.7), 12);
   assert.equal(budgetFor(-5), 240);
 
-  // 单卷：只在开考那一刻起算一次，确认一题就把银行滚进下一题，直到交卷
+  // 真的走一遍状态机（运行时用的就是这几个函数）：开考、确认、超时、交卷
+  const t0 = 1_700_000_000_000;
+  const s = (sec) => sec * 1000;
+  const start = startClock(t0);
+  assert.deepEqual(start, { idx: 0, bank: 0, deadline: t0 + s(240), shownAt: t0 });
+
+  // 第一题用了 45 秒就确认：剩下的 195 秒滚进第二题，第二题从此刻起算 240 + 195 秒
+  const second = confirmQuestion(start, 10, t0 + s(45));
+  assert.equal(second.kind, 'next');
+  assert.deepEqual(second.clock, { idx: 1, bank: 195, deadline: t0 + s(45) + s(435), shownAt: t0 + s(45) });
+  assert.equal(remainingSeconds(second.clock.deadline, t0 + s(45)), 435);
+
+  // 第二题又只用了 20 秒：银行接着滚，不设上限、不在中途清零
+  const third = confirmQuestion(second.clock, 10, t0 + s(65));
+  assert.equal(third.clock.bank, 415);
+  assert.equal(budgetFor(third.clock.bank), 240 * 3 - 65);
+
+  // 超时：截止那一刻起算作用完，自动确认时银行清零
+  assert.equal(isTimedOut(third.clock, third.clock.deadline - 1), false);
+  assert.equal(isTimedOut(third.clock, third.clock.deadline), true);
+  const afterTimeout = confirmQuestion(third.clock, 10, third.clock.deadline + 400);
+  assert.equal(afterTimeout.clock.bank, 0, 'running out the clock earns nothing');
+  assert.equal(afterTimeout.clock.deadline, third.clock.deadline + 400 + s(240));
+
+  // 最后一题确认即交卷；只有一题的卷，第一次确认就交
+  let clock = start;
+  for (let i = 0; i < 9; i++) clock = confirmQuestion(clock, 10, t0 + s(i + 1)).clock;
+  assert.equal(clock.idx, 9);
+  assert.deepEqual(confirmQuestion(clock, 10, t0 + s(30)), { kind: 'finish' });
+  assert.deepEqual(confirmQuestion(startClock(t0), 1, t0), { kind: 'finish' });
+
+  // 判分：不分大小写（MAT 体例的标号是小写），没答的不算对
+  assert.equal(countRight([{ answer: 'a' }, { answer: 'C' }, { answer: 'D' }], ['A', 'c', null]), 2);
+
+  // 单卷：只在开考那一刻起算一次，没有「换卷清零」那一步了
   const runner = codeOnly(fs.readFileSync(runnerPath, 'utf8'));
-  assert.match(runner, /const nextBank = bankAfter\(remainingSeconds\(deadlineRef\.current\)\);/);
-  assert.match(runner, /setBank\(nextBank\);\s*\n\s*setIdx\(\(i\) => i \+ 1\);\s*\n\s*deadlineRef\.current = deadlineFrom\(nextBank\);/);
-  // 没有「换卷清零」那一步了
+  assert.match(runner, /useState<RunnerClock>\(\(\) => startClock\(\)\)/);
   assert.doesNotMatch(runner, /setBank\(0\)|deadlineFrom\(0\)/);
+});
+
+test('holding Enter or double-clicking can never skip a question', () => {
+  // 第一层：按住 Enter 时浏览器补发的 keydown（repeat）不算确认。
+  // 不挡的话约 30 次/秒连续确认，一路空题交卷、白扣一次机会
+  const labels = ['A', 'B', 'C', 'D'];
+  assert.deepEqual(runnerKeyAction({ key: 'Enter', labels }), { kind: 'confirm' });
+  assert.deepEqual(runnerKeyAction({ key: 'Enter', repeat: true, labels }), { kind: 'none' });
+
+  // 第二层：新题换上来之后 300ms 内的手动确认不接（双击 / 连按两下的第二下）
+  assert.equal(DIAGNOSTIC_CONFIRM_GUARD_MS, 300);
+  const shownAt = 5_000;
+  assert.equal(acceptManualConfirm(shownAt, shownAt + 120), false);
+  assert.equal(acceptManualConfirm(shownAt, shownAt + 299), false);
+  assert.equal(acceptManualConfirm(shownAt, shownAt + 300), true);
+  assert.equal(acceptManualConfirm(shownAt, shownAt + 5_000, true), false, 'a repeat is never a confirm');
+
+  // 模拟：开考后按住 Enter 一整秒（30 次 repeat）＋ 在第 2 题上双击确认按钮。
+  // 两道闸之下，10 道题一道都不会被空着跳过
+  const t0 = 1_700_000_000_000;
+  let clock = startClock(t0);
+  let finished = false;
+  const press = (now, repeat) => {
+    const action = runnerKeyAction({ key: 'Enter', repeat, labels });
+    if (action.kind !== 'confirm' || !acceptManualConfirm(clock.shownAt, now, repeat)) return false;
+    const outcome = confirmQuestion(clock, 10, now);
+    if (outcome.kind === 'finish') finished = true;
+    else clock = outcome.clock;
+    return true;
+  };
+  // 开考 0.2s 后按下 Enter：还在第一题的时间闸里，不接
+  assert.equal(press(t0 + 200, false), false);
+  // 0.5s 时再按：接了，换到第 2 题
+  assert.equal(press(t0 + 500, false), true);
+  assert.equal(clock.idx, 1);
+  // 按住不放：之后 1 秒里的 30 次 repeat 一次都不接
+  for (let i = 1; i <= 30; i++) press(t0 + 500 + i * 33, true);
+  assert.equal(clock.idx, 1, 'held Enter must not advance');
+  // 双击（两下相隔 80ms）：第一下确认第 2 题，第二下落在第 3 题的时间闸里
+  assert.equal(press(t0 + 3_000, false), true);
+  assert.equal(press(t0 + 3_080, false), false);
+  assert.equal(clock.idx, 2, 'the second click of a double-click lands in the guard window');
+  assert.equal(finished, false);
+
+  // 超时自动确认不过这道闸：时间到了就得往前走（纯函数上它只看截止时间）
+  assert.equal(isTimedOut(clock, clock.deadline), true);
+
+  // 运行时的接线：Enter 与确认按钮都走 confirmByUser（先过 acceptManualConfirm），
+  // 超时那条路直接确认，而且先拿当前这题的截止时间复核，免得把刚换上来的新题一并确认
+  const runner = codeOnly(fs.readFileSync(runnerPath, 'utf8'));
+  assert.match(runner, /repeat: e\.repeat/);
+  assert.match(runner, /if \(!acceptManualConfirm\(clockRef\.current\.shownAt, Date\.now\(\)\)\) return;/);
+  assert.match(runner, /else if \(action\.kind === 'confirm'\) confirmByUser\(\);/);
+  assert.match(runner, /e\.currentTarget\.blur\(\);\s*\n\s*confirmByUser\(\);/);
+  assert.match(runner, /if \(left > 0\) return;\s*\n\s*if \(!isTimedOut\(clockRef\.current\)\) return;\s*\n\s*confirmRef\.current\(\);/);
+});
+
+test('the abandon dialog swallows every key except Escape', () => {
+  const labels = ['a', 'b', 'c', 'd'];
+  const open = { dialogOpen: true, labels };
+  // 弹窗开着：选项与确认都不许穿透到底下的题上（倒计时照走，弹窗不是暂停后门）
+  for (const key of ['a', 'B', '1', '4', 'Enter', 'ArrowRight', 'f']) {
+    assert.deepEqual(runnerKeyAction({ ...open, key }), { kind: 'none' }, `${key} leaked through the dialog`);
+  }
+  assert.deepEqual(runnerKeyAction({ ...open, key: 'Escape' }), { kind: 'closeDialog' });
+  // 弹窗关着时同样的键照常生效
+  assert.deepEqual(runnerKeyAction({ key: 'b', labels }), { kind: 'select', label: 'b' });
+  assert.deepEqual(runnerKeyAction({ key: 'Escape', labels }), { kind: 'none' });
+  // 焦点在输入框里的按键归输入框
+  assert.deepEqual(runnerKeyAction({ key: 'a', inField: true, labels }), { kind: 'none' });
+
+  // 运行时把弹窗状态原样喂进去
+  const runner = codeOnly(fs.readFileSync(runnerPath, 'utf8'));
+  assert.match(runner, /dialogOpen: abandonOpenRef\.current/);
+  assert.match(runner, /if \(action\.kind === 'closeDialog'\) setConfirmAbandon\(false\);/);
+});
+
+test('a second attempt runs paper 2 and says so in the header', () => {
+  // 第二次机会：判定给出 nth = 2、卷二；开考时把 nth 交给运行时，题头据此写 Paper 2
+  const status = diagnosticStatus(PAPERS, { passed: false, attempts: 1, lastTs: 0 });
+  assert.equal(status.kind, 'ready');
+  assert.equal(status.nth, 2);
+  assert.equal(status.paper, 'p2');
+  for (const lang of ['zh', 'en']) {
+    assert.equal(DICT[lang].diagnostic.paper(status.nth), 'Paper 2');
+    assert.equal(DICT[lang].diagnostic.paper(1), 'Paper 1');
+  }
+  const exam = codeOnly(fs.readFileSync(examPath, 'utf8'));
+  assert.match(exam, /setDiagQuestions\(questions\);\s*\n\s*setDiagNth\(status\.nth\);/);
+  assert.match(exam, /nth=\{diagNth\}/);
+  const runner = codeOnly(fs.readFileSync(runnerPath, 'utf8'));
+  assert.match(runner, /\{t\.diagnostic\.title\} · \{t\.diagnostic\.paper\(nth\)\}/);
+});
+
+test('the legacy note shows only to old GMAT takers who have not sat the 7.5+ yet', () => {
+  // 考过旧 GMAT、还没碰过 7.5+：说一句「以前的次数不算」
+  assert.equal(showLegacyNote(2, undefined), true);
+  assert.equal(showLegacyNote(1, { passed: false, attempts: 0 }), true);
+  // 考过一次 7.5+ 之后就不再是新消息
+  assert.equal(showLegacyNote(2, { passed: false, attempts: 1 }), false);
+  // 从没考过旧诊断的人没什么可解释的
+  assert.equal(showLegacyNote(0, undefined), false);
+  const intro = codeOnly(fs.readFileSync(introPath, 'utf8'));
+  assert.match(intro, /\{showLegacyNote\(legacyAttempts, diag\) && \(/);
 });
 
 test('pass is 8 of 10 and nothing else', () => {
@@ -438,16 +582,24 @@ test('the runner is one-way: no navigator, no back, no marking', () => {
   assert.doesNotMatch(runner, /graded|gradeCurrent/);
 
   // 键盘只留选项与确认；←→ 和 F 在诊断里没有意义。
-  // 选项键的映射抽成了纯函数 choiceForKey（1–9 / A–L，见下面那条行为测试）
+  // 按键路由抽成了纯函数 runnerKeyAction（行为测试见下面几条）
   assert.doesNotMatch(runner, /ArrowLeft|ArrowRight|ArrowUp|ArrowDown/);
   assert.match(source, /e\.key === 'Enter'/);
-  assert.match(runner, /choiceForKey\(/);
+  assert.match(runner, /runnerKeyAction\(/);
+  for (const key of ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'f', 'F', 'Backspace']) {
+    assert.deepEqual(runnerKeyAction({ key, labels: ['A', 'B', 'C', 'D', 'E'] }), { kind: 'none' }, key);
+  }
 
-  // 归零自动确认，确认后单向推进
+  // 归零自动确认，确认后单向推进：状态机只会往前走一题，没有任何一步能退回
   assert.match(source, /if \(left > 0\) return;/);
   assert.match(source, /confirmRef\.current\(\);/);
-  assert.match(source, /setIdx\(\(i\) => i \+ 1\)/);
   assert.match(source, /doneRef/);
+  let clock = startClock(0);
+  for (let i = 1; i < 10; i++) {
+    const before = clock.idx;
+    clock = confirmQuestion(clock, 10, i * 1000).clock;
+    assert.equal(clock.idx, before + 1);
+  }
 });
 
 test('there is no break page: one paper, one clock, one bank', () => {
@@ -635,8 +787,12 @@ test('the runner takes 4–12 options, lowercase MAT labels and inline options',
   assert.match(runner, /\{c\.text && \(/);
   assert.match(runner, /<MathText text=\{q\.statement\} \/>/);
   assert.match(runner, /aria-pressed=\{selected\}/);
-  // 组合键不是在选选项（Ctrl+C 不该选中 C）
-  assert.match(runner, /if \(e\.ctrlKey \|\| e\.metaKey \|\| e\.altKey\) return;/);
+  // 组合键不是在选选项（Ctrl+C 不该选中 C）；Shift 是大写字母，照常选
+  assert.deepEqual(runnerKeyAction({ key: 'c', ctrlKey: true, labels: ['A', 'B', 'C'] }), { kind: 'none' });
+  assert.deepEqual(runnerKeyAction({ key: 'r', metaKey: true, labels: ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L'] }), { kind: 'none' });
+  assert.deepEqual(runnerKeyAction({ key: 'b', altKey: true, labels: ['a', 'b'] }), { kind: 'none' });
+  assert.deepEqual(runnerKeyAction({ key: 'C', labels: ['A', 'B', 'C'] }), { kind: 'select', label: 'C' });
+  assert.match(runner, /ctrlKey: e\.ctrlKey,\s*\n\s*metaKey: e\.metaKey,\s*\n\s*altKey: e\.altKey,/);
 });
 
 test('diagnostic is its own phase, so practice and mock are untouched', () => {
