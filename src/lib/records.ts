@@ -80,9 +80,28 @@ function normalizeDiag(value: unknown): DiagState | undefined {
   };
 }
 
+/** 本版认得的顶层字段。其余字段一律原样透传，见 normalizeRecords */
+const KNOWN_RECORD_KEYS = new Set(['v', 'q', 's', 'grill', 'diag', 'diag75']);
+
+/** 本版不认识的顶层字段（以后的版本加的），原样取出来 */
+function unknownFields(raw: unknown): Record<string, unknown> {
+  const extras: Record<string, unknown> = {};
+  if (!raw || typeof raw !== 'object') return extras;
+  for (const [key, value] of Object.entries(raw)) {
+    if (!KNOWN_RECORD_KEYS.has(key)) extras[key] = value;
+  }
+  return extras;
+}
+
 /**
  * 存量档案没有 grill / diag / diag75 这几个字段，读到就地补默认即可——
- * 版本号仍是 1，不做迁移：加可选字段而已，旧版本读新档案也只是看不见它们。
+ * 版本号仍是 1，不做迁移：加的都是可选字段。
+ *
+ * 反方向要小心：本版之前的代码在这里只挑自己认得的字段，**不认识的会被丢掉**，
+ * 下一次落盘（练一场）就把它从 localStorage 里抹掉——所以本版上线后不能直接回滚到
+ * 不认识 diag75 的旧版本，否则用户练一场就丢掉 7.5+ 战绩（Design §21 的回滚警告）。
+ * 从本版起不认识的顶层字段原样透传，给以后加字段留后路：以后的版本新加的东西，
+ * 就算被人退回到本版，也不会在这里被悄悄删掉。
  *
  * 7.5+ 取代 GMAT 诊断时也不改写旧字段（用户裁定 2026-09-28）：
  * diag 原样留着——通过过的人凭它保持解锁；新考试记在 diag75，
@@ -91,11 +110,13 @@ function normalizeDiag(value: unknown): DiagState | undefined {
  */
 export function normalizeRecords(parsed: unknown): Records {
   const raw = (parsed ?? {}) as Partial<Records> & { q?: unknown; s?: unknown };
-  const out: Records = {
+  // 不认识的字段先放进去，认得的再覆盖上来：透传的东西永远盖不掉本版的字段
+  const out = {
+    ...unknownFields(raw),
     v: 1,
     q: (raw.q as Records['q']) || {},
     s: Array.isArray(raw.s) ? (raw.s as SessionRecord[]) : [],
-  };
+  } as Records;
   const grill = Array.isArray(raw.grill)
     ? [...new Set(raw.grill.filter((qid): qid is number => Number.isSafeInteger(qid) && qid > 0))]
     : [];
@@ -213,16 +234,22 @@ export function resetDiagnosticRecord(records: Records): Records {
  * 清空做题记录。
  * grill 与两场诊断的战绩（diag / diag75）刻意留下并回写：Diagnostic 通过一次就永久解锁 9.0
  * 是结构性承诺，不该被「清空练习记录」这个按钮顺手撤销——导入那条路径也是同样的保底。
- * 机会次数同理：清空练习记录不是重新领两次机会的后门
+ * 机会次数同理：清空练习记录不是重新领两次机会的后门。
+ * 本版不认识的顶层字段（以后的版本加的）也原样留下：「清空」清的是练习记录（q / s），
+ * 不是别人的数据
  */
 export function clearRecords(previous?: Records): Records {
-  const kept = createEmptyRecords();
+  const extras = unknownFields(previous);
+  const kept = { ...extras, ...createEmptyRecords() } as Records;
   if (previous?.grill && previous.grill.length > 0) kept.grill = [...previous.grill];
   if (previous?.diag) kept.diag = { ...previous.diag };
   if (previous?.diag75) kept.diag75 = { ...previous.diag75 };
   try {
-    if (kept.grill || kept.diag || kept.diag75) localStorage.setItem(KEY, JSON.stringify(kept));
-    else localStorage.removeItem(KEY);
+    if (kept.grill || kept.diag || kept.diag75 || Object.keys(extras).length > 0) {
+      localStorage.setItem(KEY, JSON.stringify(kept));
+    } else {
+      localStorage.removeItem(KEY);
+    }
   } catch {}
   return kept;
 }
@@ -804,10 +831,11 @@ function mergeDiagState(a?: DiagState, b?: DiagState): DiagState | undefined {
  * 两边都是「做过就算数」的单调量，合并只会往前不会倒退——
  * 换台机器导入不该把已经拿到的解锁弄丢，也不该把对方的成果盖掉；
  * attempts 取 max 也保证导一份旧文件进来，换不回已经用掉的机会。
+ * 本机上本版不认识的顶层字段原样带过去：导入只替换文件里带着的东西
  */
 export function mergeDiagnostic(local: Records, imported: Records): Records {
   const grill = [...new Set([...(local.grill || []), ...(imported.grill || [])])];
-  const merged: Records = { ...imported };
+  const merged = { ...unknownFields(local), ...imported } as Records;
   if (grill.length > 0) merged.grill = grill;
   else delete merged.grill;
 

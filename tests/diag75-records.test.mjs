@@ -18,6 +18,7 @@ import {
   DIAGNOSTIC75_HEADERS,
   DIAGNOSTIC_HEADERS,
   HIDDEN_UNLOCK_COUNT,
+  addSession,
   availableCountForMode,
   clearRecords,
   createEmptyRecords,
@@ -27,14 +28,17 @@ import {
   indexForLibraryMode,
   indexForLogicReasoning,
   isHiddenModeUnlocked,
+  loadRecords,
   mergeDiagnostic,
   normalizeRecords,
   pickQidsForMode,
   reachableIndex,
   recordDiagnostic,
+  saveRecords,
   validCompletedCount,
   wrongRanking,
 } from '../src/lib/records.ts';
+import { RECORDS_KEY } from '../src/lib/storage.ts';
 import { topicEntries, topicReach } from '../src/lib/topics.ts';
 import { readExamIndex } from './helpers/exam-data.mjs';
 
@@ -121,6 +125,65 @@ test('the retired GMAT result and the 7.5+ result are kept apart: migration by s
   const cleared = clearRecords({ ...twice, diag: { passed: false, attempts: 2, lastTs: 3 } });
   assert.deepEqual(cleared.diag75, twice.diag75);
   assert.deepEqual(cleared.diag, { passed: false, attempts: 2, lastTs: 3 });
+});
+
+test('fields this version does not know survive load → practise → save, and every rebuild path', (t) => {
+  // 以后的版本写下的档案：多了两个本版不认识的顶层字段
+  const store = new Map();
+  globalThis.window = {};
+  globalThis.localStorage = {
+    getItem: (key) => (store.has(key) ? store.get(key) : null),
+    setItem: (key, value) => store.set(key, String(value)),
+    removeItem: (key) => store.delete(key),
+  };
+  t.after(() => {
+    delete globalThis.localStorage;
+    delete globalThis.window;
+  });
+  const future = { notes: { 101: 'check the sign' }, badges: ['early-bird'] };
+  const diag75 = { passed: false, attempts: 1, lastTs: 9 };
+  store.set(RECORDS_KEY, JSON.stringify({ v: 1, q: {}, s: [], grill: [7], diag75, ...future }));
+
+  // 读档：不认识的字段原样透传，认得的照常清洗
+  const loaded = loadRecords();
+  assert.deepEqual(loaded.notes, future.notes);
+  assert.deepEqual(loaded.badges, future.badges);
+  assert.deepEqual(loaded.diag75, diag75);
+
+  // 练一场、落盘、再读回来：一个都不少（本版之前的代码就是在这一步把它们抹掉的）
+  const practised = addSession(
+    loaded,
+    [{ qid: 101, selected: 'A', answer: 'A', correct: true, answered: true }],
+    { db: 'TMUA', mode: 'practice', n: 1, right: 1, answered: 1, sec: 30 },
+    { now: 10 },
+  );
+  saveRecords(practised);
+  const stored = JSON.parse(store.get(RECORDS_KEY));
+  assert.deepEqual(stored.notes, future.notes);
+  assert.deepEqual(stored.badges, future.badges);
+  assert.deepEqual(stored.diag75, diag75, 'the 7.5+ record rides along too');
+  assert.equal(stored.q['101'].a, 1);
+  assert.deepEqual(loadRecords().notes, future.notes);
+
+  // 别的重建路径同样留着：7.5+ 交卷、清空练习记录、导入合并
+  assert.deepEqual(recordDiagnostic(loaded, [1], false, { now: 11 }).notes, future.notes);
+  const cleared = clearRecords(practised);
+  assert.deepEqual(cleared.q, {}, '「清空」清的仍是练习记录');
+  assert.deepEqual(cleared.notes, future.notes);
+  assert.deepEqual(JSON.parse(store.get(RECORDS_KEY)).badges, future.badges, 'and it is written back');
+  const merged = mergeDiagnostic(practised, { v: 1, q: {}, s: [] });
+  assert.deepEqual(merged.notes, future.notes);
+
+  // 透传的东西盖不掉本版认得的字段：同名的一律按本版的规则清洗
+  const dirty = normalizeRecords({ v: 1, q: {}, s: [], diag75: { passed: 'yes' }, extra: 1 });
+  assert.deepEqual(dirty.diag75, { passed: false, attempts: 0, lastTs: 0 });
+  assert.equal(dirty.extra, 1);
+  assert.equal(dirty.v, 1);
+
+  // 只有练习记录、没有别的：清空照旧把整条存储删掉
+  store.set(RECORDS_KEY, JSON.stringify({ v: 1, q: { 1: { a: 1, w: 0, t: 0, c: 1 } }, s: [] }));
+  clearRecords(loadRecords());
+  assert.equal(store.has(RECORDS_KEY), false);
 });
 
 // ---------------- reserved：出池但计数 ----------------
