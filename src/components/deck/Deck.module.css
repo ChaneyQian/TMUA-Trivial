@@ -171,9 +171,10 @@
     0 0 36px -4px color-mix(in srgb, var(--tint) 46%, transparent);
 }
 
-/* 护眼主题只留一丝 */
+/* 护眼主题只留一丝，且往纸色的暖褐里调：9.0 的青、经典的蓝原样投在米黄纸上是一块冷斑 */
 :global([data-theme='sepia']) .tilt::before {
-  box-shadow: 0 16px 40px -16px color-mix(in srgb, var(--tint) 28%, transparent);
+  box-shadow: 0 16px 40px -16px
+    color-mix(in srgb, color-mix(in srgb, var(--tint) 40%, #8b5e2f) 30%, transparent);
 }
 
 /* 后牌降亮用一层遮罩的 opacity，而不是 filter：filter 强制离屏合成，移动端掉帧 */
@@ -210,8 +211,8 @@
   z-index: 2;
   background: radial-gradient(
     circle closest-side,
-    rgb(255 255 255 / 58%),
-    rgb(255 255 255 / 18%) 44%,
+    rgb(255 255 255 / 72%),
+    rgb(255 255 255 / 22%) 40%,
     transparent 100%
   );
   mix-blend-mode: soft-light;
@@ -239,8 +240,8 @@
 :global([data-theme='dark']) .face::after {
   background: radial-gradient(
     circle closest-side,
-    rgb(255 255 255 / 15%),
-    rgb(255 255 255 / 5%) 44%,
+    rgb(255 255 255 / 20%),
+    rgb(255 255 255 / 6%) 40%,
     transparent 100%
   );
   mix-blend-mode: screen;
@@ -250,8 +251,8 @@
 :global([data-theme='sepia']) .face::after {
   background: radial-gradient(
     circle closest-side,
-    rgb(255 255 255 / 34%),
-    rgb(255 255 255 / 9%) 44%,
+    rgb(255 255 255 / 42%),
+    rgb(255 255 255 / 11%) 40%,
     transparent 100%
   );
 }
