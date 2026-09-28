@@ -678,6 +678,8 @@ test('the locked 9.0 card opens the diagnostic intro, charge bar and all', () =>
 
   // 规则是大白话短句，七条：数字全从常量来，改规则不用改文案
   for (const call of [
+    't.diagnostic.lead(DIAGNOSTIC_PAPER_SIZE)',
+    't.diagnostic.legacyNote(DIAGNOSTIC_MAX_ATTEMPTS)',
     't.diagnostic.rulePaper(DIAGNOSTIC_PAPER_SIZE)',
     't.diagnostic.ruleTime(DIAGNOSTIC_BASE_SECONDS / 60)',
     't.diagnostic.ruleOneWay',
@@ -705,6 +707,11 @@ test('the intro says every rule in plain words, in both languages', () => {
   for (const lang of ['zh', 'en']) {
     const d = DICT[lang].diagnostic;
     assert.equal(d.title, '7.5+ Diagnostic');
+    // 题数与机会次数不写死在文案里：导语与旧版提示都吃常量
+    assert.match(d.lead(DIAGNOSTIC_PAPER_SIZE), /10/);
+    assert.match(d.lead(12), /12/);
+    assert.match(d.legacyNote(DIAGNOSTIC_MAX_ATTEMPTS), /2/);
+    assert.match(d.legacyNote(3), /3/);
     // 一卷 10 题
     assert.match(d.rulePaper(DIAGNOSTIC_PAPER_SIZE), /10/);
     // 每题 4 分钟，提前答完余时顺延
@@ -712,19 +719,30 @@ test('the intro says every rule in plain words, in both languages', () => {
     // 不能回头、全程不告诉对错
     assert.match(d.ruleOneWay, lang === 'zh' ? /不能回头/ : /cannot go back/);
     assert.match(d.ruleNoFeedback, lang === 'zh' ? /不告诉你对错/ : /never told/);
-    // 对 8 题通过
+    // 对 8 题通过；考完看到的两个词与结果页的大字对上
     assert.match(d.rulePass(passMark(), DIAGNOSTIC_PAPER_SIZE), /8[\s\S]*10/);
-    // 两次机会，每次不同的题
+    assert.match(d.rulePass(passMark(), DIAGNOSTIC_PAPER_SIZE), /PASS[\s\S]*FAIL/);
+    if (lang === 'zh') assert.match(d.rulePass(8, 10), /通过（PASS）或未通过（FAIL）/);
+    // 两次机会，每次不同的题；交卷才算一次，中途放弃或刷新不算
     assert.match(d.ruleChances(DIAGNOSTIC_MAX_ATTEMPTS), lang === 'zh' ? /2 次机会[\s\S]*不一样/ : /2 attempts[\s\S]*different/);
+    assert.match(
+      d.ruleChances(DIAGNOSTIC_MAX_ATTEMPTS),
+      lang === 'zh' ? /交卷才算[\s\S]*放弃或刷新不算/ : /submitted paper[\s\S]*abandoning or refreshing/,
+    );
     // 通过即解锁 9.0，与做满 365 并列
     assert.match(d.ruleUnlock, /9\.0/);
     assert.match(d.ruleUnlock, /365/);
     // 卷二没出齐时要说清楚原因，且说明机会不扣
     assert.match(d.pendingTitle, lang === 'zh' ? /卷二/ : /Paper 2/);
     assert.match(d.pendingHint, lang === 'zh' ? /不会被扣掉/ : /will not be used up/);
-    // 大白话短句：每条规则一句话说完，不写成一段
-    for (const rule of [d.ruleOneWay, d.ruleNoFeedback, d.ruleUnlock, d.rulePaper(10), d.ruleChances(2)]) {
-      assert.ok(rule.length <= 120, `rule too long for a short plain sentence: ${rule}`);
+    // 大白话短句：每条规则最多两句，每句都短，不写成一段
+    for (const rule of [d.ruleOneWay, d.ruleNoFeedback, d.ruleUnlock, d.rulePaper(10), d.ruleChances(2), d.rulePass(8, 10)]) {
+      // 句读：中文按「。」，英文按「. 」——「9.0」里的点不是句号
+      const sentences = rule.split(/(?<=。)|(?<=\.)\s+/).filter(Boolean);
+      assert.ok(sentences.length <= 2, `more than two sentences: ${rule}`);
+      for (const sentence of sentences) {
+        assert.ok(sentence.length <= 100, `sentence too long for plain words: ${sentence}`);
+      }
     }
   }
   // 两种语言真的翻过

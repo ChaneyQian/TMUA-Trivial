@@ -65,11 +65,11 @@ export default function DiagnosticIntro({
   return (
     <div className={styles.intro}>
       <h2 className={styles.introTitle}>{t.diagnostic.title}</h2>
-      <p className={styles.lead}>{t.diagnostic.lead}</p>
+      <p className={styles.lead}>{t.diagnostic.lead(DIAGNOSTIC_PAPER_SIZE)}</p>
       {/* 考过旧 GMAT 诊断、还没碰过新考试的人：先把「之前那几次不算」说破，
           免得他看着「两次机会用完」的旧印象不敢点开始 */}
       {showLegacyNote(legacyAttempts, diag) && (
-        <p className={styles.legacyNote}>{t.diagnostic.legacyNote}</p>
+        <p className={styles.legacyNote}>{t.diagnostic.legacyNote(DIAGNOSTIC_MAX_ATTEMPTS)}</p>
       )}
 
       <h3 className={styles.rulesTitle}>{t.diagnostic.rulesTitle}</h3>

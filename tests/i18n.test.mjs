@@ -90,6 +90,8 @@ test('parameterised entries interpolate their arguments in both languages', () =
     assert.match(t.diagnostic.rulePaper(10), /10/, `${lang} rulePaper must show the paper size`);
     assert.match(t.diagnostic.ruleTime(4), /4/, `${lang} ruleTime must show the minutes`);
     assert.match(t.diagnostic.ruleChances(2), /2/, `${lang} ruleChances must show the attempts`);
+    assert.match(t.diagnostic.lead(10), /10/, `${lang} lead must show the paper size`);
+    assert.match(t.diagnostic.legacyNote(2), /2/, `${lang} legacyNote must show the attempts`);
     assert.match(t.diagnostic.chance(1, 2), /1.*2/, `${lang} chance must show which attempt`);
     assert.match(t.diagnostic.grillBound(12), /12/, `${lang} grillBound must show the count`);
     assert.match(

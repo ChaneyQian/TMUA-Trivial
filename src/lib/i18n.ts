@@ -228,15 +228,17 @@ const zh = {
   // 数字全从 lib/diagnostic 的常量传进来，改规则不必改文案
   diagnostic: {
     title: '7.5+ Diagnostic',
-    lead: '一场 10 道题的限时小测，题目都不简单。通过就解锁 9.0 Trivial。',
+    lead: (n: number) => `一场 ${n} 道题的限时小测，题目都不简单。通过就解锁 9.0 Trivial。`,
     rulesTitle: '怎么考',
     rulePaper: (n: number) => `一卷，一共 ${n} 道题。`,
     ruleTime: (minutes: number) => `每题 ${minutes} 分钟。提前答完，剩下的时间顺延给下一题。`,
     ruleOneWay: '时间到了会自动进入下一题。答过的题不能回头改。',
     ruleNoFeedback: '全程不告诉你对错。',
+    // PASS / FAIL 与结果页的大字对上：考完看到的就是这两个词
     rulePass: (mark: number, total: number) =>
-      `答对 ${mark} 题就通过（共 ${total} 题）。考完只显示「通过」或「未通过」。`,
-    ruleChances: (n: number) => `一共 ${n} 次机会，每次的题都不一样。`,
+      `答对 ${mark} 题就通过（共 ${total} 题）。考完只显示通过（PASS）或未通过（FAIL）。`,
+    ruleChances: (n: number) =>
+      `一共 ${n} 次机会，每次的题都不一样。交卷才算用掉一次，中途放弃或刷新不算。`,
     ruleUnlock: '通过就解锁 9.0 Trivial。它和做满 365 题是并列的两条路，走通一条就行。',
     start: '开始 7.5+ Diagnostic',
     starting: '准备中…',
@@ -248,7 +250,8 @@ const zh = {
     pendingHint:
       '第二次机会用的是另一套新题，这套题还没出齐，所以现在还不能开始。你的第二次机会先留着，不会被扣掉；题出齐了回来就能考。',
     // 考过旧 GMAT 诊断的人读到的一句：新考试的机会从头算
-    legacyNote: '旧版 Diagnostic 已经下线，换成了这场 7.5+ Diagnostic。以前考过的次数不算，你有完整的 2 次机会。',
+    legacyNote: (n: number) =>
+      `旧版 Diagnostic 已经下线，换成了这场 7.5+ Diagnostic。以前考过的次数不算，你有完整的 ${n} 次机会。`,
     passedNote: '你已经通过了 7.5+ Diagnostic。',
     unavailable: '诊断题库尚未就绪',
     orPractice: '也可以继续练习，做满 365 题同样解锁',
@@ -486,7 +489,8 @@ const en: Strings = {
 
   diagnostic: {
     title: '7.5+ Diagnostic',
-    lead: 'A short timed test: 10 questions, none of them easy. Pass it and 9.0 Trivial unlocks.',
+    lead: (n: number) =>
+      `A short timed test: ${n} questions, none of them easy. Pass it and 9.0 Trivial unlocks.`,
     rulesTitle: 'How it works',
     rulePaper: (n: number) => `One paper, ${n} questions.`,
     ruleTime: (minutes: number) =>
@@ -494,8 +498,9 @@ const en: Strings = {
     ruleOneWay: 'When time runs out you move on automatically. You cannot go back to change an answer.',
     ruleNoFeedback: 'You are never told whether an answer was right.',
     rulePass: (mark: number, total: number) =>
-      `Get ${mark} of the ${total} right to pass. At the end you only see "pass" or "fail".`,
-    ruleChances: (n: number) => `You get ${n} attempts, each with different questions.`,
+      `Get ${mark} of the ${total} right to pass. At the end you only see PASS or FAIL.`,
+    ruleChances: (n: number) =>
+      `You get ${n} attempts, each with different questions. Only a submitted paper uses one up — abandoning or refreshing midway does not.`,
     ruleUnlock:
       'Passing unlocks 9.0 Trivial. It is one of two routes, alongside answering 365 questions — either one is enough.',
     start: 'Start the 7.5+ Diagnostic',
@@ -507,8 +512,8 @@ const en: Strings = {
     pendingTitle: 'Paper 2 is not ready yet',
     pendingHint:
       'Your second attempt uses a new set of questions, and that set is not finished yet, so it cannot start now. Your second attempt is saved and will not be used up — come back once the questions are ready.',
-    legacyNote:
-      'The old Diagnostic has been retired and replaced by this 7.5+ Diagnostic. Earlier attempts do not count — you get the full 2 attempts.',
+    legacyNote: (n: number) =>
+      `The old Diagnostic has been retired and replaced by this 7.5+ Diagnostic. Earlier attempts do not count — you get the full ${n} attempts.`,
     passedNote: 'You have already passed the 7.5+ Diagnostic.',
     unavailable: 'The diagnostic bank is not ready yet',
     orPractice: 'You can also keep practising — 365 questions unlocks it too',
