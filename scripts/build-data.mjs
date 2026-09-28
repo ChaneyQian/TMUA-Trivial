@@ -38,7 +38,7 @@ const MIN_GRADEABLE = /^\d+$/.test(process.env.MIN_GRADEABLE || '')
 // 目录名带空格无妨：这里只拿它拼路径，题目落进 index 时统一叫 TMUA_MOCK
 const DATABASES = ['TMUA', 'TMUA Mock', 'MAT', 'SMC', 'ECAA', 'AMC', 'GMAT', 'TMUA Addition'];
 
-// 7.5+ Diagnostic 的备用题源。目录名（源侧的顶层库）与它在 index 里的 db 名分开写：
+// 7.5+ Diagnostic 的专用题源（卷二的 SMT 章末题、卷一的野题）。目录名（源侧的顶层库）与它在 index 里的 db 名分开写：
 // 这批题的 frontmatter 各自写着 database: TMUA / MAT（决定用哪个选项解析器），
 // 而它们在站内属于哪个池子是另一件事——统一落成 DIAG75 并打 diag
 const ADDITION_DB = 'TMUA Addition';

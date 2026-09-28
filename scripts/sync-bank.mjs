@@ -25,7 +25,7 @@ const BANKS = ['TMUA', 'TMUA Mock', 'MAT', 'SMC', 'ECAA', 'AMC'];
  * 只开了一部分子目录的库。
  *
  * 'TMUA Addition' 底下摆着好几批来源各异的题，用户裁定只启用 dirs 里这两个
- * （7.5+ Diagnostic 的备用题源）；Clarkson、Euclid Modification 等一律不碰——
+ * （7.5+ Diagnostic 的专用题源：卷二的 SMT 章末题、卷一的野题）；Clarkson、Euclid Modification 等一律不碰——
  * 既不镜像过去，也不会因为「源侧不存在」被镜像删除逻辑扫掉。
  *
  * imageDir 同样不整目录镜像：那个 Image 里装着**所有**子目录的图，

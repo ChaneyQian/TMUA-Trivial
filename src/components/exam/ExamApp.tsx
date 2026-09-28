@@ -306,8 +306,8 @@ export default function ExamApp() {
 
   /**
    * 为什么这张卡展不开；返回空串表示可以展开。
-   * 9.0 锁定态不再算「展不开」：展开动作变成 Diagnostic Test 的介绍页，
-   * 那正是它的第二条解锁路（见 Design §3）。
+   * 9.0 锁定态不再算「展不开」：展开动作变成 7.5+ Diagnostic 的介绍页，
+   * 那正是它的第二条解锁路（见 Design §21）。
    */
   const zoneBlockReason = (id: ZoneId): string => {
     const zone = zoneById(id);

@@ -38,7 +38,8 @@ const zh = {
     quickAria: (summary: string) => `用当前配置快速开始：${summary}`,
     openAria: (no: string, title: string) => `${no} ${title}，展开配置`,
     frontAria: (no: string, title: string) => `${no} ${title}，转到前位`,
-    diagnosticAria: (no: string, title: string) => `${no} ${title}，开始 Diagnostic Test`,
+    // 锁定的 9.0 卡展开的是 7.5+ Diagnostic 的介绍页，不是直接开考——读屏念的要是它真会做的事
+    diagnosticAria: (no: string, title: string) => `${no} ${title}，查看 7.5+ Diagnostic 说明`,
   },
 
   cardBadge: {
@@ -320,7 +321,7 @@ const en: Strings = {
     quickAria: (summary: string) => `Quick start with the current setup: ${summary}`,
     openAria: (no: string, title: string) => `${no} ${title}, open settings`,
     frontAria: (no: string, title: string) => `${no} ${title}, bring to front`,
-    diagnosticAria: (no: string, title: string) => `${no} ${title}, start the Diagnostic Test`,
+    diagnosticAria: (no: string, title: string) => `${no} ${title}, view the 7.5+ Diagnostic`,
   },
 
   cardBadge: {

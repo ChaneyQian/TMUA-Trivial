@@ -70,7 +70,7 @@ test('no dictionary entry is blank, and the two languages actually differ', () =
   // 少数条目两语言天然相同（考试名缩写、纯符号），列成白名单，其余必须真的翻过
   assert.deepEqual(
     identical.sort(),
-    // diagnostic.title 和 9.0 Trivial 一样是功能专名，两边都叫 Diagnostic Test
+    // diagnostic.title 和 9.0 Trivial 一样是功能专名，两边都叫 7.5+ Diagnostic
     // notice.title 是票券抬头的装饰性拉丁字标（NOTICE），两边同文是排版选择
     ['diagnostic.title', 'langToggle.title', 'notice.title', 'zone.sub.classic', 'zone.title.trivial'],
     'these entries are identical in both languages — translate them or whitelist them here',
