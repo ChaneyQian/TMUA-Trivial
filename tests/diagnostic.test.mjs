@@ -1,6 +1,5 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import path from 'node:path';
 import test from 'node:test';
 
 import {
@@ -50,58 +49,25 @@ const cssPath = 'src/components/diagnostic/Diagnostic.module.css';
 const examPath = 'src/components/exam/ExamApp.tsx';
 const recordsPath = 'src/lib/records.ts';
 
-/** 从题库源文件读出 qid → level，用来验固定卷的难度单调 */
-function levelByQid(dir) {
-  const map = new Map();
-  for (const name of fs.readdirSync(dir)) {
-    if (!name.endsWith('.md')) continue;
-    const raw = fs.readFileSync(path.join(dir, name), 'utf8');
-    const qid = Number(raw.match(/^qid:\s*(\d+)/m)?.[1]);
-    const level = Number(raw.match(/^level:\s*LEVEL\s*(\d+)/im)?.[1]);
-    if (qid) map.set(qid, level);
+test('the diagnostic ships fixed 7.5+ papers, not a random draw', () => {
+  // v2 起是 7.5+ 的卷结构（scripts\diag75-papers.mjs 组卷）：两次机会各一卷，
+  // 卷一固定 10 道，卷二凑不满 10 道已复核 SMT 时是 null（准备中）
+  const diag = readExamJson('diag.json', (d) => d?.v === 2 && Array.isArray(d.papers));
+  assert.equal(diag.exam, '7.5+');
+  assert.equal(diag.papers.length, DIAGNOSTIC_MAX_ATTEMPTS, 'one fixed paper per attempt');
+  const [p1, p2] = diag.papers.map((paper) => paper.qids);
+  assert.equal(p1.length, 10, 'paper 1 is the ten fixed questions');
+  assert.ok(p2 === null || p2.length === 10, 'paper 2 is either ready in full or not at all');
+  // 两卷互不重题
+  if (p2) {
+    assert.equal(p2.filter((qid) => p1.includes(qid)).length, 0, 'the two papers must not share a question');
   }
-  return map;
-}
 
-test('the diagnostic ships two fixed papers, not a random draw', () => {
-  const diag = readExamJson('diag.json', (d) => d?.v === 1 && Array.isArray(d.sets) && d.sets.length > 0);
-
-  assert.equal(diag.sets.length, DIAGNOSTIC_MAX_ATTEMPTS, 'one fixed set per attempt');
-  for (const [i, set] of diag.sets.entries()) {
-    assert.equal(set.p1.length, DIAGNOSTIC_PAPER_SIZE, `set ${i + 1} paper 1 size`);
-    assert.equal(set.p2.length, DIAGNOSTIC_PAPER_SIZE, `set ${i + 1} paper 2 size`);
-  }
-  assert.equal(DIAGNOSTIC_TOTAL, DIAGNOSTIC_PAPER_SIZE * 2);
-
-  // 两套互不重题，并起来正好是两个 40 题文件
-  const a = [...diag.sets[0].p1, ...diag.sets[0].p2];
-  const b = [...diag.sets[1].p1, ...diag.sets[1].p2];
-  const setA = new Set(a);
-  assert.equal(b.filter((qid) => setA.has(qid)).length, 0, 'the two sets must not share a question');
-  assert.equal(new Set([...a, ...b]).size, 80, 'the union is both 40-question files');
-
-  // 卷内顺序 = 难度升序，零洗牌
-  const ps = levelByQid('data/GMAT/algebra-ps');
-  const ds = levelByQid('data/GMAT/algebra-ds');
-  for (const [i, set] of diag.sets.entries()) {
-    for (const [paper, qids, levels] of [
-      ['p1', set.p1, ps],
-      ['p2', set.p2, ds],
-    ]) {
-      const seq = qids.map((qid) => levels.get(qid));
-      assert.equal(
-        seq.every((level) => Number.isFinite(level)),
-        true,
-        `set ${i + 1} ${paper} must draw from the right source file`,
-      );
-      for (let k = 1; k < seq.length; k++) {
-        assert.ok(
-          seq[k] >= seq[k - 1],
-          `set ${i + 1} ${paper} must run easiest-first (${seq[k - 1]} then ${seq[k]})`,
-        );
-      }
-    }
-  }
+  // GMAT 两卷制下线：它的题一道都不在卷里（从前两套 80 题全是它）
+  const index = readExamIndex();
+  const gmat = new Set(index.filter((entry) => entry.db === 'GMAT').map((entry) => entry.qid));
+  assert.ok(gmat.size > 0, 'GMAT 单题仍在 index 里（复烤区还要看），这条守卫才有负载');
+  assert.equal([...p1, ...(p2 || [])].some((qid) => gmat.has(qid)), false, 'GMAT is retired from the papers');
 
   // 前端按固定顺序原样取回，不能走会洗牌的 buildExam
   const exam = fs.readFileSync(examPath, 'utf8');
@@ -110,15 +76,14 @@ test('the diagnostic ships two fixed papers, not a random draw', () => {
   assert.doesNotMatch(exam, /buildExam\([^)]*chosen/);
   const examLib = fs.readFileSync('src/lib/exam.ts', 'utf8');
   assert.match(examLib, /export async function fetchQuestions/);
-  // 固定卷定义单独一个文件，index 形状仍然冻结。
-  // logic / tagged（逻辑推理开关及其覆盖率提示）是后来加的两个可选标记，
-  // 和 hidden / diag 同体例：这张白名单要拦的是「把整份固定卷塞进 index」
-  // 那类膨胀，不是拦所有新字段
-  const index = readExamIndex();
+  // 卷定义单独一个文件，index 形状仍然冻结。
+  // logic / tagged（逻辑推理开关及其覆盖率提示）与 reserved（7.5+ 卷里经典区那两道，
+  // 移出练习池）是后来加的可选标记，和 hidden / diag 同体例：这张白名单要拦的是
+  // 「把整份固定卷塞进 index」那类膨胀，不是拦所有新字段
   for (const entry of index) {
     for (const key of Object.keys(entry)) {
       assert.ok(
-        ['qid', 'db', 'hidden', 'diag', 'logic', 'tagged'].includes(key),
+        ['qid', 'db', 'hidden', 'diag', 'logic', 'tagged', 'reserved'].includes(key),
         `unexpected index key ${key}`,
       );
     }

@@ -128,7 +128,7 @@ test('every GMAT question reaches the gradeable index flagged as diag', () => {
 
   assert.equal(gmat.length, TOTAL, 'GMAT 113 题必须全部可判分');
   assert.equal(gmat.every((entry) => entry.diag === true), true, 'GMAT 条目必须带 diag');
-  // 诊断集只有两个来源：GMAT（现行 Diagnostic）与 DIAG75（TMUA Addition，7.5+ 的备用题源）。
+  // 诊断集只有两个来源：GMAT（2026-09 下线的旧诊断，单题留给复烤区）与 DIAG75（TMUA Addition，7.5+ Diagnostic 的题源）。
   // 别的库冒出 diag 条目，就是 build-data 里 isDiagnosticQuestion 的判据漂了
   assert.equal(
     index.filter((entry) => entry.diag && entry.db !== 'GMAT' && entry.db !== 'DIAG75').length,

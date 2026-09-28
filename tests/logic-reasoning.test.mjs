@@ -565,7 +565,8 @@ test('the frontmatter parser keeps a block list alive across blank lines and com
       cwd: root,
       stdio: 'pipe',
       // 合成题库只有三道题，关掉可判分底线（见 build-data 的 MIN_GRADEABLE）
-      env: { ...process.env, EXAM_OUT: outputDir, BANK_PATH: bank, MIN_GRADEABLE: '0' },
+      // 也没有 7.5+ 卷一那 10 道题：DIAG75_PAPER1=off 不出卷（见 scripts/diag75-papers.mjs）
+      env: { ...process.env, EXAM_OUT: outputDir, BANK_PATH: bank, MIN_GRADEABLE: '0', DIAG75_PAPER1: 'off' },
     });
     const index = JSON.parse(fs.readFileSync(path.join(outputDir, 'index.json'), 'utf8'));
     const byQid = new Map(index.map((entry) => [entry.qid, entry]));

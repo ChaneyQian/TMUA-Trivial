@@ -234,11 +234,12 @@ test('index.json keeps its frozen shape — topics data lives in its own file', 
   const { index, outputDir } = buildInto(t);
 
   // 白名单和 diagnostic.test.mjs 那条同源：index 每次冷启动都要下载，
+  // reserved（7.5+ 卷里落在经典区的两道，移出练习池）同体例，只在为真时写，
   // 知识点数据只有打开进度面板才用得到，不该挤进来
   for (const entry of index) {
     for (const key of Object.keys(entry)) {
       assert.ok(
-        ['qid', 'db', 'hidden', 'diag', 'logic', 'tagged'].includes(key),
+        ['qid', 'db', 'hidden', 'diag', 'logic', 'tagged', 'reserved'].includes(key),
         `index 里冒出了新键 ${key}`,
       );
     }
@@ -361,7 +362,8 @@ test('an out-of-vocabulary topic is dropped and reported, never swallowed', (t) 
   write('20-P1-Q5.md', `${base(20200210500, '20-P1-Q5')}\ntopics: []\nstatus: 已入库`);
 
   // 合成题库只有五道题，关掉可判分底线（见 build-data 的 MIN_GRADEABLE）
-  const { topics, log } = buildInto(t, { BANK_PATH: bank, MIN_GRADEABLE: '0' });
+  // 也没有 7.5+ 卷一那 10 道题：DIAG75_PAPER1=off 不出卷（见 scripts/diag75-papers.mjs）
+  const { topics, log } = buildInto(t, { BANK_PATH: bank, MIN_GRADEABLE: '0', DIAG75_PAPER1: 'off' });
 
   assert.deepEqual(topics.byTopic.Algebra, [20200210300, 20200210100]);
   assert.deepEqual(topics.byTopic.Probability, [20200210100], '`Statistical Theory` 归到 Probability');

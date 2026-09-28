@@ -43,7 +43,8 @@ test('the skip tally is broken down by paper directory', (t) => {
   const built = execFileSync(process.execPath, [path.join(root, 'scripts', 'build-data.mjs')], {
     cwd: root,
     encoding: 'utf8',
-    env: { ...process.env, EXAM_OUT: out, BANK_PATH: bank, MIN_GRADEABLE: '0' },
+    // 合成题库：可判分底线关掉；也没有 7.5+ 卷一那 10 道题，DIAG75_PAPER1=off 不出卷
+    env: { ...process.env, EXAM_OUT: out, BANK_PATH: bank, MIN_GRADEABLE: '0', DIAG75_PAPER1: 'off' },
   });
 
   assert.match(built, /\[build-data\] {3}TMUA\/2024\s+badAnswer 1/);

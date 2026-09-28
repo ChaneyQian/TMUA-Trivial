@@ -173,7 +173,8 @@ test('a long prose distractor is not mistaken for a swallowed stem', (t) => {
     cwd: root,
     stdio: 'pipe',
     // 合成题库只有两道题，可判分底线（默认 1000）要关掉——这里测的是解析行为
-    env: { ...process.env, EXAM_OUT: out, BANK_PATH: bank, MIN_GRADEABLE: '0' },
+    // 也没有 7.5+ 卷一那 10 道题：DIAG75_PAPER1=off 不出卷（见 scripts/diag75-papers.mjs）
+    env: { ...process.env, EXAM_OUT: out, BANK_PATH: bank, MIN_GRADEABLE: '0', DIAG75_PAPER1: 'off' },
   });
 
   const index = JSON.parse(fs.readFileSync(path.join(out, 'index.json'), 'utf8'));
@@ -278,7 +279,8 @@ test('questions flagged TODO(...) stay off the site until proofread', (t) => {
     cwd: root,
     encoding: 'utf8',
     // 合成题库题量远低于可判分底线，这里关掉它（见 build-data 的 MIN_GRADEABLE）
-    env: { ...process.env, EXAM_OUT: out, BANK_PATH: bank, MIN_GRADEABLE: '0' },
+    // 也没有 7.5+ 卷一那 10 道题：DIAG75_PAPER1=off 不出卷（见 scripts/diag75-papers.mjs）
+    env: { ...process.env, EXAM_OUT: out, BANK_PATH: bank, MIN_GRADEABLE: '0', DIAG75_PAPER1: 'off' },
   });
 
   const index = JSON.parse(fs.readFileSync(path.join(out, 'index.json'), 'utf8'));
@@ -322,7 +324,7 @@ test('an empty bank fails the build instead of quietly shipping an empty site', 
   const forced = spawnSync(process.execPath, [path.join(root, 'scripts', 'build-data.mjs')], {
     cwd: root,
     encoding: 'utf8',
-    env: { ...process.env, EXAM_OUT: out, BANK_PATH: bank, MIN_GRADEABLE: '0' },
+    env: { ...process.env, EXAM_OUT: out, BANK_PATH: bank, MIN_GRADEABLE: '0', DIAG75_PAPER1: 'off' },
   });
   assert.notEqual(forced.status, 0, 'MIN_GRADEABLE=0 也不该放空索引过关');
 
@@ -351,7 +353,7 @@ test('an empty bank fails the build instead of quietly shipping an empty site', 
   const allowed = spawnSync(process.execPath, [path.join(root, 'scripts', 'build-data.mjs')], {
     cwd: root,
     encoding: 'utf8',
-    env: { ...process.env, EXAM_OUT: out, BANK_PATH: bank, MIN_GRADEABLE: '0' },
+    env: { ...process.env, EXAM_OUT: out, BANK_PATH: bank, MIN_GRADEABLE: '0', DIAG75_PAPER1: 'off' },
   });
   assert.equal(allowed.status, 0, `放开底线后不该再失败：\n${allowed.stderr}`);
   // 读不出来的文件进计数、进日志，不再是一句裸 continue

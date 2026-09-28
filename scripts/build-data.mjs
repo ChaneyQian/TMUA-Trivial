@@ -7,10 +7,19 @@
 //   public\exam\index.json   [{ qid, db }]，用于统计题数和随机抽题
 //   public\exam\q\<qid>.json 单题全文（题面/选项/答案/解析）
 //   public\exam\img\<name>   题面引用的图片
+//   public\exam\diag.json    7.5+ Diagnostic 的两卷（组卷规则在 scripts\diag75-papers.mjs）
 
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import {
+  DIAG75_PAPER_SIZE,
+  diagnosticPapersJson,
+  paper1FromEnv,
+  paper1Problems,
+  reservedQids,
+  selectPaper2,
+} from './diag75-papers.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const BANK = process.env.BANK_PATH ? path.resolve(process.env.BANK_PATH) : path.join(ROOT, 'data');
@@ -480,29 +489,15 @@ function isHiddenQuestion(database, data) {
   return false;
 }
 
-// ---------------- Diagnostic 固定卷 ----------------
-// Diagnostic Test 是两卷制、零随机：Paper 1 取 algebra-ps，Paper 2 取 algebra-ds。
-// 每个 40 题的文件按难度（level 为主键）升序排好后奇偶交错拆成两套 20 题——
-// 套一取第 1,3,5… 名，套二取第 2,4,6… 名。两套各自天然升序，难度分布对等，
-// 两次机会各用一套，互不重题。word-problems 两套仍在 diag 池里，但本引擎不碰。
-const DIAG_PAPER_DIRS = { p1: 'algebra-ps', p2: 'algebra-ds' };
-const DIAG_SET_COUNT = 2;
+// ---------------- 诊断集 ----------------
+// Diagnostic 的卷（diag.json）由 scripts\diag75-papers.mjs 组：7.5+ 单卷 10 题、
+// 两次机会各一卷。GMAT 两卷制 2026-09 下线，它那套「按 level 奇偶拆卷」的逻辑随之删除——
+// GMAT 的单题 JSON 与 index 条目照常产出（已经绑进复烤区的人还要看），只是不再组卷。
 
-function levelRank(data) {
-  // 'LEVEL 7' → 7；缺失或不认识的一律排到最后，但不至于让排序崩掉
-  const match = String(data.level || '').match(/(\d+)/);
-  return match ? Number(match[1]) : Number.MAX_SAFE_INTEGER;
-}
-
-/** 把一个 40 题目录拆成 DIAG_SET_COUNT 套等长、各自升序的卷 */
-function splitDiagnosticPaper(entries) {
-  const sorted = [...entries].sort((a, b) => a.rank - b.rank || a.qid - b.qid);
-  const sets = Array.from({ length: DIAG_SET_COUNT }, () => []);
-  sorted.forEach((entry, i) => sets[i % DIAG_SET_COUNT].push(entry.qid));
-  return sets;
-}
-
-/** 诊断集：入 index 但另作一池，体例同 hidden。GMAT 是现行 Diagnostic，DIAG75 是 7.5+ 的备用题源 */
+/**
+ * 诊断集：入 index 但另作一池，体例同 hidden，不进任何练习池、不计 365。
+ * DIAG75 是 7.5+ Diagnostic 的专用题源；GMAT 是下线了的旧诊断，单题留给复烤区
+ */
 function isDiagnosticQuestion(database) {
   return database === 'GMAT' || database === DIAG75_DB;
 }
@@ -640,8 +635,12 @@ const TOPIC_CANONICAL = new Map(TOPIC_VOCAB.map((name) => [name.toLowerCase(), n
 // 卷 → qid 的清单。和 topics.json 一样单独落一个文件、不进 index.json：
 // index 每次冷启动都要下载，而这份数据只有打开进度面板才用得到。
 //
-// diag（GMAT 诊断集）整库不收：诊断题全程不显示对错，连「做过几题」
+// diag（诊断集）整库不收：诊断题全程不显示对错，连「做过几题」
 // 都不该经这面墙露出来。
+//
+// reserved（7.5+ 卷里落在经典区的那两道）照收：它们是真题卷的一部分，
+// 清单保持与卷面一致；墙上的分母由前端按「够得着的题」求交时扣掉（reachableIndex），
+// 于是那两套卷不用它们也能做满。
 
 /** 墙上按库分组的顺序，与 lib/exam.ts 的 EXAM_DATABASES 同序 */
 const PAPER_DB_ORDER = ['TMUA', 'TMUA_MOCK', 'MAT', 'SMC', 'ECAA', 'AMC'];
@@ -684,6 +683,15 @@ function main() {
     process.exit(1);
   }
 
+  // 卷一的清单先认出来：环境变量配错了就该在扫盘之前当场炸（见 paper1FromEnv）
+  let diag75Paper1;
+  try {
+    diag75Paper1 = paper1FromEnv(process.env.DIAG75_PAPER1);
+  } catch (e) {
+    console.error(`[build-data] ${e.message}`);
+    process.exit(1);
+  }
+
   fs.rmSync(OUT, { recursive: true, force: true });
   fs.mkdirSync(path.join(OUT, 'q'), { recursive: true });
   fs.mkdirSync(path.join(OUT, 'img'), { recursive: true });
@@ -692,7 +700,8 @@ function main() {
   const seen = new Map();
   const wantedImages = new Set();
   const corrupted = [];
-  const diagCandidates = { p1: [], p2: [] };
+  // 7.5+ 卷二的候选：index 里 DIAG75 那批题的 { qid, id }（id 认章节，见 selectPaper2）
+  const diag75Pool = [];
   // 知识点倒排与按库覆盖。只收进了 index 的题——判不了分的题在前端根本不存在，
   // 收进来只会让分母对不上，「练这类题」还会抽到取不回来的 qid
   const topicQids = new Map();
@@ -823,19 +832,11 @@ function main() {
       // 都要下载的，给一千多条全都补一个 false 只是白白撑大它
       if (isLogicQuestion(data)) indexEntry.logic = true;
       if (hasTopicTags(data)) indexEntry.tagged = true;
-      // 诊断集：只给「Diagnostic Test 压力测试」用，不参与 classic / 9.0 随机抽题池
-      if (isDiagnosticQuestion(db)) {
-        indexEntry.diag = true;
-        // 固定卷仍然只由 GMAT 的 algebra 两套组成：7.5+ 那批题的组卷规则还没定，
-        // 一道都不许漏进现行 Diagnostic。目录名恰好也对不上，但「恰好」不是保证
-        if (db === 'GMAT') {
-          // 用所在目录名认卷别
-          const folder = path.basename(path.dirname(filePath));
-          for (const [paper, dir] of Object.entries(DIAG_PAPER_DIRS)) {
-            if (folder === dir) diagCandidates[paper].push({ qid, rank: levelRank(data) });
-          }
-        }
-      }
+      // 诊断集：只给 Diagnostic 用，不参与 classic / 9.0 随机抽题池
+      if (isDiagnosticQuestion(db)) indexEntry.diag = true;
+      // 7.5+ 卷二的候选只认 DIAG75：GMAT 下线后一道都不许再进卷，
+      // 就算它哪天恰好冒出一个叫 SMT- 的 id
+      if (db === DIAG75_DB) diag75Pool.push({ qid, id: String(data.id || '') });
       index.push(indexEntry);
 
       // 知识点倒排跟着 index.push 走，两者一步不差：coverage 的分母就是
@@ -892,20 +893,48 @@ function main() {
     copied++;
   }
 
+  // ---- 7.5+ Diagnostic 的卷（diag.json v2）----
+  //
+  // 放在 index 落盘之前：reserved 要写进 index 条目。卷一不完整时不产出 diag.json，
+  // 构建在最后（理智底线之后）以非零退出——缺一道题的卷不能拿去消耗用户的机会
+  const indexByQid = new Map(index.map((entry) => [entry.qid, entry]));
+  let diag75Problems = [];
+  let diag75Papers = null;
+  if (diag75Paper1) {
+    diag75Problems = paper1Problems(diag75Paper1, indexByQid);
+    if (diag75Problems.length === 0) {
+      const p2 = selectPaper2(diag75Pool, new Set(diag75Paper1));
+      const reserved = reservedQids([diag75Paper1, p2], indexByQid);
+      // 经典区的考题移出练习抽题池。只打标记不删条目：它们的作答记录照常计入 365，
+      // 复烤区也照常取得到题（诊断考过之后要能看答案解析）
+      for (const qid of reserved) indexByQid.get(qid).reserved = true;
+      diag75Papers = { p1: diag75Paper1, p2, reserved };
+    }
+  }
+
   index.sort((a, b) => b.qid - a.qid);
   fs.writeFileSync(path.join(OUT, 'index.json'), JSON.stringify(index));
 
-  // 固定卷定义单独落一个小文件，index 形状保持冻结；前端只在进 Diagnostic 时才取
-  const p1Sets = splitDiagnosticPaper(diagCandidates.p1);
-  const p2Sets = splitDiagnosticPaper(diagCandidates.p2);
-  const diagSets = p1Sets.map((p1, i) => ({ p1, p2: p2Sets[i] || [] }));
-  // 带 v：前端的形状闸靠它分辨「这份 JSON 是不是我要的那份」，
-  // 与 topics.json / papers.json 同体例
-  fs.writeFileSync(path.join(OUT, 'diag.json'), JSON.stringify({ v: 1, sets: diagSets }));
-  console.log(
-    '[build-data] Diagnostic 固定卷：',
-    diagSets.map((s, i) => `套${i + 1} P1=${s.p1.length} P2=${s.p2.length}`).join('  '),
-  );
+  // 卷定义单独落一个小文件，index 形状保持冻结；前端只在 9.0 还锁着时才取。
+  // v2 起是 7.5+ 的卷结构，前端的形状闸认 v 与 exam 两个字段，旧的 v1 一律拒收
+  if (diag75Papers) {
+    fs.writeFileSync(
+      path.join(OUT, 'diag.json'),
+      JSON.stringify(diagnosticPapersJson(diag75Papers.p1, diag75Papers.p2)),
+    );
+    const smtCount = diag75Pool.filter((item) => item.id.startsWith('SMT-')).length;
+    console.log(
+      `[build-data] 7.5+ Diagnostic：卷一 ${diag75Papers.p1.length} 道；` +
+        (diag75Papers.p2
+          ? `卷二 ${diag75Papers.p2.length} 道（已复核 SMT ${smtCount} 道里按章节轮转取）`
+          : `卷二暂不出卷（已复核 SMT 只有 ${smtCount} 道，不足 ${DIAG75_PAPER_SIZE} 道）`),
+    );
+    console.log(
+      `[build-data]   经典区考题移出练习池（reserved）：${diag75Papers.reserved.join(', ') || '无'}`,
+    );
+  } else if (!diag75Paper1) {
+    console.log('[build-data] 7.5+ Diagnostic：DIAG75_PAPER1=off，本次不出卷（仅供测试）');
+  }
 
   // 知识点倒排。vocab 给全 12 词（哪怕某个词一道题都没有，它仍是规范表的一部分），
   // byTopic 只列真有题的词。qid 按索引同序（降序），产物与目录遍历顺序无关
@@ -1045,6 +1074,18 @@ function main() {
         `    题库目录：${BANK}\n` +
         `    多半是题库目录配错、sync 没跑完，或者源盘没挂上。\n` +
         `    确认题库确实缩到这个规模，再用 MIN_GRADEABLE 调低底线。`,
+    );
+    process.exit(1);
+  }
+
+  // 7.5+ 卷一的闸排在理智底线之后：题库整个空掉时，先看见的该是那一条。
+  // 卷一是写死的 10 道，缺一道就开不了考——不产出 diag.json、构建非零退出，
+  // 而不是让前端拿着一份残卷去消耗用户的机会
+  if (diag75Problems.length > 0) {
+    console.error(
+      `\n[build-data] ✗ 7.5+ Diagnostic 卷一不完整，拒绝产出 diag.json：\n` +
+        diag75Problems.map((problem) => `    ${problem}`).join('\n') +
+        `\n    卷一的清单在 scripts\\diag75-papers.mjs。把题补回题库（或修到能判分）再构建。`,
     );
     process.exit(1);
   }

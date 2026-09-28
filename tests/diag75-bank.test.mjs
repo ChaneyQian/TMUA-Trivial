@@ -26,12 +26,14 @@ function skippedCounts(stdout) {
   return JSON.parse(m[1]);
 }
 
-function build(bank, out) {
+function build(bank, out, env = {}) {
   const built = spawnSync(process.execPath, [path.join(root, 'scripts', 'build-data.mjs')], {
     cwd: root,
     encoding: 'utf8',
     // 合成题库题量远低于可判分底线，这里关掉它（见 build-data 的 MIN_GRADEABLE）
-    env: { ...process.env, EXAM_OUT: out, BANK_PATH: bank, MIN_GRADEABLE: '0' },
+    // 也没有 7.5+ 卷一那 10 道题：DIAG75_PAPER1=off 不出卷（见 scripts/diag75-papers.mjs）；
+    // 要测组卷的那条自己传一份合成卷一进来
+    env: { ...process.env, EXAM_OUT: out, BANK_PATH: bank, MIN_GRADEABLE: '0', DIAG75_PAPER1: 'off', ...env },
   });
   assert.equal(built.status, 0, built.stderr);
   return built;
@@ -302,69 +304,80 @@ test('DIAG75 entries are excluded from every practice pool', (t) => {
   );
 });
 
-test('the existing GMAT diagnostic papers are byte-identical with Addition present', (t) => {
-  // 7.5+ 的组卷规则还没定，现行 Diagnostic 的两套固定卷一个字节都不许动
-  const withAddition = makeBank();
-  const without = fs.mkdtempSync(path.join(os.tmpdir(), 'mcq-diag75-base-'));
+test('retired GMAT questions never reach diag.json, whether or not they are in the bank', (t) => {
+  // GMAT 两卷制 2026-09 下线，diag.json 改由 7.5+ 组卷（Design §21）。GMAT 的单题
+  // 照常进 index——已经绑进复烤区的人还要看——但卷里一道都不许有。
+  // 这条原先钉的是反方向（Addition 在不在，GMAT 固定卷都逐字节不变），
+  // 下线之后倒过来钉：GMAT 在不在，7.5+ 的卷都逐字节不变
+  const withGmat = makeBank();
+  const without = makeBank();
   const outA = fs.mkdtempSync(path.join(os.tmpdir(), 'mcq-diag75-a-'));
   const outB = fs.mkdtempSync(path.join(os.tmpdir(), 'mcq-diag75-b-'));
   t.after(() => {
-    for (const dir of [withAddition, without, outA, outB]) {
+    for (const dir of [withGmat, without, outA, outB]) {
       fs.rmSync(dir, { recursive: true, force: true });
     }
   });
 
-  // 两个 4 题的 GMAT 目录，难度乱序摆着——奇偶交错拆套是按 level 排完才做的
-  const gmat = (qid, level, answer) => [
-    '---', 'database: GMAT', `qid: ${qid}`, `id: gmat-${qid}`, 'paper: GMAT',
+  // 合成卷一：10 道普通经典题（生产清单那 10 道不在合成题库里，用 DIAG75_PAPER1 换掉）
+  const paper1 = Array.from({ length: 10 }, (_, i) => 20190210100 + i * 100);
+  for (const bank of [withGmat, without]) {
+    paper1.forEach((qid, i) => {
+      write(bank, ['TMUA', '2019'], `19-P1-Q${i + 1}.md`, [
+        '---', 'database: TMUA', `qid: ${qid}`, `id: 19-P1-Q${i + 1}`, 'paper: TMUA P1',
+        'year: 2019', `number: Q${i + 1}`, '---', '',
+        '## 题目', 'Compute $2+2$.', '',
+        '$$\\mathbf{A} \\quad 3$$', '',
+        '$$\\mathbf{B} \\quad 4$$', '',
+        '$$\\mathbf{C} \\quad 5$$', '',
+        '## 答案', 'B', '',
+      ]);
+    });
+  }
+
+  // 两个 4 题的 GMAT 目录（老的两卷制就是从这两个目录按 level 拆卷），
+  // 外加一道 id 伪装成 SMT 章节题的诱饵：卷二只认 DIAG75，不认 id 长什么样
+  const gmat = (qid, level, id = `gmat-${qid}`) => [
+    '---', 'database: GMAT', `qid: ${qid}`, `id: ${id}`, 'paper: GMAT',
     'year: 0', `number: Q${qid % 10}`, `level: LEVEL ${level}`, '---', '',
     '## 题目', 'Compute $1+1$.', '',
     '$$\\mathbf{A} \\quad 1$$', '',
     '$$\\mathbf{B} \\quad 2$$', '',
     '$$\\mathbf{C} \\quad 3$$', '',
-    `## 答案`, answer, '',
+    '## 答案', 'B', '',
   ];
-  for (const bank of [withAddition, without]) {
-    for (const [dir, base] of [['algebra-ps', 10], ['algebra-ds', 20]]) {
-      for (const [i, level] of [5, 3, 7, 3].entries()) {
-        write(bank, ['GMAT', dir], `q${base + i}.md`, gmat(base + i, level, 'B'));
-      }
+  for (const [dir, base] of [['algebra-ps', 10], ['algebra-ds', 20]]) {
+    for (const [i, level] of [5, 3, 7, 3].entries()) {
+      write(withGmat, ['GMAT', dir], `q${base + i}.md`, gmat(base + i, level));
     }
-    // 索引不为空即可（MIN_GRADEABLE 已关，但空索引不认豁免）
-    write(bank, ['TMUA', '2019'], '19-P1-Q1.md', [
-      '---', 'database: TMUA', 'qid: 20190210100', 'id: 19-P1-Q1', 'paper: TMUA P1',
-      'year: 2019', 'number: Q1', '---', '',
-      '## 题目', 'Compute $2+2$.', '',
-      '$$\\mathbf{A} \\quad 3$$', '',
-      '$$\\mathbf{B} \\quad 4$$', '',
-      '$$\\mathbf{C} \\quad 5$$', '',
-      '## 答案', 'B', '',
-    ]);
   }
+  write(withGmat, ['GMAT', 'algebra-ps'], 'q19.md', gmat(19, 1, 'SMT-Ch1-Q1'));
 
-  // 诱饵：Addition 底下恰好也有个叫 algebra-ps 的子目录，题还标成最容易的 LEVEL 1。
-  // 固定卷按所在目录名认卷别，没有 db === 'GMAT' 那道显式闸的话，
-  // 这道题会被当成 P1 的候选排到最前面——「目录名恰好对不上」不是保证
-  const decoy = tmuaStyle({ qid: 90020990100, id: 'SMT-Ch9-Q1', verified: 'true', figure: 'smt-fig1.png' });
-  decoy.splice(decoy.indexOf('---', 1), 0, 'level: LEVEL 1');
-  write(withAddition, ['TMUA Addition', 'SMT Skills', 'algebra-ps'], 'SMT-Ch9-Q1.md', decoy);
-
-  build(withAddition, outA);
-  build(without, outB);
+  const env = { DIAG75_PAPER1: paper1.join(',') };
+  build(withGmat, outA, env);
+  build(without, outB, env);
 
   const a = fs.readFileSync(path.join(outA, 'diag.json'));
   const b = fs.readFileSync(path.join(outB, 'diag.json'));
-  assert.deepEqual(
-    JSON.parse(a).sets.flatMap((s) => [...s.p1, ...s.p2]).sort((x, y) => x - y),
-    [10, 11, 12, 13, 20, 21, 22, 23],
-  );
-  assert.ok(a.equals(b), 'diag.json 必须与没有 Addition 时逐字节相同');
+  assert.ok(a.equals(b), 'diag.json 必须与没有 GMAT 时逐字节相同');
+  const diag = JSON.parse(a);
+  assert.equal(diag.v, 2);
+  assert.deepEqual(diag.papers[0].qids, paper1);
+  // 合成题库只有两道已复核 SMT，凑不满卷二
+  assert.equal(diag.papers[1].qids, null);
 
-  // 反面确认：Addition 那三道已复核的题（含诱饵）确实进了索引，只是没进固定卷
+  // 反面确认：GMAT 那 9 道确实进了索引（带 diag），只是一道都没进卷
   const index = JSON.parse(fs.readFileSync(path.join(outA, 'index.json'), 'utf8'));
+  const gmatEntries = index.filter((entry) => entry.db === 'GMAT');
+  assert.deepEqual(
+    gmatEntries.map((entry) => entry.qid).sort((x, y) => x - y),
+    [10, 11, 12, 13, 19, 20, 21, 22, 23],
+  );
+  assert.equal(gmatEntries.every((entry) => entry.diag === true), true);
+  // Addition 那两道已复核的题也在索引里——它们是卷二的候选，只是还不够 10 道
   assert.deepEqual(
     index.filter((entry) => entry.db === 'DIAG75').map((entry) => entry.qid).sort((x, y) => x - y),
-    [90020210300, 90020351200, 90020990100],
+    [90020210300, 90020351200],
   );
 });
 
@@ -387,10 +400,15 @@ test('the shipped build carries DIAG75 only as diagnostic-only questions', (t) =
     assert.ok(q.choices.some((c) => c.label === q.answer), `${q.id} 的答案对不上任何选项`);
   }
 
-  // 现行 Diagnostic 的固定卷一道都不许混进来
-  const diag = readExamJson('diag.json', (d) => d?.v === 1 && Array.isArray(d.sets));
-  for (const set of diag.sets) {
-    for (const qid of [...set.p1, ...set.p2]) assert.equal(qids.has(qid), false, `固定卷里混进了 ${qid}`);
+  // 7.5+ 的卷里用到的 DIAG75 题只有两种：卷一那道野题，与卷二的 SMT 章末题。
+  // （从前这里钉的是「GMAT 固定卷一道都不许混进 DIAG75」——GMAT 下线后卷就是 7.5+ 的）
+  const diag = readExamJson('diag.json', (d) => d?.v === 2 && Array.isArray(d.papers));
+  const [p1, p2] = diag.papers.map((paper) => paper.qids || []);
+  assert.ok(p1.includes(99000200100), '卷一里有野题 Wild-Q01');
+  assert.deepEqual(p1.filter((qid) => qids.has(qid)), [99000200100], '卷一里的 DIAG75 只有野题');
+  for (const qid of p2) {
+    assert.ok(qids.has(qid), `卷二的 ${qid} 不是 DIAG75`);
+    assert.match(readExamQuestion(qid).id, /^SMT-Ch\d+-Q\d+$/, `卷二的 ${qid} 不是 SMT 章末题`);
   }
   // 卷面墙与知识点倒排：与 GMAT 同规，一条都不收
   const papers = readExamJson('papers.json', (d) => d?.v === 1 && Array.isArray(d.papers));

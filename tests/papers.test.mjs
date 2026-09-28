@@ -220,11 +220,12 @@ test('index.json keeps its frozen shape — paper data lives in its own file', (
   const { index, outputDir } = buildInto(t);
 
   // 白名单和 weak-topics / diagnostic 那两条同源：index 每次冷启动都要下载，
+  // reserved（7.5+ 卷里落在经典区的两道，移出练习池）同体例，只在为真时写，
   // 卷面数据只有打开进度面板才用得到，不该挤进来
   for (const entry of index) {
     for (const key of Object.keys(entry)) {
       assert.ok(
-        ['qid', 'db', 'hidden', 'diag', 'logic', 'tagged'].includes(key),
+        ['qid', 'db', 'hidden', 'diag', 'logic', 'tagged', 'reserved'].includes(key),
         `index 里冒出了新键 ${key}`,
       );
     }

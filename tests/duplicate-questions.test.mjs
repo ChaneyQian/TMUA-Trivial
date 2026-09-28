@@ -22,7 +22,8 @@ function build(bank, out) {
     cwd: root,
     encoding: 'utf8',
     // 合成题库题量远低于可判分底线，这里关掉它（见 build-data 的 MIN_GRADEABLE）
-    env: { ...process.env, EXAM_OUT: out, BANK_PATH: bank, MIN_GRADEABLE: '0' },
+    // 也没有 7.5+ 卷一那 10 道题：DIAG75_PAPER1=off 不出卷（见 scripts/diag75-papers.mjs）
+    env: { ...process.env, EXAM_OUT: out, BANK_PATH: bank, MIN_GRADEABLE: '0', DIAG75_PAPER1: 'off' },
   });
   assert.equal(built.status, 0, built.stderr);
   return built;
