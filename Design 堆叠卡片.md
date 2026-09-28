@@ -658,14 +658,25 @@ LP1 数据管线（sync 拷贝 + 讲解转 Markdown + build-data 产出 + 测试
 - **XLSX**：Diagnostic 表在前四列之后**追加** `7.5+ Passed / 7.5+ Attempts / 7.5+ Last Attempt` 三列。
   前四列线格式冻结（旧站读新文件照旧）；整表去留只看前四列，追加三列另查表头——旧文件导入 diag75 为空，
   追加列被挪过只丢这三列
-- **Runner**：单卷；`choiceForKey` 抽成纯函数（1–9 按序号、A–L 按标号、大小写不敏感），4–12 选项、
-  MAT 小写标号（显示统一大写，与练习 / 复烤一致）、内联选项、题图都照题目数据渲染；组合键不再误选选项
-- **文案**：介绍页七条规则的数字全取常量；卷二准备中单独一态并说明「机会不扣」；考过旧 GMAT 的人多一句
-  「以前的次数不算」；结果页没过且卷二未出齐时先说「现在还考不了、机会留着」
+- **Runner**：单卷；规则全是 lib/diagnostic 的纯函数，运行时只接线——`startClock` / `confirmQuestion`
+  （确认一题 + 银行结算，手动与超时共用）/ `isTimedOut` / `acceptManualConfirm` / `runnerKeyAction`
+  （1–9 按序号、A–L 按标号、大小写不敏感；放弃确认框开着时只认 Esc、其余吞掉；组合键不选选项）/ `countRight`。
+  4–12 选项、MAT 小写标号（显示统一大写，与练习 / 复烤一致）、内联选项、题图都照题目数据渲染
+- **防连跳（审查必修项）**：按住 Enter 的 keydown.repeat 不算确认（原先约 30 次/秒连续确认、空题交卷扣机会）；
+  换上新题后 300ms（`DIAGNOSTIC_CONFIRM_GUARD_MS`）内不接手动确认，Enter 与点确认按钮都算，挡双击的第二下；
+  超时自动确认不过这道闸，但先拿当前这题的截止时间复核，免得把刚换上来的新题一并确认
+- **文案**：介绍页七条规则、导语、旧版提示里的题数 / 分钟 / 通过线 / 机会次数全取常量；机会规则写明
+  「交卷才算一次，中途放弃或刷新不算」；通过线写明「只显示通过（PASS）或未通过（FAIL）」与结果页大字对上；
+  卷二准备中单独一态并说明「机会不扣」；考过旧 GMAT、还没考过 7.5+ 的人多一句「以前的次数不算」
+  （`showLegacyNote`）；结果页没过且卷二未出齐时先说「现在还考不了、机会留着」；锁定 9.0 卡的读屏文案
+  改为「查看 7.5+ Diagnostic 说明」
+- **复烤卡徽章**：绑定集 ∪ 错题榜去重（`grillBadgeCount`）——7.5+ 卷里 9.0 区的考题在复烤区练错后两边都有
 - **/admin**：「设为诊断通过 / 重置诊断」改走 `markDiagnosticPassed` / `resetDiagnosticRecord`，只动 diag75
-- **测试** 171 → 193 条（新增 diag75-papers 11、diag75-records 8、diagnostic +2、admin +1；
-  diagnostic.test 原 16 条全部按新规则改写、无删除；diag75-bank / grill / deck / progress / papers /
-  weak-topics / i18n 里钉旧口径的断言同步更新；既有合成题库构建一律带 `DIAG75_PAPER1=off`）
+- **构建日志**：`DIAG75_PAPER1` 被设置（off 或自定义清单）时打一行「卷一被 DIAG75_PAPER1 覆盖（仅测试用）」
+- **测试** 171 → 200 条（新增 diag75-papers 11、diag75-records 10、diagnostic +6、grill +1、admin +1；
+  diagnostic.test 原 16 条全部按新规则改写、无删除，计时 / 银行 / 按键改为真正执行状态机；
+  diag75-bank / grill / deck / progress / papers / weak-topics / i18n 里钉旧口径的断言同步更新；
+  既有合成题库构建一律带 `DIAG75_PAPER1=off`）
 
 ### 回滚警告（上线后必读）
 **本版上线后不要直接回滚到不认识 `diag75` 的旧版本**，否则用户只要再练一场，7.5+ 的战绩（含已通过的
