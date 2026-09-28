@@ -252,6 +252,16 @@
   }
 }
 
+/* 没有悬停的设备（触屏手机、平板）：光斑不漂移，静止的光晕照留。
+   漂移是三层常驻的无限动画、各占一块大合成层，手机上为这点「呼吸」耗电不值 */
+@media (hover: none) {
+  .spotA,
+  .spotB,
+  .spotC {
+    animation: none;
+  }
+}
+
 /* 放在文件最末：同特异性下要压过上面每一条动效声明（含 hover 媒体查询里的 display） */
 @media (prefers-reduced-motion: reduce) {
   /* 光斑静止在原位；换区瞬时切换；进场不淡入；

@@ -312,6 +312,11 @@ test('glow layers crossfade by opacity and drift on transform only, no blur anyw
   }
   assert.match(ruleBody('.glow .spot'), /animation-play-state: paused/);
   assert.match(ruleBody('.glowOn .spot'), /animation-play-state: running/);
+
+  // 没有悬停的设备（触屏）省电：光斑不漂移，静止的光晕照留（只关动画，不藏光斑）
+  const touch = css.match(/@media \(hover: none\) \{([\s\S]*?)\n\}/)?.[1] ?? '';
+  assert.match(touch, /\.spotA,\s*\.spotB,\s*\.spotC \{\s*animation: none;\s*\}/);
+  assert.doesNotMatch(touch, /display|opacity|visibility/);
 });
 
 test('the paper grid and the cursor lens are aligned and the lens only exists for a fine pointer', () => {
