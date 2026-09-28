@@ -108,7 +108,7 @@
           前牌的倾斜钩子（components/fx/useCardTilt）也挂在这层——它只量不转
    .tilt  倾斜层：跟手时只有它转；两圈投影挂在它身上，随牌一起歪，
           抬起的一侧与投影之间不会漏出一道缝
-   .face  卡面：边框、底色、圆角裁切、跟手高光
+   .face  卡面：边框、底色、圆角裁切；跟手高光只在封面里（见下方 .glare）
    .card / .tilt 都不能 overflow: hidden：倾斜时抬起的那一侧会探出原来的盒子。 */
 .card {
   position: absolute;
@@ -117,6 +117,8 @@
   /* 景深挂在槽位层，.tilt 只转角度（transform 里不写 perspective()：
      回弹的过冲会把 perspective() 外推成负距离） */
   perspective: 900px;
+  /* 封面占卡面高度的比例。.coverBox 的高度与封面区那层高光的几何共用这一个数 */
+  --cover-frac: 0.46;
   transition:
     transform 350ms cubic-bezier(0.2, 0.7, 0.2, 1),
     opacity 350ms cubic-bezier(0.2, 0.7, 0.2, 1),
@@ -134,7 +136,9 @@
 
 /* 前牌随鼠标倾斜。变量与 data-tilting 由 useCardTilt 写在 .card 上，只有前牌挂着
    那个 ref；这里再限定 .slotFront，转牌的过渡窗口里也不会有后牌跟着歪。
-   只在跟手期间挂 3D transform：静止时前牌不常驻合成层，文字不丢亚像素抗锯齿 */
+   只在跟手期间给 .tilt 挂 transform：静止时倾斜层不另起一层合成层。
+   （槽位层 .card 的 translate3d 本来就让每张牌常驻一层合成层，那是转牌动效的既有代价，
+   这里不再往上叠） */
 .slotFront[data-tilting] > .tilt {
   transform: rotateX(var(--tilt-rx, 0deg)) rotateY(var(--tilt-ry, 0deg));
   /* 跟手期间补间收短：跟得上又不抖 */
@@ -201,34 +205,52 @@
   background: var(--surface);
 }
 
-/* 跟手高光：卡面上的一层伪元素，比卡面大一倍、圆心落在卡面正中，里面是一枚
-   静态径向渐变；跟手时只用 transform 把圆心推到指针下，不重绘渐变。
-   translate 的百分比按它自身尺寸（卡面的 2 倍）解析，所以位移要除以 2。
-   z-index 2：盖住封面与正文，垫在命中层（3）与快速开始按钮（4）之下 */
-.face::after {
+/* ---- 跟手高光 ----
+   只照封面，不盖任何文字与按钮：高光放在 .coverBox 里、树序在封面图之后，随 .coverBox 裁切；
+   编号与徽章不在 .coverBox 里（见 CardDeck），正文与按钮更在封面之外。
+   为什么不照正文区：
+   - 浅色 / 护眼的卡面底色近白，soft-light 照上去看不出任何东西
+   - 深色下照亮正文底色就是在压次要文字的对比度（光心处 --text-muted 从 5.96 掉到 4.7 上下）
+   - 混合模式要一个隔离组。组若是整张卡面，卡面连字带图先栅格成一张图、再随倾斜重采样，
+     指针下的字整片发虚（实测浅色 --text-muted 4.83 → 3.7）；组只圈封面，字就不进这张图
+   几何：层本身与卡面同尺寸（包含块只有封面高，层高按封面占比放大回卡面高），
+   translate 的百分比按它自身解析，恰好是卡面的宽高，不用换算；光斑画在 ::after 上——
+   以卡面中心为心、边长 2 倍卡宽的正方形，渐变半径就是卡宽（closest-side），刚好装下。
+   静止时是 2D translate、不挂 will-change：平时四张牌的高光都不另起合成层 */
+.glare {
+  --glare-core: rgb(255 255 255 / 72%);
+  --glare-mid: rgb(255 255 255 / 22%);
   position: absolute;
-  inset: -50%;
-  z-index: 2;
-  background: radial-gradient(
-    circle closest-side,
-    rgb(255 255 255 / 72%),
-    rgb(255 255 255 / 22%) 40%,
-    transparent 100%
-  );
-  mix-blend-mode: soft-light;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: calc(100% / var(--cover-frac));
   opacity: 0;
-  transform: translate3d(
-    calc((var(--glare-x, 50%) - 50%) / 2),
-    calc((var(--glare-y, 50%) - 50%) / 2),
-    0
-  );
-  content: '';
   pointer-events: none;
+  mix-blend-mode: soft-light;
+  transform: translate(calc(var(--glare-x, 50%) - 50%), calc(var(--glare-y, 50%) - 50%));
   transition: opacity 280ms ease;
 }
 
+.glare::after {
+  position: absolute;
+  top: 50%;
+  left: -50%;
+  width: 200%;
+  aspect-ratio: 1;
+  /* 纵向外边距的百分比也按包含块的「宽」解析：-100% 即上移一个卡宽，圆心落回卡面正中 */
+  margin-top: -100%;
+  background: radial-gradient(
+    circle closest-side,
+    var(--glare-core),
+    var(--glare-mid) 40%,
+    transparent 100%
+  );
+  content: '';
+}
+
 /* 跟手期间：显出来、单独成层（逐帧只挪不重绘），位移与倾斜同一条补间 */
-.slotFront[data-tilting] .face::after {
+.slotFront[data-tilting] .glare {
   opacity: 1;
   will-change: transform;
   transition:
@@ -236,25 +258,17 @@
     transform 160ms cubic-bezier(0.2, 0.7, 0.2, 1);
 }
 
-/* 深色卡面上 soft-light 几乎看不见，换 screen、压低强度，读作一层薄光 */
-:global([data-theme='dark']) .face::after {
-  background: radial-gradient(
-    circle closest-side,
-    rgb(255 255 255 / 20%),
-    rgb(255 255 255 / 6%) 40%,
-    transparent 100%
-  );
+/* 深色封面上 soft-light 几乎看不见，换 screen、压低强度，读作一层薄光 */
+:global([data-theme='dark']) .glare {
+  --glare-core: rgb(255 255 255 / 20%);
+  --glare-mid: rgb(255 255 255 / 6%);
   mix-blend-mode: screen;
 }
 
 /* 护眼主题：光效压到最弱 */
-:global([data-theme='sepia']) .face::after {
-  background: radial-gradient(
-    circle closest-side,
-    rgb(255 255 255 / 42%),
-    rgb(255 255 255 / 11%) 40%,
-    transparent 100%
-  );
+:global([data-theme='sepia']) .glare {
+  --glare-core: rgb(255 255 255 / 42%);
+  --glare-mid: rgb(255 255 255 / 11%);
 }
 
 .slotFront {
@@ -300,8 +314,10 @@
 
 .coverBox {
   position: relative;
-  flex: 0 0 46%;
+  flex: 0 0 calc(var(--cover-frac) * 100%);
   overflow: hidden;
+  /* 高光的混合模式只与封面图混合：隔离组只圈到这里，不圈整张卡面（原因见 .glare） */
+  isolation: isolate;
   background-position: center;
   background-size: cover;
 }
@@ -317,9 +333,11 @@
   object-fit: cover;
 }
 
-/* Ken Burns 只给前牌：切到前位时封面缓慢 settle，不做裁切跳变 */
+/* Ken Burns 只给前牌：切到前位时封面缓慢 settle，不做裁切跳变。
+   填充只要 backwards：终点 scale(1) 就是不变换，放完不必留着。留着（both）的话封面图
+   放完后仍常驻一层合成层，压在它上面的高光和编号也被连带提成合成层 */
 .slotFront .cover {
-  animation: kenBurns 900ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  animation: kenBurns 900ms cubic-bezier(0.2, 0.7, 0.2, 1) backwards;
 }
 
 @keyframes kenBurns {
@@ -333,7 +351,9 @@
 
 /* 编号和徽章压在封面图上，而封面图不随主题换。所以两者都得自带底板：
    底板取 --surface、文字取 --text，一起翻面，深浅主题下都读得清；
-   靠 text-shadow 硬顶会在深色主题 + 浅色封面（classic）上直接糊掉。 */
+   靠 text-shadow 硬顶会在深色主题 + 浅色封面（classic）上直接糊掉。
+   两者挂在 .face 上而不在 .coverBox 里，只是位置落在封面上（.coverBox 就在卡面左上角，
+   坐标相同）：封面是高光的混合隔离组，组里的字会随组一起先栅格、再随倾斜重采样而发虚 */
 .no {
   position: absolute;
   top: 0.7rem;
@@ -563,15 +583,15 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  /* 伪元素要单列：.card / .tilt / .face 的 transition: none 管不到 ::before / ::after。
-     倾斜本身在减动效下由 useCardTilt 整个不开，这里把过渡也关掉，双保险 */
+  /* 伪元素要单列：.card / .tilt 的 transition: none 管不到 ::before / ::after。
+     倾斜与高光在减动效下由 useCardTilt 整个不开，这里把过渡也关掉，双保险 */
   .deck,
   .card,
   .card::after,
   .tilt,
   .tilt::before,
-  .face::after,
-  .slotFront[data-tilting] .face::after,
+  .glare,
+  .slotFront[data-tilting] .glare,
   .cover,
   .slotFront .cover,
   .dot,

@@ -13,8 +13,9 @@
 //   --tilt-rx / --tilt-ry   两个轴的倾角，带 deg 单位（正中为 0）
 //   --glare-x / --glare-y   高光圆心，占元素宽 / 高的百分比
 //   --tilt-on               1 = 正在跟手，0 = 已收手；纯数字，可以进 calc
-//   data-tilting            跟手期间存在。CSS 靠它切「跟手」与「回弹」两套过渡，
-//                           也靠它只在跟手时挂 3D transform（静止时不常驻合成层）
+//   data-tilting            跟手期间存在。CSS 靠它切「跟手」与「回弹」两套过渡，也靠它
+//                           只在跟手时给倾斜层挂 transform、给高光挂 will-change——
+//                           静止时这两层都不另起合成层
 //
 // 纪律：
 //   - 只认鼠标，且只在 (hover: hover) and (pointer: fine)、非减动效时启用：

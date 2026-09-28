@@ -444,22 +444,13 @@ test('the front card tilts on an inner layer and never touches the slot transfor
   assert.match(tilt, /box-shadow:/);
   assert.doesNotMatch(card, /box-shadow:/);
 
-  // 跟手高光：伪元素上的静态径向渐变，只用 transform 挪；混合模式按主题分
-  assert.doesNotMatch(deck, /styles\.glare/, '高光是 .face 的伪元素，不再是一个节点');
-  assert.match(css, /\n\.face::after \{[^}]*radial-gradient\(/);
-  assert.match(
-    css,
-    /\n\.face::after \{[^}]*transform: translate3d\(\s*calc\(\(var\(--glare-x, 50%\) - 50%\) \/ 2\),\s*calc\(\(var\(--glare-y, 50%\) - 50%\) \/ 2\)/,
-  );
-  assert.match(css, /\n\.face::after \{[^}]*mix-blend-mode: soft-light/);
-  assert.match(css, /:global\(\[data-theme='dark'\]\) \.face::after \{[^}]*mix-blend-mode: screen/);
-  assert.match(css, /:global\(\[data-theme='sepia'\]\) \.face::after \{/);
-  assert.match(css, /\n\.slotFront\[data-tilting\] \.face::after \{[^}]*opacity: 1/);
-
   // 前牌的区色投影：颜色取 zones.ts 的区色，换前牌只过渡 opacity，不补间 box-shadow
   assert.match(deck, /'--tint': zone\.tint/);
-  assert.match(css, /\n\.tilt::before \{[^}]*color-mix\(in srgb, var\(--tint\)/);
-  assert.match(css, /\n\.tilt::before \{[^}]*transition: opacity 350ms/);
+  const tintShadow = rule('.tilt::before');
+  assert.match(tintShadow, /color-mix\(in srgb, var\(--tint\)/);
+  assert.match(tintShadow, /transition: opacity 350ms/);
+  const shadowTransition = tintShadow.match(/transition:([^;]*);/)?.[1] ?? '';
+  assert.doesNotMatch(shadowTransition, /box-shadow|all/, '投影只交叉淡变，box-shadow 本身补间就是逐帧重绘');
   assert.match(css, /\n\.slotFront > \.tilt::before \{\s*opacity: 1;/);
 
   // 伪元素的补间要单列进降级块：.card / .tilt 的 transition: none 管不到它们
@@ -468,8 +459,8 @@ test('the front card tilts on an inner layer and never touches the slot transfor
     '.tilt',
     '.tilt::before',
     '.card::after',
-    '.face::after',
-    '.slotFront[data-tilting] .face::after',
+    '.glare',
+    '.slotFront[data-tilting] .glare',
   ]) {
     assert.match(
       reduced,
@@ -477,6 +468,76 @@ test('the front card tilts on an inner layer and never touches the slot transfor
       `${selector} 没进减动效降级块`,
     );
   }
+});
+
+test('the glare lights the cover only, never the text or the buttons', () => {
+  const deck = fs.readFileSync(deckPath, 'utf8');
+  const css = fs.readFileSync(deckCssPath, 'utf8');
+  const escapeRe = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const rule = (selector) => css.match(new RegExp(`\\n${escapeRe(selector)} \\{[^}]*\\}`))?.[0] ?? '';
+  const zIndex = (selector) => {
+    const hit = rule(selector).match(/\n\s*z-index: (-?\d+);/);
+    return hit ? Number(hit[1]) : null;
+  };
+
+  // 一层高光，在 .coverBox 里、树序在封面图之后；.coverBox 里只有图和光，一个字都没有——
+  // 编号与徽章挂在 .face 上（位置照样落在封面上）
+  const coverAt = deck.indexOf('<div className={styles.coverBox}');
+  const coverEnd = deck.indexOf('</div>', coverAt);
+  const bodyAt = deck.indexOf('<div className={styles.body}>');
+  assert.ok(coverAt > 0 && coverEnd > coverAt && bodyAt > coverEnd);
+  const coverJsx = deck.slice(coverAt, coverEnd);
+  assert.ok(coverJsx.indexOf('className={styles.cover}') < coverJsx.indexOf('className={styles.glare}'));
+  assert.doesNotMatch(coverJsx, /styles\.no\b|styles\.badge|zone\.no|badges\[|t\.zone/, '封面组里不许有字');
+  const chips = deck.slice(coverEnd, bodyAt);
+  assert.match(chips, /className=\{styles\.no\}/);
+  assert.match(chips, /styles\.badge/);
+  assert.equal((deck.match(/styles\.glare\b/g) || []).length, 1, '只有一层高光');
+  assert.doesNotMatch(css, /\.face::after|glareBody|glareCover/, '不再有盖在卡面或正文上的那层');
+
+  // 混合模式的隔离组只圈到 .coverBox：组若是整张卡面，字会随组先栅格、再随倾斜重采样而发虚
+  assert.match(rule('.coverBox'), /isolation: isolate/);
+  assert.equal((css.match(/isolation: isolate/g) || []).length, 1);
+  assert.doesNotMatch(rule('.face'), /isolation|mix-blend-mode|z-index/);
+  for (const [, selector] of css.matchAll(/\n([^\n{}]+) \{[^}]*mix-blend-mode:/g)) {
+    assert.match(selector, /\.glare$/, `${selector} 也在做混合`);
+  }
+
+  // 层级：高光不设 z-index（按树序压在图上，出不了 .coverBox）；
+  // 编号徽章 1 < 命中层 3 < 快速开始 4 —— 按钮与命中层的层级、可点性不变
+  assert.equal(zIndex('.glare'), null);
+  assert.equal(zIndex('.no'), 1);
+  assert.equal(zIndex('.badge'), 1);
+  assert.equal(zIndex('.hit'), 3);
+  assert.equal(zIndex('.quickBtn'), 4);
+  assert.match(rule('.glare'), /pointer-events: none/);
+
+  // 几何：层与卡面同尺寸（包含块只有封面高，层高按封面占比放大回卡面高），
+  // 光斑是边长 2 倍卡宽的正方形，不再是 2W × 2H 的大块；封面占比只有一个出处
+  assert.match(rule('.glare'), /width: 100%;\s*height: calc\(100% \/ var\(--cover-frac\)\);/);
+  assert.match(rule('.coverBox'), /flex: 0 0 calc\(var\(--cover-frac\) \* 100%\)/);
+  assert.equal((css.match(/--cover-frac: /g) || []).length, 1);
+  const spot = rule('.glare::after');
+  assert.match(spot, /width: 200%;/);
+  assert.match(spot, /aspect-ratio: 1;/);
+  assert.match(spot, /margin-top: -100%;/);
+  assert.match(spot, /radial-gradient\(\s*circle closest-side/);
+  assert.doesNotMatch(css, /inset: -50%/);
+
+  // 静止时 2D translate、不挂 will-change：四张牌的高光平时不各自常驻合成层
+  assert.match(
+    rule('.glare'),
+    /transform: translate\(calc\(var\(--glare-x, 50%\) - 50%\), calc\(var\(--glare-y, 50%\) - 50%\)\)/,
+  );
+  assert.doesNotMatch(rule('.glare'), /translate3d|will-change/);
+  const live = rule('.slotFront[data-tilting] .glare');
+  assert.match(live, /opacity: 1/);
+  assert.match(live, /will-change: transform/);
+
+  // 混合模式按主题分：浅色 / 护眼 soft-light、深色 screen
+  assert.match(rule('.glare'), /mix-blend-mode: soft-light/);
+  assert.match(rule(":global([data-theme='dark']) .glare"), /mix-blend-mode: screen/);
+  assert.match(rule(":global([data-theme='sepia']) .glare"), /--glare-core: /);
 });
 
 test('the tilt maps the pointer to at most ±6° and lifts the side under it', async () => {

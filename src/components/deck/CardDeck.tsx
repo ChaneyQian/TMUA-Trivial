@@ -228,7 +228,7 @@ export default function CardDeck({
               >
                 {/* 倾斜只作用在 .tilt 这一层（连同两圈投影），外层 .card 的槽位
                     transform（转牌、横滑跟手）一个字都不动；.face 是卡面本体
-                    （边框、底色、圆角裁切、跟手高光） */}
+                    （边框、底色、圆角裁切；跟手高光只在封面里） */}
                 <div className={styles.tilt}>
                   <div className={styles.face}>
                     {/* 用 backgroundImage 而不是 background 简写：简写会把样式表里的
@@ -243,15 +243,19 @@ export default function CardDeck({
                         loading={isFront ? 'eager' : 'lazy'}
                         decoding="async"
                       />
-                      <span className={styles.no} aria-hidden="true">
-                        {zone.no}
-                      </span>
-                      <span
-                        className={`${styles.badge} ${locked[zone.id] ? styles.badgeLocked : ''}`}
-                      >
-                        {badges[zone.id]}
-                      </span>
+                      {/* 跟手高光：只照封面图。.coverBox 里只放图和光，不放字 */}
+                      <span className={styles.glare} aria-hidden="true" />
                     </div>
+                    {/* 编号与徽章落在封面上，但挂在 .face 上：.coverBox 是高光的混合隔离组，
+                        放进去的字会随组先栅格、再随倾斜重采样而发虚（见 Deck.module.css） */}
+                    <span className={styles.no} aria-hidden="true">
+                      {zone.no}
+                    </span>
+                    <span
+                      className={`${styles.badge} ${locked[zone.id] ? styles.badgeLocked : ''}`}
+                    >
+                      {badges[zone.id]}
+                    </span>
 
                     <div className={styles.body}>
                       <div className={styles.title}>{t.zone.title[zone.id]}</div>
