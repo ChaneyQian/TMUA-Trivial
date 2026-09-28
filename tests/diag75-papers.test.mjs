@@ -318,6 +318,8 @@ test('a complete bank ships diag.json v2: paper 1 in order, paper 2 by chapter, 
     JSON.stringify(diag),
   );
   assert.match(built.stdout, /7\.5\+ Diagnostic：卷一 10 道；卷二 10 道/);
+  // 没设 DIAG75_PAPER1 的构建（生产就是这样）不该出现「被覆盖」那一行
+  assert.doesNotMatch(built.stdout, /卷一被 DIAG75_PAPER1 覆盖/);
 });
 
 test('the classic-zone exam questions are reserved, and nothing else is', (t) => {
@@ -409,6 +411,13 @@ test('an empty bank still reports the floor first, and DIAG75_PAPER1=off ships n
   cleanup(t, bank);
   const off = build(t, bank, { DIAG75_PAPER1: 'off' });
   assert.equal(off.built.status, 0, off.built.stderr);
+  // 被覆盖就在日志里当场说出来：生产构建的日志里冒出这一行，就是配错了
+  assert.match(off.built.stdout, /⚠ 卷一被 DIAG75_PAPER1 覆盖（仅测试用）：off/);
+  // 换成一份自定义清单同样要报，并报出清单本身（不在题库里也照样先报，再被卷一闸拦下）
+  const custom = build(t, bank, { DIAG75_PAPER1: '20180211900,20230300110' });
+  assert.match(custom.built.stdout, /⚠ 卷一被 DIAG75_PAPER1 覆盖（仅测试用）：20180211900,20230300110/);
+  assert.notEqual(custom.built.status, 0, 'a two-question paper 1 is still refused by the size check');
+  assert.match(custom.built.stderr, /卷一应为 10 道，实为 2 道/);
   assert.equal(off.has('diag.json'), false);
   assert.equal(off.read('index.json').some((entry) => entry.reserved), false);
 

@@ -691,6 +691,13 @@ function main() {
     console.error(`[build-data] ${e.message}`);
     process.exit(1);
   }
+  // 被覆盖就当场说出来：这个开关只给测试用，生产构建的日志里冒出这一行就是配错了
+  if (process.env.DIAG75_PAPER1 !== undefined) {
+    console.log(
+      `[build-data] ⚠ 卷一被 DIAG75_PAPER1 覆盖（仅测试用）：` +
+        (diag75Paper1 ? diag75Paper1.join(',') : 'off，本次不出 7.5+ 的卷'),
+    );
+  }
 
   fs.rmSync(OUT, { recursive: true, force: true });
   fs.mkdirSync(path.join(OUT, 'q'), { recursive: true });
@@ -932,9 +939,8 @@ function main() {
     console.log(
       `[build-data]   经典区考题移出练习池（reserved）：${diag75Papers.reserved.join(', ') || '无'}`,
     );
-  } else if (!diag75Paper1) {
-    console.log('[build-data] 7.5+ Diagnostic：DIAG75_PAPER1=off，本次不出卷（仅供测试）');
   }
+  // DIAG75_PAPER1=off 那种情形不另报：开头那行「卷一被 DIAG75_PAPER1 覆盖」已经说过了
 
   // 知识点倒排。vocab 给全 12 词（哪怕某个词一道题都没有，它仍是规范表的一部分），
   // byTopic 只列真有题的词。qid 按索引同序（降序），产物与目录遍历顺序无关
