@@ -70,7 +70,9 @@ test('GMAT question files follow the shared frontmatter and section layout', () 
   for (const set of SETS) {
     for (let n = 1; n <= set.count; n++) {
       const file = path.join(gmatDir, set.slug, `${set.prefix}-Q${n}.md`);
-      const raw = fs.readFileSync(file, 'utf8');
+      // 行尾先归一：Windows 上 Git 默认 core.autocrlf=true，检出的就是 CRLF，
+      // 下面按 \n 找「## 题目」这类分节行会整片误报缺节。库里存的是 LF，断言强度不变
+      const raw = fs.readFileSync(file, 'utf8').replace(/\r\n/g, '\n');
       const where = path.relative(root, file);
 
       assert.equal(field(raw, 'database'), 'GMAT', where);
