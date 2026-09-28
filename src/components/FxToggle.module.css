@@ -1,0 +1,32 @@
+/* 光效开关钮。圆形外观、悬停 / 按下 / 焦点环都沿用 LangToggle.module.css 的 .toggle，
+   这里只管位置和图标：紧挨中/英钮的左边（40px 钮宽 + 8px 间隔）。
+   开 / 关两态由 <html data-fx> 决定，首帧就对，不等水合 */
+
+/* 叠一次类名抬特异性：两份样式表打包后的先后不由我们定，同特异性时 .toggle 的 right: 0 可能在后面赢 */
+.fx.fx {
+  right: 48px;
+}
+
+.icon {
+  display: block;
+  overflow: visible;
+}
+
+/* 开：实心的区色（站点强调色）星，右下角再带一颗小星 */
+.star,
+.spark {
+  fill: var(--accent);
+  stroke: var(--accent);
+  stroke-width: 1.2;
+  stroke-linejoin: round;
+}
+
+/* 关：只剩空心轮廓、退成次要文字色，小星收起 */
+:global(:root[data-fx='off']) .star {
+  fill: none;
+  stroke: var(--text-muted);
+}
+
+:global(:root[data-fx='off']) .spark {
+  display: none;
+}

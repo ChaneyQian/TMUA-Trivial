@@ -1209,6 +1209,31 @@
   margin-bottom: 0.6rem;
 }
 
+/* 窄屏：右上角两颗圆钮（中/英、光效）会压住第一行页签的右端（英文界面实测压上 30px）。
+   用一个右浮动的占位只把第一行的右端让出来，之后的行照常铺满——整排右内边距的话，
+   375px 下页签会从两行变成三行。flex 里没有浮动，所以窄屏这一排改用行内块。
+   占位只高一行页签（30px）：再高就会把第二行的行框也挤短。行距取 0.65rem，
+   第二行的页签（30 + 10px 起）正好落在圆钮（高 40px）底边之下 */
+@media (max-width: 639px) {
+  .zoneTabs {
+    display: block;
+    margin-bottom: 0;
+  }
+
+  .zoneTabs::before {
+    float: right;
+    width: 92px;
+    height: 30px;
+    content: '';
+  }
+
+  .zoneTabs > * {
+    display: inline-block;
+    margin: 0 0.4rem 0.65rem 0;
+    vertical-align: middle;
+  }
+}
+
 .zoneBack {
   padding: 0.32rem 0.6rem;
   border: 1px solid var(--border);

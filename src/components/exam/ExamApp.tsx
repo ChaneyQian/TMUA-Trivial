@@ -6,6 +6,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import AmbientBackdrop from '@/components/ambient/AmbientBackdrop';
 import IdBadge from '@/components/badge/IdBadge';
+import FxToggle from '@/components/FxToggle';
 import LangToggle from '@/components/LangToggle';
 import CardDeck from '@/components/deck/CardDeck';
 import { ZONES, zoneById, type ZoneId } from '@/components/deck/zones';
@@ -1141,6 +1142,8 @@ export default function ExamApp() {
         >
           <IdBadge />
           <LangToggle />
+          {/* 光效开关挨着中/英钮；和它一样只在设置页（选区 / 配置 / 进度三个视图）出现，答题页没有 */}
+          <FxToggle />
           {/* 公告只在 setup 相挂载：考试进行中不该有任何浮层打扰 */}
           <NoticeBoard />
 

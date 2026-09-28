@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import test from 'node:test';
 
+import * as fxModule from '../src/lib/fx.ts';
 import { FX_EVENT, inferFx, isFx, resolveFx } from '../src/lib/fx.ts';
 import { FX_KEY } from '../src/lib/storage.ts';
 import { cmpSpec, cssFiles, declarations, parseRules, specificity, stripComments, subject } from './helpers/css-rules.mjs';
@@ -245,4 +246,83 @@ test('with effects off the tilt and the spotlight attach nothing; switching off 
     off();
     restoreGlobals();
   }
+});
+
+// ---------------------------------------------------------------------------
+// 按钮：挨着中/英钮的同款圆钮，三个设置页视图都在，答题页没有
+
+test('setFx flips <html data-fx>, remembers the choice and tells every subscriber', (t) => {
+  const { setFx, subscribeFx, currentFx } = fxModule;
+  const store = new Map();
+  const dom = installFakeDom({ fx: 'on' });
+  globalThis.localStorage = { setItem: (k, v) => store.set(k, v), getItem: (k) => store.get(k) ?? null };
+  // Node 自带 Event；假 window 上的派发转成它自己的 emit
+  dom.win.dispatchEvent = (event) => dom.win.emit(event.type);
+  t.after(() => {
+    restoreGlobals();
+    delete globalThis.localStorage;
+  });
+
+  let heard = 0;
+  const unsubscribe = subscribeFx(() => heard++);
+  assert.equal(currentFx(), 'on');
+  setFx('off');
+  assert.equal(dom.doc.documentElement.dataset.fx, 'off', 'CSS 读的属性立刻变');
+  assert.equal(currentFx(), 'off');
+  assert.equal(store.get(FX_KEY), 'off', '手动切换才落盘，以后以存值为准');
+  assert.equal(heard, 1);
+  setFx('on');
+  assert.equal(store.get(FX_KEY), 'on');
+  assert.equal(heard, 2);
+  unsubscribe();
+  setFx('off');
+  assert.equal(heard, 2, '退订之后不再收到');
+
+  // 存储被禁用也照样切（只是记不住）
+  globalThis.localStorage = {
+    setItem() {
+      throw new Error('storage disabled');
+    },
+  };
+  setFx('on');
+  assert.equal(currentFx(), 'on');
+});
+
+test('the effects toggle is a round button beside the language one, in the setup stage only', () => {
+  const toggle = fs.readFileSync('src/components/FxToggle.tsx', 'utf8');
+  const css = stripComments(fs.readFileSync('src/components/FxToggle.module.css', 'utf8'));
+  const exam = fs.readFileSync('src/components/exam/ExamApp.tsx', 'utf8');
+  const i18n = fs.readFileSync('src/lib/i18n.ts', 'utf8');
+  const examCss = stripComments(fs.readFileSync('src/components/exam/Exam.module.css', 'utf8'));
+
+  // 同款圆钮：直接用中/英钮的 .toggle（圆形、悬停 / 按下、焦点环、减动效都在那里），自己只管位置和图标
+  assert.match(toggle, /className=\{`\$\{langStyles\.toggle\} \$\{styles\.fx\}`\}/);
+  assert.match(toggle, /import langStyles from '\.\/LangToggle\.module\.css';/);
+  assert.match(css, /\.fx\.fx \{\s*right: 48px;\s*\}/, '紧挨中/英钮左边（40px 钮宽 + 8px 间隔）');
+  // 读屏：按下 = 开；标签说出当前状态；悬停提示说明什么时候该关；点一下就切
+  assert.match(toggle, /aria-pressed=\{on\}/);
+  assert.match(toggle, /aria-label=\{on \? t\.fxToggle\.ariaOn : t\.fxToggle\.ariaOff\}/);
+  assert.match(toggle, /title=\{t\.fxToggle\.title\}/);
+  assert.match(toggle, /onClick=\{\(\) => setFx\(on \? 'off' : 'on'\)\}/);
+  assert.match(toggle, /type="button"/);
+  assert.match(i18n, /fxToggle: \{ ariaOn: '光效：开', ariaOff: '光效：关', title: '卡顿时可以关掉' \}/);
+  assert.match(
+    i18n,
+    /fxToggle: \{ ariaOn: 'Effects: on', ariaOff: 'Effects: off', title: 'Turn off if things feel laggy' \}/,
+  );
+  // 图标的开 / 关由首帧就写好的 data-fx 决定，不等水合
+  assert.match(css, /:global\(:root\[data-fx='off'\]\) \.star \{[^}]*fill: none;/);
+  assert.match(toggle, /aria-hidden="true"/);
+
+  // 只挂在设置页的舞台里、紧跟中/英钮；答题页和成绩页没有
+  assert.equal(exam.split('<FxToggle />').length - 1, 1, '只挂一处');
+  assert.match(exam, /<LangToggle \/>\s*\{\/\*[^]*?\*\/\}\s*<FxToggle \/>/);
+  const at = exam.indexOf('<FxToggle />');
+  assert.ok(at > exam.indexOf("if (phase === 'setup' || phase === 'loading') {"));
+  assert.ok(at < exam.indexOf("if (phase === 'diagnostic') {"));
+
+  // 窄屏的配置页：两颗圆钮占着页签第一行的右端，用右浮动的占位让出来（宽度装得下两颗钮）
+  const narrow = examCss.slice(examCss.indexOf('@media (max-width: 639px)'));
+  const reserve = narrow.match(/\.zoneTabs::before \{[^}]*float: right;[^}]*width: (\d+)px;/);
+  assert.ok(reserve && Number(reserve[1]) >= 40 * 2 + 8, '让出来的宽度装不下两颗 40px 的圆钮');
 });

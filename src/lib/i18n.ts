@@ -16,6 +16,8 @@ export const DEFAULT_LANG: Lang = 'zh';
 const zh = {
   // 切换按钮显示的是「切过去之后的语言」，不是当前语言
   langToggle: { label: 'EN', aria: '切换到英文', title: '中 / EN' },
+  // 光效开关：读屏念的是当前状态（配合 aria-pressed），悬停提示说明什么时候该关
+  fxToggle: { ariaOn: '光效：开', ariaOff: '光效：关', title: '卡顿时可以关掉' },
 
   zone: {
     title: { classic: '经典题库', grill: '复烤区', trivial: '9.0 Trivial', board: '标化题库' },
@@ -296,6 +298,7 @@ export type Strings = typeof zh;
 
 const en: Strings = {
   langToggle: { label: '中', aria: 'Switch to Chinese', title: '中 / EN' },
+  fxToggle: { ariaOn: 'Effects: on', ariaOff: 'Effects: off', title: 'Turn off if things feel laggy' },
 
   zone: {
     title: {
