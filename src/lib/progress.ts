@@ -26,6 +26,17 @@ export function practiceQids(index: IndexEntry[] | null): Set<number> {
   return out;
 }
 
+/**
+ * 365 解锁计数的口径：非 diag，**含** reserved（与 validCompletedCount 同一条判据）。
+ * 「已做 N 题」与总体正确率按它数——和充电条是同一个数。练习池（practiceQids）
+ * 只管「当前错题」：reserved 不上错题榜，那个数得跟着榜走
+ */
+export function countedQids(index: IndexEntry[] | null): Set<number> {
+  const out = new Set<number>();
+  for (const entry of index || []) if (!entry.diag) out.add(entry.qid);
+  return out;
+}
+
 export interface PracticeOverview {
   seen: number;
   attempts: number;
@@ -35,21 +46,31 @@ export interface PracticeOverview {
 }
 
 /**
- * 只统计练习池的概览。records.overview() 一视同仁地数所有 qid，
- * 但诊断题的对错是永不示人的——统计条说「14 道当前错题」、错题榜只列得出 12 条，
- * 用户会以为榜坏了。两边必须用同一个池子。
+ * 练习概览。records.overview() 一视同仁地数所有 qid，但诊断题的对错是永不示人的，
+ * 所以这里分两个池子：
+ *   - pool：「已做」「作答次数」「正确率」按它数。调用方传 countedQids——和 365 充电条
+ *     同一个口径（含 reserved）。做过那两道 7.5+ 征用题的人，「已做」与充能是同一个数；
+ *     作答次数为 0 的记录（导入文件里可能有）不算「做过」，这一点也和 365 一致
+ *   - wrongPool：「当前错题」按它数，调用方传 practiceQids——统计条说「14 道当前错题」、
+ *     错题榜只列得出 12 条，用户会以为榜坏了。这个数必须和榜同源（reserved 不上榜）
+ * 不传 wrongPool 就两件事用同一个池子
  */
-export function practiceOverview(records: Records, pool: Set<number>): PracticeOverview {
+export function practiceOverview(
+  records: Records,
+  pool: Set<number>,
+  wrongPool: Set<number> = pool,
+): PracticeOverview {
   let seen = 0;
   let attempts = 0;
   let wrong = 0;
   let wrongNow = 0;
   for (const [qid, stat] of Object.entries(records.q)) {
-    if (!pool.has(Number(qid))) continue;
+    const key = Number(qid);
+    if (wrongPool.has(key) && stat.c === 0) wrongNow++;
+    if (!pool.has(key) || stat.a < 1) continue;
     seen++;
     attempts += stat.a;
     wrong += stat.w;
-    if (stat.c === 0) wrongNow++;
   }
   return {
     seen,

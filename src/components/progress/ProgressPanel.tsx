@@ -14,6 +14,7 @@ import type { Records } from '@/lib/records';
 import {
   TREND_LIMIT,
   chartGeometry,
+  countedQids,
   fmtClock,
   fmtDate,
   fmtPercent,
@@ -72,11 +73,16 @@ export default function ProgressPanel({
   const [pickedTs, setPickedTs] = useState<number | null>(null);
   const pickedIndex = pickedTs === null ? -1 : points.findIndex((p) => p.session.ts === pickedTs);
 
-  // diag（诊断集）必须挡在统计之外：那批题设计上全程不显示对错；reserved 也不算
-  // （它们不上错题榜，统计块跟着榜走，见 practiceQids）。
-  // 统计块与 deck 上那条统计条共用同一个池子，否则两处数字会对不上
+  // diag（诊断集）必须挡在统计之外：那批题设计上全程不显示对错。
+  // 统计块与 deck 上那条统计条共用同样两个池子，否则两处数字会对不上：
+  // 「已做 / 正确率」按 365 的口径（countedQids，含 reserved，与充电条同一个数），
+  // 「当前错题」按练习池（practiceQids，reserved 不上错题榜，这个数跟着榜走）
+  const counted = useMemo(() => countedQids(index), [index]);
   const practice = useMemo(() => practiceQids(index), [index]);
-  const stats = useMemo(() => practiceOverview(records, practice), [records, practice]);
+  const stats = useMemo(
+    () => practiceOverview(records, counted, practice),
+    [records, counted, practice],
+  );
 
   // 卷面清单只在这个面板打开时才取：它对 deck 首屏毫无用处。
   // 缓存在模块里，开一次取一次是浪费。取不到就整块不渲染——

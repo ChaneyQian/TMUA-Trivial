@@ -15,7 +15,7 @@ import DiagnosticResult from '@/components/diagnostic/DiagnosticResult';
 import GrillPanel from '@/components/grill/GrillPanel';
 import NoticeBoard from '@/components/notice/NoticeBoard';
 import { pickGrillQids } from '@/lib/grill';
-import { historyFor, practiceOverview, practiceQids } from '@/lib/progress';
+import { countedQids, historyFor, practiceOverview, practiceQids } from '@/lib/progress';
 import {
   cachedPapers,
   loadPapers,
@@ -546,9 +546,12 @@ export default function ExamApp() {
   const logicCov = logicCoverage(scopedIndex, db);
   const recordOverview = overview(records);
   // deck 上那条统计条和进度面板里的数字必须同源，否则会出现
-  // 「14 道当前错题」而榜上只列得出 12 条
+  // 「14 道当前错题」而榜上只列得出 12 条。两个池子各管一件事（见 practiceOverview）：
+  // 「已做 N 题」按 365 的口径（countedQids，含 reserved），和充电条是同一个数；
+  // 「当前错题」按练习池（practiceQids），和错题榜同源
   const practicePool = useMemo(() => practiceQids(index), [index]);
-  const practiceStats = practiceOverview(records, practicePool);
+  const countedPool = useMemo(() => countedQids(index), [index]);
+  const practiceStats = practiceOverview(records, countedPool, practicePool);
   // 复烤区卡面的错题数必须与面板里那张榜同源：榜用的是「历史错过（w>0）」，
   // 而 wrongNow 是「最近一次做错」——错过后改对的题仍在榜上，卡面却报 0，
   // 两处会当面打臉

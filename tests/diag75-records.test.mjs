@@ -13,7 +13,7 @@ import writeExcelFile from 'write-excel-file/browser';
 import { attemptsLeft, canAttempt } from '../src/lib/diagnostic.ts';
 import { grillEntries, pickGrillQids } from '../src/lib/grill.ts';
 import { paperLevel, paperProgress, papersJustCompleted, PAPER_LEVELS } from '../src/lib/papers.ts';
-import { practiceOverview, practiceQids } from '../src/lib/progress.ts';
+import { countedQids, practiceOverview, practiceQids } from '../src/lib/progress.ts';
 import {
   DIAGNOSTIC75_HEADERS,
   DIAGNOSTIC_HEADERS,
@@ -152,7 +152,8 @@ test('reserved questions are out of every practice pick path', () => {
   const missed = wrongRanking(records, Number.POSITIVE_INFINITY).filter((row) => practice.has(row.qid));
   assert.deepEqual(missed.map((row) => row.qid), [5, 4]);
   // 统计条与榜同源：「N 道当前错题」不数 reserved，不会出现数字对不上榜的情况
-  assert.equal(practiceOverview(records, practice).wrongNow, missed.length);
+  // （「已做」那一半按 365 的口径另算，见下面那条）
+  assert.equal(practiceOverview(records, countedQids(INDEX), practice).wrongNow, missed.length);
 
   // 「练这类题」（复烤区知识点复盘）：范围读 reachableIndex，本身已挡；topicEntries 再挡一道
   const topics = { v: 1, vocab: ['Algebra'], byTopic: { Algebra: [1, 2, 3, 4, 5] }, coverage: {} };
@@ -194,6 +195,48 @@ test('reserved questions still count toward 365, so nobody drops out of an unloc
   const touched = createEmptyRecords();
   for (const entry of reserved) touched.q[String(entry.qid)] = { a: 1, w: 1, t: 1, c: 0 };
   assert.equal(validCompletedCount(real, touched), 2);
+});
+
+test('"questions done" is the same number as the 365 charge, reserved included; "wrong now" follows the missed list', () => {
+  // 10 道普通题 + 恰好 2 道 reserved + 1 道诊断题
+  const index = [
+    ...Array.from({ length: 10 }, (_, i) => ({ qid: i + 1, db: 'TMUA' })),
+    { qid: 11, db: 'TMUA', reserved: true },
+    { qid: 12, db: 'MAT', reserved: true },
+    { qid: 13, db: 'DIAG75', diag: true },
+  ];
+  const records = createEmptyRecords();
+  records.q = {
+    1: { a: 2, w: 0, t: 1, c: 1 },
+    2: { a: 1, w: 1, t: 2, c: 0 },
+    3: { a: 1, w: 0, t: 3, c: 1 },
+    // 两道 reserved 都做过、都是当前错题（被 7.5+ 征用之前练的）
+    11: { a: 3, w: 2, t: 4, c: 0 },
+    12: { a: 1, w: 1, t: 5, c: 0 },
+    // 诊断题：什么都不算
+    13: { a: 4, w: 4, t: 6, c: 0 },
+    // 导入文件里作答次数为 0 的一行：365 不算「做过」，「已做」也不算
+    4: { a: 0, w: 0, t: 7, c: 1 },
+  };
+
+  const counted = countedQids(index);
+  const practice = practiceQids(index);
+  const stats = practiceOverview(records, counted, practice);
+
+  // 「已做」与充电条是同一个数：1、2、3 加上两道 reserved
+  assert.equal(validCompletedCount(index, records), 5);
+  assert.equal(stats.seen, validCompletedCount(index, records));
+  // 正确率同一口径：作答 2+1+1+3+1 = 8 次，错 0+1+0+2+1 = 4 次
+  assert.equal(stats.attempts, 8);
+  assert.equal(stats.accuracy, 0.5);
+  // 「当前错题」只数练习池（reserved 不上错题榜）：只有 2 号
+  assert.equal(stats.wrongNow, 1);
+  const missed = wrongRanking(records, Number.POSITIVE_INFINITY).filter((row) => practice.has(row.qid));
+  assert.deepEqual(missed.map((row) => row.qid), [2]);
+
+  // 两个池子只差 reserved：诊断题两边都不进
+  assert.deepEqual([...counted].filter((qid) => !practice.has(qid)).sort((a, b) => a - b), [11, 12]);
+  assert.equal(counted.has(13), false);
 });
 
 test('the real classic pool loses exactly the two reserved questions, one from TMUA and one from MAT', () => {

@@ -196,13 +196,15 @@ test('diagnostic questions are filtered out of both the missed list and the retr
   assert.match(records, /indexForLibraryMode[\s\S]*?!entry\.diag/);
   assert.match(records, /reachableIndex[\s\S]*?!entry\.diag/);
 
-  // 正：统计块与 deck 统计条也走同一个池子，否则会出现
-  // 「N 道当前错题」而复烤区榜上列不出那么多条
-  assert.match(panel, /practiceOverview\(records, practice\)/);
+  // 正：统计块与 deck 统计条也走同样的池子，否则会出现
+  // 「N 道当前错题」而复烤区榜上列不出那么多条。7.5+ 之后分两个池子：
+  // 「已做」按 365 的口径（countedQids，含 reserved），「当前错题」按练习池（与榜同源）
+  assert.match(panel, /practiceOverview\(records, counted, practice\)/);
   const exam = fs.readFileSync(examPath, 'utf8');
   // M2 后 ExamApp 把池子抽成了 practicePool，口径不变
   assert.match(exam, /const practicePool = useMemo\(\(\) => practiceQids\(index\), \[index\]\);/);
-  assert.match(exam, /practiceOverview\(records, practicePool\)/);
+  assert.match(exam, /const countedPool = useMemo\(\(\) => countedQids\(index\), \[index\]\);/);
+  assert.match(exam, /practiceOverview\(records, countedPool, practicePool\)/);
   assert.match(exam, /practiceStats\.wrongNow/);
 
   // 反：两块面板都不许把原始 index 直接当池子用，也不许用不分池的 overview() 出统计

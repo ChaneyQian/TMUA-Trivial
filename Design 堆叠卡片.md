@@ -652,9 +652,9 @@ LP1 数据管线（sync 拷贝 + 讲解转 Markdown + build-data 产出 + 测试
 - **出池**：`indexForLibraryMode`、`reachableIndex`（练这类题 / 卷面墙 / 完卷横幅）、`practiceQids`
   （错题榜 / 重练这些 / 统计条同源）、`topicEntries` / `topicReach`、`start()` 显式 qid 通道的第二道闸
   （只有复烤区 allowDiag 放行）都排除 reserved；`validCompletedCount` 照算
-- **已知口径差（有意为之）**：练习统计（deck 统计条「已做 N 题」、进度面板 tiles、知识点复盘）跟着练习池走、
-  不数 reserved，而 365 充电条照数——做过那两道的人，两处最多差 2。反过来让统计条数 reserved，
-  就会出现「N 道当前错题」与错题榜对不上
+- **统计口径（审查后改定）**：「已做 N 题」与总体正确率按 365 的口径数（`countedQids`：非 diag、**含** reserved、
+  作答次数 ≥ 1），与充电条是同一个数；「当前错题」仍按练习池（`practiceQids`），与错题榜同源——reserved
+  不上榜，这个数跟着榜走。deck 统计条与进度面板 tiles 同一套。知识点复盘仍只统计练习池
 - **XLSX**：Diagnostic 表在前四列之后**追加** `7.5+ Passed / 7.5+ Attempts / 7.5+ Last Attempt` 三列。
   前四列线格式冻结（旧站读新文件照旧）；整表去留只看前四列，追加三列另查表头——旧文件导入 diag75 为空，
   追加列被挪过只丢这三列
