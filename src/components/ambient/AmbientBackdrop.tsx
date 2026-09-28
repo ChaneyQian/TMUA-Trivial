@@ -13,83 +13,22 @@
 //   - 换区不去过渡渐变本身，每区一层、只过渡 opacity；
 //   - 聚光走 rAF 节流，只往本层元素上写 CSS 变量，不触发 React 重渲染；
 //     透镜整体用 transform 平移、里层网格反向平移抵消，跟手全程不重绘。
+//     聚光的监听、节流与收手都在 ./spotlight（attachSpotlight），这里只管挂与摘
 
-import { useEffect, useRef, type CSSProperties } from 'react';
-import { ZONES, zoneById, type ZoneId } from '@/components/deck/zones';
+import { useEffect, useRef } from 'react';
+import { ZONES, type ZoneId } from '@/components/deck/zones';
 import styles from './Ambient.module.css';
-
-/** 聚光只给「能悬停的精确指针」：触屏没有悬停，光也就无处可跟 */
-const FINE_POINTER = '(hover: hover) and (pointer: fine)';
-const REDUCED_MOTION = '(prefers-reduced-motion: reduce)';
-
-type TintVars = CSSProperties & Record<'--tint' | '--tint2', string>;
-
-function tintVars(id: ZoneId): TintVars {
-  const zone = zoneById(id);
-  return { '--tint': zone.tint, '--tint2': zone.tint2 };
-}
+import { attachSpotlight, tintVars } from './spotlight';
 
 export default function AmbientBackdrop({ zone }: { zone: ZoneId }) {
   const lensRef = useRef<HTMLDivElement | null>(null);
 
+  // 挂一次、卸载时摘：媒体条件（有没有鼠标、减动效）由 attachSpotlight 逐次现判并订阅变化，
+  // 这里不在挂载时一锤定音
   useEffect(() => {
     const lens = lensRef.current;
     if (!lens) return;
-    // 跟手移动本身就是交互触发的动效，减动效下整个不开；触屏同样不开
-    if (!window.matchMedia(FINE_POINTER).matches) return;
-    if (window.matchMedia(REDUCED_MOTION).matches) return;
-
-    let frame = 0;
-    let lit = false;
-    let x = 0;
-    let y = 0;
-
-    const paint = () => {
-      frame = 0;
-      lens.style.setProperty('--mx', `${x}px`);
-      lens.style.setProperty('--my', `${y}px`);
-      if (!lit) {
-        lit = true;
-        lens.dataset.lit = 'true';
-      }
-    };
-
-    const onMove = (e: PointerEvent) => {
-      if (e.pointerType !== 'mouse') return;
-      x = e.clientX;
-      y = e.clientY;
-      // 页面隐藏时不排帧：后台标签页的 rAF 本来就会被冻住，排了也只是悬着
-      if (!frame && !document.hidden) frame = window.requestAnimationFrame(paint);
-    };
-
-    const dim = () => {
-      if (frame) window.cancelAnimationFrame(frame);
-      frame = 0;
-      if (lit) {
-        lit = false;
-        delete lens.dataset.lit;
-      }
-    };
-
-    // 指针离开窗口时 pointerout 的 relatedTarget 为 null；窗口内换元素时不为 null
-    const onOut = (e: PointerEvent) => {
-      if (!e.relatedTarget) dim();
-    };
-    const onVisibility = () => {
-      if (document.hidden) dim();
-    };
-
-    window.addEventListener('pointermove', onMove, { passive: true });
-    document.addEventListener('pointerout', onOut);
-    window.addEventListener('blur', dim);
-    document.addEventListener('visibilitychange', onVisibility);
-    return () => {
-      window.removeEventListener('pointermove', onMove);
-      document.removeEventListener('pointerout', onOut);
-      window.removeEventListener('blur', dim);
-      document.removeEventListener('visibilitychange', onVisibility);
-      if (frame) window.cancelAnimationFrame(frame);
-    };
+    return attachSpotlight(lens);
   }, []);
 
   return (
@@ -110,6 +49,7 @@ export default function AmbientBackdrop({ zone }: { zone: ZoneId }) {
         </div>
       ))}
       <div className={styles.grid} />
+      {/* 透镜在最外层之内：它的线读的 --tint 就是上面按当前区写的那一份 */}
       <div ref={lensRef} className={styles.lens}>
         <div className={styles.lensGrid} />
       </div>
