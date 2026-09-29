@@ -5,7 +5,9 @@ import test from 'node:test';
 
 import { cascade, declarations, evalLength, parseRules, stripComments, subject } from './helpers/css-rules.mjs';
 import { attrValue, balanced, calls, code, effects, fnBody, jsxByClass, jsxChildren } from './helpers/source.mjs';
-import { nextFocus, onBadgeKey } from '../src/components/badge/focusTrap.ts';
+import ts from 'typescript';
+
+import { badgeStops, nextFocus, onBadgeKey } from '../src/components/badge/focusTrap.ts';
 
 const componentPath = 'src/components/badge/IdBadge.tsx';
 const cssPath = 'src/components/badge/IdBadge.module.css';
@@ -171,16 +173,85 @@ test('Tab and Shift+Tab cycle between the card and the stow button; Esc stows; o
   assert.equal(nextFocus(key('Tab'), [null, null], card), null);
 });
 
+test('while the badge is still dropping in, the invisible stow button is not a Tab stop', () => {
+  // 「收起工牌」在提示行里，提示行 1.25s 后才淡入；落下途中它是 opacity 0 的
+  const ring = focusRing();
+  const card = ring.make('card');
+  const stowBtn = ring.make('stow');
+  assert.deepEqual(badgeStops('dropping', card, stowBtn), [card]);
+  assert.deepEqual(badgeStops('resting', card, stowBtn), [card, stowBtn]);
+  assert.deepEqual(badgeStops('flying', card, stowBtn), [card, stowBtn]);
+
+  // 落下途中：Tab / Shift+Tab 都只落在卡片上（从 body 出发也一样），照样拦下默认的焦点移动
+  for (const from of [null, card, { name: 'body' }]) {
+    for (const shiftKey of [false, true]) {
+      ring.set(from);
+      const e = key('Tab', { shiftKey });
+      assert.equal(onBadgeKey(e, badgeStops('dropping', card, stowBtn), ring.focused(), () => {}), true);
+      assert.equal(ring.focused(), card, `落下途中 ${shiftKey ? 'Shift+' : ''}Tab 落到了看不见的按钮上`);
+      assert.equal(e.prevented, true);
+    }
+  }
+  // 落稳之后照常在两者之间转
+  ring.set(card);
+  onBadgeKey(key('Tab'), badgeStops('resting', card, stowBtn), ring.focused(), () => {});
+  assert.equal(ring.focused(), stowBtn);
+});
+
+/** 把剥过注释的一段 TSX 代码包成函数真跑：先用 TypeScript 去掉类型标注，names 是它用到的外部名字 */
+function runnable(body, names) {
+  const js = ts.transpileModule(`function __run(${names.join(', ')}) {\n${body}\n}`, {
+    compilerOptions: { target: ts.ScriptTarget.ES2022 },
+  }).outputText;
+  return new Function(`${js}\nreturn __run;`)();
+}
+
 test('the key handler is wired to the card and the stow button while the overlay is up', () => {
   const src = code(fs.readFileSync(componentPath, 'utf8'));
-  // 浮层开着时挂在 window 上：Esc 与焦点陷阱都走 ./focusTrap 那一个函数
-  const keydown = effects(src).filter(({ body }) => body.includes("addEventListener('keydown'"));
+  // 浮层开着时挂在 window 上：Esc 与焦点陷阱都走 ./focusTrap。按语义判——把这段 effect 真跑一遍，
+  // 看它挂了什么监听、监听收到按键时把什么交给 onBadgeKey、清理时摘没摘干净
+  const keydown = effects(src).filter(({ body }) => body.includes("'keydown'"));
   assert.equal(keydown.length, 1, '只该有一个 keydown effect');
   const { body, deps } = keydown[0];
-  assert.match(body, /^if \(!visible\) return;/);
-  assert.match(body, /onBadgeKey\(e, \[badgeRef\.current, stowRef\.current\], document\.activeElement, stow\)/);
-  assert.match(body, /return \(\) => window\.removeEventListener\('keydown', onKey\);/);
-  assert.deepEqual([...deps].sort(), ['stow', 'visible']);
+  for (const dep of ['visible', 'stow', 'stage']) assert.ok(deps.includes(dep), `effect 依赖里少了 ${dep}`);
+
+  const names = ['visible', 'stage', 'stow', 'badgeRef', 'stowRef', 'onBadgeKey', 'badgeStops', 'window', 'document'];
+  const run = runnable(body, names);
+  const card = { name: 'card' };
+  const stowBtn = { name: 'stow' };
+  const active = { name: 'active' };
+  const stow = () => {};
+  const fakeWindow = () => {
+    const listeners = new Map();
+    return {
+      listeners,
+      addEventListener: (type, fn) => listeners.set(type, fn),
+      removeEventListener: (type, fn) => listeners.get(type) === fn && listeners.delete(type),
+    };
+  };
+
+  // 不在屏上：什么都不挂
+  let win = fakeWindow();
+  assert.equal(run(false, 'stowed', stow, { current: card }, { current: stowBtn }, () => {}, badgeStops, win, {}), undefined);
+  assert.equal(win.listeners.size, 0);
+
+  for (const stage of ['dropping', 'resting', 'flying']) {
+    win = fakeWindow();
+    const received = [];
+    const cleanup = run(true, stage, stow, { current: card }, { current: stowBtn }, (...args) => received.push(args), badgeStops, win, { activeElement: active });
+    assert.equal(typeof win.listeners.get('keydown'), 'function', `${stage}：没挂 keydown`);
+    const event = { key: 'Tab', shiftKey: false };
+    win.listeners.get('keydown')(event);
+    assert.equal(received.length, 1);
+    const [e, stops, focused, stowFn] = received[0];
+    assert.equal(e, event);
+    assert.deepEqual(stops, badgeStops(stage, card, stowBtn), `${stage}：停靠点不对`);
+    assert.equal(focused, active, '当前焦点要现读 document.activeElement');
+    assert.equal(stowFn, stow);
+    cleanup();
+    assert.equal(win.listeners.size, 0, `${stage}：清理时没摘掉监听`);
+  }
+
   // 两个停靠点的 ref 挂在对的元素上
   assert.equal(jsxByClass(src, 'stowBtn')[0]?.attrs.get('ref'), '{stowRef}');
   assert.equal(jsxByClass(src, 'card')[0]?.attrs.get('ref'), '{badgeRef}');

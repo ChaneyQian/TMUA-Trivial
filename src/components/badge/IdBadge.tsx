@@ -11,7 +11,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useCardTilt } from '@/components/fx/useCardTilt';
 import { holdOverlay } from '@/lib/overlay';
 import { BADGE_SEEN_KEY as SEEN_KEY } from '@/lib/storage';
-import { onBadgeKey } from './focusTrap';
+import { badgeStops, onBadgeKey } from './focusTrap';
 import styles from './IdBadge.module.css';
 
 const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH || '';
@@ -182,13 +182,14 @@ export default function IdBadge() {
   useEffect(() => {
     if (!visible) return;
     // Esc 收起；Tab / Shift+Tab 只在卡片与「收起工牌」之间循环（轻量焦点陷阱，见 ./focusTrap）：
-    // 否则焦点会跑到身后被遮住的设置页上，看不见在哪、回车还会按到看不见的按钮
+    // 否则焦点会跑到身后被遮住的设置页上，看不见在哪、回车还会按到看不见的按钮。
+    // 落下途中「收起工牌」还没淡入，不算停靠点（badgeStops）
     const onKey = (e: KeyboardEvent) => {
-      onBadgeKey(e, [badgeRef.current, stowRef.current], document.activeElement, stow);
+      onBadgeKey(e, badgeStops(stage, badgeRef.current, stowRef.current), document.activeElement, stow);
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [visible, stow]);
+  }, [visible, stow, stage]);
 
   // 浮层在屏上（落下、挂着、收起途中）就在 <html> 上挂遮罩标记（lib/overlay）：身后设置页的
   // 光标聚光看见它就熄灯、不再逐帧重画——否则浮层的整屏 backdrop-filter 要跟着每帧重算

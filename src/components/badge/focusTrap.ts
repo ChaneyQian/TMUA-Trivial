@@ -21,6 +21,14 @@ export interface Focusable {
 }
 
 /**
+ * 此刻的停靠点：卡片，外加「收起工牌」——但它在提示行里，落下途中提示行还没淡入
+ * （opacity 0，约 1.25s 后才出现），落稳之前不当停靠点，免得焦点停在一个看不见的按钮上
+ */
+export function badgeStops<T>(stage: string, card: T | null, stowButton: T | null): (T | null)[] {
+  return stage === 'dropping' ? [card] : [card, stowButton];
+}
+
+/**
  * Tab / Shift+Tab 该把焦点交给谁：停靠点里的下一个 / 上一个，首尾相接。
  * 还没挂载的停靠点（null）跳过；焦点不在停靠点上（比如在 body 上）时，Tab 去第一个、Shift+Tab 去最后一个。
  * 不是 Tab、带了 Alt / Ctrl / Meta（那是浏览器或系统的组合键）、或一个停靠点都没有时返回 null：不拦
