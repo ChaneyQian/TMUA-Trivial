@@ -5,7 +5,7 @@
 //
 // P8-B（2026-09）：正面做成实体证件——CR80 竖版比例、切边 + 倒角高光、冲孔 + 金属鸭嘴扣、
 // 证件式字段、微缩印字防伪线、右下角全息贴片；随指针轻倾 ±8°，指针停住约 0.9 秒就回平
-// （倾斜中的字会发软，读字时指针通常是停着的）。
+// （倾斜中的字会发软，读字时指针通常是停着的）。背面原生排版，二维码只留码区本身。
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useCardTilt } from '@/components/fx/useCardTilt';
@@ -31,14 +31,30 @@ const FIELDS = [
   { label: 'REGION', value: IDENTITY.location },
 ];
 
+/**
+ * 背面两页的文字：逐字转写自原来那两张截图（微信名片、赞赏码），不改写、不增删。
+ * 昵称第二字按像素与候选字形比对为「栉」（U+6809）。赞赏码那句的引号是原图里的直引号，
+ * 原图在「~」后折行，这里照样分两行
+ */
+const CONTACT = {
+  nickname: '桔栉',
+  region: 'Zhejiang Hangzhou',
+  hint: 'Scan QR code to add me as a friend',
+};
+const TIP = {
+  quote: ['"赞助将全额用于维持cc max5x订阅~', '感谢大家"'],
+  caption: "桔栉's Tip Code",
+};
+
 /** 挂绳织带与防伪线上的重复印字（纯装饰，读屏不念） */
 const STRAP_PRINT = 'MCQ TEST · TMUA · '.repeat(14);
 const MICROPRINT = 'TMUA · MAT · STEP · '.repeat(9);
 
 const ASSETS = {
   avatar: `${BASE_PATH}/badge/avatar.jpg`,
-  contact: `${BASE_PATH}/badge/contact-qr.png`,
-  tip: `${BASE_PATH}/badge/tip-qr.png`,
+  // 两张码都是从原截图里裁出的精确子区域（不改色、不缩放），尺寸即原图像素
+  contact: `${BASE_PATH}/badge/contact-code.png`,
+  tip: `${BASE_PATH}/badge/tip-code.png`,
 };
 
 // 动画时长，和 CSS 里的 keyframes / transition 一一对应，改一处要改两处
@@ -237,20 +253,59 @@ export default function IdBadge() {
                   className={`${styles.spread} ${opened ? styles.spreadOpen : ''}`}
                   onClick={toggle}
                 >
-                  {/* 右页：常驻，合上时被左翼盖住 */}
-                  <div className={`${styles.page} ${styles.rightPage}`}>
-                    <div className={styles.qrPlate}>
-                      <span className={styles.qrTab}>赞助 · TIP</span>
-                      <img className={styles.qrImg} src={ASSETS.tip} alt="微信赞助码" />
+                  {/* 右页：常驻，合上时被左翼盖住。合着时读屏也不念（看不见的就不念） */}
+                  <div
+                    className={`${styles.page} ${styles.rightPage}`}
+                    aria-hidden={opened ? undefined : true}
+                  >
+                    <div className={styles.back}>
+                      <span className={styles.backBand}>赞助 · TIP</span>
+                      <span className={styles.backBody}>
+                        <img
+                          className={`${styles.code} ${styles.codeTip}`}
+                          src={ASSETS.tip}
+                          width={202}
+                          height={202}
+                          alt="微信赞助码"
+                          draggable={false}
+                        />
+                        <span className={styles.quote}>
+                          {TIP.quote[0]}
+                          <br />
+                          {TIP.quote[1]}
+                        </span>
+                        <span className={styles.backCaption}>{TIP.caption}</span>
+                      </span>
+                      <span className={styles.backMicro} aria-hidden="true">
+                        {MICROPRINT}
+                      </span>
                     </div>
                   </div>
 
                   {/* 左翼：绕右边缘（书脊）翻转。合上=正面工牌，翻开=联系方式 */}
                   <div className={`${styles.page} ${styles.leaf} ${opened ? styles.leafOpen : ''}`}>
-                    <div className={`${styles.face} ${styles.faceInner}`}>
-                      <div className={styles.qrPlate}>
-                        <span className={styles.qrTab}>联系 · WECHAT</span>
-                        <img className={styles.qrImg} src={ASSETS.contact} alt="微信联系方式二维码" />
+                    <div
+                      className={`${styles.face} ${styles.faceInner}`}
+                      aria-hidden={opened ? undefined : true}
+                    >
+                      <div className={styles.back}>
+                        <span className={styles.backBand}>联系 · WECHAT</span>
+                        <span className={styles.backBody}>
+                          <span className={styles.nickname}>{CONTACT.nickname}</span>
+                          <span className={styles.region}>{CONTACT.region}</span>
+                          <img
+                            className={`${styles.code} ${styles.codeContact}`}
+                            src={ASSETS.contact}
+                            width={336}
+                            height={336}
+                            alt="微信联系方式二维码"
+                            draggable={false}
+                          />
+                          <span className={styles.backCaption}>{CONTACT.hint}</span>
+                        </span>
+                        <span className={styles.backMicro} aria-hidden="true">
+                          {MICROPRINT}
+                        </span>
                       </div>
                     </div>
 

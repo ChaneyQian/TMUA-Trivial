@@ -7,23 +7,34 @@ import { cascade, parseRules, stripComments } from './helpers/css-rules.mjs';
 const componentPath = 'src/components/badge/IdBadge.tsx';
 const cssPath = 'src/components/badge/IdBadge.module.css';
 
+/** PNG 的真实像素尺寸：IHDR 紧跟在 8 字节签名与 8 字节块头之后 */
+function pngSize(file) {
+  const bytes = fs.readFileSync(file);
+  assert.equal(bytes.subarray(1, 4).toString('latin1'), 'PNG', `${file} 不是 PNG`);
+  return { width: bytes.readUInt32BE(16), height: bytes.readUInt32BE(20) };
+}
+
 /** 'calc(var(--u) * 252)' → 252（卡上尺寸一律写成 u 的倍数） */
 const units = (value) => Number(/^calc\(var\(--u\) \* ([\d.]+)\)$/.exec(value)?.[1]);
 
-test('the ID badge ships its avatar and both QR plates as static assets', () => {
+test('the ID badge ships its avatar and both cropped codes as static assets', () => {
   assert.equal(fs.existsSync(componentPath), true, 'missing IdBadge component');
   assert.equal(fs.existsSync(cssPath), true, 'missing IdBadge styles');
   assert.equal(fs.existsSync('public/badge/avatar.jpg'), true, 'missing badge avatar');
-  assert.equal(fs.existsSync('public/badge/contact-qr.png'), true, 'missing contact QR');
-  assert.equal(fs.existsSync('public/badge/tip-qr.png'), true, 'missing tip QR');
+  assert.equal(fs.existsSync('public/badge/contact-code.png'), true, 'missing contact code');
+  assert.equal(fs.existsSync('public/badge/tip-code.png'), true, 'missing tip code');
+  // 背面改原生排版后，两张整页截图不再入库（git 历史里有）
+  assert.equal(fs.existsSync('public/badge/contact-qr.png'), false, '旧的微信名片截图该删了');
+  assert.equal(fs.existsSync('public/badge/tip-qr.png'), false, '旧的赞赏码截图该删了');
 
   const component = fs.readFileSync(componentPath, 'utf8');
 
   // 静态导出部署在 /<repo>/ 下时要带路径前缀，和 PixelCompanion 同一套规矩
   assert.match(component, /NEXT_PUBLIC_BASE_PATH/);
   assert.match(component, /badge\/avatar\.jpg/);
-  assert.match(component, /badge\/contact-qr\.png/);
-  assert.match(component, /badge\/tip-qr\.png/);
+  assert.match(component, /badge\/contact-code\.png/);
+  assert.match(component, /badge\/tip-code\.png/);
+  assert.doesNotMatch(component, /contact-qr\.png|tip-qr\.png/);
 });
 
 test('the badge drops on first visit only, then lives behind the ribbon', () => {
@@ -44,7 +55,7 @@ test('the badge drops on first visit only, then lives behind the ribbon', () => 
   assert.match(component, /prefers-reduced-motion:\s*reduce/);
 });
 
-test('the badge is a two-page fold: contact QR left, tip QR right', () => {
+test('the badge is a two-page fold: contact code left, tip code right', () => {
   const component = fs.readFileSync(componentPath, 'utf8');
   const css = fs.readFileSync(cssPath, 'utf8');
 
@@ -59,14 +70,61 @@ test('the badge is a two-page fold: contact QR left, tip QR right', () => {
   assert.match(css, /rotateY\(180deg\)/);
   assert.match(css, /transform-origin:\s*100%\s*50%/);
 
-  // 二维码必须留白底，扫码要靠对比度和静默区
-  assert.match(css, /\.qrPlate[\s\S]*?background:\s*#fff/);
-  assert.match(css, /object-fit:\s*contain/);
-  // 右页整个藏起来——正面绕冲孔倾斜时下缘会往回收，压在底下的这页会从卡边露出一截。
-  // 藏要等合上的翻页走完，翻开时立刻显出
+  // 合着时背面两页不给读屏念（看不见的就不念）；右页整个藏起来——正面绕冲孔倾斜时
+  // 下缘会往回收，压在底下的这页会从卡边露出一截。藏要等合上的翻页走完，翻开时立刻显出
+  assert.equal(component.split('aria-hidden={opened ? undefined : true}').length - 1, 2);
   assert.equal(cascade(css, '.rightPage').visibility, 'hidden');
   assert.match(cascade(css, '.rightPage').transition, /^visibility 0s linear 640ms$/);
   assert.equal(cascade(css, '.spreadOpen > .rightPage').visibility, 'visible');
+});
+
+test('each code is shown from its own pixels on pure white, bigger than before, never recoloured', () => {
+  const component = fs.readFileSync(componentPath, 'utf8');
+  const css = fs.readFileSync(cssPath, 'utf8');
+
+  // <img> 的尺寸属性就是文件的真实像素：两张码都是原截图的精确子区域，换图时这里会先红
+  const contact = pngSize('public/badge/contact-code.png');
+  const tip = pngSize('public/badge/tip-code.png');
+  assert.match(
+    component,
+    new RegExp(String.raw`src=\{ASSETS\.contact\}\s*width=\{${contact.width}\}\s*height=\{${contact.height}\}`),
+  );
+  assert.match(component, new RegExp(String.raw`src=\{ASSETS\.tip\}\s*width=\{${tip.width}\}\s*height=\{${tip.height}\}`));
+
+  // 白底和留白是扫得出来的前提：背面纯白（与码图自带的白边无缝），码本身与它的容器
+  // 不加滤镜、不调透明度、不混合
+  assert.equal(cascade(css, '.back').background, '#fff');
+  for (const rule of parseRules(stripComments(css))) {
+    if (!/\.(back|backBody|code|codeContact|codeTip)\b/.test(rule.selector)) continue;
+    assert.doesNotMatch(rule.body, /\b(filter|opacity|mix-blend-mode)\s*:/, `${rule.selector} 会改掉码的颜色`);
+  }
+
+  // 显示尺寸不小于改版前（页宽 300 时：联系码的码区约 168px，赞赏码约 106px）。
+  // 码区在图里的占比取自裁切脚本：联系码 264 / 336，赞赏码 154 / 202
+  const contactShown = units(cascade(css, '.codeContact').width) * (264 / contact.width);
+  const tipShown = units(cascade(css, '.codeTip').width) * (154 / tip.width);
+  assert.ok(contactShown >= 168, `联系码只剩 ${contactShown.toFixed(1)}u`);
+  assert.ok(tipShown >= 106, `赞赏码只剩 ${tipShown.toFixed(1)}u`);
+});
+
+test('the back pages are typeset natively, word for word from the two original screenshots', () => {
+  const component = fs.readFileSync(componentPath, 'utf8');
+  const css = fs.readFileSync(cssPath, 'utf8');
+
+  // 原文逐字转写，不改写、不增删（直引号、「~」与折行都照原图）
+  assert.match(component, /nickname: '桔栉',/);
+  assert.match(component, /region: 'Zhejiang Hangzhou',/);
+  assert.match(component, /hint: 'Scan QR code to add me as a friend',/);
+  assert.match(component, /quote: \['"赞助将全额用于维持cc max5x订阅~', '感谢大家"'\],/);
+  assert.match(component, /caption: "桔栉's Tip Code",/);
+  // 两页的标签沿用改版前的页签文字
+  assert.match(component, />联系 · WECHAT</);
+  assert.match(component, />赞助 · TIP</);
+
+  // 两页头带与正面同一套品牌蓝
+  assert.match(cascade(css, '.band').background, /var\(--band-fill\)/);
+  assert.match(cascade(css, '.backBand').background, /var\(--band-fill\)/);
+  assert.match(cascade(css, '.stage')['--band-fill'], /#4a6cf7/);
 });
 
 test('the front is a CR80 card with a cut edge, a bevel highlight and a two-layer shadow, whatever the theme', () => {
@@ -82,6 +140,7 @@ test('the front is a CR80 card with a cut edge, a bevel highlight and a two-laye
   const card = cascade(css, '.card');
   assert.equal(card['border-radius'], 'var(--card-r)');
   assert.equal(card['box-shadow'], 'var(--card-shadow)');
+  assert.equal(cascade(css, '.back')['box-shadow'], 'var(--card-shadow)', '正反面同一张卡的边');
   // 切边：1px 深色半透明；接触阴影 + 环境阴影
   const shadow = stage['--card-shadow'];
   assert.match(shadow, /^0 0 0 1px rgb\(8 12 30 \/ \d+%\)/);
