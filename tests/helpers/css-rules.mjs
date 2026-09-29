@@ -189,8 +189,8 @@ export function cascade(css, selector, { media = null } = {}) {
 
 /**
  * 长度表达式求值（单位 px）：env['%'] 是百分比的基准，env['--x'] 是 var(--x) 的值，
- * env.rem 是根字号（默认 16：站点没改 html 的字号）。
- * 只认 px / rem / % / var() / calc() 与 + − × ÷、括号；auto 之类的关键字、缺了的变量都返回 NaN
+ * env.rem 是根字号（默认 16：站点没改 html 的字号），env.em 是元素自己的字号（不给则 em 求不出）。
+ * 只认 px / rem / em / % / var() / calc() 与 + − × ÷、括号；auto 之类的关键字、缺了的变量都返回 NaN
  */
 export function evalLength(value, env = {}) {
   let missing = false;
@@ -206,6 +206,10 @@ export function evalLength(value, env = {}) {
       return `(${n} / 100 * ${env['%']})`;
     })
     .replace(/(\d*\.?\d+)rem\b/g, (_, n) => `(${n} * ${rem})`)
+    .replace(/(\d*\.?\d+)em\b/g, (_, n) => {
+      if (!('em' in env)) missing = true;
+      return `(${n} * ${env.em})`;
+    })
     .replace(/(\d*\.?\d+)px\b/g, '$1')
     .replace(/\bcalc\(/g, '(');
   if (missing || !/^[\d.\s+\-*/()]+$/.test(expr)) return Number.NaN;

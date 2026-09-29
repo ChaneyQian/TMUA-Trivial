@@ -476,17 +476,29 @@ test('the side title never runs under the front card, in any tier and at any car
   const medium = { ...narrow, ...deckVars('(min-width: 640px)') };
   const wide = { ...medium, ...deckVars('(min-width: 1024px)') };
 
-  // 侧位标题的纵向范围（离卡心的距离，单位卡宽 W）：顶 = 封面底边 + 上边距；两行字的底
-  const REM = 16;
+  const H = 10 / 7;
   const coverFrac = Number(cascade(css, '.card')['--cover-frac']);
   const title = cascade(css, '.sideTitle');
-  const top = title.top.match(/^calc\(var\(--cover-frac\) \* 100% \+ ([\d.]+)rem\)$/);
-  assert.ok(top, '侧位标题的 top 要与正文标题同一行：封面底边 + .body 的上内边距');
-  const fontPx = Number.parseFloat(title['font-size']) * REM;
-  const blockPx = Number.parseFloat(title['padding-top']) * fontPx + 2 * Number(title['line-height']) * fontPx;
-  const H = 10 / 7;
-  const pad = Number.parseFloat(cascade(css, '.sideTitleL').left) * REM;
-  assert.equal(cascade(css, '.sideTitleR').right, cascade(css, '.sideTitleL').left);
+  const body = cascade(css, '.body');
+
+  // 宽度上限真的就是 --side-read：下面按各档几何核的是这个变量，样式上没接上的话核了也白核
+  assert.equal(evalLength(title['max-width'], { '--side-read': 123.4 }), 123.4, '.sideTitle 的 max-width 要读 --side-read');
+
+  // 与正文标题同一行、同一道侧边距：top = 封面底边 + .body 的上内边距（按卡高求值，两张卡宽各核一遍）；
+  // 贴左那份的 left、贴右那份的 right = .body 的左 / 右内边距。改了正文的内边距却没跟着改，这里就红
+  const topAt = (cardW) => evalLength(title.top, { '%': cardW * H, '--cover-frac': coverFrac });
+  for (const cardW of [340, 400]) {
+    const expected = coverFrac * cardW * H + evalLength(body['padding-top']);
+    assert.ok(Math.abs(topAt(cardW) - expected) < 1e-6, `侧位标题的 top（${topAt(cardW)}px）没落在正文标题那一行（${expected}px）`);
+  }
+  const pad = evalLength(cascade(css, '.sideTitleL').left);
+  assert.equal(pad, evalLength(body['padding-left']), '贴左那份与正文的左内边距不一致');
+  assert.equal(evalLength(cascade(css, '.sideTitleR').right), evalLength(body['padding-right']), '贴右那份与正文的右内边距不一致');
+
+  // 侧位标题的纵向范围（离卡心的距离，单位卡宽 W）：顶 = 上面那个 top；底 = 两行字
+  const fontPx = evalLength(title['font-size']);
+  const blockPx = evalLength(title['padding-top'], { em: fontPx }) + 2 * Number(title['line-height']) * fontPx;
+  assert.ok(Number.isFinite(blockPx) && blockPx > 0, '侧位标题的行高 / 上内边距求不出来');
 
   const check = (name, vars, cardW) => {
     const s = Number(vars['--slot-scale']);
@@ -494,10 +506,10 @@ test('the side title never runs under the front card, in any tier and at any car
     const x = Number.parseFloat(vars['--slot-x']) / 100;
     // 侧牌自身坐标里、离卡心纵向 v 处露在前牌之外的宽度（单位 W）；左右两张镜像对称
     const exposed = (v) => 0.5 - (0.5 - x) / (s * Math.cos(theta)) - v * Math.tan(theta);
-    const vTop = coverFrac * H - H / 2 + (Number(top[1]) * REM) / cardW;
+    const vTop = topAt(cardW) / cardW - H / 2;
     const vBottom = vTop + blockPx / cardW;
     const strip = Math.min(exposed(vTop), exposed(vBottom)) * cardW;
-    const read = evalLength(vars['--side-read'], { '--card-w': cardW });
+    const read = evalLength(title['max-width'], { '--side-read': evalLength(vars['--side-read'], { '--card-w': cardW }) });
     assert.ok(read + pad + 4 <= strip, `${name} ${cardW}px：侧位标题最宽 ${read.toFixed(1)}px + 外侧 ${pad}px，露出的只有 ${strip.toFixed(1)}px`);
     assert.ok(read >= 4 * fontPx, `${name} ${cardW}px：侧位标题连四个汉字都放不下（${read.toFixed(1)}px）`);
   };
