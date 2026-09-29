@@ -3,7 +3,7 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import test from 'node:test';
 
-import { cascade, parseRules, stripComments } from './helpers/css-rules.mjs';
+import { cascade, declarations, parseRules, stripComments } from './helpers/css-rules.mjs';
 
 const componentPath = 'src/components/badge/IdBadge.tsx';
 const cssPath = 'src/components/badge/IdBadge.module.css';
@@ -54,6 +54,73 @@ test('the badge drops on first visit only, then lives behind the ribbon', () => 
   assert.match(css, /translateY\(-125vh\)/);
   assert.match(component, /'Escape'/);
   assert.match(component, /prefers-reduced-motion:\s*reduce/);
+});
+
+/** 'translateY(calc(var(--u) * 3)) rotate(4.2deg)' 里某个变换函数的参数（括号可以嵌套） */
+function transformArg(value, fn) {
+  const at = String(value ?? '').indexOf(`${fn}(`);
+  if (at < 0) return undefined;
+  let depth = 0;
+  for (let i = at + fn.length; i < value.length; i++) {
+    if (value[i] === '(') depth++;
+    else if (value[i] === ')' && --depth === 0) return value.slice(at + fn.length + 1, i);
+  }
+  return undefined;
+}
+
+/** @keyframes 名 → Map(关键帧位置 → { opacity, translateY, rotate })，from / to 记作 0% / 100% */
+function keyframes(css, name) {
+  const out = new Map();
+  for (const rule of parseRules(stripComments(css))) {
+    if (rule.at !== `@keyframes ${name}`) continue;
+    const decl = Object.fromEntries(declarations(rule.body));
+    for (const raw of rule.selector.split(',')) {
+      const offset = { from: '0%', to: '100%' }[raw.trim()] ?? raw.trim();
+      out.set(offset, {
+        opacity: decl.opacity,
+        translateY: transformArg(decl.transform, 'translateY'),
+        rotate: transformArg(decl.transform, 'rotate'),
+      });
+    }
+  }
+  return out;
+}
+
+test('the lanyard travels with the card on the way down and back up, so the clip never leaves the punch hole', () => {
+  const css = fs.readFileSync(cssPath, 'utf8');
+
+  for (const [card, lanyard, cardSel, lanyardSel] of [
+    ['badgeDrop', 'lanyardDrop', '.flyer', '.lanyard'],
+    ['badgeRetract', 'lanyardRetract', '.overlayLeaving .flyer', '.overlayLeaving .lanyard'],
+  ]) {
+    // 两边挂的是这两套关键帧，时长、缓动、填充方式逐字相同（只差名字）
+    const [cardName, ...cardTiming] = cascade(css, cardSel).animation.split(' ');
+    const [lanyardName, ...lanyardTiming] = cascade(css, lanyardSel).animation.split(' ');
+    assert.equal(cardName, card);
+    assert.equal(lanyardName, lanyard);
+    assert.equal(lanyardTiming.join(' '), cardTiming.join(' '), `${lanyardSel} 与 ${cardSel} 的时长 / 缓动不同步`);
+
+    // 关键帧位置一样、每一帧的上下位移与透明度一样；挂绳不转（转了下端就甩开了）
+    const a = keyframes(css, card);
+    const b = keyframes(css, lanyard);
+    assert.ok(a.size >= 3, `找不到 @keyframes ${card}`);
+    assert.deepEqual([...b.keys()], [...a.keys()], `${lanyard} 的关键帧位置与 ${card} 不同`);
+    for (const [offset, frame] of a) {
+      assert.equal(b.get(offset).translateY, frame.translateY, `${offset} 处挂绳与卡的位移不同`);
+      assert.equal(b.get(offset).opacity, frame.opacity, `${offset} 处挂绳与卡的透明度不同`);
+      assert.equal(b.get(offset).rotate, undefined, `${lanyard} 不该转`);
+      // 位移只用 vh 与 u：百分比按各自的盒子算，卡和挂绳高度不同就对不上
+      if (frame.translateY) assert.doesNotMatch(frame.translateY, /%/, `${card} ${offset} 用了百分比`);
+    }
+
+    // 回弹只有几个 u：挂绳跟着同样的位移走，幅度压小是为了读起来像卡在晃、不像整根绳在弹
+    for (const [offset, frame] of a) {
+      const u = /^calc\(var\(--u\) \* (-?[\d.]+)\)$/.exec(frame.translateY ?? '')?.[1];
+      if (u !== undefined) assert.ok(Math.abs(Number(u)) <= 3, `${card} ${offset} 回弹 ${u}u`);
+    }
+  }
+  // 旧的 scaleY 伸缩那一套不在了
+  assert.doesNotMatch(stripComments(css), /scaleY\(/);
 });
 
 test('the badge is a two-page fold: contact code left, tip code right', () => {
