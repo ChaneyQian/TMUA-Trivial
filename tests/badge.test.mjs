@@ -3,8 +3,8 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import test from 'node:test';
 
-import { cascade, declarations, parseRules, stripComments } from './helpers/css-rules.mjs';
-import { code, effects, jsxByClass } from './helpers/source.mjs';
+import { cascade, declarations, parseRules, stripComments, subject } from './helpers/css-rules.mjs';
+import { attrValue, balanced, calls, code, effects, fnBody, jsxByClass, jsxChildren } from './helpers/source.mjs';
 import { nextFocus, onBadgeKey } from '../src/components/badge/focusTrap.ts';
 
 const componentPath = 'src/components/badge/IdBadge.tsx';
@@ -19,6 +19,47 @@ function pngSize(file) {
 
 /** 'calc(var(--u) * 252)' → 252（卡上尺寸一律写成 u 的倍数） */
 const units = (value) => Number(/^calc\(var\(--u\) \* ([\d.]+)\)$/.exec(value)?.[1]);
+
+// 结构断言一律在剥掉注释、归一空白之后的代码上做（tests/helpers/source.mjs）：
+// 注释掉的代码不算数，换行、属性先后、等价改写不该让断言红
+
+/** 剥注释后的源码里一个数值常量：`const NAME = 8;` → 8 */
+function constNumber(src, name) {
+  return Number(new RegExp(`const ${name} = (-?[\\d.]+);`).exec(src)?.[1]);
+}
+
+/** 对象字面量 `{ a: x, b: y && z }` → Map（只切顶层逗号；值原样保留） */
+function objectLiteral(text) {
+  const out = new Map();
+  let depth = 0;
+  let current = '';
+  for (const ch of `${text.trim().replace(/^\{|\}$/g, '')},`) {
+    if ('([{'.includes(ch)) depth++;
+    else if (')]}'.includes(ch)) depth--;
+    if (ch === ',' && depth === 0) {
+      const at = current.indexOf(':');
+      if (at > 0) out.set(current.slice(0, at).trim(), current.slice(at + 1).trim());
+      current = '';
+    } else current += ch;
+  }
+  return out;
+}
+
+/** 开始标签 className 里用到的 styles.* 类名 */
+const stylesOf = (tag) => [...String(tag.attrs.get('className') ?? '').matchAll(/styles\.(\w+)/g)].map((m) => m[1]);
+
+/** 开始标签 tag 的全部带 styles.* 类名的祖先标签（由外到内），按 JSX 的嵌套结构算 */
+function jsxAncestors(src, tag) {
+  const names = new Set([...src.matchAll(/styles\.(\w+)/g)].map((m) => m[1]));
+  const out = [];
+  for (const name of names) {
+    for (const t of jsxByClass(src, name)) {
+      if (t.selfClosing || t.start >= tag.start || out.some((o) => o.start === t.start)) continue;
+      if (tag.start < t.end + jsxChildren(src, t).length) out.push(t);
+    }
+  }
+  return out.sort((a, b) => a.start - b.start);
+}
 
 test('the ID badge ships its avatar and both cropped codes as static assets', () => {
   assert.equal(fs.existsSync(componentPath), true, 'missing IdBadge component');
@@ -236,9 +277,19 @@ test('the badge is a two-page fold: contact code left, tip code right', () => {
   assert.match(css, /rotateY\(180deg\)/);
   assert.match(css, /transform-origin:\s*100%\s*50%/);
 
-  // 合着时背面两页不给读屏念（看不见的就不念）；右页整个藏起来——正面绕冲孔倾斜时
-  // 下缘会往回收，压在底下的这页会从卡边露出一截。藏要等合上的翻页走完，翻开时立刻显出
-  assert.equal(component.split('aria-hidden={opened ? undefined : true}').length - 1, 2);
+  // 合着时背面两页不给读屏念（看不见的就不念）、翻开后能读到。按 opened 真假把表达式求一遍：
+  // `opened ? undefined : true`、`!opened || undefined` 之类的等价写法都算
+  const src = code(component);
+  for (const cls of ['rightPage', 'faceInner']) {
+    const [tag] = jsxByClass(src, cls);
+    const expr = attrValue(tag?.attrs.get('aria-hidden'));
+    assert.equal(typeof expr, 'string', `.${cls} 没有 aria-hidden`);
+    const hidden = new Function('opened', `return (${expr});`);
+    assert.ok([true, 'true'].includes(hidden(false)), `.${cls} 合着时要对读屏隐藏`);
+    assert.ok([undefined, null, false, 'false'].includes(hidden(true)), `.${cls} 翻开后要能读到`);
+  }
+  // 右页整个藏起来——正面绕冲孔倾斜时下缘会往回收，压在底下的这页会从卡边露出一截。
+  // 藏要等合上的翻页走完，翻开时立刻显出
   assert.equal(cascade(css, '.rightPage').visibility, 'hidden');
   assert.match(cascade(css, '.rightPage').transition, /^visibility 0s linear 640ms$/);
   assert.equal(cascade(css, '.spreadOpen > .rightPage').visibility, 'visible');
@@ -257,13 +308,8 @@ test('each code is shown from its own pixels on pure white, bigger than before, 
   );
   assert.match(component, new RegExp(String.raw`src=\{ASSETS\.tip\}\s*width=\{${tip.width}\}\s*height=\{${tip.height}\}`));
 
-  // 白底和留白是扫得出来的前提：背面纯白（与码图自带的白边无缝），码本身与它的容器
-  // 不加滤镜、不调透明度、不混合
+  // 白底和留白是扫得出来的前提：背面纯白（与码图自带的白边无缝）。不改色见下一条
   assert.equal(cascade(css, '.back').background, '#fff');
-  for (const rule of parseRules(stripComments(css))) {
-    if (!/\.(back|backBody|code|codeContact|codeTip)\b/.test(rule.selector)) continue;
-    assert.doesNotMatch(rule.body, /\b(filter|opacity|mix-blend-mode)\s*:/, `${rule.selector} 会改掉码的颜色`);
-  }
 
   // 显示尺寸不小于改版前（页宽 300 时：联系码的码区约 168px，赞赏码约 106px）。
   // 码区在图里的占比取自裁切脚本：联系码墨迹 631 / 801，赞赏码墨迹 468 / 648
@@ -274,6 +320,72 @@ test('each code is shown from its own pixels on pure white, bigger than before, 
   // 只缩不放：页宽封顶 300px（1u = 1px），DPR 3 的屏上显示也不超过文件像素
   assert.ok(units(cascade(css, '.codeContact').width) * 3 <= contact.width, '联系码会被放大显示');
   assert.ok(units(cascade(css, '.codeTip').width) * 3 <= tip.width, '赞赏码会被放大显示');
+});
+
+/** 会改掉码颜色的属性，与它们「什么都不改」的那个值 */
+const NEUTRAL = { opacity: '1', filter: 'none', '-webkit-filter': 'none', 'mix-blend-mode': 'normal' };
+
+test('nothing between the page and a code recolours it: not the image, not any ancestor, in any state', () => {
+  const src = code(fs.readFileSync(componentPath, 'utf8'));
+  const rules = parseRules(stripComments(fs.readFileSync(cssPath, 'utf8'))).filter((rule) => !/^@keyframes/.test(rule.at ?? ''));
+
+  for (const [cls, page] of [['codeContact', 'faceInner'], ['codeTip', 'rightPage']]) {
+    const [img] = jsxByClass(src, cls);
+    assert.equal(img?.name, 'img', `找不到 .${cls} 那张图`);
+    const own = new Set(stylesOf(img));
+    // 祖先链从 JSX 的嵌套结构里取，不手抄：整页浮层、翻页组、所在那一页、背面白板都在上面
+    const ancestors = new Set(jsxAncestors(src, img).flatMap(stylesOf));
+    for (const layer of ['overlay', 'stage', 'flyer', 'spread', 'page', page, 'back', 'backBody']) {
+      assert.ok(ancestors.has(layer), `.${cls} 的祖先链里没有 .${layer}`);
+    }
+
+    // 每一条可能选中它们的规则都算（带状态限定的 .spreadOpen > .rightPage、媒体查询里的都算）：
+    // 不是只看此刻层叠的赢家——哪个状态下赢了都会改色
+    for (const rule of rules) {
+      for (const selector of rule.selector.split(',')) {
+        const [classes, pseudo] = subject(selector).split('::');
+        const hits = classes.split('|').filter((c) => own.has(c) || ancestors.has(c));
+        if (hits.length === 0) continue;
+        const where = `${rule.at ? `${rule.at} ` : ''}${selector.trim()}`;
+        for (const [prop, value] of declarations(rule.body)) {
+          if (pseudo) {
+            // 祖先的伪元素是叠在上面的一层：它自己的透明度无所谓，混合与背后模糊会改掉身后码的颜色
+            if (prop === 'mix-blend-mode' || prop === 'backdrop-filter') {
+              assert.ok(/^(normal|none)$/.test(value), `${where} { ${prop}: ${value} } 会改掉码的颜色`);
+            }
+            continue;
+          }
+          if (prop in NEUTRAL) assert.equal(value, NEUTRAL[prop], `${where} { ${prop}: ${value} } 会改掉码的颜色`);
+          // 图本身连插值方式也不许换：pixelated 缩小会整行整列地丢像素
+          if (prop === 'image-rendering' && hits.some((c) => own.has(c))) {
+            assert.equal(value, 'auto', `${where} { ${prop}: ${value} }`);
+          }
+        }
+      }
+    }
+  }
+
+  // 浮层再往外：ExamApp 的 .wrap > .stage，然后是 <body> / <html>，外加全局的 * 与 img 规则
+  const exam = parseRules(stripComments(fs.readFileSync('src/components/exam/Exam.module.css', 'utf8')));
+  for (const rule of exam) {
+    for (const selector of rule.selector.split(',')) {
+      const subj = subject(selector);
+      if (subj.includes('::') || !subj.split('|').some((c) => c === 'wrap' || c === 'stage')) continue;
+      for (const [prop, value] of declarations(rule.body)) {
+        if (prop in NEUTRAL) assert.equal(value, NEUTRAL[prop], `Exam.module.css ${selector.trim()} { ${prop}: ${value} }`);
+      }
+    }
+  }
+  const globals = parseRules(stripComments(fs.readFileSync('src/app/globals.css', 'utf8')));
+  for (const rule of globals) {
+    for (const selector of rule.selector.split(',')) {
+      const last = selector.trim().split(/\s+|>|\+|~/).filter(Boolean).pop() ?? '';
+      if (!/^(\*|html|body|img|:root)(?![\w-])/.test(last)) continue;
+      for (const [prop, value] of declarations(rule.body)) {
+        if (prop in NEUTRAL) assert.equal(value, NEUTRAL[prop], `globals.css ${selector.trim()} { ${prop}: ${value} }`);
+      }
+    }
+  }
 });
 
 // 两张码的文件内容钉死。它们是从最初入库的原始截图里裁出的精确子区域：
@@ -384,12 +496,21 @@ test('the front tilts ±8° on an inner layer, pivots on the punch hole and leve
   const component = fs.readFileSync(componentPath, 'utf8');
   const css = fs.readFileSync(cssPath, 'utf8');
 
-  assert.match(component, /const TILT_DEG = 8;/);
-  assert.match(component, /const SETTLE_MS = 900;/);
-  assert.match(
-    component,
-    /useCardTilt<HTMLDivElement>\(\{\s*maxDeg: TILT_DEG,\s*settleMs: SETTLE_MS,\s*enabled: stage === 'resting' && !opened,\s*\}\)/,
-  );
+  // 选项按语义判：先后顺序、写字面量还是常量都行
+  const src = code(component);
+  const tiltCalls = calls(src, 'useCardTilt<HTMLDivElement>');
+  assert.equal(tiltCalls.length, 1, '工牌只挂一个倾斜钩子');
+  const options = objectLiteral(tiltCalls[0].args);
+  const number = (value) => (/^-?[\d.]+$/.test(value) ? Number(value) : constNumber(src, value));
+  assert.equal(number(options.get('maxDeg')), 8, '±8°');
+  assert.equal(number(options.get('settleMs')), 900, '指针停住 900ms 回平');
+  // 只在静止挂着、且合着时跟手：四个阶段 × 开合逐一求值
+  const enabled = new Function('stage', 'opened', `return (${options.get('enabled')});`);
+  for (const stage of ['stowed', 'dropping', 'resting', 'flying']) {
+    for (const opened of [false, true]) {
+      assert.equal(Boolean(enabled(stage, opened)), stage === 'resting' && !opened, `enabled 在 ${stage}${opened ? '（翻开）' : ''} 时不对`);
+    }
+  }
   // ref 挂在不转的外层；外层给景深、自己不转
   assert.match(component, /<div ref=\{tiltRef\} className=\{styles\.tiltHost\}>/);
   const host = cascade(css, '.tiltHost');
@@ -413,9 +534,34 @@ test('the front tilts ±8° on an inner layer, pivots on the punch hole and leve
     assert.equal(cascade(css, part)['pointer-events'], 'auto', `${part} 点了会穿到背景上、把工牌收起`);
   }
 
-  // 首登自动落下那次静默聚焦（不亮焦点环）；点丝带取出交给浏览器判断
-  assert.match(component, /focus\(autoDropRef\.current \? QUIET_FOCUS : undefined\)/);
-  assert.match(component, /focusVisible: false/);
+  // 首登自动落下那次静默聚焦（不亮焦点环）；点丝带取出交给浏览器判断。
+  // 按结构判：卡片只在一处被程序聚焦、那一处没被注释掉，参数按「是不是自动落下」求值
+  const focusCalls = [...src.matchAll(/badgeRef\.current\?\.focus\(/g)].map((m) =>
+    balanced(src, m.index + m[0].length - 1).slice(1, -1).trim(),
+  );
+  assert.equal(focusCalls.length, 1, '卡片只在一处被程序聚焦');
+  const QUIET = { focusVisible: false };
+  const focusArg = new Function('autoDropRef', 'QUIET_FOCUS', `return (${focusCalls[0]});`);
+  assert.equal(focusArg({ current: true }, QUIET), QUIET, '首登自动落下：静默聚焦');
+  assert.notEqual(focusArg({ current: false }, QUIET), QUIET, '点丝带取出：交给浏览器自己判断');
+  assert.match(src, /const QUIET_FOCUS(?::[^=]+)? = \{ focusVisible: false \};/);
+  // 聚焦发生在落到「挂着」的那一刻；autoDropRef 在首登落下前置 true、点丝带取出时置 false
+  const focusEffect = effects(src).find(({ body }) => body.includes('badgeRef.current?.focus('));
+  assert.deepEqual(focusEffect?.deps, ['stage']);
+  assert.match(focusEffect.body, /^if \(stage === 'resting'\) badgeRef\.current\?\.focus\(/);
+  const firstVisit = effects(src).find(({ body }) => body.includes('localStorage.getItem(SEEN_KEY)'));
+  const armed = firstVisit?.body.indexOf('autoDropRef.current = true;') ?? -1;
+  assert.ok(armed >= 0 && armed < firstVisit.body.indexOf("setStage('dropping')"), '首登落下之前要记下「这是自动落下」');
+  const showAt = src.indexOf('const show = useCallback(');
+  assert.ok(showAt >= 0);
+  assert.match(fnBody(balanced(src, src.indexOf('(', showAt)).slice(1, -1)), /autoDropRef\.current = false;/);
+
+  // 挂绳与卡面上的装饰读屏一律跳过（按结构取标签，不按字面搜）
+  for (const deco of ['lanyard', 'microprint', 'backMicro', 'punch', 'chip', 'barcode', 'holo', 'sheen']) {
+    const tags = jsxByClass(src, deco);
+    assert.ok(tags.length > 0, `找不到 .${deco}`);
+    for (const tag of tags) assert.equal(tag.attrs.get('aria-hidden'), '"true"', `.${deco} 是装饰，读屏不念`);
+  }
 });
 
 test('material feedback lives in one small holo patch that follows the glare, plus a sheen only while tilting', () => {

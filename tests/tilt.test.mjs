@@ -552,3 +552,56 @@ test('useCardTilt hands settleMs through, read live: changing it does not re-att
   assert.equal(clock.timers(), 0);
   cleanup();
 });
+
+test('attachCardTilt reads a settleMs getter live: a change takes effect at the next check, without re-attaching', (t) => {
+  t.after(restoreGlobals);
+  const dom = fakeDom();
+  const clock = installClock(dom.win);
+  const targets = [dom.node, dom.win, dom.doc, ...Object.values(dom.queries)];
+  let settle = 900;
+  const detach = attachCardTilt(dom.node, 8, () => settle);
+  const attached = targets.map((target) => target.count());
+
+  // 900：差一毫秒还倾着，到点回平
+  dom.move(1, 1);
+  dom.flush();
+  clock.advance(899);
+  assert.equal(dom.node.dataset.tilting, '');
+  clock.advance(1);
+  assert.equal('tilting' in dom.node.dataset, false);
+
+  // 运行中改成 300：下一次停住按 300 回平
+  settle = 300;
+  dom.move(0, 0);
+  dom.flush();
+  clock.advance(299);
+  assert.equal(dom.node.dataset.tilting, '');
+  clock.advance(1);
+  assert.equal('tilting' in dom.node.dataset, false, '改短之后按新值回平');
+
+  // 已经排上的检查按到点时的值判：排着 300 的检查、到点前改成 1000——到点时还没停够，按差额改约
+  dom.move(0.5, 0.2);
+  dom.flush();
+  settle = 1000;
+  clock.advance(300);
+  assert.equal(dom.node.dataset.tilting, '', '到点时按新值 1000 判，还没停够');
+  assert.equal(clock.timers(), 1);
+  clock.advance(699);
+  assert.equal(dom.node.dataset.tilting, '');
+  clock.advance(1);
+  assert.equal('tilting' in dom.node.dataset, false, '从最后一次移动起停满 1000 才回平');
+
+  // 改成 0 = 停用：排着的检查到点后不回平、也不再约；倾着就一直倾着，直到离开
+  dom.move(0.3, 0.3);
+  dom.flush();
+  settle = 0;
+  clock.advance(5000);
+  assert.equal(dom.node.dataset.tilting, '', '停用之后不回平');
+  assert.equal(clock.timers(), 0, '停用之后一个定时器都不再排');
+
+  // 全程没有摘了重挂：监听一个不多一个不少（重挂会先把正倾着的卡摔平一次）
+  assert.deepEqual(targets.map((target) => target.count()), attached, '改值不重挂');
+  dom.node.emit('pointerleave');
+  assert.equal('tilting' in dom.node.dataset, false);
+  detach();
+});
