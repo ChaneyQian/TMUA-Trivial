@@ -8,6 +8,8 @@ import {
   type CSSProperties,
   type PointerEvent as ReactPointerEvent,
 } from 'react';
+import { useFx } from '@/lib/useFx';
+import { framePlan, shownFrame } from './framePlan';
 import styles from './PixelCompanion.module.css';
 
 type Point = { x: number; y: number };
@@ -134,6 +136,8 @@ export default function PixelCompanion() {
   const tapReactionRef = useRef<'waving' | 'jumping'>('waving');
   const [offset, setOffset] = useState<Point>({ x: 0, y: 0 });
   const [reducedMotion, setReducedMotion] = useState(false);
+  // 光效关：循环帧冻住、一次性反馈照放（见 ./framePlan）
+  const fxOff = useFx() === 'off';
   const [theme, setTheme] = useState<ThemeName>('light');
   const [animation, setAnimation] = useState<AnimationState>({
     state: 'idle',
@@ -280,15 +284,14 @@ export default function PixelCompanion() {
 
   useEffect(() => {
     const config = ANIMATIONS[animation.state];
-    if (reducedMotion) {
-      if (!config.loop) {
-        const timer = window.setTimeout(
-          () => setAnimation((current) => ({ ...current, state: current.after, frame: 0 })),
-          0,
-        );
-        return () => window.clearTimeout(timer);
-      }
-      return;
+    const plan = framePlan(config.loop, reducedMotion, fxOff);
+    if (plan === 'hold') return;
+    if (plan === 'skip') {
+      const timer = window.setTimeout(
+        () => setAnimation((current) => ({ ...current, state: current.after, frame: 0 })),
+        0,
+      );
+      return () => window.clearTimeout(timer);
     }
 
     const timer = window.setTimeout(() => {
@@ -302,7 +305,7 @@ export default function PixelCompanion() {
     }, config.durations[animation.frame]);
 
     return () => window.clearTimeout(timer);
-  }, [animation, reducedMotion]);
+  }, [animation, reducedMotion, fxOff]);
 
   const reactToTap = () => {
     const next = tapReactionRef.current;
@@ -364,6 +367,7 @@ export default function PixelCompanion() {
   };
 
   const config = ANIMATIONS[animation.state];
+  const frame = shownFrame(animation.frame, framePlan(config.loop, reducedMotion, fxOff));
   const petId = PET_BY_THEME[theme];
   const petName = PET_NAMES[petId];
   const petClass =
@@ -373,7 +377,7 @@ export default function PixelCompanion() {
         ? styles.frieren
         : styles.guga;
   const spriteStyle = {
-    '--sprite-x': `${-animation.frame * CELL_WIDTH}px`,
+    '--sprite-x': `${-frame * CELL_WIDTH}px`,
     '--sprite-y': `${-config.row * CELL_HEIGHT}px`,
     '--pet-sheet': `url("${PET_SPRITES[petId]}")`,
   } as CSSProperties;
@@ -404,7 +408,7 @@ export default function PixelCompanion() {
           <span
             className={styles.sprite}
             data-motion={animation.state}
-            data-frame={animation.frame}
+            data-frame={frame}
             style={spriteStyle}
             aria-hidden="true"
           />
