@@ -12,6 +12,7 @@ import { useCardTilt } from '@/components/fx/useCardTilt';
 import { useLang } from '@/lib/LangContext';
 import examStyles from '../exam/Exam.module.css';
 import styles from './Deck.module.css';
+import { TURN_MS, acceptsActivation } from './turnGuard';
 import { ZONES, ringOffset, stepZone, zoneById, type ZoneId } from './zones';
 
 const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH || '';
@@ -90,6 +91,18 @@ export default function CardDeck({
   // deck 退场的 280ms 里停用，展开动画期间牌面不再跟手
   const tiltRef = useCardTilt<HTMLDivElement>({ enabled: !leaving });
 
+  // 转牌守卫（./turnGuard）：记下最近一次转牌的时刻，之后 TURN_MS 内卡上的点击一律不认。
+  // 前牌不论因何而变（点侧牌、键盘、横滑、页签换区、解锁自动转位），牌都要滑 TURN_MS，
+  // 所以在 front 变了之后统一记一笔；点侧牌那条路在点击当下就先记上，不等这次渲染
+  const turnedAtRef = useRef(Number.NEGATIVE_INFINITY);
+  const shownFrontRef = useRef(front);
+  useEffect(() => {
+    if (shownFrontRef.current === front) return;
+    shownFrontRef.current = front;
+    turnedAtRef.current = performance.now();
+  }, [front]);
+  const settled = () => acceptsActivation(turnedAtRef.current, performance.now());
+
   useEffect(() => {
     if (autoFocus) viewportRef.current?.focus();
   }, [autoFocus]);
@@ -112,6 +125,12 @@ export default function CardDeck({
 
   const rotate = (dir: number) => {
     setDrag(null);
+    // 焦点若停在前牌的快速开始上，转完那张就成了后牌、快速开始被收起（inert），
+    // 焦点会掉回 <body>。先收回到牌堆容器，键盘用户接着按 ←→ / Enter 不迷路
+    if (viewportRef.current && viewportRef.current !== document.activeElement &&
+      viewportRef.current.contains(document.activeElement)) {
+      viewportRef.current.focus();
+    }
     onFront(stepZone(front, dir));
   };
 
@@ -128,6 +147,9 @@ export default function CardDeck({
       e.preventDefault();
       rotate(-1);
     } else if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') {
+      // 焦点在牌里的按钮上（快速开始）：Enter / 空格归按钮自己，别抢成「展开面板」——
+      // 原先这里一律 preventDefault，键盘用户按快速开始得到的是面板
+      if (target && target !== e.currentTarget && target.tagName === 'BUTTON') return;
       e.preventDefault();
       onOpen(front);
     }
@@ -183,7 +205,11 @@ export default function CardDeck({
   const frontZone = zoneById(front);
 
   return (
-    <div className={`${styles.deck} ${leaving ? styles.deckLeaving : ''}`}>
+    <div
+      className={`${styles.deck} ${leaving ? styles.deckLeaving : ''}`}
+      // 转牌过渡的时长从守卫常量来：样式表里的槽位位移读 var(--turn-ms)，两边只有一个出处
+      style={{ '--turn-ms': `${TURN_MS}ms` } as CSSProperties}
+    >
       <div className={styles.head}>
         <div className={styles.headTitle}>MCQ Test</div>
         <div className={styles.headSub}>{t.deck.headSub}</div>
@@ -300,11 +326,13 @@ export default function CardDeck({
                       {/* 快速开始：跳过配置面板，直接用当前配置起考。
                           即将开放 / 锁定的区不给这个入口。用 visibility 而不是条件渲染，
                           同一张卡在前位和后位的高度才一致，转牌时不会有布局跳动；
-                          visibility: hidden 也顺带把它移出 tab 序、挡掉点击。 */}
+                          后牌上再加 inert：不可点、不可聚焦、读屏跳过——不单靠 visibility
+                          这一条样式兜着（它哪天被改成 opacity: 0，按钮就又能点、能 Tab 到了） */}
                       {openable && (
                         <div
                           className={`${styles.quick} ${isFront ? '' : styles.quickIdle}`}
                           aria-hidden={isFront ? undefined : true}
+                          inert={isFront ? undefined : true}
                         >
                           <div className={styles.quickSummary}>{quickStart.summary}</div>
                           <button
@@ -316,6 +344,8 @@ export default function CardDeck({
                               // 命中层是兄弟节点、不是祖先，本来也收不到这一下；
                               // 写出来是防止日后有人把按钮挪进 .hit 里
                               e.stopPropagation();
+                              // 刚转到前位、牌还在指针底下滑：不认（见 ./turnGuard）
+                              if (!settled()) return;
                               // 直调，不包任何异步：requestFullscreen 认的是同步手势链
                               quickStart.onStart();
                             }}
@@ -342,7 +372,17 @@ export default function CardDeck({
                               ? t.block.comingSoon(t.zone.title[zone.id])
                               : t.deck.openAria(zone.no, t.zone.title[zone.id])
                       }
-                      onClick={() => (isFront ? onOpen(zone.id) : onFront(zone.id))}
+                      onClick={() => {
+                        // 转牌之后 TURN_MS 内不认：双击侧牌的第二下会落在滑过来的新前牌上
+                        if (!settled()) return;
+                        if (isFront) {
+                          onOpen(zone.id);
+                          return;
+                        }
+                        // 点侧牌就是转牌：当下就记上时刻，不等 front 变了之后的那次记录
+                        turnedAtRef.current = performance.now();
+                        onFront(zone.id);
+                      }}
                     />
                   </div>
                 </div>

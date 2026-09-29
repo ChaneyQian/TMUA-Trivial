@@ -213,7 +213,8 @@ test('deck motion stays on the compositor and degrades to instant', () => {
   }
 
   assert.match(css, /cubic-bezier\(0\.2, 0\.7, 0\.2, 1\)/);
-  assert.match(css, /z-index 0s 175ms/, 'z-index must flip at the midpoint, not fade');
+  // 转牌时长从守卫常量来（--turn-ms），层级在过渡的正中翻面
+  assert.match(css, /z-index 0s calc\(var\(--turn-ms\) \/ 2\)/, 'z-index must flip at the midpoint, not fade');
   assert.match(css, /@media \(prefers-reduced-motion: reduce\)/);
 
   // lightningcss 会因为手写的 -webkit- 前缀删掉标准属性，这里一次也不许出现
@@ -307,6 +308,50 @@ test('the deck spreads out in three width tiers, and each container holds exactl
   const pad = wide['--viewport-pad'].match(/^calc\(var\(--card-w\) \* ([\d.]+)\)$/);
   assert.ok(pad, '中宽屏的上内边距按卡宽取');
   assert.ok(Number(pad[1]) >= strip(wide) * (10 / 7), '上内边距接不住第三层退出去的那截');
+});
+
+test('a card that just turned ignores clicks for as long as it is still sliding', async () => {
+  const { TURN_MS, acceptsActivation } = await import('../src/components/deck/turnGuard.ts');
+  const deck = fs.readFileSync(deckPath, 'utf8');
+  const css = fs.readFileSync(deckCssPath, 'utf8');
+
+  // 纯函数：上次转牌的时刻 + 当前时刻 → 接不接受这次激活
+  assert.equal(TURN_MS, 350);
+  assert.equal(acceptsActivation(Number.NEGATIVE_INFINITY, 0), true, '还没转过牌');
+  assert.equal(acceptsActivation(1000, 1000), false, '转牌的同一刻');
+  assert.equal(acceptsActivation(1000, 1100), false, '双击的第二下（100ms）');
+  assert.equal(acceptsActivation(1000, 1000 + TURN_MS - 1), false, '过渡还差 1ms');
+  assert.equal(acceptsActivation(1000, 1000 + TURN_MS), true, '过渡走完');
+  assert.equal(acceptsActivation(1000, 5000), true);
+  assert.equal(acceptsActivation(1000, 900), true, '时钟回拨不能把卡锁死');
+  assert.equal(acceptsActivation(1000, Number.NaN), true);
+  assert.equal(acceptsActivation(1000, 1200, 150), true, '窗口可配');
+
+  // 守卫窗口与槽位位移的过渡只有一个出处：组件把 TURN_MS 写成 --turn-ms，样式表的转牌过渡读它
+  assert.match(deck, /import \{ TURN_MS, acceptsActivation \} from '\.\/turnGuard';/);
+  assert.match(deck, /style=\{\{ '--turn-ms': `\$\{TURN_MS\}ms` \} as CSSProperties\}/);
+  const code = css.replace(/\/\*[\s\S]*?\*\//g, '');
+  const card = code.match(/\n\.card \{[^}]*\}/)?.[0] ?? '';
+  const transition = card.match(/transition:([^;]*);/)?.[1] ?? '';
+  for (const prop of ['transform', 'opacity']) {
+    assert.match(transition, new RegExp(`${prop} var\\(--turn-ms\\)`), `槽位的 ${prop} 过渡要读 --turn-ms`);
+  }
+  assert.doesNotMatch(code, /350ms/, '转牌相关的过渡不许再各写一个 350ms');
+
+  // 接线：命中层与快速开始在动作之前先过守卫；点侧牌当下就记转牌时刻；前牌一变就记一笔
+  const hit = deck.slice(deck.indexOf('className={styles.hit}'));
+  assert.match(hit, /onClick=\{\(\) => \{\s*[^}]*?if \(!settled\(\)\) return;\s*if \(isFront\) \{\s*onOpen\(zone\.id\);/);
+  assert.match(hit, /turnedAtRef\.current = performance\.now\(\);\s*onFront\(zone\.id\);/);
+  const quick = deck.slice(deck.indexOf('className={styles.quickBtn}'), deck.indexOf('className={styles.hit}'));
+  assert.ok(quick.indexOf('if (!settled()) return;') < quick.indexOf('quickStart.onStart();'));
+  assert.ok(quick.indexOf('if (!settled()) return;') > 0, '快速开始要过守卫');
+  assert.match(deck, /const settled = \(\) => acceptsActivation\(turnedAtRef\.current, performance\.now\(\)\);/);
+  assert.match(deck, /if \(shownFrontRef\.current === front\) return;\s*shownFrontRef\.current = front;\s*turnedAtRef\.current = performance\.now\(\);/);
+
+  // 键盘：Enter 展开不经过守卫；焦点在牌里的按钮（快速开始）上时，Enter / 空格归按钮自己
+  const keys = deck.slice(deck.indexOf('const onKeyDown'), deck.indexOf('const onTouchStart'));
+  assert.doesNotMatch(keys, /settled\(\)/);
+  assert.match(keys, /if \(target && target !== e\.currentTarget && target\.tagName === 'BUTTON'\) return;\s*e\.preventDefault\(\);\s*onOpen\(front\);/);
 });
 
 test('the deck owns its keyboard and touch handling without global listeners', () => {
@@ -520,7 +565,7 @@ test('the front card tilts on an inner layer and never touches the slot transfor
   assert.match(deck, /'--tint': zone\.tint/);
   const tintShadow = rule('.tilt::before');
   assert.match(tintShadow, /color-mix\(in srgb, var\(--tint\)/);
-  assert.match(tintShadow, /transition: opacity 350ms/);
+  assert.match(tintShadow, /transition: opacity var\(--turn-ms\)/);
   const shadowTransition = tintShadow.match(/transition:([^;]*);/)?.[1] ?? '';
   assert.doesNotMatch(shadowTransition, /box-shadow|all/, '投影只交叉淡变，box-shadow 本身补间就是逐帧重绘');
   assert.match(css, /\n\.slotFront > \.tilt::before \{\s*opacity: 1;/);
