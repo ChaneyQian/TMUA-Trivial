@@ -296,19 +296,78 @@ function keyframes(css, name) {
   return out;
 }
 
+/** animation 简写 → 各长写（没写的按初值） */
+function animationLonghands(shorthand) {
+  const out = {
+    name: 'none',
+    duration: '0s',
+    'timing-function': 'ease',
+    delay: '0s',
+    'iteration-count': '1',
+    direction: 'normal',
+    'fill-mode': 'none',
+    'play-state': 'running',
+  };
+  let times = 0;
+  for (const token of splitValue(shorthand)) {
+    if (/^-?[\d.]+m?s$/.test(token)) {
+      if (times++ === 0) out.duration = token;
+      else out.delay = token;
+    } else if (/^(ease|ease-in|ease-out|ease-in-out|linear|step-start|step-end)$|^(cubic-bezier|steps|linear)\(/.test(token)) {
+      out['timing-function'] = token;
+    } else if (token === 'infinite' || /^[\d.]+$/.test(token)) out['iteration-count'] = token;
+    else if (/^(forwards|backwards|both)$/.test(token)) out['fill-mode'] = token;
+    else if (/^(normal|reverse|alternate|alternate-reverse)$/.test(token)) out.direction = token;
+    else if (/^(running|paused)$/.test(token)) out['play-state'] = token;
+    else out.name = token;
+  }
+  return out;
+}
+
+/**
+ * 某个类作主体的全部规则，按「状态」（选择器里把主体换成 $ 之后的样子，如 `$`、`.overlayLeaving $`）分组，
+ * 每组按先后把简写与长写叠出最终的动画长写。减动效块不算（那里两边都是 none）
+ */
+function animationStates(css, cls) {
+  const states = new Map();
+  for (const rule of parseRules(stripComments(css))) {
+    if (rule.inReduced) continue;
+    for (const selector of rule.selector.split(',')) {
+      if (subject(selector) !== cls) continue;
+      const state = `${rule.at ? `${rule.at} ` : ''}${selector.trim().replace(new RegExp(`\\.${cls}$`), '$')}`;
+      for (const [prop, value] of declarations(rule.body)) {
+        if (prop === 'animation') states.set(state, animationLonghands(value));
+        else if (prop.startsWith('animation-')) {
+          const longhands = states.get(state) ?? animationLonghands('none');
+          longhands[prop.slice('animation-'.length)] = value;
+          states.set(state, longhands);
+        }
+      }
+    }
+  }
+  return states;
+}
+
 test('the lanyard travels with the card on the way down and back up, so the clip never leaves the punch hole', () => {
   const css = fs.readFileSync(cssPath, 'utf8');
 
-  for (const [card, lanyard, cardSel, lanyardSel] of [
-    ['badgeDrop', 'lanyardDrop', '.flyer', '.lanyard'],
-    ['badgeRetract', 'lanyardRetract', '.overlayLeaving .flyer', '.overlayLeaving .lanyard'],
+  // 两边在同样的几种状态下挂动画；每种状态展开后的长写（时长、延迟、缓动、次数、方向、填充、播放状态）
+  // 逐项相同，只差关键帧的名字。只比简写的话，另写一条 .lanyard { animation-delay: … } 就漏了
+  const flyer = animationStates(css, 'flyer');
+  const lanyardStates = animationStates(css, 'lanyard');
+  assert.deepEqual([...lanyardStates.keys()].sort(), [...flyer.keys()].sort(), '挂绳与卡挂动画的状态不一样');
+  for (const [state, longhands] of flyer) {
+    const { name: _card, ...cardRest } = longhands;
+    const { name: _lanyard, ...lanyardRest } = lanyardStates.get(state);
+    assert.deepEqual(lanyardRest, cardRest, `「${state}」下挂绳与卡的动画不同步`);
+  }
+
+  for (const [card, lanyard, state] of [
+    ['badgeDrop', 'lanyardDrop', '$'],
+    ['badgeRetract', 'lanyardRetract', '.overlayLeaving $'],
   ]) {
-    // 两边挂的是这两套关键帧，时长、缓动、填充方式逐字相同（只差名字）
-    const [cardName, ...cardTiming] = cascade(css, cardSel).animation.split(' ');
-    const [lanyardName, ...lanyardTiming] = cascade(css, lanyardSel).animation.split(' ');
-    assert.equal(cardName, card);
-    assert.equal(lanyardName, lanyard);
-    assert.equal(lanyardTiming.join(' '), cardTiming.join(' '), `${lanyardSel} 与 ${cardSel} 的时长 / 缓动不同步`);
+    assert.equal(flyer.get(state)?.name, card);
+    assert.equal(lanyardStates.get(state)?.name, lanyard);
 
     // 关键帧位置一样、每一帧的上下位移与透明度一样；挂绳不转（转了下端就甩开了）
     const a = keyframes(css, card);
@@ -427,10 +486,9 @@ test('nothing between the page and a code recolours it: not the image, not any a
             continue;
           }
           if (prop in NEUTRAL) assert.equal(value, NEUTRAL[prop], `${where} { ${prop}: ${value} } 会改掉码的颜色`);
-          // 图本身连插值方式也不许换：pixelated 缩小会整行整列地丢像素
-          if (prop === 'image-rendering' && hits.some((c) => own.has(c))) {
-            assert.equal(value, 'auto', `${where} { ${prop}: ${value} }`);
-          }
+          // 插值方式也不许换：pixelated 缩小会整行整列地丢像素。image-rendering 是继承属性，
+          // 写在任何一层祖先上（.back、页、翻页组……）都会传到图上，所以整条链一起核
+          if (prop === 'image-rendering') assert.equal(value, 'auto', `${where} { ${prop}: ${value} } 会传到码上`);
         }
       }
     }
@@ -618,6 +676,28 @@ test('the front tilts ±8° on an inner layer, pivots on the punch hole and leve
     assert.equal(cascade(css, part)['pointer-events'], 'auto', `${part} 点了会穿到背景上、把工牌收起`);
     assert.ok(box(part).bottom >= cardTop, `${part} 伸进了卡面，会挡住指针`);
   }
+  // 静态几何：扣舌一开始就插在冲孔里。以卡顶为 0、往下为正（单位 u）：
+  //   扣片底 = 挂绳容器底 − 扣片离容器底的距离；扣舌（.clip::after）从扣片底往上 2u 起、高 9u；
+  //   冲孔中心在 hole-y、上下各 5u。改动 .clip 的 bottom、挂绳锚点或冲孔位置，这里先红
+  {
+    const clipRule = cascade(css, '.clip');
+    const clipBottomY = cardTop - evalLength(clipRule.bottom, env);
+    const clipHeight = evalLength(clipRule.height, env);
+    const tongueRule = cascade(css, '.clip::after');
+    const tongueTop = clipBottomY - clipHeight + evalLength(tongueRule.top, { ...env, '%': clipHeight });
+    const tongueBottom = tongueTop + evalLength(tongueRule.height, env);
+    const punchRule = cascade(css, '.punch');
+    const punchTop = evalLength(punchRule.top, env);
+    const punchBottom = punchTop + evalLength(punchRule.height, env);
+    assert.ok(tongueTop < punchTop, `扣舌得从冲孔上方伸进去（扣舌顶 ${tongueTop}u，冲孔顶 ${punchTop}u）`);
+    assert.ok(tongueBottom > punchTop + 1 && tongueBottom <= punchBottom, `扣舌下端 ${tongueBottom}u 不在冲孔 ${punchTop}–${punchBottom}u 里`);
+    // 横向：两者都水平居中（left 50% + 负一半宽），扣舌比冲孔窄
+    for (const rule of [tongueRule, punchRule]) {
+      assert.equal(rule.left, '50%');
+      assert.equal(evalLength(rule['margin-left'], env), -evalLength(rule.width, env) / 2);
+    }
+    assert.ok(evalLength(tongueRule.width, env) < evalLength(punchRule.width, env), '扣舌比冲孔还宽');
+  }
   // 抓手正好是扣片高出卡顶的那一截：底边落在卡顶、顶边与扣片顶齐
   const clip = box('.clip');
   const grip = box('.clipGrip');
@@ -743,7 +823,7 @@ function fontSizeOf(rule) {
   return slash > 0 ? tokens[slash - 1] : tokens.at(-2);
 }
 
-test('the smallest print on the card still has a readable floor on a 375px screen', () => {
+test('the smallest print on the card still has a readable floor on 375px and 320px screens', () => {
   const css = fs.readFileSync(cssPath, 'utf8');
   // 求值器自检：等价写法得出同一个下限（max、clamp、min 套 max 都认）
   assert.equal(cssPx('max(6px, calc(var(--u) * 7.8))', { u: 0.5 }), 6);
@@ -751,22 +831,28 @@ test('the smallest print on the card still has a readable floor on a 375px scree
   assert.equal(cssPx('min(40px, max(6px, calc(var(--u) * 7.8)))', { u: 0.5 }), 6);
   assert.equal(cssPx('calc(var(--u) * 7.8)', { u: 1 }), 7.8);
 
-  // 页宽按样式表里的定义现算：min(300px, (100vw − 2rem) / 2, (100vh − 7.5rem) × 54 / 85.6)；1u = 页宽 / 300
-  const pageW = cssPx(cascade(css, '.stage')['--page-w'], { vw: 375, vh: 812 });
-  assert.equal(pageW, 171.5);
-  const u = pageW / 300;
-  // 卡上尺寸等比缩，小字缩到 6px 以下就只剩一团灰：这几样给最小字号
-  for (const [selector, floor] of [
-    ['.fieldLabel', 6],
-    ['.serial', 6],
-    ['.title', 6],
-    ['.backCaption', 7],
+  // 页宽按样式表里的定义现算：min(300px, (100vw − 2rem) / 2, (100vh − 7.5rem) × 54 / 85.6)；1u = 页宽 / 300。
+  // 375 × 812 → 171.5px；320 × 568（最窄的一档手机）→ 144px
+  for (const [vw, vh, expected] of [
+    [375, 812, 171.5],
+    [320, 568, 144],
   ]) {
-    const size = cssPx(fontSizeOf(cascade(css, selector)), { u });
-    assert.ok(size >= floor, `${selector} 在 375 宽时只有 ${size.toFixed(2)}px`);
+    const pageW = cssPx(cascade(css, '.stage')['--page-w'], { vw, vh });
+    assert.equal(pageW, expected);
+    const u = pageW / 300;
+    // 卡上尺寸等比缩，小字缩到 6px 以下就只剩一团灰：这几样给最小字号
+    for (const [selector, floor] of [
+      ['.fieldLabel', 6],
+      ['.serial', 6],
+      ['.title', 6],
+      ['.backCaption', 7],
+    ]) {
+      const size = cssPx(fontSizeOf(cascade(css, selector)), { u });
+      assert.ok(size >= floor, `${selector} 在 ${vw} 宽时只有 ${size.toFixed(2)}px`);
+    }
+    // 微缩印字本来就是要小（防伪线），不在此列：它就该跟着缩
+    assert.ok(cssPx(fontSizeOf(cascade(css, '.microprint')), { u }) < 3);
   }
-  // 微缩印字本来就是要小（防伪线），不在此列：它就该跟着缩
-  assert.ok(cssPx(fontSizeOf(cascade(css, '.microprint')), { u }) < 3);
 });
 
 test('the stowed badge is a 3D ribbon anchored to the setup stage corner', () => {
