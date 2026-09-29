@@ -52,7 +52,8 @@ const MICROPRINT = 'TMUA · MAT · STEP · '.repeat(9);
 
 const ASSETS = {
   avatar: `${BASE_PATH}/badge/avatar.jpg`,
-  // 两张码都是从原截图里裁出的精确子区域（不改色、不缩放），尺寸即原图像素
+  // 两张码都是从最初入库的原始截图（1095b41，960×1418 / 1213×1213）里裁出的精确子区域：
+  // 不改色、不重绘、不缩放，<img> 的宽高即文件像素。显示时一律是缩小（见测试里的 SHA-256 钉子）
   contact: `${BASE_PATH}/badge/contact-code.png`,
   tip: `${BASE_PATH}/badge/tip-code.png`,
 };
@@ -264,8 +265,8 @@ export default function IdBadge() {
                         <img
                           className={`${styles.code} ${styles.codeTip}`}
                           src={ASSETS.tip}
-                          width={202}
-                          height={202}
+                          width={648}
+                          height={648}
                           alt="微信赞助码"
                           draggable={false}
                         />
@@ -296,8 +297,8 @@ export default function IdBadge() {
                           <img
                             className={`${styles.code} ${styles.codeContact}`}
                             src={ASSETS.contact}
-                            width={336}
-                            height={336}
+                            width={801}
+                            height={801}
                             alt="微信联系方式二维码"
                             draggable={false}
                           />

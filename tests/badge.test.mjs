@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import crypto from 'node:crypto';
 import fs from 'node:fs';
 import test from 'node:test';
 
@@ -100,11 +101,38 @@ test('each code is shown from its own pixels on pure white, bigger than before, 
   }
 
   // 显示尺寸不小于改版前（页宽 300 时：联系码的码区约 168px，赞赏码约 106px）。
-  // 码区在图里的占比取自裁切脚本：联系码 264 / 336，赞赏码 154 / 202
-  const contactShown = units(cascade(css, '.codeContact').width) * (264 / contact.width);
-  const tipShown = units(cascade(css, '.codeTip').width) * (154 / tip.width);
+  // 码区在图里的占比取自裁切脚本：联系码墨迹 631 / 801，赞赏码墨迹 468 / 648
+  const contactShown = units(cascade(css, '.codeContact').width) * (631 / contact.width);
+  const tipShown = units(cascade(css, '.codeTip').width) * (468 / tip.width);
   assert.ok(contactShown >= 168, `联系码只剩 ${contactShown.toFixed(1)}u`);
   assert.ok(tipShown >= 106, `赞赏码只剩 ${tipShown.toFixed(1)}u`);
+  // 只缩不放：页宽封顶 300px（1u = 1px），DPR 3 的屏上显示也不超过文件像素
+  assert.ok(units(cascade(css, '.codeContact').width) * 3 <= contact.width, '联系码会被放大显示');
+  assert.ok(units(cascade(css, '.codeTip').width) * 3 <= tip.width, '赞赏码会被放大显示');
+});
+
+// 两张码的文件内容钉死。它们是从最初入库的原始截图里裁出的精确子区域：
+//   git show 1095b41:public/badge/contact-qr.png（960×1418 RGBA）→ 裁 (79,359) 起 801×801
+//     码 37 模块、每模块 17.05px；四周 85px 纯白 ≈ 5 模块静区
+//   git show 1095b41:public/badge/tip-qr.png（1213×1213 RGBA）→ 裁 (281,118) 起 648×648
+//     小程序码连同外圈极淡的光晕；光晕外四周 72px 纯白，不含 y = 804 起的感谢语
+// 只做裁切 + 去 alpha（裁区 alpha 全为 255）+ 无损 PNG 编码，RGB 与原图逐字节一致。
+// 钉 SHA-256 是因为这两张图被「瘦身」过一次：ae1528d 把原始截图 Lanczos 缩到 400 宽、转调色板，
+// 码边从此带插值振铃，每模块只剩约 7px——看着差不多，扫码余量却少了一大截。
+// 以后任何重编码、压缩、缩放都会让这里先红。真要换图：从上面的原图按同一坐标重裁、逐像素核对，
+// 再更新这两个哈希（P8-B 第二轮的裁切脚本思路：sharp extract → removeAlpha → png，颜色 > 256 用真彩色）
+const CODE_SHA256 = {
+  'public/badge/contact-code.png': '4fbc9ad7be9dfc0b9642daba63125ae43d72e7458fd53ff02f1b95de97857800',
+  'public/badge/tip-code.png': '40a1273aaf817e7660c5b1f68bae84455bcfff75562ae6c07c6cc7eece47f30f',
+};
+
+test('the two code images are byte-for-byte the pixel-exact crops, pinned by SHA-256', () => {
+  for (const [file, sha] of Object.entries(CODE_SHA256)) {
+    const actual = crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex');
+    assert.equal(actual, sha, `${file} 被改过（重编码 / 压缩 / 缩放？）——见上方注释的重裁方法`);
+  }
+  assert.deepEqual(pngSize('public/badge/contact-code.png'), { width: 801, height: 801 });
+  assert.deepEqual(pngSize('public/badge/tip-code.png'), { width: 648, height: 648 });
 });
 
 test('the back pages are typeset natively, word for word from the two original screenshots', () => {
