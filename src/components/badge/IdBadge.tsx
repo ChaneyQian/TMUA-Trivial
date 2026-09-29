@@ -256,6 +256,8 @@ export default function IdBadge() {
               <span className={styles.ring} />
               <span className={styles.crimp} />
               <span className={styles.clip} />
+              {/* 鸭嘴扣高出卡顶的那一截的点击区（透明）：扣件本身不收指针，见 .clipGrip */}
+              <span className={styles.clipGrip} />
             </span>
 
             <div className={styles.flyer}>

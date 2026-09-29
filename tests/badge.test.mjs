@@ -3,7 +3,7 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import test from 'node:test';
 
-import { cascade, declarations, parseRules, stripComments, subject } from './helpers/css-rules.mjs';
+import { cascade, declarations, evalLength, parseRules, stripComments, subject } from './helpers/css-rules.mjs';
 import { attrValue, balanced, calls, code, effects, fnBody, jsxByClass, jsxChildren } from './helpers/source.mjs';
 import { nextFocus, onBadgeKey } from '../src/components/badge/focusTrap.ts';
 
@@ -527,12 +527,33 @@ test('the front tilts ±8° on an inner layer, pivots on the punch hole and leve
   assert.equal(cascade(css, '.flyer')['transform-origin'], '50% var(--hole-y)');
   assert.match(cascade(css, '.lanyard').bottom, /var\(--hole-y\)/);
   assert.match(cascade(css, '.punch').top, /var\(--hole-y\)/);
-  // 挂绳容器不收指针（它是一整块 260u 宽的盒子，大半是空的）；画出来的零件——织带、开口圈、
-  // 压扣、鸭嘴扣——各自收点击：点到它们不算点背景，不会把工牌收起
+  // 挂绳容器不收指针（它是一整块 260u 宽的盒子，大半是空的）。卡顶之上画出来的零件——织带、
+  // 开口圈、压扣、鸭嘴扣高出卡顶的那一截（.clipGrip）——各自收点击：点到它们不算点背景、不会收起；
+  // 压在卡面上的扣片下半与扣舌不收指针，指针落到卡上，扫过卡顶正中倾斜不断
   assert.equal(cascade(css, '.lanyard')['pointer-events'], 'none');
-  for (const part of ['.strap', '.ring', '.crimp', '.clip']) {
+  assert.equal(cascade(css, '.clip')['pointer-events'], 'none', '扣件压在卡面上的部分收了指针，倾斜会断');
+  // 几何（单位 u，以挂绳容器底为 0、往上为正）：卡顶在 hole-y + 1u
+  const env = { '--u': 1, '%': 1000 };
+  env['--hole-y'] = evalLength(cascade(css, '.stage')['--hole-y'], env);
+  const lanyardBottom = evalLength(cascade(css, '.lanyard').bottom, env);
+  const cardTop = env['%'] - lanyardBottom; // 舞台顶 = 卡顶；容器底离舞台顶 hole-y + 1u
+  assert.equal(cardTop, env['--hole-y'] + 1);
+  const box = (sel) => {
+    const rule = cascade(css, sel);
+    const bottom = evalLength(rule.bottom, env);
+    return { bottom, top: bottom + evalLength(rule.height, env) };
+  };
+  for (const part of ['.strap', '.ring', '.crimp', '.clipGrip']) {
     assert.equal(cascade(css, part)['pointer-events'], 'auto', `${part} 点了会穿到背景上、把工牌收起`);
+    assert.ok(box(part).bottom >= cardTop, `${part} 伸进了卡面，会挡住指针`);
   }
+  // 抓手正好是扣片高出卡顶的那一截：底边落在卡顶、顶边与扣片顶齐
+  const clip = box('.clip');
+  const grip = box('.clipGrip');
+  assert.ok(clip.bottom < cardTop, '扣片本来就压在卡面上（所以它自己不收指针）');
+  assert.equal(grip.bottom, cardTop);
+  assert.equal(grip.top, clip.top);
+  assert.equal(cascade(css, '.clipGrip').width, cascade(css, '.clip').width);
 
   // 首登自动落下那次静默聚焦（不亮焦点环）；点丝带取出交给浏览器判断。
   // 按结构判：卡片只在一处被程序聚焦、那一处没被注释掉，参数按「是不是自动落下」求值
