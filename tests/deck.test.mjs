@@ -350,15 +350,50 @@ test('the deck spreads out in three width tiers, and each container holds exactl
   // 越宽越舒展
   assert.ok(tiers.narrow.span < tiers.medium.span && tiers.medium.span < tiers.wide.span);
 
-  // 宽屏的侧牌往下沉成一道弧；卡宽只在大屏且够高时放到 360
+  // 宽屏的侧牌往下沉成一道弧
   assert.match(wide['--slot-y'], /^\d+(\.\d+)?%$/);
   assert.ok(Number.parseFloat(wide['--slot-y']) > 0);
-  assert.equal(deckVars('(min-width: 1280px) and (min-height: 860px)')['--card-max'], '360px');
-  // 再大一档（≥ 1600×1000）：卡宽 400，只换卡宽——露边比例、转角、下沉都沿用宽屏档；
-  // 写在 360 那档后面，两档同时命中时它赢
-  const large = '(min-width: 1600px) and (min-height: 1000px)';
-  assert.deepEqual(deckVars(large), { '--card-max': '400px' });
-  assert.ok(css.indexOf(`@media ${large}`) > css.indexOf('@media (min-width: 1280px) and (min-height: 860px)'));
+
+  // 卡宽按视口分档：把每条 .deck 规则的媒体条件拿各个视口尺寸去比，按源码先后层叠出 --card-max。
+  // 不认媒体查询怎么写，只认「这个视口最后用多宽的卡」
+  const matches = (at, w, h) => {
+    if (at === null) return true;
+    if (!at.startsWith('@media ')) return false;
+    return at
+      .slice('@media '.length)
+      .split(/\s+and\s+/)
+      .every((cond) => {
+        const m = cond.match(/^\((min|max)-(width|height):\s*(\d+)px\)$/);
+        assert.ok(m, `认不出的媒体条件：${cond}`);
+        const v = m[2] === 'width' ? w : h;
+        return m[1] === 'min' ? v >= Number(m[3]) : v <= Number(m[3]);
+      });
+  };
+  const deckRules = parseRules(css).filter((rule) => rule.selector.trim() === '.deck');
+  const varsAt = (w, h) => Object.assign({}, ...deckRules.filter((rule) => matches(rule.at, w, h)).map((rule) => Object.fromEntries(declarations(rule.body))));
+  // 大屏且够高才放到 360；再大一档（宽 ≥ 1600，高 ≥ 900：窗口模式的 1080p 浏览器视口高约 937–969，
+  // 也要用上）放到 400。高度门槛的下限是 400px 卡时选区页不出纵向滚动的最低视口高：页面自然高
+  // ≈ 216 + 1.549·W + 0.03·H，W = 400 时要 H ≥ 861（见样式表注释；实测 860 滚、861 起不滚）；
+  // 上限是原先的 1000——再高就又把窗口化的 1080p 挡在外面了
+  for (const [w, h, card] of [
+    [375, 812, '340px'],
+    [1280, 800, '340px'],
+    [1366, 768, '340px'],
+    [1440, 900, '360px'],
+    [1536, 864, '360px'],
+    [1600, 900, '400px'],
+    [1920, 937, '400px'],
+    [1920, 969, '400px'],
+    [1920, 1080, '400px'],
+    [2560, 1440, '400px'],
+  ]) {
+    assert.equal(varsAt(w, h)['--card-max'], card, `${w}×${h} 该用 ${card} 的卡`);
+  }
+  const large = deckRules.find((rule) => declarations(rule.body).some(([p, v]) => p === '--card-max' && v === '400px'));
+  const gate = Number(large.at.match(/min-height:\s*(\d+)px/)?.[1]);
+  assert.ok(gate >= 861 && gate <= 1000, `400 那档的高度门槛 ${gate}px：低于 861 会出纵向滚动，高于 1000 又挡住窗口化的 1080p`);
+  // 那一档只换卡宽：露边比例、转角、下沉、跨度都沿用宽屏档
+  assert.deepEqual(Object.fromEntries(declarations(large.body)), { '--card-max': '400px' });
 
   // 第三层：中宽屏往上退得更多（净露 = 位移 − (1 − 缩放)/2），接它的上内边距按卡宽取、装得下那截
   const strip = (vars) => -Number.parseFloat(vars['--slot-back-y']) / 100 - (1 - Number(vars['--slot-back-scale'])) / 2;
