@@ -247,6 +247,8 @@
   box-shadow:
     inset 1px 0 0 rgb(255 255 255 / 14%),
     inset -1px 0 0 rgb(0 0 0 / 28%);
+  /* 织带本身照旧收点击（点到挂绳不算点背景、不收起工牌）；它止于卡顶之上，不挡卡面 */
+  pointer-events: auto;
   transform-origin: bottom center;
 }
 

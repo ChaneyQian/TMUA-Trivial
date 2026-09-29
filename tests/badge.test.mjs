@@ -213,8 +213,9 @@ test('the front tilts ±8° on an inner layer, pivots on the punch hole and leve
   assert.equal(cascade(css, '.flyer')['transform-origin'], '50% var(--hole-y)');
   assert.match(cascade(css, '.lanyard').bottom, /var\(--hole-y\)/);
   assert.match(cascade(css, '.punch').top, /var\(--hole-y\)/);
-  // 挂扣压在卡上但不收指针：跟手与点卡翻面都穿透它
+  // 挂扣压在卡上但不收指针：跟手与点卡翻面都穿透它。织带照旧收点击（点挂绳不算点背景）
   assert.equal(cascade(css, '.lanyard')['pointer-events'], 'none');
+  assert.equal(cascade(css, '.strap')['pointer-events'], 'auto');
 
   // 首登自动落下那次静默聚焦（不亮焦点环）；点丝带取出交给浏览器判断
   assert.match(component, /focus\(autoDropRef\.current \? QUIET_FOCUS : undefined\)/);
