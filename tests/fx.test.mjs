@@ -299,24 +299,21 @@ test('the effects toggle is a round button beside the language one, in the setup
   assert.match(toggle, /className=\{`\$\{langStyles\.toggle\} \$\{styles\.fx\}`\}/);
   assert.match(toggle, /import langStyles from '\.\/LangToggle\.module\.css';/);
   assert.match(css, /\.fx\.fx \{\s*right: 48px;\s*\}/, '紧挨中/英钮左边（40px 钮宽 + 8px 间隔）');
-  // 读屏：按下 = 开；标签说出当前状态；悬停提示说明什么时候该关；点一下就切
+  // 读屏：按下 = 开；标签只说它是什么，开 / 关只由 aria-pressed 表达；悬停提示说明什么时候该关；点一下就切
   assert.match(toggle, /aria-pressed=\{on\}/);
-  assert.match(toggle, /aria-label=\{on \? t\.fxToggle\.ariaOn : t\.fxToggle\.ariaOff\}/);
+  assert.match(toggle, /aria-label=\{t\.fxToggle\.aria\}/);
   assert.match(toggle, /title=\{t\.fxToggle\.title\}/);
   assert.match(toggle, /onClick=\{\(\) => setFx\(on \? 'off' : 'on'\)\}/);
   assert.match(toggle, /type="button"/);
-  assert.match(i18n, /fxToggle: \{ ariaOn: '光效：开', ariaOff: '光效：关', title: '卡顿时可以关掉' \}/);
-  assert.match(
-    i18n,
-    /fxToggle: \{ ariaOn: 'Effects: on', ariaOff: 'Effects: off', title: 'Turn off if things feel laggy' \}/,
-  );
+  assert.match(i18n, /fxToggle: \{ aria: '光效', title: '卡顿时可以关掉' \}/);
+  assert.match(i18n, /fxToggle: \{ aria: 'Visual effects', title: 'Turn off if things feel laggy' \}/);
   // 图标的开 / 关由首帧就写好的 data-fx 决定，不等水合
   assert.match(css, /:global\(:root\[data-fx='off'\]\) \.star \{[^}]*fill: none;/);
   assert.match(toggle, /aria-hidden="true"/);
 
-  // 只挂在设置页的舞台里、紧跟中/英钮；答题页和成绩页没有
+  // 只挂在设置页的舞台里、紧挨中/英钮且排在它前面（Tab 先后与视觉从左到右一致）；答题页和成绩页没有
   assert.equal(exam.split('<FxToggle />').length - 1, 1, '只挂一处');
-  assert.match(exam, /<LangToggle \/>\s*\{\/\*[^]*?\*\/\}\s*<FxToggle \/>/);
+  assert.match(exam, /<FxToggle \/>\s*<LangToggle \/>/);
   const at = exam.indexOf('<FxToggle />');
   assert.ok(at > exam.indexOf("if (phase === 'setup' || phase === 'loading') {"));
   assert.ok(at < exam.indexOf("if (phase === 'diagnostic') {"));
