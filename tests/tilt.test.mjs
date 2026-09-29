@@ -5,7 +5,7 @@ import test from 'node:test';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 
-import { TILT_MAX_DEG, tiltPose } from '../src/lib/tilt.ts';
+import { TILT_MAX_DEG, settleDelay, shouldSettle, tiltPose } from '../src/lib/tilt.ts';
 import { REDUCED_MOTION, installFakeDom, restoreGlobals } from './helpers/fake-dom.mjs';
 
 // 卡片随指针倾斜（P8-A2 前牌；P8-B 工牌会共用）。
@@ -300,11 +300,13 @@ test('the hook is a stable ref callback that stays out of React state', () => {
   // 返回 ref 回调；选项不变身份就不变，React 不会每次渲染都摘了重挂
   assert.match(
     src,
-    /export function useCardTilt<T extends HTMLElement>\(\{\s*maxDeg = TILT_MAX_DEG,\s*enabled = true,\s*\}: CardTiltOptions = \{\}\): RefCallback<T>/,
+    /export function useCardTilt<T extends HTMLElement>\(\{\s*maxDeg = TILT_MAX_DEG,\s*enabled = true,\s*settleMs = 0,\s*\}: CardTiltOptions = \{\}\): RefCallback<T>/,
   );
   assert.match(src, /useCallback\(/);
-  // 「是否启用」= enabled 且光效开着（lib/useFx）；选项或开关一变，回调换身份、React 摘了重挂
+  // 「是否启用」= enabled 且光效开着（lib/useFx）；选项或开关一变，回调换身份、React 摘了重挂。
+  // 回平时长不在依赖里：走 ref 现读（改它不该把正倾着的卡摔平一次），见下方的行为测试
   assert.match(src, /\[active, maxDeg\]/);
+  assert.match(src, /attachCardTilt\(node, maxDeg, \(\) => settleRef\.current\)/);
   assert.match(src, /if \(!node \|\| !active\) return;/);
   // 跟手路径不许有 React state；也不许自己去写 transform
   assert.doesNotMatch(src, /useState|useReducer|forceUpdate/);
@@ -317,4 +319,236 @@ test('the hook is a stable ref callback that stays out of React state', () => {
   assert.doesNotMatch(apply, /getBoundingClientRect|offsetWidth|offsetHeight|getComputedStyle/);
   const onMove = src.slice(src.indexOf('const onMove = (e: PointerEvent) => {'), src.indexOf('const onVisibility'));
   assert.match(onMove, /if \(frame \|\| document\.hidden\) return;\s*rect = node\.getBoundingClientRect\(\);/);
+});
+
+// ---------------------------------------------------------------------------
+// 停住回平（settleMs）：工牌用，前牌不启用。
+//   1. lib/tilt.ts 的判定：纯函数，直接算
+//   2. 挂载逻辑：在假 DOM 上再装一只手摇的时钟（setTimeout / clearTimeout / performance.now），
+//      只在这个文件里装——没启用回平的挂载一个定时器都不该排，也就不需要它
+
+test('settling is off unless given a positive finite delay, then due once the pointer has rested that long', () => {
+  // 规整：只认正的有限毫秒数
+  assert.equal(settleDelay(900), 900);
+  assert.equal(settleDelay(0.5), 0.5);
+  for (const off of [undefined, 0, -1, -900, NaN, Infinity, -Infinity]) {
+    assert.equal(settleDelay(off), 0, `${off} 应当是不启用`);
+  }
+
+  // 不启用：停多久都不回平
+  for (const off of [undefined, 0, -5, NaN, Infinity]) {
+    assert.equal(shouldSettle(0, 1e9, off), false, `${off} 不该回平`);
+  }
+
+  // 启用：差一毫秒不回平，正好到点与之后都回平
+  assert.equal(shouldSettle(1000, 1899, 900), false);
+  assert.equal(shouldSettle(1000, 1899.999, 900), false);
+  assert.equal(shouldSettle(1000, 1900, 900), true);
+  assert.equal(shouldSettle(1000, 5000, 900), true);
+  assert.equal(shouldSettle(1000, 1000, 900), false, '刚动过');
+
+  // 时钟倒退当「刚动过」；坏时间一律不回平（宁可多倾一会儿，不在没停的时候摔平）
+  assert.equal(shouldSettle(5000, 1000, 900), false);
+  assert.equal(shouldSettle(NaN, 5000, 900), false);
+  assert.equal(shouldSettle(1000, NaN, 900), false);
+  assert.equal(shouldSettle(-Infinity, 5000, 900), false);
+});
+
+/** 给假 window 装一只手摇时钟：advance(ms) 按到期先后跑定时器，跑的时候 now 正好停在到期那一刻 */
+function installClock(win) {
+  let now = 0;
+  let nextId = 1;
+  const timers = new Map();
+  win.performance = { now: () => now };
+  win.setTimeout = (fn, ms = 0) => {
+    const id = nextId++;
+    timers.set(id, { fn, at: now + Math.max(0, Number(ms) || 0) });
+    return id;
+  };
+  win.clearTimeout = (id) => {
+    timers.delete(id);
+  };
+  return {
+    /** 排着还没到期的定时器数 */
+    timers: () => timers.size,
+    advance(ms) {
+      const end = now + ms;
+      for (;;) {
+        let due = null;
+        for (const [id, timer] of timers) if (timer.at <= end && (!due || timer.at < due[1].at)) due = [id, timer];
+        if (!due) break;
+        timers.delete(due[0]);
+        now = due[1].at;
+        due[1].fn();
+      }
+      now = end;
+    },
+  };
+}
+
+test('with settleMs the card levels off after the pointer rests, and tilts again on the next move', (t) => {
+  t.after(restoreGlobals);
+  const dom = fakeDom();
+  const clock = installClock(dom.win);
+  const detach = attachCardTilt(dom.node, 8, 900);
+
+  dom.move(1, 1);
+  dom.flush();
+  assert.equal(dom.node.dataset.tilting, '');
+  assert.equal(dom.props.get('--tilt-rx'), '8.00deg');
+  assert.equal(clock.timers(), 1, '一次跟手只排一个停住检查');
+
+  // 差一毫秒：还倾着
+  clock.advance(899);
+  assert.equal(dom.node.dataset.tilting, '');
+  // 到点：回平——和离开同一条收手路径：摘姿态、摘 data-tilting，高光坐标留在原地
+  clock.advance(1);
+  assert.equal('tilting' in dom.node.dataset, false);
+  assert.equal(dom.props.has('--tilt-rx'), false);
+  assert.equal(dom.props.has('--tilt-ry'), false);
+  assert.equal(dom.props.get('--tilt-on'), '0');
+  assert.equal(dom.props.get('--glare-x'), '100.0%', '贴片停在最后的颜色上，不跳回正中');
+  assert.equal(clock.timers(), 0, '回平之后不再排定时器');
+
+  // 再动再倾
+  dom.move(0, 0);
+  dom.flush();
+  assert.equal(dom.node.dataset.tilting, '');
+  assert.equal(dom.props.get('--tilt-rx'), '-8.00deg');
+  assert.equal(clock.timers(), 1);
+  detach();
+  assert.equal(clock.timers(), 0, '摘除时撤掉定时器');
+});
+
+test('moving keeps the card tilted: the rest timer counts from the last move, with one timer at a time', (t) => {
+  t.after(restoreGlobals);
+  const dom = fakeDom();
+  const clock = installClock(dom.win);
+  const detach = attachCardTilt(dom.node, 8, 900);
+
+  // 0、500、1000 各动一下（每下都跑一帧）：定时器不随每下重排，始终只有一个
+  dom.move(0.2, 0.2);
+  dom.flush();
+  clock.advance(500);
+  dom.move(0.4, 0.4);
+  dom.flush();
+  assert.equal(clock.timers(), 1);
+  clock.advance(500);
+  dom.move(0.6, 0.6);
+  dom.flush();
+  assert.equal(clock.timers(), 1);
+
+  // 第一个检查在 900 到点：离最后一次移动（1000）还差得远，改约到 1900
+  clock.advance(899); // now = 1899
+  assert.equal(dom.node.dataset.tilting, '', '最后一次移动之后还没停够 900');
+  assert.equal(clock.timers(), 1);
+  clock.advance(1); // now = 1900
+  assert.equal('tilting' in dom.node.dataset, false, '从最后一次移动起停满 900 才回平');
+
+  // 一帧里的连动也只按最后一下算：排着帧的那几下同样刷新「最后一次移动」
+  dom.move(0.1, 0.1);
+  dom.flush();
+  clock.advance(800);
+  dom.move(0.3, 0.3);
+  dom.move(0.5, 0.5); // 同一帧里的第二下
+  dom.flush();
+  clock.advance(899);
+  assert.equal(dom.node.dataset.tilting, '');
+  clock.advance(1);
+  assert.equal('tilting' in dom.node.dataset, false);
+  detach();
+});
+
+test('without settleMs nothing is timed: the deck front card stays tilted while the pointer rests', (t) => {
+  t.after(restoreGlobals);
+  const dom = fakeDom();
+  const clock = installClock(dom.win);
+  let reads = 0;
+  dom.win.performance = { now: () => (reads++, 0) };
+  const detach = attachCardTilt(dom.node, 6);
+
+  dom.move(1, 0);
+  dom.flush();
+  clock.advance(60_000);
+  assert.equal(dom.node.dataset.tilting, '', '前牌不启用回平：停多久都倾着，直到离开');
+  assert.equal(clock.timers(), 0, '一个定时器都不排');
+  assert.equal(reads, 0, '也不读时钟');
+  dom.node.emit('pointerleave');
+  assert.equal('tilting' in dom.node.dataset, false);
+  detach();
+
+  // 坏值同不启用
+  for (const bad of [0, -1, NaN, Infinity]) {
+    const again = fakeDom();
+    const c = installClock(again.win);
+    const off = attachCardTilt(again.node, 6, bad);
+    again.move(1, 1);
+    again.flush();
+    c.advance(10_000);
+    assert.equal(again.node.dataset.tilting, '', `settleMs = ${bad} 应当不启用`);
+    assert.equal(c.timers(), 0);
+    off();
+    restoreGlobals();
+  }
+});
+
+test('leaving, hiding or switching effects off while tilted also clears the rest timer', (t) => {
+  t.after(restoreGlobals);
+  for (const leave of [
+    (dom) => dom.node.emit('pointerleave'),
+    (dom) => dom.win.emit('blur'),
+    (dom) => {
+      dom.doc.hidden = true;
+      dom.doc.emit('visibilitychange');
+    },
+    (dom) => dom.setMedia(REDUCED_MOTION, true),
+    (dom) => dom.setFx('off'),
+  ]) {
+    const dom = fakeDom();
+    const clock = installClock(dom.win);
+    const detach = attachCardTilt(dom.node, 8, 900);
+    dom.move(0.9, 0.9);
+    dom.flush();
+    assert.equal(clock.timers(), 1);
+    leave(dom);
+    assert.equal('tilting' in dom.node.dataset, false);
+    assert.equal(clock.timers(), 0, '收手时撤掉停住检查');
+    detach();
+    restoreGlobals();
+  }
+});
+
+test('useCardTilt hands settleMs through, read live: changing it does not re-attach', (t) => {
+  t.after(restoreGlobals);
+  const refs = {};
+  function Probe({ settleMs }) {
+    refs.badge = useCardTilt({ maxDeg: 8, settleMs });
+    refs.plain = useCardTilt({ maxDeg: 8 });
+    return null;
+  }
+  renderToStaticMarkup(createElement(Probe, { settleMs: 900 }));
+
+  // 工牌：±8°、停住 900ms 回平
+  let dom = fakeDom();
+  let clock = installClock(dom.win);
+  let cleanup = refs.badge(dom.node);
+  dom.move(1, 1);
+  dom.flush();
+  assert.equal(dom.props.get('--tilt-rx'), '8.00deg');
+  clock.advance(900);
+  assert.equal('tilting' in dom.node.dataset, false);
+  cleanup();
+  assert.equal(clock.timers(), 0);
+  restoreGlobals();
+
+  // 不传：与前牌一样不回平
+  dom = fakeDom();
+  clock = installClock(dom.win);
+  cleanup = refs.plain(dom.node);
+  dom.move(1, 1);
+  dom.flush();
+  clock.advance(5_000);
+  assert.equal(dom.node.dataset.tilting, '');
+  assert.equal(clock.timers(), 0);
+  cleanup();
 });

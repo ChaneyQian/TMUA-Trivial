@@ -16,6 +16,16 @@
 //   data-tilting            跟手期间存在。CSS 靠它切「跟手」与「回弹」两套过渡，也靠它
 //                           只在跟手时给倾斜层挂 transform——静止时倾斜层不另起合成层
 //
+// 停住回平（settleMs，可选，默认不启用）：指针在卡上停住超过这个时长，走和离开同一条
+// 收手路径（摘姿态、摘 data-tilting，回平的补间交给 CSS），再动再倾。给「拿起来读字」的卡用：
+// 倾斜中的字按贴图重采样会发软，读字时指针通常是停着的。判定是 lib/tilt.ts 的 shouldSettle。
+//
+// 工牌接入方法（components/badge/IdBadge）：
+//   const tiltRef = useCardTilt<HTMLDivElement>({ maxDeg: 8, settleMs: 900, enabled: … });
+//   <div ref={tiltRef} className={styles.tiltHost}>   ← 不转；给 perspective
+//     <button className={styles.card}>…</button>        ← [data-tilting] 时按 --tilt-rx/--tilt-ry 转
+//   </div>
+//
 // 纪律：
 //   - 只认鼠标，且只在 (hover: hover) and (pointer: fine)、非减动效、光效开着时启用：
 //     触屏没有悬停；减动效下由交互触发的动效一概不做；光效关着（lib/fx）一个监听都不挂。
@@ -29,9 +39,9 @@
 // 换算本身（指针 → 角度 / 高光坐标）是 lib/tilt.ts 里的纯函数。这里用带扩展名的
 // 相对路径引它（同 lib 里的写法），整个模块在 node --test 里也能直接加载。
 
-import { useCallback, type RefCallback } from 'react';
+import { useCallback, useLayoutEffect, useRef, type RefCallback } from 'react';
 import { currentFx, subscribeFx } from '../../lib/fx.ts';
-import { TILT_MAX_DEG, tiltPose } from '../../lib/tilt.ts';
+import { TILT_MAX_DEG, settleDelay, shouldSettle, tiltPose } from '../../lib/tilt.ts';
 import { useFx } from '../../lib/useFx.ts';
 
 export const FINE_POINTER = '(hover: hover) and (pointer: fine)';
@@ -48,6 +58,11 @@ export interface CardTiltOptions {
   maxDeg?: number;
   /** false 时不挂监听、不写变量；从 true 翻到 false 会先收手复位。默认 true */
   enabled?: boolean;
+  /**
+   * 指针停住超过这么多毫秒就回平，再动再倾。默认 0 = 不启用（前牌就是这样）。
+   * 只认正的有限数（见 lib/tilt.ts 的 settleDelay）
+   */
+  settleMs?: number;
 }
 
 /**
@@ -59,14 +74,21 @@ export interface CardTiltOptions {
 export function useCardTilt<T extends HTMLElement>({
   maxDeg = TILT_MAX_DEG,
   enabled = true,
+  settleMs = 0,
 }: CardTiltOptions = {}): RefCallback<T> {
   // 钩子无条件调用（不能写进 && 的右边：enabled 一变，钩子的调用顺序就跟着变）
   const fx = useFx();
   const active = enabled && fx === 'on';
+  // 回平时长不进依赖、走 ref 每次到点现读：它不决定挂不挂、挂在哪，
+  // 为改它摘了重挂，正倾着的卡会先被摔平一次
+  const settleRef = useRef(settleMs);
+  useLayoutEffect(() => {
+    settleRef.current = settleMs;
+  }, [settleMs]);
   return useCallback(
     (node: T | null) => {
       if (!node || !active) return;
-      return attachCardTilt(node, maxDeg);
+      return attachCardTilt(node, maxDeg, () => settleRef.current);
     },
     [active, maxDeg],
   );
@@ -80,8 +102,14 @@ const NOOP = () => {};
  * 同一个元素只挂一次（React 的 ref 本来就是一挂一摘，自己手动调用时别叠挂）。
  * 光效关着时什么都不挂（返回空的摘除函数）；挂着期间光效被关掉，立刻收手——
  * 恢复靠调用方重新挂（useCardTilt 已经跟着开关重挂）。
+ * settleMs：停住多久回平，数或「现读」函数（钩子传的是后者）；缺省 0 = 不启用，
+ * 这时不排任何定时器、也不读时钟
  */
-export function attachCardTilt(node: HTMLElement, maxDeg: number = TILT_MAX_DEG): () => void {
+export function attachCardTilt(
+  node: HTMLElement,
+  maxDeg: number = TILT_MAX_DEG,
+  settleMs: number | (() => number) = 0,
+): () => void {
   if (currentFx() === 'off') return NOOP;
   const fine = window.matchMedia(FINE_POINTER);
   const reduced = window.matchMedia(REDUCED_MOTION);
@@ -90,6 +118,12 @@ export function attachCardTilt(node: HTMLElement, maxDeg: number = TILT_MAX_DEG)
   let x = 0;
   let y = 0;
   let rect: DOMRect | null = null;
+  /** 最后一次（鼠标）移动的时刻，performance.now() 的毫秒；只在启用回平时记 */
+  let movedAt = 0;
+  /** 停住检查的定时器；一次跟手最多排一个 */
+  let idle = 0;
+
+  const idleMs = () => settleDelay(typeof settleMs === 'function' ? settleMs() : settleMs);
 
   /** rAF 里只写不读：包围盒在输入阶段已经量好 */
   const apply = () => {
@@ -106,12 +140,29 @@ export function attachCardTilt(node: HTMLElement, maxDeg: number = TILT_MAX_DEG)
       style.setProperty('--tilt-on', '1');
       node.dataset.tilting = '';
     }
+    // 停住计时：不每动一下就重排定时器，到点再看离最后一次移动过了多久
+    if (!idle) {
+      const wait = idleMs();
+      if (wait) idle = window.setTimeout(onIdle, wait);
+    }
   };
 
-  /** 收手：停帧、摘倾角。高光坐标留着，让高光在原地淡出，不先跳回正中再淡 */
+  /** 停住检查：停够了就回平；中途又动过，按还差的时间再约一次 */
+  const onIdle = () => {
+    idle = 0;
+    if (!live) return;
+    const wait = idleMs();
+    const now = window.performance.now();
+    if (shouldSettle(movedAt, now, wait)) settle();
+    else if (wait) idle = window.setTimeout(onIdle, wait - (now - movedAt));
+  };
+
+  /** 收手：停帧、摘倾角。高光坐标留着，让高光在原地淡出，不先跳回正中再淡。停住回平也走这里 */
   const settle = () => {
     if (frame) window.cancelAnimationFrame(frame);
     frame = 0;
+    if (idle) window.clearTimeout(idle);
+    idle = 0;
     if (!live) return;
     live = false;
     node.style.removeProperty('--tilt-rx');
@@ -128,6 +179,7 @@ export function attachCardTilt(node: HTMLElement, maxDeg: number = TILT_MAX_DEG)
     if (e.pointerType !== 'mouse' || blocked()) return;
     x = e.clientX;
     y = e.clientY;
+    if (idleMs()) movedAt = window.performance.now();
     // 这一帧已经排上了：只记下最新的坐标。页面隐藏时不排帧——
     // 后台标签页的 rAF 本来就会被冻住，排了也只是悬着
     if (frame || document.hidden) return;
