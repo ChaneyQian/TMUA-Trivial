@@ -4,6 +4,7 @@ import test from 'node:test';
 
 import { ZONE_IDS, ringOffset, stepZone } from '../src/components/deck/zones.ts';
 import { indexForLibraryMode } from '../src/lib/records.ts';
+import { cascade, declarations, evalLength, parseRules, px, splitValue, stripComments, subject } from './helpers/css-rules.mjs';
 import { readExamIndex } from './helpers/exam-data.mjs';
 
 const zonesPath = 'src/components/deck/zones.ts';
@@ -154,8 +155,8 @@ test('the fourth card gets a slot of its own instead of piling onto the left one
   assert.match(css, /\.slotBack\s*\{[\s\S]*?var\(--drag, 0px\)/);
   // 第三层往上退出去的那截要有 padding 接着，不然它挤进 .head 的外边距里
   // 窄屏 30px；中宽屏第三层退得更多，接它的内边距按卡宽取（见下一条几何测试）
-  assert.match(css, /\.viewport\s*\{[\s\S]*?padding-top:\s*var\(--viewport-pad\)/);
-  assert.match(css, /\n\.deck \{[^}]*--viewport-pad: 30px;/);
+  assert.equal(cascade(css, '.viewport')['padding-top'], 'var(--viewport-pad)');
+  assert.equal(px(cascade(css, '.deck')['--viewport-pad']), 30);
 });
 
 test('the board card is a coming-soon skeleton: it turns to the front but never opens', () => {
@@ -239,15 +240,39 @@ test('the deck geometry is derived from the viewport, never from scale', () => {
   for (const block of ['.head', '.progressRow', '.hintRow']) {
     assert.match(code, new RegExp(`\\n\\${block} \\{[^}]*width: min\\(var\\(--deck-w\\), 100%\\)`), block);
   }
-  // .viewport 就是牌堆总宽；宽于舞台时两侧等量外扩（负外边距），不偏向右边
-  assert.match(code, /\n\.viewport \{[^}]*width: var\(--deck-w\);\s*margin: 0 calc\(\(100% - var\(--deck-w\)\) \/ 2\);/);
+  // .viewport 就是牌堆总宽；宽于舞台时两侧等量外扩（负外边距），不偏向右边。
+  // 按层叠后的值代入几组「舞台宽 / 牌堆宽」求出来比，不认写法（简写、长写、先后都行）
+  const viewport = cascade(code, '.viewport');
+  for (const [stage, deckW] of [
+    [343, 343],
+    [900, 1100],
+    [1400, 1180],
+  ]) {
+    const env = { '%': stage, '--deck-w': deckW };
+    assert.equal(evalLength(viewport.width, env), deckW, `.viewport 宽不是牌堆总宽（舞台 ${stage}）`);
+    for (const side of ['margin-left', 'margin-right']) {
+      assert.ok(
+        Math.abs(evalLength(viewport[side], env) - (stage - deckW) / 2) < 1e-9,
+        `舞台 ${stage}、牌堆 ${deckW} 时 ${side} = ${viewport[side]}，两侧不等量`,
+      );
+    }
+  }
   // 不许它的内容宽度把舞台的网格列撑开
-  assert.match(code, /\n\.deck \{[^}]*min-width: 0;/);
+  assert.equal(px(cascade(code, '.deck')['min-width']), 0);
 
-  // 兜底裁剪：clip 不建立滚动容器，配 overflow-y: visible 才不切掉侧牌下移的 8px
-  assert.match(css, /overflow-x:\s*clip/);
-  assert.match(css, /overflow-y:\s*visible/);
-  assert.match(css, /touch-action:\s*pan-y/);
+  // 兜底裁剪：clip 不建立滚动容器，配 overflow-y: visible 才不切掉侧牌下移的 8px。
+  // 取层叠后的值——后面再补一句 overflow: visible 就把裁剪整个撤了，字面上 clip 却还在
+  assert.equal(viewport['overflow-x'], 'clip');
+  assert.equal(viewport['overflow-y'], 'visible');
+  for (const rule of parseRules(code)) {
+    if (!rule.selector.split(',').some((one) => one.trim() === '.viewport')) continue;
+    for (const [prop, value] of declarations(rule.body)) {
+      if (prop === 'overflow' || prop === 'overflow-x') {
+        assert.equal(splitValue(value)[0], 'clip', `${rule.at ?? ''} .viewport 的 ${prop}: ${value} 撤掉了横向裁剪`);
+      }
+    }
+  }
+  assert.match(viewport['touch-action'], /^pan-y\b/);
 });
 
 test('the deck spreads out in three width tiers, and each container holds exactly its fan', () => {
@@ -352,6 +377,45 @@ test('a card that just turned ignores clicks for as long as it is still sliding'
   const keys = deck.slice(deck.indexOf('const onKeyDown'), deck.indexOf('const onTouchStart'));
   assert.doesNotMatch(keys, /settled\(\)/);
   assert.match(keys, /if \(target && target !== e\.currentTarget && target\.tagName === 'BUTTON'\) return;\s*e\.preventDefault\(\);\s*onOpen\(front\);/);
+});
+
+test('a side or back card keeps its quick start in the layout but it can be neither clicked nor focused', () => {
+  const deck = fs.readFileSync(deckPath, 'utf8');
+  const css = stripComments(fs.readFileSync(deckCssPath, 'utf8'));
+
+  // 样式一层：层叠后必须是 visibility: hidden（或 display: none）——两样都把按钮移出 Tab 序、
+  // 也不再接点击。opacity: 0 只是看不见：照样能点、能 Tab 到，点下去就在侧牌上开考
+  const idle = cascade(css, '.quickIdle');
+  assert.ok(
+    idle.visibility === 'hidden' || idle.display === 'none',
+    `.quickIdle 层叠后是 ${JSON.stringify(idle)}，按钮还能点、能聚焦`,
+  );
+  // visibility 能被子孙拨回来：任何一条快速开始相关的规则都不许写 visibility: visible / 别的值
+  for (const rule of parseRules(css)) {
+    if (!/\.quick/.test(rule.selector)) continue;
+    for (const [prop, value] of declarations(rule.body)) {
+      if (prop === 'visibility') assert.equal(value, 'hidden', `${rule.selector} 把 visibility 拨成了 ${value}`);
+    }
+  }
+
+  // 结构一层：挂 .quickIdle 的那个容器自己带 inert 与 aria-hidden（不单靠样式兜着），按钮在它里面
+  const open = deck.match(/<div\s+className=\{`[^`]*styles\.quickIdle[^`]*`\}([^>]*)>/);
+  assert.ok(open, '找不到挂 .quickIdle 的容器');
+  const idleWhen = String.raw`\{(?:!isFront|isFront \? undefined : true)\}`;
+  assert.match(open[1], new RegExp(`inert=${idleWhen}`), '后牌的快速开始要 inert：不可点、不可聚焦、读屏跳过');
+  assert.match(open[1], new RegExp(`aria-hidden=${idleWhen}`));
+  let depth = 0;
+  let end = open.index;
+  for (const tag of deck.slice(open.index).matchAll(/<div\b|<\/div>/g)) {
+    depth += tag[0] === '</div>' ? -1 : 1;
+    if (depth === 0) {
+      end = open.index + tag.index;
+      break;
+    }
+  }
+  const area = deck.slice(open.index, end);
+  assert.match(area, /className=\{styles\.quickBtn\}/, '快速开始按钮得在这个 inert 容器里');
+  assert.equal(subject('.quickIdle .quickBtn'), 'quickBtn');
 });
 
 test('the deck owns its keyboard and touch handling without global listeners', () => {
