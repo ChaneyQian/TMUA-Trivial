@@ -87,32 +87,91 @@ export function subject(selector) {
 
 const PSEUDO_ELEMENT = /^::?(before|after|first-line|first-letter|marker|placeholder|backdrop|selection)$/;
 
-/** 选择器里的限定条件：类名、属性选择器、伪类（伪元素归主体管，不在这里） */
-function qualifiers(selector) {
-  const plain = unwrapGlobal(selector);
+/** 一个复合选择器里的限定条件：元素名、类名、属性选择器、伪类（伪元素归主体管，不在这里；* 不算限定） */
+function qualifiers(compound) {
   return new Set(
     [
-      ...(plain.match(/\.[\w-]+/g) || []),
-      ...(plain.match(/\[[^\]]*\]/g) || []),
-      ...(plain.match(/(?<!:):(?!:)[\w-]+(?:\([^)]*\))?/g) || []),
+      ...(compound.match(/^[a-z][\w-]*/i) || []),
+      ...(compound.match(/\.[\w-]+/g) || []),
+      ...(compound.match(/\[[^\]]*\]/g) || []),
+      ...(compound.match(/(?<!:):(?!:)[\w-]+(?:\([^)]*\))?/g) || []),
     ].filter((q) => !PSEUDO_ELEMENT.test(q)),
   );
+}
+
+/**
+ * 选择器拆成复合选择器链：[{ comb, quals }]，comb 是它与前一个之间的组合符
+ * （' ' 后代、'>' 子、'+' 紧邻兄弟、'~' 兄弟；第一个为 null）。括号 / 方括号里的不拆
+ */
+export function compounds(selector) {
+  const plain = unwrapGlobal(selector).trim();
+  const out = [];
+  let current = '';
+  let depth = 0;
+  let comb = null;
+  for (const ch of plain) {
+    if (ch === '(' || ch === '[') depth++;
+    else if (ch === ')' || ch === ']') depth--;
+    if (depth === 0 && /[\s>+~]/.test(ch)) {
+      if (current) {
+        out.push({ comb, text: current });
+        current = '';
+        comb = ' ';
+      }
+      if (!/\s/.test(ch)) comb = ch;
+      continue;
+    }
+    current += ch;
+  }
+  if (current) out.push({ comb, text: current });
+  return out.map(({ comb: c, text }) => ({ comb: c, quals: qualifiers(text) }));
 }
 
 /** 「光效关」开关本身的限定条件：写在 :root 上的 data-fx='off' */
 export const FX_OFF_ROOT = [':root', "[data-fx='off']"];
 
 /**
+ * off 选中的元素是不是 sel 选中的超集（结构上）：off 的每个复合选择器都能按次序、按组合符对到 sel 的
+ * 某个复合选择器上，且限定条件是它的子集。
+ * - 主体（最后一个）对主体；
+ * - 后代（空格）：对到 sel 里更靠前、且中间只隔着后代 / 子组合符的任何一个（祖先链上的哪一层都行）；
+ * - 子（>）：只能对到紧挨着的前一个，且 sel 那里也得是 >——`.a > .b` 管不到 `.a .b` 里隔代的 .b；
+ * - 紧邻兄弟（+）只认 +；兄弟（~）认 + 与 ~（紧邻的必定也是兄弟）。
+ * allow 里的限定条件（开关本身，写在 :root 上）整段略过：:root 是一切元素的祖先，只要后面接的是后代组合符
+ */
+export function selects(offSel, sel, allow = []) {
+  let off = compounds(offSel);
+  const on = compounds(sel);
+  // 开头只含开关条件的那一段（:root[data-fx='off']）略过；它后面必须是后代组合符
+  while (off.length > 1 && off[0].quals.size && [...off[0].quals].every((q) => allow.includes(q))) {
+    if (off[1].comb !== ' ') return false;
+    off = [{ ...off[1], comb: null }, ...off.slice(2)];
+  }
+  const fits = (o, s) => [...o.quals].every((q) => s.quals.has(q));
+  const match = (i, j) => {
+    if (i === 0) return true;
+    const c = off[i].comb;
+    if (c === '>' || c === '+') return j > 0 && on[j].comb === c && fits(off[i - 1], on[j - 1]) && match(i - 1, j - 1);
+    if (c === '~') return j > 0 && (on[j].comb === '+' || on[j].comb === '~') && fits(off[i - 1], on[j - 1]) && match(i - 1, j - 1);
+    for (let k = j - 1; k >= 0; k--) {
+      if (on[k + 1].comb !== ' ' && on[k + 1].comb !== '>') break;
+      if (fits(off[i - 1], on[k]) && match(i - 1, k)) return true;
+    }
+    return false;
+  };
+  return on.length > 0 && off.length > 0 && fits(off[off.length - 1], on[on.length - 1]) && match(off.length - 1, on.length - 1);
+}
+
+/**
  * offSel（规则 off 里的一条选择器）是不是真把 sel（规则 rule 里的一条）选中的每个元素都压住了：
  * - 主体相同（伪元素单独算）；
- * - 它用到的限定条件（类、属性、伪类）除开关本身（allow）之外全都出现在 sel 里——
- *   即它选中的是 sel 的超集：`.slotFront .body` 只管前牌的正文，盖不住所有 `.body`；
+ * - 它选中的是 sel 的超集（按复合选择器与组合符逐段对，见 selects）：`.slotFront .body` 只管前牌的正文，
+ *   盖不住所有 `.body`；`.a > .b` 只管直接子元素，盖不住 `.a .b`；
  * - 层叠上赢：特异性更高，或相同且写在后面。
  */
 export function overrides(off, offSel, rule, sel, { allow = [] } = {}) {
   if (subject(offSel) !== subject(sel)) return false;
-  const want = qualifiers(sel);
-  for (const q of qualifiers(offSel)) if (!want.has(q) && !allow.includes(q)) return false;
+  if (!selects(offSel, sel, allow)) return false;
   const order = cmpSpec(specificity(offSel), specificity(sel));
   return order > 0 || (order === 0 && off.start > rule.start);
 }

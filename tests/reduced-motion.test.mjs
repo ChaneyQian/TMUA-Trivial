@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import test from 'node:test';
 
-import { cssFiles, declarations, overrides, parseRules, stripComments, subject } from './helpers/css-rules.mjs';
+import { cssFiles, declarations, FX_OFF_ROOT, overrides, parseRules, selects, stripComments, subject } from './helpers/css-rules.mjs';
 
 /**
  * 减动效纪律的源码级守卫。
@@ -104,6 +104,30 @@ test('a stylesheet that moves at all must carry a reduced-motion block', () => {
   assert.equal(declaresMotion('.a { animation: spin 1s infinite; }'), true);
 });
 
+test('an override only counts when it selects every element the animated rule does, combinators included', () => {
+  // [关闭规则, 动效规则, 前者选中的是不是后者的超集]
+  for (const [off, on, superset] of [
+    ['.b', '.a > .b', true],
+    ['.a .b', '.a > .b', true],
+    ['.a .b', '.a .x .b', true],
+    ['.a .b', '.a > .x .b', true],
+    ['.a > .b .c', '.a > .b > .c', true],
+    ['.a > .b', '.a .b', false],
+    ['.a > .b', '.a > .x > .b', false],
+    ['.a > .b > .c', '.a > .b .c', false],
+    ['.a ~ .b', '.a + .b', true],
+    ['.a + .b', '.a ~ .b', false],
+    ['.a .c', '.a + .b .c', false],
+    ['.slotFront .body', '.body', false],
+    ['.pillDot', '.pill:hover .pillDot', true],
+    ['.pill:hover .pillDot', '.pillDot', false],
+    [":global(:root[data-fx='off']) .body", '.body', true],
+    [":global(:root[data-fx='off']) > .body", '.body', false],
+  ]) {
+    assert.equal(selects(off, on, FX_OFF_ROOT), superset, `${off} ⊇ ${on} 应为 ${superset}`);
+  }
+});
+
 test('the specificity guard has teeth', () => {
   // 反面：降级块只写基础类名，而动效开在「父类 + 基础类」上——正是充电条那盏灯的原形
   const weak = `
@@ -156,6 +180,22 @@ test('the specificity guard has teeth', () => {
     @media (prefers-reduced-motion: reduce) { :global([data-theme='dark']) .glare { transition: none; } }
   `;
   assert.equal(uncoveredMotion(themed).length, 1, '只在深色主题下关，浅色与护眼照动');
+
+  // 组合符也算：`.a > .b` 只管 .a 的直接子元素，盖不住 `.a .b`（隔代的 .b 照动）；
+  // 反过来 `.a .b` 盖得住 `.a > .b`（选中的是超集）
+  const child = `
+    .a .b { transition: opacity 200ms ease; }
+    @media (prefers-reduced-motion: reduce) { .a > .b { transition: none; } }
+  `;
+  assert.equal(uncoveredMotion(child).length, 1, '子组合符的降级规则盖不住后代组合符的动效');
+  assert.deepEqual(uncoveredMotion(child.replace('.a > .b {', '.a .b {')), []);
+  assert.deepEqual(
+    uncoveredMotion(`
+      .a > .b { transition: opacity 200ms ease; }
+      @media (prefers-reduced-motion: reduce) { .a .b { transition: none; } }
+    `),
+    [],
+  );
 
   // 配色类补间不在本纪律内：它不产生位移，硬关掉只会让按钮 hover 变生硬
   const tint = `
