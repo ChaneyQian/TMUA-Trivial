@@ -95,8 +95,9 @@ test('no component keeps a storage key literal of its own', () => {
     if (normalized.endsWith('src/lib/storage.ts')) continue;
     const source = fs.readFileSync(file, 'utf8');
     for (const hit of source.match(/'mcq-test:[^']+'/g) || []) {
-      // 事件名不是存储键；首屏内联脚本没法 import，键名在那里只能是字面量
-      if (hit.includes('pet-command') || hit.includes('fx-change')) continue;
+      // 事件名不是存储键（小助手指令、光效开关、整屏遮罩标记的切换广播）；
+      // 首屏内联脚本没法 import，键名在那里只能是字面量
+      if (hit.includes('pet-command') || hit.includes('fx-change') || hit.includes('overlay-change')) continue;
       if (normalized.endsWith(layoutPath) && hit === `'${storage.THEME_KEY}'`) continue;
       if (normalized.endsWith(layoutPath) && hit === `'${storage.FX_KEY}'`) continue;
       strays.push(`${normalized}  ${hit}`);
