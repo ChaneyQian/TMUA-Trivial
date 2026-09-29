@@ -191,8 +191,8 @@ export default function IdBadge() {
     return () => window.removeEventListener('keydown', onKey);
   }, [visible, stow, stage]);
 
-  // 浮层在屏上（落下、挂着、收起途中）就在 <html> 上挂遮罩标记（lib/overlay）：身后设置页的
-  // 光标聚光看见它就熄灯、不再逐帧重画——否则浮层的整屏 backdrop-filter 要跟着每帧重算
+  // 浮层在屏上（落下、挂着、收起途中）就在 <html> 上挂遮罩标记（lib/overlay）：身后设置页的光标聚光
+  // 熄灯、无限循环动画暂停——浮层的整屏 backdrop-filter 要随身后每一帧变化重算，而这时它们都看不见
   useEffect(() => {
     if (!visible) return;
     return holdOverlay();

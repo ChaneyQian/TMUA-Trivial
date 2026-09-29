@@ -189,6 +189,15 @@
   animation: none;
 }
 
+/* 整屏遮罩开着（<html data-overlay>：工牌浮层、解锁过渡层，见 lib/overlay）：充电条的呼吸灯与流光
+   停在原地（不是 none——遮罩一撤接着走）。遮罩的 backdrop-filter 要随身后每一帧变化重算整屏模糊，
+   这时它们都被盖着。前缀 (0,3,0) 压得过「父类 + 子类」的简写 animation。完卷横幅那两样见文件后面 */
+:global(:root[data-overlay]) .chargeLight,
+:global(:root[data-overlay]) .libraryChargeFill,
+:global(:root[data-overlay]) .libraryChargeLabel {
+  animation-play-state: paused;
+}
+
 .libraryChargeReady:hover {
   background: color-mix(in srgb, var(--surface-alt) 86%, #00a8ad);
   box-shadow: 0 0 0 1px rgb(0 168 173 / 18%), 0 0 24px rgb(0 168 173 / 20%);
@@ -1446,6 +1455,13 @@
 :global(:root[data-fx='off']) .finishMark,
 :global(:root[data-fx='off']) .finishTitle {
   animation: none;
+}
+
+/* 整屏遮罩开着（<html data-overlay>，见 lib/overlay）：完卷横幅的竖标与标题流光停在原地，
+   遮罩一撤接着走（理由同充电条那几条） */
+:global(:root[data-overlay]) .finishMark,
+:global(:root[data-overlay]) .finishTitle {
+  animation-play-state: paused;
 }
 
 /* 从复烤区「重练这些」进来的场次才有这一句 */

@@ -1164,6 +1164,13 @@
   }
 }
 
+/* 整屏遮罩开着（<html data-overlay>，见 lib/overlay）：丝带在遮罩底下，摆动停在原地（不是 none——
+   遮罩一撤就从停住的地方接着摆）。遮罩的 backdrop-filter 要随身后每一帧变化重算整屏模糊，
+   这时丝带根本看不见。前缀多出 (0,2,0)，压得过简写 animation（它会把播放状态重置回 running） */
+:global(:root[data-overlay]) .ribbonTail {
+  animation-play-state: paused;
+}
+
 /* 光效关（<html data-fx="off">，见 lib/fx）：丝带的摆动是纯装饰的无限循环，停掉。
    前缀 :root[data-fx] 多出 (0,2,0)，连 hover / 焦点时改节奏的那两条也一并压住。
    倾斜与扫光由钩子管（光效关时一个监听都不挂），这里再把扫光层整个摘掉兜底 */

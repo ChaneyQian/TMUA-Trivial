@@ -278,6 +278,15 @@
   animation: none;
 }
 
+/* 整屏遮罩开着（<html data-overlay>：工牌浮层、解锁过渡层，见 lib/overlay）：光斑的漂移停在原地
+   （不是 none——遮罩一撤就从停住的地方接着漂，不跳回起点）。遮罩的 backdrop-filter 要随身后
+   每一帧变化重算整屏模糊，这时光斑被盖着看不见。聚光那边由 spotlight.ts 现判同一个标记熄灯 */
+:global(:root[data-overlay]) .spotA,
+:global(:root[data-overlay]) .spotB,
+:global(:root[data-overlay]) .spotC {
+  animation-play-state: paused;
+}
+
 /* 放在文件最末：同特异性下要压过上面每一条动效声明（含 hover 媒体查询里的 display） */
 @media (prefers-reduced-motion: reduce) {
   /* 光斑静止在原位；换区瞬时切换；进场不淡入；

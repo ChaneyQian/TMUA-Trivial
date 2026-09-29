@@ -43,6 +43,8 @@ function uncoveredMotion(css) {
             : null;
       if (!family) continue;
       if (value === 'none' || value.startsWith('none')) continue;
+      // 暂停（遮罩开着时的 animation-play-state: paused）是让东西停下，不是动效
+      if (prop === 'animation-play-state' && value === 'paused') continue;
       if (family === 'transition' && !MOTION.test(value)) continue;
 
       for (const selector of rule.selector.split(',')) {
@@ -80,6 +82,7 @@ function declaresMotion(css) {
       !rule.inReduced &&
       declarations(rule.body).some(([prop, value]) => {
         if (value === 'none' || value.startsWith('none')) return false;
+        if (prop === 'animation-play-state' && value === 'paused') return false;
         if (prop === 'animation' || prop.startsWith('animation-')) return true;
         return (prop === 'transition' || prop.startsWith('transition-')) && MOTION.test(value);
       }),

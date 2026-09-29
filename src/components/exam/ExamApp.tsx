@@ -16,6 +16,7 @@ import DiagnosticRunner from '@/components/diagnostic/DiagnosticRunner';
 import DiagnosticResult from '@/components/diagnostic/DiagnosticResult';
 import GrillPanel from '@/components/grill/GrillPanel';
 import NoticeBoard from '@/components/notice/NoticeBoard';
+import { holdOverlay } from '@/lib/overlay';
 import { grillBadgeCount, pickGrillQids } from '@/lib/grill';
 import { countedQids, historyFor, practiceOverview, practiceQids } from '@/lib/progress';
 import {
@@ -164,6 +165,9 @@ function UnlockOverlay({ onDismiss }: { onDismiss: () => void }) {
     const t = window.setTimeout(close, 4000);
     return () => window.clearTimeout(t);
   }, [close]);
+
+  // 同工牌浮层：整屏 backdrop-filter，在屏期间挂遮罩标记（lib/overlay），身后的聚光熄灯、无限动画暂停
+  useEffect(() => holdOverlay(), []);
 
   return (
     <div

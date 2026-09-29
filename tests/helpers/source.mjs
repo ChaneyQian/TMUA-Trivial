@@ -300,13 +300,33 @@ export function calls(src, callee) {
   return out;
 }
 
-/** useEffect（或别的 effect 钩子）的每一处：{ body：回调的函数体, deps：依赖名数组（没写依赖为 null） } */
+/** from 起第一个顶层（不在括号 / 引号里）逗号的位置；没有就是 text.length */
+function topLevelComma(text, from) {
+  let depth = 0;
+  for (let i = from; i < text.length; i++) {
+    const ch = text[i];
+    if (ch === '"' || ch === "'" || ch === '`') {
+      let j = i + 1;
+      while (j < text.length && text[j] !== ch) j += text[j] === '\\' ? 2 : 1;
+      i = j;
+    } else if ('([{'.includes(ch)) depth++;
+    else if (')]}'.includes(ch)) depth--;
+    else if (ch === ',' && depth === 0) return i;
+  }
+  return text.length;
+}
+
+/**
+ * useEffect（或别的 effect 钩子）的每一处：{ body：回调的函数体, deps：依赖名数组（没写依赖为 null） }。
+ * 回调可以是块体 `() => { … }`，也可以是表达式体 `() => holdOverlay()`、`() => () => clear()`
+ * ——表达式体的 body 就是那个表达式
+ */
 export function effects(src, hook = 'useEffect') {
   return calls(src, hook).map(({ args }) => {
     const arrow = args.indexOf('=>');
     const brace = args.indexOf('{', arrow);
     const block = arrow >= 0 && brace >= 0 && args.slice(arrow + 2, brace).trim() === '';
-    const fnEnd = block ? brace + balanced(args, brace).length : args.length;
+    const fnEnd = block ? brace + balanced(args, brace).length : topLevelComma(args, arrow >= 0 ? arrow + 2 : 0);
     const rest = args.slice(fnEnd).replace(/^\s*,\s*/, '').trim();
     const deps = rest.startsWith('[')
       ? rest

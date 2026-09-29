@@ -357,6 +357,8 @@ export function endlessOffenders(css) {
     for (const [prop, value] of declarations(rule.body)) {
       if (prop !== 'animation' && !prop.startsWith('animation-')) continue;
       if (value === 'none' || value.startsWith('none')) continue;
+      // 暂停（遮罩开着时的 animation-play-state: paused）不会让任何东西动起来，不需要关闭开关
+      if (prop === 'animation-play-state' && value === 'paused') continue;
       for (const selector of rule.selector.split(',')) {
         const subj = subject(selector);
         if (!endless.has(subj)) continue;

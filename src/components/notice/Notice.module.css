@@ -257,3 +257,11 @@
 :global(:root[data-fx='off']) .headline {
   animation: none;
 }
+
+/* 整屏遮罩开着（<html data-overlay>：工牌浮层、解锁过渡层，见 lib/overlay）：呼吸灯与大标题的流光
+   停在原地（不是 none——遮罩一撤接着走）。遮罩的整屏背景模糊要随身后每一帧变化重算，
+   这时公告被盖着看不见 */
+:global(:root[data-overlay]) .pillDot,
+:global(:root[data-overlay]) .headline {
+  animation-play-state: paused;
+}
