@@ -2,8 +2,13 @@
 
 // 工牌展示：首登时挂绳吊着工牌落下 → 之后收成设置卡左上角的 3D 丝带 → 点丝带再取出。
 // 工牌本体是独立浮层（不嵌在题库展示卡里），翻开后变成左右双页：左联系方式、右赞助。
+//
+// P8-B（2026-09）：正面做成实体证件——CR80 竖版比例、切边 + 倒角高光、冲孔 + 金属鸭嘴扣、
+// 证件式字段、微缩印字防伪线、右下角全息贴片；随指针轻倾 ±8°，指针停住约 0.9 秒就回平
+// （倾斜中的字会发软，读字时指针通常是停着的）。
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCardTilt } from '@/components/fx/useCardTilt';
 import { BADGE_SEEN_KEY as SEEN_KEY } from '@/lib/storage';
 import styles from './IdBadge.module.css';
 
@@ -20,6 +25,16 @@ const IDENTITY = {
   serial: `Last Update ${process.env.NEXT_PUBLIC_BUILD_DATE || ''}`.trim(),
 };
 
+/** 证件式字段：小标签 + 值。值沿用上面的身份信息，不另写 */
+const FIELDS = [
+  { label: 'ROLE', value: IDENTITY.team },
+  { label: 'REGION', value: IDENTITY.location },
+];
+
+/** 挂绳织带与防伪线上的重复印字（纯装饰，读屏不念） */
+const STRAP_PRINT = 'MCQ TEST · TMUA · '.repeat(14);
+const MICROPRINT = 'TMUA · MAT · STEP · '.repeat(9);
+
 const ASSETS = {
   avatar: `${BASE_PATH}/badge/avatar.jpg`,
   contact: `${BASE_PATH}/badge/contact-qr.png`,
@@ -31,18 +46,49 @@ const DROP_MS = 1450;
 const FOLD_MS = 640;
 const FLY_MS = 700;
 
+/** 正面随指针倾斜：±8°；指针停住这么久就回平（见 useCardTilt 的 settleMs） */
+const TILT_DEG = 8;
+const SETTLE_MS = 900;
+
 type Stage = 'stowed' | 'dropping' | 'resting' | 'flying';
+
+/** 程序聚焦时不亮焦点环（FocusOptions.focusVisible，TS 的 DOM 库还没收录这个字段） */
+const QUIET_FOCUS: FocusOptions & { focusVisible?: boolean } = { focusVisible: false };
+
+/** 头带上的坐标纸与函数曲线，呼应经典区封面。视口与头带同比例（300 × 100），不拉伸 */
+function BandArt() {
+  return (
+    <svg className={styles.bandArt} viewBox="0 0 300 100" aria-hidden="true" focusable="false">
+      <path className={styles.bandAxis} d="M0 66H300M58 0V100" />
+      <path
+        className={styles.bandCurve}
+        d="M-4 88C22 88 36 42 70 40S118 78 152 74S200 22 236 24S286 58 304 60"
+      />
+      <circle className={styles.bandDot} cx="70" cy="40" r="2.6" />
+      <circle className={styles.bandDot} cx="152" cy="74" r="2.6" />
+      <circle className={styles.bandDot} cx="236" cy="24" r="2.6" />
+    </svg>
+  );
+}
 
 export default function IdBadge() {
   const [stage, setStage] = useState<Stage>('stowed');
   const [opened, setOpened] = useState(false);
 
   const ribbonRef = useRef<HTMLButtonElement | null>(null);
-  const flyerRef = useRef<HTMLDivElement | null>(null);
-  const cardRef = useRef<HTMLDivElement | null>(null);
   const badgeRef = useRef<HTMLButtonElement | null>(null);
   const timersRef = useRef<number[]>([]);
   const reducedRef = useRef(false);
+  /** 这次落下是首登自动落下（没有任何用户操作）还是点丝带取出 */
+  const autoDropRef = useRef(false);
+
+  // 只在静止挂着、且合着（正面朝外）时跟手；落下 / 收起的摆动里不叠倾斜。
+  // 减动效、没有悬停的设备、光效关着时钩子自己一个监听都不挂
+  const tiltRef = useCardTilt<HTMLDivElement>({
+    maxDeg: TILT_DEG,
+    settleMs: SETTLE_MS,
+    enabled: stage === 'resting' && !opened,
+  });
 
   const after = useCallback((ms: number, run: () => void) => {
     const id = window.setTimeout(run, reducedRef.current ? 0 : ms);
@@ -74,12 +120,14 @@ export default function IdBadge() {
       if (!seen) localStorage.setItem(SEEN_KEY, '1');
     } catch {}
     if (seen) return;
+    autoDropRef.current = true;
     setStage('dropping');
     after(DROP_MS, () => setStage('resting'));
   }, [after]);
 
   const show = useCallback(() => {
     clearTimers();
+    autoDropRef.current = false;
     setOpened(false);
     setStage('dropping');
     after(DROP_MS, () => setStage('resting'));
@@ -130,8 +178,11 @@ export default function IdBadge() {
     };
   }, [visible]);
 
+  // 焦点移进浮层（模态对话框的本分）。首登自动落下时页面上还没有任何操作，
+  // 浏览器会把这次程序聚焦当成键盘聚焦、亮起焦点环——一圈贴着卡边的光圈读起来像卡的描边。
+  // 那一次静默聚焦；键盘用户一按键焦点环照常出现，点丝带取出则交给浏览器自己判断
   useEffect(() => {
-    if (stage === 'resting') badgeRef.current?.focus();
+    if (stage === 'resting') badgeRef.current?.focus(autoDropRef.current ? QUIET_FOCUS : undefined);
   }, [stage]);
 
   return (
@@ -165,14 +216,20 @@ export default function IdBadge() {
             onClick={(e) => e.stopPropagation()}
           >
             <span className={styles.lanyard} aria-hidden="true">
-              {/* 两股带子从上方分开、向下收进扣子：绕颈挂绳本来就是一个环，
-                  画成一根竖条会像电线 */}
-              <span className={`${styles.strap} ${styles.strapLeft}`} />
-              <span className={`${styles.strap} ${styles.strapRight}`} />
-              <span className={styles.lanyardClip} />
+              {/* 两股织带从上方分开、向下收进压扣：绕颈挂绳本来就是一个环，
+                  画成一根竖条会像电线。压扣下挂一只开口圈，圈上吊鸭嘴扣，扣舌插进卡顶的冲孔 */}
+              <span className={`${styles.strap} ${styles.strapLeft}`}>
+                <span className={styles.strapPrint}>{STRAP_PRINT}</span>
+              </span>
+              <span className={`${styles.strap} ${styles.strapRight}`}>
+                <span className={styles.strapPrint}>{STRAP_PRINT}</span>
+              </span>
+              <span className={styles.ring} />
+              <span className={styles.crimp} />
+              <span className={styles.clip} />
             </span>
 
-            <div ref={flyerRef} className={styles.flyer}>
+            <div className={styles.flyer}>
               <div className={`${styles.fit} ${opened ? styles.fitOpen : ''}`}>
                 {/* 翻开后正面朝里，卡片按钮的背面收不到点击，
                     所以整个跨页兜住 toggle：合上/翻开都点得动 */}
@@ -197,38 +254,59 @@ export default function IdBadge() {
                       </div>
                     </div>
 
-                    <div ref={cardRef} className={`${styles.face} ${styles.faceOuter}`}>
-                      <button
-                        ref={badgeRef}
-                        type="button"
-                        className={styles.card}
-                        onClick={(e) => {
-                          e.stopPropagation(); // 免得跨页的 toggle 再翻一次
-                          toggle();
-                        }}
-                        aria-expanded={opened}
-                        aria-label={opened ? '合上工牌' : '翻开工牌，查看联系方式与赞助码'}
-                      >
-                        <span className={styles.holo} aria-hidden="true" />
-                        <span className={styles.cardTop}>
-                          <span className={styles.dot} aria-hidden="true" />
-                          <span className={styles.org}>{IDENTITY.org}</span>
-                          <span className={styles.chip} aria-hidden="true" />
-                        </span>
+                    <div className={`${styles.face} ${styles.faceOuter}`}>
+                      {/* 倾斜钩子挂在这层：它不转，只收指针、量尺寸、挂变量；给景深。
+                          真正倾斜的是里面的卡（量正在倾斜的那层，倾角会追着自己跑） */}
+                      <div ref={tiltRef} className={styles.tiltHost}>
+                        <button
+                          ref={badgeRef}
+                          type="button"
+                          className={styles.card}
+                          onClick={(e) => {
+                            e.stopPropagation(); // 免得跨页的 toggle 再翻一次
+                            toggle();
+                          }}
+                          aria-expanded={opened}
+                          aria-label={opened ? '合上工牌' : '翻开工牌，查看联系方式与赞助码'}
+                        >
+                          <span className={styles.band}>
+                            <BandArt />
+                            <span className={styles.org}>{IDENTITY.org}</span>
+                            <span className={styles.punch} aria-hidden="true" />
+                            <span className={styles.chip} aria-hidden="true" />
+                          </span>
 
-                        <span className={styles.photoFrame}>
-                          <img className={styles.photo} src={ASSETS.avatar} alt="作者卡通形象" />
-                          <span className={styles.photoGlow} aria-hidden="true" />
-                        </span>
+                          <span className={styles.photoFrame}>
+                            <img className={styles.photo} src={ASSETS.avatar} alt="作者卡通形象" />
+                          </span>
 
-                        <span className={styles.name}>{IDENTITY.name}</span>
-                        <span className={styles.title}>{IDENTITY.title}</span>
-                        <span className={styles.rule} aria-hidden="true" />
-                        <span className={styles.team}>{IDENTITY.team}</span>
-                        <span className={styles.location}>{IDENTITY.location}</span>
-                        <span className={styles.serial}>{IDENTITY.serial}</span>
-                        <span className={styles.barcode} aria-hidden="true" />
-                      </button>
+                          <span className={styles.name}>{IDENTITY.name}</span>
+                          <span className={styles.title}>{IDENTITY.title}</span>
+
+                          <span className={styles.fields}>
+                            {FIELDS.map((field) => (
+                              <span key={field.label} className={styles.field}>
+                                <span className={styles.fieldLabel}>{field.label}</span>
+                                <span className={styles.fieldValue}>{field.value}</span>
+                              </span>
+                            ))}
+                          </span>
+
+                          <span className={styles.microprint} aria-hidden="true">
+                            {MICROPRINT}
+                          </span>
+
+                          <span className={styles.foot}>
+                            <span className={styles.idBlock}>
+                              <span className={styles.barcode} aria-hidden="true" />
+                              <span className={styles.serial}>{IDENTITY.serial}</span>
+                            </span>
+                            <span className={styles.holo} aria-hidden="true" />
+                          </span>
+
+                          <span className={styles.sheen} aria-hidden="true" />
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
