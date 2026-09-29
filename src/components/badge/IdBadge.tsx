@@ -10,6 +10,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useCardTilt } from '@/components/fx/useCardTilt';
 import { BADGE_SEEN_KEY as SEEN_KEY } from '@/lib/storage';
+import { onBadgeKey } from './focusTrap';
 import styles from './IdBadge.module.css';
 
 const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH || '';
@@ -94,6 +95,7 @@ export default function IdBadge() {
 
   const ribbonRef = useRef<HTMLButtonElement | null>(null);
   const badgeRef = useRef<HTMLButtonElement | null>(null);
+  const stowRef = useRef<HTMLButtonElement | null>(null);
   const timersRef = useRef<number[]>([]);
   const reducedRef = useRef(false);
   /** 这次落下是首登自动落下（没有任何用户操作）还是点丝带取出 */
@@ -175,11 +177,10 @@ export default function IdBadge() {
 
   useEffect(() => {
     if (!visible) return;
+    // Esc 收起；Tab / Shift+Tab 只在卡片与「收起工牌」之间循环（轻量焦点陷阱，见 ./focusTrap）：
+    // 否则焦点会跑到身后被遮住的设置页上，看不见在哪、回车还会按到看不见的按钮
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        e.stopPropagation();
-        stow();
-      }
+      onBadgeKey(e, [badgeRef.current, stowRef.current], document.activeElement, stow);
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
@@ -373,7 +374,7 @@ export default function IdBadge() {
               <span className={styles.hint}>
                 {opened ? '再次点击工牌合上' : '点击工牌翻开 · 联系方式与赞助码'}
               </span>
-              <button type="button" className={styles.stowBtn} onClick={stow}>
+              <button ref={stowRef} type="button" className={styles.stowBtn} onClick={stow}>
                 收起工牌
               </button>
             </div>

@@ -4,6 +4,8 @@ import fs from 'node:fs';
 import test from 'node:test';
 
 import { cascade, declarations, parseRules, stripComments } from './helpers/css-rules.mjs';
+import { code, effects, jsxByClass } from './helpers/source.mjs';
+import { nextFocus, onBadgeKey } from '../src/components/badge/focusTrap.ts';
 
 const componentPath = 'src/components/badge/IdBadge.tsx';
 const cssPath = 'src/components/badge/IdBadge.module.css';
@@ -52,8 +54,95 @@ test('the badge drops on first visit only, then lives behind the ribbon', () => 
   const css = fs.readFileSync(cssPath, 'utf8');
   assert.match(css, /@keyframes badgeRetract/);
   assert.match(css, /translateY\(-125vh\)/);
-  assert.match(component, /'Escape'/);
   assert.match(component, /prefers-reduced-motion:\s*reduce/);
+});
+
+// ---------------------------------------------------------------------------
+// 键盘：Esc 收起；Tab / Shift+Tab 只在卡片与「收起工牌」之间循环（轻量焦点陷阱）
+
+/** 一个会记录焦点的假停靠点；focused() 读当前焦点 */
+function focusRing() {
+  let active = null;
+  const make = (name) => {
+    const el = { name, focus: () => (active = el) };
+    return el;
+  };
+  return { make, focused: () => active, set: (el) => (active = el) };
+}
+
+/** 假按键事件：记下有没有被 preventDefault / stopPropagation */
+function key(k, mods = {}) {
+  const e = { key: k, shiftKey: false, ...mods, prevented: false, stopped: false };
+  e.preventDefault = () => (e.prevented = true);
+  e.stopPropagation = () => (e.stopped = true);
+  return e;
+}
+
+test('Tab and Shift+Tab cycle between the card and the stow button; Esc stows; other keys pass through', () => {
+  const ring = focusRing();
+  const card = ring.make('card');
+  const stowBtn = ring.make('stow');
+  let stowed = 0;
+  const stow = () => stowed++;
+  const press = (e) => onBadgeKey(e, [card, stowBtn], ring.focused(), stow);
+
+  // 焦点在卡上：Tab → 收起按钮 → 回到卡（首尾相接），每一下都拦下默认的焦点移动
+  ring.set(card);
+  let e = key('Tab');
+  assert.equal(press(e), true);
+  assert.equal(ring.focused(), stowBtn);
+  assert.equal(e.prevented, true, 'Tab 要拦下默认行为，否则焦点跑到身后的设置页');
+  press(key('Tab'));
+  assert.equal(ring.focused(), card);
+  // Shift+Tab 反向
+  press(key('Tab', { shiftKey: true }));
+  assert.equal(ring.focused(), stowBtn);
+  press(key('Tab', { shiftKey: true }));
+  assert.equal(ring.focused(), card);
+
+  // 焦点不在停靠点上（在 body 上）：Tab 去第一个，Shift+Tab 去最后一个
+  ring.set({ name: 'body' });
+  press(key('Tab'));
+  assert.equal(ring.focused(), card);
+  ring.set(null);
+  press(key('Tab', { shiftKey: true }));
+  assert.equal(ring.focused(), stowBtn);
+
+  // Esc：收起，并拦下冒泡（设置页那边的 Esc「退回选区」不再跟着触发）；不动焦点
+  ring.set(card);
+  e = key('Escape');
+  assert.equal(press(e), true);
+  assert.equal(stowed, 1);
+  assert.equal(e.stopped, true);
+  assert.equal(ring.focused(), card);
+
+  // 其它键、以及带 Alt / Ctrl / Meta 的 Tab（浏览器与系统的组合键）一概不拦
+  for (const other of [key('Enter'), key(' '), key('a'), key('Tab', { ctrlKey: true }), key('Tab', { altKey: true }), key('Tab', { metaKey: true })]) {
+    assert.equal(press(other), false, `${other.key} 不该被拦`);
+    assert.equal(other.prevented, false);
+    assert.equal(ring.focused(), card);
+  }
+  assert.equal(stowed, 1);
+
+  // 还没挂载的停靠点跳过；一个都没有就不拦
+  assert.equal(nextFocus(key('Tab'), [null, stowBtn], card), stowBtn);
+  assert.equal(nextFocus(key('Tab', { shiftKey: true }), [card, undefined], card), card);
+  assert.equal(nextFocus(key('Tab'), [null, null], card), null);
+});
+
+test('the key handler is wired to the card and the stow button while the overlay is up', () => {
+  const src = code(fs.readFileSync(componentPath, 'utf8'));
+  // 浮层开着时挂在 window 上：Esc 与焦点陷阱都走 ./focusTrap 那一个函数
+  const keydown = effects(src).filter(({ body }) => body.includes("addEventListener('keydown'"));
+  assert.equal(keydown.length, 1, '只该有一个 keydown effect');
+  const { body, deps } = keydown[0];
+  assert.match(body, /^if \(!visible\) return;/);
+  assert.match(body, /onBadgeKey\(e, \[badgeRef\.current, stowRef\.current\], document\.activeElement, stow\)/);
+  assert.match(body, /return \(\) => window\.removeEventListener\('keydown', onKey\);/);
+  assert.deepEqual([...deps].sort(), ['stow', 'visible']);
+  // 两个停靠点的 ref 挂在对的元素上
+  assert.equal(jsxByClass(src, 'stowBtn')[0]?.attrs.get('ref'), '{stowRef}');
+  assert.equal(jsxByClass(src, 'card')[0]?.attrs.get('ref'), '{badgeRef}');
 });
 
 /** 'translateY(calc(var(--u) * 3)) rotate(4.2deg)' 里某个变换函数的参数（括号可以嵌套） */
