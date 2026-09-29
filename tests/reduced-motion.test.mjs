@@ -3,6 +3,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import test from 'node:test';
 
+import { cmpSpec, cssFiles, declarations, parseRules, specificity, stripComments, subject } from './helpers/css-rules.mjs';
+
 /**
  * 减动效纪律的源码级守卫。
  *
@@ -20,81 +22,8 @@ const SRC = 'src';
 /** transition 只管「会动的」属性。配色、边框、filter 的补间不是 motion，不在本纪律内 */
 const MOTION = /\b(transform|translate|rotate|scale|width|height|top|left|right|bottom|margin|padding|opacity|all)\b/;
 
-function cssFiles(dir) {
-  return fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
-    const full = path.join(dir, entry.name);
-    if (entry.isDirectory()) return cssFiles(full);
-    return entry.name.endsWith('.css') ? [full] : [];
-  });
-}
-
-const stripComments = (css) => css.replace(/\/\*[\s\S]*?\*\//g, '');
-
-/** 把 CSS 拍平成规则列表，记下每条规则在不在减动效块里、写在第几个字符 */
-function parseRules(css) {
-  const rules = [];
-  const walk = (text, offset, inReduced) => {
-    let i = 0;
-    let head = '';
-    while (i < text.length) {
-      const ch = text[i];
-      if (ch === '{') {
-        let depth = 1;
-        let k = i + 1;
-        while (k < text.length && depth > 0) {
-          if (text[k] === '{') depth++;
-          else if (text[k] === '}') depth--;
-          k++;
-        }
-        const body = text.slice(i + 1, k - 1);
-        const selector = head.trim();
-        if (selector.startsWith('@')) {
-          walk(body, offset + i + 1, inReduced || /prefers-reduced-motion\s*:\s*reduce/.test(selector));
-        } else if (selector) {
-          rules.push({ selector, body, start: offset + i - head.length, inReduced });
-        }
-        head = '';
-        i = k;
-        continue;
-      }
-      if (ch === '}') {
-        head = '';
-        i++;
-        continue;
-      }
-      head += ch;
-      i++;
-    }
-  };
-  walk(css, 0, false);
-  return rules;
-}
-
-/** [id 数, 类/伪类/属性数]。元素选择器不计——本站的模块化 CSS 里没有裸元素规则参与竞争 */
-function specificity(selector) {
-  const ids = (selector.match(/#[\w-]+/g) || []).length;
-  const classes =
-    (selector.match(/\.[\w-]+/g) || []).length +
-    (selector.match(/\[[^\]]*\]/g) || []).length +
-    (selector.match(/(?<!:):(?!:)[\w-]+/g) || []).length;
-  return [ids, classes];
-}
-
-const cmpSpec = (a, b) => (a[0] !== b[0] ? a[0] - b[0] : a[1] - b[1]);
-
-/** 选择器的主体：最后一个复合选择器里的类名。`.a .b:hover` → ['b'] */
-function subject(selector) {
-  const last = selector.trim().split(/\s+|>|\+|~/).filter(Boolean).pop() || '';
-  return (last.match(/\.[\w-]+/g) || []).map((name) => name.slice(1)).join('|');
-}
-
-function declarations(body) {
-  return body
-    .split(';')
-    .map((one) => one.trim())
-    .filter((one) => one.includes(':'))
-    .map((one) => [one.slice(0, one.indexOf(':')).trim(), one.slice(one.indexOf(':') + 1).trim()]);
-}
+// 解析 / 特异性 / 主体（含伪元素）与光效开关的守卫共用 tests/helpers/css-rules.mjs 一套口径。
+// 主体带上伪元素：.card { transition: none } 管不到 .card::after 的补间，得单列
 
 /** 返回这份 CSS 里「降级块没真的盖住」的动效规则 */
 function uncoveredMotion(css) {
@@ -204,6 +133,17 @@ test('the specificity guard has teeth', () => {
   assert.equal(uncoveredMotion(move).length, 1, 'width 补间也是动效，animation: none 关不掉它');
   assert.deepEqual(
     uncoveredMotion(move.replace('.fill { animation: none; }', '.fill { animation: none; transition: none; }')),
+    [],
+  );
+
+  // 伪元素单独算主体：基础类上的 transition: none 管不到它 ::after 的补间，降级块得单列
+  const pseudo = `
+    .dot::after { transition: opacity 200ms ease; }
+    @media (prefers-reduced-motion: reduce) { .dot { transition: none; } }
+  `;
+  assert.equal(uncoveredMotion(pseudo).length, 1, '::after 的补间只关了基础类，必须判为没盖住');
+  assert.deepEqual(
+    uncoveredMotion(pseudo.replace('.dot { transition: none; }', '.dot, .dot::after { transition: none; }')),
     [],
   );
 
