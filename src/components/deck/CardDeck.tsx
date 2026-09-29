@@ -12,7 +12,7 @@ import { useCardTilt } from '@/components/fx/useCardTilt';
 import { useLang } from '@/lib/LangContext';
 import examStyles from '../exam/Exam.module.css';
 import styles from './Deck.module.css';
-import { TURN_MS, acceptsActivation } from './turnGuard';
+import { TURN_MS, acceptsActivation, activationSource, type ActivationSource } from './turnGuard';
 import { ZONES, ringOffset, stepZone, zoneById, type ZoneId } from './zones';
 
 const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH || '';
@@ -91,9 +91,9 @@ export default function CardDeck({
   // deck 退场的 280ms 里停用，展开动画期间牌面不再跟手
   const tiltRef = useCardTilt<HTMLDivElement>({ enabled: !leaving });
 
-  // 转牌守卫（./turnGuard）：记下最近一次转牌的时刻，之后 TURN_MS 内卡上的点击一律不认。
-  // 前牌不论因何而变（点侧牌、键盘、横滑、页签换区、解锁自动转位），牌都要滑 TURN_MS，
-  // 所以在 front 变了之后统一记一笔；点侧牌那条路在点击当下就先记上，不等这次渲染
+  // 转牌守卫（./turnGuard）：记下最近一次转牌的时刻，之后 TURN_MS 内指针在卡上的点击一律不认
+  // （命中层上键盘按的照常，见下）。前牌不论因何而变（点侧牌、键盘、横滑、页签换区、解锁自动转位），
+  // 牌都要滑 TURN_MS，所以在 front 变了之后统一记一笔；点侧牌那条路在点击当下就先记上，不等这次渲染
   const turnedAtRef = useRef(Number.NEGATIVE_INFINITY);
   const shownFrontRef = useRef(front);
   useEffect(() => {
@@ -101,7 +101,7 @@ export default function CardDeck({
     shownFrontRef.current = front;
     turnedAtRef.current = performance.now();
   }, [front]);
-  const settled = () => acceptsActivation(turnedAtRef.current, performance.now());
+  const settled = (source?: ActivationSource) => acceptsActivation(turnedAtRef.current, performance.now(), { source });
 
   useEffect(() => {
     if (autoFocus) viewportRef.current?.focus();
@@ -344,7 +344,8 @@ export default function CardDeck({
                               // 命中层是兄弟节点、不是祖先，本来也收不到这一下；
                               // 写出来是防止日后有人把按钮挪进 .hit 里
                               e.stopPropagation();
-                              // 刚转到前位、牌还在指针底下滑：不认（见 ./turnGuard）
+                              // 刚转到前位、牌还在滑：不认（见 ./turnGuard）。不传来源 = 键盘按的也一样等——
+                              // 快速开始直接开考，转牌中途误触的代价比多按一次大
                               if (!settled()) return;
                               // 直调，不包任何异步：requestFullscreen 认的是同步手势链
                               quickStart.onStart();
@@ -382,9 +383,10 @@ export default function CardDeck({
                               ? t.block.comingSoon(t.zone.title[zone.id])
                               : t.deck.openAria(zone.no, t.zone.title[zone.id])
                       }
-                      onClick={() => {
-                        // 转牌之后 TURN_MS 内不认：双击侧牌的第二下会落在滑过来的新前牌上
-                        if (!settled()) return;
+                      onClick={(e) => {
+                        // 转牌之后 TURN_MS 内指针点的不认：双击侧牌的第二下会落在滑过来的新前牌上。
+                        // 键盘按的照常：鼠标点侧牌后焦点就停在这层上，紧接着按 Enter / 空格展开是有意的
+                        if (!settled(activationSource(e))) return;
                         if (isFront) {
                           onOpen(zone.id);
                           return;

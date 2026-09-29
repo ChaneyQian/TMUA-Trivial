@@ -23,9 +23,11 @@ import { readExamIndex } from './helpers/exam-data.mjs';
 import {
   attrValue,
   balanced,
+  calls,
   code,
   effects,
   fnBody,
+  fnParams,
   jsxByClass,
   jsxChildren,
   jsxOpening,
@@ -518,7 +520,7 @@ test('the side title never runs under the front card, in any tier and at any car
 });
 
 test('a card that just turned ignores clicks for as long as it is still sliding', async () => {
-  const { acceptsActivation } = await import('../src/components/deck/turnGuard.ts');
+  const { acceptsActivation, activationSource } = await import('../src/components/deck/turnGuard.ts');
   const deckSrc = fs.readFileSync(deckPath, 'utf8');
   // 剥掉注释再看接线：被注释掉的守卫不算数
   const deck = code(deckSrc);
@@ -534,7 +536,26 @@ test('a card that just turned ignores clicks for as long as it is still sliding'
   assert.equal(acceptsActivation(1000, 5000), true);
   assert.equal(acceptsActivation(1000, 900), true, '时钟回拨不能把卡锁死');
   assert.equal(acceptsActivation(1000, Number.NaN), true);
-  assert.equal(acceptsActivation(1000, 1200, 150), true, '窗口可配');
+  assert.equal(acceptsActivation(1000, 1200, { windowMs: 150 }), true, '窗口可配');
+
+  // 来源 × 距上次转牌多久 → 接不接受：指针（不说来源也按指针算）在窗口内一律不认；键盘任何时候都认——
+  // 鼠标点侧牌后焦点停在它的命中层上，紧接着按 Enter / 空格展开是有意的，不能被吞掉
+  for (const [elapsed, pointerOk] of [
+    [0, false],
+    [100, false],
+    [TURN_MS - 1, false],
+    [TURN_MS, true],
+    [5000, true],
+    [-100, true],
+  ]) {
+    assert.equal(acceptsActivation(1000, 1000 + elapsed), pointerOk, `不说来源（按指针算），距转牌 ${elapsed}ms`);
+    assert.equal(acceptsActivation(1000, 1000 + elapsed, { source: 'pointer' }), pointerOk, `指针，距转牌 ${elapsed}ms`);
+    assert.equal(acceptsActivation(1000, 1000 + elapsed, { source: 'keyboard' }), true, `键盘，距转牌 ${elapsed}ms`);
+  }
+  // 来源从 click 的 detail 认：0 是键盘在按钮上按 Enter / 空格合成的（或程序调 click()），≥ 1 是指针连击数
+  assert.equal(activationSource({ detail: 0 }), 'keyboard');
+  assert.equal(activationSource({ detail: 1 }), 'pointer');
+  assert.equal(activationSource({ detail: 2 }), 'pointer');
 
   // 守卫窗口与槽位位移的过渡只有一个出处：组件把 TURN_MS 写成 --turn-ms，样式表的转牌过渡读它
   const fromGuard = namedImports(deckSrc, './turnGuard');
@@ -565,21 +586,31 @@ test('a card that just turned ignores clicks for as long as it is still sliding'
   // 守卫函数就是「拿转牌时刻与此刻去问 acceptsActivation」的那个，名字不论
   const guardDecl = deck.match(/const (\w+) = \(([^()]*)\) => acceptsActivation\((\w+)\.current, performance\.now\(\)/);
   assert.ok(guardDecl, '找不到守卫函数（拿转牌时刻与此刻去问 acceptsActivation）');
-  const [, guard, , turnedRef] = guardDecl;
-  const guardReturn = new RegExp(`if \\(!${guard}\\([^()]*(?:\\([^()]*\\))?[^()]*\\)\\) return;`);
-  const handler = (anchor) => fnBody(attrValue(jsxOpening(deck, anchor).attrs.get('onClick')));
+  const [, guard, guardParams, turnedRef] = guardDecl;
+  const guardReturn = new RegExp(`if \\(!${guard}\\(([^()]*(?:\\([^()]*\\))?[^()]*)\\)\\) return;`);
+  const onClickOf = (anchor) => attrValue(jsxOpening(deck, anchor).attrs.get('onClick'));
+  // 守卫把「这一下从哪来」原样交给 acceptsActivation
+  const sourceParam = guardParams.match(/^\s*(\w+)/)?.[1];
+  assert.ok(sourceParam, '守卫函数要能接收激活的来源');
+  const [guardCall] = calls(namedFn(deck, guard), 'acceptsActivation');
+  assert.match(guardCall.args, new RegExp(`\\b${sourceParam}\\b`), '守卫要把来源交给 acceptsActivation');
 
-  // 快速开始：开考之前先过守卫
-  const quick = handler('className={styles.quickBtn}');
-  const quickGuard = quick.search(guardReturn);
-  assert.ok(quickGuard >= 0, '快速开始要过守卫');
-  assert.ok(quickGuard < quick.indexOf('quickStart.onStart()'), '守卫要在开考之前');
+  // 快速开始：开考之前先过守卫；不说来源（按指针算）——键盘按的也要等牌停稳，转牌中途不会误开考
+  const quick = fnBody(onClickOf('className={styles.quickBtn}'));
+  const quickGuard = guardReturn.exec(quick);
+  assert.ok(quickGuard, '快速开始要过守卫');
+  assert.ok(quickGuard.index < quick.indexOf('quickStart.onStart()'), '守卫要在开考之前');
+  assert.match(quickGuard[1], /^(?:['"]pointer['"])?$/, '快速开始不给键盘开口子');
 
-  // 命中层：展开前牌之前先过守卫（守卫写在分支外还是写进前牌那一支都行）；
-  // 点侧牌那一支在转牌当下就记上时刻（与 onFront 谁先谁后不论，同一拍）
-  const hit = handler('className={styles.hit}');
-  const hitGuard = hit.search(guardReturn);
-  assert.ok(hitGuard >= 0 && hitGuard < hit.indexOf('onOpen(zone.id)'), '命中层展开前牌之前要过守卫');
+  // 命中层：展开前牌之前先过守卫（守卫写在分支外还是写进前牌那一支都行），来源取自这次 click：
+  // 键盘按的照常展开，指针点的在窗口内不认
+  const hitFn = onClickOf('className={styles.hit}');
+  const hit = fnBody(hitFn);
+  const hitGuard = guardReturn.exec(hit);
+  assert.ok(hitGuard && hitGuard.index < hit.indexOf('onOpen(zone.id)'), '命中层展开前牌之前要过守卫');
+  const [clickEvent] = fnParams(hitFn);
+  assert.ok(clickEvent, '命中层的 onClick 要接住 click 事件（来源从它的 detail 认）');
+  assert.match(hitGuard[1], new RegExp(`^activationSource\\(${clickEvent}\\)$|\\b${clickEvent}\\.detail\\b`), '命中层要把这次 click 的来源交给守卫');
   const frontIf = hit.indexOf('if (isFront) {');
   assert.ok(frontIf >= 0, '命中层按前牌 / 侧牌分两支');
   const sideBranch = hit.replace(balanced(hit, hit.indexOf('{', frontIf)), '');
