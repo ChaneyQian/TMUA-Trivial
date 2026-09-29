@@ -6,7 +6,8 @@ import test from 'node:test';
 import * as fxModule from '../src/lib/fx.ts';
 import { FX_EVENT, inferFx, isFx, resolveFx } from '../src/lib/fx.ts';
 import { FX_KEY } from '../src/lib/storage.ts';
-import { cmpSpec, cssFiles, declarations, parseRules, specificity, stripComments, subject } from './helpers/css-rules.mjs';
+import { DICT } from '../src/lib/i18n.ts';
+import { cascade, cssFiles, endlessOffenders, px, subject } from './helpers/css-rules.mjs';
 import { installFakeDom, restoreGlobals } from './helpers/fake-dom.mjs';
 
 // 光效开关（用户 2026-10）。这一组盯：
@@ -109,64 +110,20 @@ test('the first-paint script agrees with resolveFx case by case and never writes
 // ---------------------------------------------------------------------------
 // 关着的时候：环境光不渲染、区色投影不画、纯装饰的无限动画停掉
 
-const OFF = /\[data-fx='off'\]/;
+const OFF_ROOT = ":global(:root[data-fx='off'])";
 
 test('every endless decorative animation has an off switch that really wins, and none comes back under it', () => {
   const offenders = [];
-  const covered = [];
+  const covered = new Set();
   for (const file of cssFiles('src')) {
     const where = path.relative('src', file).replace(/\\/g, '/');
-    const rules = parseRules(stripComments(fs.readFileSync(file, 'utf8')));
-    const offRules = rules.filter((rule) => !rule.inReduced && OFF.test(rule.selector));
-    const plainRules = rules.filter((rule) => !rule.inReduced && !OFF.test(rule.selector));
-
-    // 哪些主体上跑着无限循环
-    const endless = new Set();
-    for (const rule of plainRules) {
-      for (const [prop, value] of declarations(rule.body)) {
-        const loops =
-          (prop === 'animation' && /\binfinite\b/.test(value)) ||
-          (prop === 'animation-iteration-count' && value === 'infinite');
-        if (loops) for (const selector of rule.selector.split(',')) endless.add(subject(selector));
-      }
-    }
-
-    // 这些主体上的每一条动画声明（含只改 name / duration 的变体），都得被一条「光效关」规则
-    // 用 animation: none 真正压住：特异性更高，或相同且写在后面
-    for (const rule of plainRules) {
-      for (const [prop, value] of declarations(rule.body)) {
-        if (prop !== 'animation' && !prop.startsWith('animation-')) continue;
-        if (value === 'none' || value.startsWith('none')) continue;
-        for (const selector of rule.selector.split(',')) {
-          const subj = subject(selector);
-          if (!endless.has(subj)) continue;
-          const spec = specificity(selector);
-          const won = offRules.some(
-            (off) =>
-              declarations(off.body).some(([p, v]) => (p === 'animation' || p === 'animation-name') && v === 'none') &&
-              off.selector.split(',').some((offSel) => {
-                if (!OFF.test(offSel) || subject(offSel) !== subj) return false;
-                const order = cmpSpec(specificity(offSel), spec);
-                return order > 0 || (order === 0 && off.start > rule.start);
-              }),
-          );
-          if (won) covered.push(`${where} ${subj}`);
-          else offenders.push(`${where}  ${selector.trim()} { ${prop}: ${value} }`);
-        }
-      }
-    }
-
-    // 「光效关」的规则自己不许再带无限循环回来
-    for (const off of offRules) {
-      for (const [prop, value] of declarations(off.body)) {
-        if (prop.startsWith('animation') && /\binfinite\b/.test(value)) offenders.push(`${where}  ${off.selector} 又带回了无限循环`);
-      }
-    }
+    const result = endlessOffenders(fs.readFileSync(file, 'utf8'));
+    for (const miss of result.offenders) offenders.push(`${where}  ${miss}`);
+    for (const subj of result.covered) covered.add(`${where} ${subj}`);
   }
   assert.deepEqual(offenders, [], `光效关时还停不下来的无限动画：\n  ${offenders.join('\n  ')}`);
 
   // 需求点名的几样都在册：公告药丸呼吸灯、充电条满格流光、公告标题流光、环境光斑漂移
-  const names = new Set(covered);
   for (const expected of [
     'components/notice/Notice.module.css pillDot',
     'components/exam/Exam.module.css libraryChargeFill',
@@ -176,29 +133,51 @@ test('every endless decorative animation has an off switch that really wins, and
     'components/exam/Exam.module.css chargeLight',
     'components/badge/IdBadge.module.css ribbonTail',
   ]) {
-    assert.ok(names.has(expected), `${expected} 没有被光效开关管到`);
+    assert.ok(covered.has(expected), `${expected} 没有被光效开关管到`);
   }
 });
 
+test('the endless-animation guard counts a pseudo-element as a subject of its own', () => {
+  // 主体带伪元素：.pillDot 的 animation: none 管不到 .pillDot::after 身上的循环
+  assert.equal(subject('.a .b::after'), 'b::after');
+  assert.equal(subject(':global(:root) .b:before'), 'b::before');
+  assert.equal(subject('.a .b:hover'), 'b');
+  const css = `
+    .pillDot { animation: breath 2s infinite; }
+    .pillDot::after { animation: ring 3s linear infinite; }
+    ${OFF_ROOT} .pillDot { animation: none; }
+  `;
+  assert.deepEqual(endlessOffenders(css).offenders, ['.pillDot::after { animation: ring 3s linear infinite }']);
+  const fixed = css.replace(`${OFF_ROOT} .pillDot {`, `${OFF_ROOT} .pillDot,\n    ${OFF_ROOT} .pillDot::after {`);
+  assert.deepEqual(endlessOffenders(fixed).offenders, []);
+  // 光效关规则自己带回无限循环也要抓
+  assert.equal(endlessOffenders(`${fixed}\n${OFF_ROOT} .other { animation: spin 1s infinite; }`).offenders.length, 1);
+});
+
+/** ExamApp / useCardTilt 里「光效开着」的判断：认 fx === 'on' 与 fx !== 'off' 两种等价写法 */
+const FX_ON = String.raw`fx (?:=== 'on'|!== 'off')`;
+
 test('off means no ambient layer at all and a plain static shadow on the front card', () => {
   const exam = fs.readFileSync('src/components/exam/ExamApp.tsx', 'utf8');
-  const ambientCss = stripComments(fs.readFileSync('src/components/ambient/Ambient.module.css', 'utf8'));
-  const deckCss = stripComments(fs.readFileSync('src/components/deck/Deck.module.css', 'utf8'));
+  const ambientCss = fs.readFileSync('src/components/ambient/Ambient.module.css', 'utf8');
+  const deckCss = fs.readFileSync('src/components/deck/Deck.module.css', 'utf8');
   const tilt = fs.readFileSync('src/components/fx/useCardTilt.ts', 'utf8');
 
   // ExamApp：关着时整个不渲染环境光（不是透明）。钩子在所有提前 return 之前无条件调用
-  assert.match(exam, /\{fx === 'on' && <AmbientBackdrop zone=\{frontZone\} \/>\}/);
-  const hookAt = exam.indexOf('const fx = useFx();');
+  assert.match(exam, new RegExp(String.raw`\{${FX_ON} && <AmbientBackdrop zone=\{frontZone\} \/>\}`));
+  const hookAt = exam.search(/const fx = useFx\(\);/);
   assert.ok(hookAt > 0 && hookAt < exam.indexOf("if (phase === 'setup' || phase === 'loading') {"));
   assert.match(exam, /import \{ useFx \} from '@\/lib\/useFx';/);
 
   // 水合之前那一瞬（静态 HTML 按「开」预渲染）：CSS 按首帧的 data-fx 把整层藏掉
-  assert.match(ambientCss, /:global\(:root\[data-fx='off'\]\) \.backdrop \{\s*display: none;\s*\}/);
+  assert.equal(cascade(ambientCss, `${OFF_ROOT} .backdrop`).display, 'none');
 
   // 前牌：区色投影不画，只剩 .tilt 那圈中性阴影；倾斜钩子把开关折进「是否启用」
-  assert.match(deckCss, /:global\(:root\[data-fx='off'\]\) \.tilt::before \{\s*display: none;\s*\}/);
-  assert.match(deckCss, /\n\.tilt \{[^}]*box-shadow: 0 10px 30px/);
-  assert.match(tilt, /const fx = useFx\(\);\s*const active = enabled && fx === 'on';/);
+  assert.equal(cascade(deckCss, `${OFF_ROOT} .tilt::before`).display, 'none');
+  assert.ok(cascade(deckCss, '.tilt')['box-shadow'], '.tilt 上得有那圈中性阴影');
+  // 「启用」与「光效开着」两个条件谁写在前都行
+  const both = String.raw`(?:enabled && ${FX_ON}|${FX_ON} && enabled)`;
+  assert.match(tilt, new RegExp(String.raw`const fx = useFx\(\);\s*const active = ${both};`));
   assert.match(tilt, /if \(!node \|\| !active\) return;/);
   assert.match(tilt, /\[active, maxDeg\]/);
 });
@@ -290,36 +269,46 @@ test('setFx flips <html data-fx>, remembers the choice and tells every subscribe
 
 test('the effects toggle is a round button beside the language one, in the setup stage only', () => {
   const toggle = fs.readFileSync('src/components/FxToggle.tsx', 'utf8');
-  const css = stripComments(fs.readFileSync('src/components/FxToggle.module.css', 'utf8'));
+  const css = fs.readFileSync('src/components/FxToggle.module.css', 'utf8');
+  const langCss = fs.readFileSync('src/components/LangToggle.module.css', 'utf8');
   const exam = fs.readFileSync('src/components/exam/ExamApp.tsx', 'utf8');
-  const i18n = fs.readFileSync('src/lib/i18n.ts', 'utf8');
-  const examCss = stripComments(fs.readFileSync('src/components/exam/Exam.module.css', 'utf8'));
+  const examCss = fs.readFileSync('src/components/exam/Exam.module.css', 'utf8');
 
   // 同款圆钮：直接用中/英钮的 .toggle（圆形、悬停 / 按下、焦点环、减动效都在那里），自己只管位置和图标
-  assert.match(toggle, /className=\{`\$\{langStyles\.toggle\} \$\{styles\.fx\}`\}/);
   assert.match(toggle, /import langStyles from '\.\/LangToggle\.module\.css';/);
-  assert.match(css, /\.fx\.fx \{\s*right: 48px;\s*\}/, '紧挨中/英钮左边（40px 钮宽 + 8px 间隔）');
-  // 读屏：按下 = 开；标签只说它是什么，开 / 关只由 aria-pressed 表达；悬停提示说明什么时候该关；点一下就切
+  assert.match(toggle, /className=\{`\$\{langStyles\.toggle\} \$\{styles\.fx\}`\}/);
+  // 位置：紧挨中/英钮左边——右偏移 = 中/英钮的宽 + 一道 4–16px 的缝（写成 48px 还是 calc(40px + 8px) 都行）
+  const lang = cascade(langCss, '.toggle');
+  const right = px(cascade(css, '.fx.fx').right);
+  const gap = right - px(lang.width) - px(lang.right);
+  assert.ok(gap >= 4 && gap <= 16, `光效钮离中/英钮 ${gap}px`);
+
+  // 读屏：标签只说它是什么（中英成对、非空），开关状态只由 aria-pressed 表达；悬停提示说明什么时候该关
   assert.match(toggle, /aria-pressed=\{on\}/);
   assert.match(toggle, /aria-label=\{t\.fxToggle\.aria\}/);
+  assert.doesNotMatch(toggle, /aria-label=\{[^}]*\?/, '标签不许随开关变（状态交给 aria-pressed）');
   assert.match(toggle, /title=\{t\.fxToggle\.title\}/);
   assert.match(toggle, /onClick=\{\(\) => setFx\(on \? 'off' : 'on'\)\}/);
   assert.match(toggle, /type="button"/);
-  assert.match(i18n, /fxToggle: \{ aria: '光效', title: '卡顿时可以关掉' \}/);
-  assert.match(i18n, /fxToggle: \{ aria: 'Visual effects', title: 'Turn off if things feel laggy' \}/);
+  for (const key of ['aria', 'title']) {
+    const zh = DICT.zh.fxToggle[key];
+    const en = DICT.en.fxToggle[key];
+    assert.ok(typeof zh === 'string' && zh.trim() && typeof en === 'string' && en.trim(), `fxToggle.${key} 中英都得有`);
+    assert.notEqual(zh, en, `fxToggle.${key} 两种语言不能是同一句`);
+  }
   // 图标的开 / 关由首帧就写好的 data-fx 决定，不等水合
-  assert.match(css, /:global\(:root\[data-fx='off'\]\) \.star \{[^}]*fill: none;/);
+  assert.equal(cascade(css, `${OFF_ROOT} .star`).fill, 'none');
   assert.match(toggle, /aria-hidden="true"/);
 
-  // 只挂在设置页的舞台里、紧挨中/英钮且排在它前面（Tab 先后与视觉从左到右一致）；答题页和成绩页没有
+  // 只挂在设置页的舞台里；树序在中/英钮前面（Tab 先后与视觉从左到右一致），两者之间只隔注释
   assert.equal(exam.split('<FxToggle />').length - 1, 1, '只挂一处');
   assert.match(exam, /<FxToggle \/>\s*<LangToggle \/>/);
   const at = exam.indexOf('<FxToggle />');
   assert.ok(at > exam.indexOf("if (phase === 'setup' || phase === 'loading') {"));
-  assert.ok(at < exam.indexOf("if (phase === 'diagnostic') {"));
+  assert.ok(at < exam.search(/if \(phase === 'diagnostic'\) \{/));
 
   // 窄屏的配置页：两颗圆钮占着页签第一行的右端，用右浮动的占位让出来（宽度装得下两颗钮）
-  const narrow = examCss.slice(examCss.indexOf('@media (max-width: 639px)'));
-  const reserve = narrow.match(/\.zoneTabs::before \{[^}]*float: right;[^}]*width: (\d+)px;/);
-  assert.ok(reserve && Number(reserve[1]) >= 40 * 2 + 8, '让出来的宽度装不下两颗 40px 的圆钮');
+  const reserve = cascade(examCss, '.zoneTabs::before', { media: '(max-width: 639px)' });
+  assert.equal(reserve.float, 'right');
+  assert.ok(px(reserve.width) >= px(lang.width) * 2 + 8, '让出来的宽度装不下两颗圆钮');
 });
