@@ -336,6 +336,11 @@ test('the deck spreads out in three width tiers, and each container holds exactl
   assert.match(wide['--slot-y'], /^\d+(\.\d+)?%$/);
   assert.ok(Number.parseFloat(wide['--slot-y']) > 0);
   assert.equal(deckVars('(min-width: 1280px) and (min-height: 860px)')['--card-max'], '360px');
+  // 再大一档（≥ 1600×1000）：卡宽 400，只换卡宽——露边比例、转角、下沉都沿用宽屏档；
+  // 写在 360 那档后面，两档同时命中时它赢
+  const large = '(min-width: 1600px) and (min-height: 1000px)';
+  assert.deepEqual(deckVars(large), { '--card-max': '400px' });
+  assert.ok(css.indexOf(`@media ${large}`) > css.indexOf('@media (min-width: 1280px) and (min-height: 860px)'));
 
   // 第三层：中宽屏往上退得更多（净露 = 位移 − (1 − 缩放)/2），接它的上内边距按卡宽取、装得下那截
   const strip = (vars) => -Number.parseFloat(vars['--slot-back-y']) / 100 - (1 - Number(vars['--slot-back-scale'])) / 2;

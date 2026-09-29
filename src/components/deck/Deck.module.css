@@ -84,6 +84,14 @@
   }
 }
 
+/* 再大一档（≥ 1600×1000）：卡宽 400px，露边比例、转角、下沉都沿用宽屏档（只换卡宽）。
+   1920×1080 上 360px 的牌堆下面空着三成屏高；1600×1000 放到 400 仍装得下、不出纵向滚动 */
+@media (min-width: 1600px) and (min-height: 1000px) {
+  .deck {
+    --card-max: 400px;
+  }
+}
+
 @keyframes deckIn {
   from {
     transform: scale(1.04);
