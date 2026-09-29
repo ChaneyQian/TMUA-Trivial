@@ -9,6 +9,14 @@ import { loadLogicFilter, saveLogicFilter } from '../src/lib/records.ts';
 
 const layoutPath = 'src/app/layout.tsx';
 
+/**
+ * 源码里的存储键字面量：命名空间 + 版本号，'mcq-test:名字:vN'（体例见第一条测试）。
+ * 版本号就是存储键的记号——事件名（'mcq-test:fx-change'、'mcq-test:pet-command'、
+ * 'mcq-test:overlay-change'……）不带版本号，自然不算，不必逐个放行；
+ * 反过来，带了版本号的哪怕长得像事件名，也照样当键
+ */
+const STORAGE_KEY_LITERAL = /(['"`])mcq-test:[a-z0-9-]+:v\d+\1/g;
+
 function sourceFiles(dir) {
   return fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
     const full = path.join(dir, entry.name);
@@ -39,11 +47,11 @@ test('every browser-storage key is registered in one place, namespaced and versi
   assert.equal(storage.LEGACY_THEME_KEY, 'theme');
   assert.equal(storage.THEME_KEY, 'mcq-test:theme:v1');
 
-  // pet-command / fx-change 是事件名，从来没写进过存储，不许混进这张表
-  assert.equal(
-    Object.values(storage).some((value) => /pet-command|fx-change/.test(String(value))),
-    false,
-  );
+  // 反查：登记处里凡以 mcq-test: 开头的取值都带版本号——事件名（不带版本号）混不进这张表
+  for (const [name, value] of Object.entries(storage)) {
+    if (typeof value !== 'string' || !value.startsWith('mcq-test:')) continue;
+    assert.match(value, /^mcq-test:[a-z0-9-]+:v\d+$/, `${name} 像是个事件名，不该登记在存储键里：${value}`);
+  }
 });
 
 /**
@@ -94,16 +102,30 @@ test('no component keeps a storage key literal of its own', () => {
     const normalized = file.split(path.sep).join('/');
     if (normalized.endsWith('src/lib/storage.ts')) continue;
     const source = fs.readFileSync(file, 'utf8');
-    for (const hit of source.match(/'mcq-test:[^']+'/g) || []) {
-      // 事件名不是存储键（小助手指令、光效开关、整屏遮罩标记的切换广播）；
+    for (const hit of source.match(STORAGE_KEY_LITERAL) || []) {
+      const key = hit.slice(1, -1);
       // 首屏内联脚本没法 import，键名在那里只能是字面量
-      if (hit.includes('pet-command') || hit.includes('fx-change') || hit.includes('overlay-change')) continue;
-      if (normalized.endsWith(layoutPath) && hit === `'${storage.THEME_KEY}'`) continue;
-      if (normalized.endsWith(layoutPath) && hit === `'${storage.FX_KEY}'`) continue;
+      if (normalized.endsWith(layoutPath) && (key === storage.THEME_KEY || key === storage.FX_KEY)) continue;
       strays.push(`${normalized}  ${hit}`);
     }
   }
   assert.deepEqual(strays, [], `这些键该从 lib/storage.ts 取：\n  ${strays.join('\n  ')}`);
+});
+
+test('only versioned literals count as storage keys: event names pass, a versioned look-alike does not', () => {
+  const keysIn = (text) => text.match(STORAGE_KEY_LITERAL) ?? [];
+  // 事件名不带版本号：不是键
+  assert.deepEqual(keysIn(`window.dispatchEvent(new Event('mcq-test:fx-change'))`), []);
+  assert.deepEqual(keysIn(`new CustomEvent("mcq-test:pet-command", { detail })`), []);
+  assert.deepEqual(keysIn('export const OVERLAY_EVENT = `mcq-test:overlay-change`;'), []);
+  // 反例：带版本号的「伪事件名」照样当键——版本号就是存储键的记号
+  assert.deepEqual(keysIn(`window.dispatchEvent(new Event('mcq-test:overlay-change:v2'))`), ["'mcq-test:overlay-change:v2'"]);
+  // 真键：单引号、双引号、模板字符串都认
+  assert.deepEqual(keysIn(`localStorage.getItem('mcq-test:zone:v1')`), ["'mcq-test:zone:v1'"]);
+  assert.deepEqual(keysIn(`localStorage.setItem("mcq-test:records:v2", x)`), ['"mcq-test:records:v2"']);
+  assert.deepEqual(keysIn('const k = `mcq-test:badge-seen:v1`;'), ['`mcq-test:badge-seen:v1`']);
+  // 引号不成对不算（免得把两段字面量拼成一个）
+  assert.deepEqual(keysIn(`'mcq-test:zone:v1"`), []);
 });
 
 /** 把首屏内联脚本原样跑起来，喂一份假的 localStorage / document */
