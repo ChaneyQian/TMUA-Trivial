@@ -6,6 +6,7 @@
 
 import type { CSSProperties } from 'react';
 import { currentFx, subscribeFx } from '../../lib/fx.ts';
+import { overlayOpen, subscribeOverlay } from '../../lib/overlay.ts';
 import { zoneById, type ZoneId } from '../deck/zones.ts';
 import { FINE_POINTER, REDUCED_MOTION } from '../fx/useCardTilt.ts';
 
@@ -29,6 +30,9 @@ const NOOP = () => {};
  *   开回来时组件重新挂载、重新挂上这里
  * - pointermove 走 rAF 节流，一帧最多写一次；页面隐藏时不排帧
  * - 指针离开窗口 / 窗口失焦 / 页面隐藏即熄
+ * - 整屏遮罩（工牌浮层等，lib/overlay 的 <html data-overlay>）开着时熄灯、不排帧：遮罩的 backdrop-filter
+ *   会把身后整屏模糊，身后每变一帧整屏模糊就得重算一遍，而这时聚光本来就看不见。现判 + 订阅，
+ *   遮罩一开立刻熄；关掉之后下一下移动照常亮起
  * 返回摘除函数：监听一一摘掉、排着的帧撤掉、熄灯。
  */
 export function attachSpotlight(lens: HTMLElement): () => void {
@@ -58,8 +62,8 @@ export function attachSpotlight(lens: HTMLElement): () => void {
     delete lens.dataset.lit;
   };
 
-  /** 此刻不该亮：没有精确指针、开着减动效、或光效被关了——三者同一条熄灯路径 */
-  const blocked = () => !fine.matches || reduced.matches || currentFx() === 'off';
+  /** 此刻不该亮：没有精确指针、开着减动效、光效被关了、或整屏遮罩盖着——同一条熄灯路径 */
+  const blocked = () => !fine.matches || reduced.matches || currentFx() === 'off' || overlayOpen();
 
   const onMove = (e: PointerEvent) => {
     if (e.pointerType !== 'mouse' || blocked()) return;
@@ -87,6 +91,7 @@ export function attachSpotlight(lens: HTMLElement): () => void {
   fine.addEventListener('change', onMedia);
   reduced.addEventListener('change', onMedia);
   const unsubscribeFx = subscribeFx(onMedia);
+  const unsubscribeOverlay = subscribeOverlay(onMedia);
 
   return () => {
     window.removeEventListener('pointermove', onMove);
@@ -96,6 +101,7 @@ export function attachSpotlight(lens: HTMLElement): () => void {
     fine.removeEventListener('change', onMedia);
     reduced.removeEventListener('change', onMedia);
     unsubscribeFx();
+    unsubscribeOverlay();
     dim();
   };
 }
