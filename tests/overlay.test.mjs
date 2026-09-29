@@ -4,7 +4,7 @@ import test from 'node:test';
 
 import path from 'node:path';
 
-import { cssFiles, declarations, overrides, parseRules, stripComments, subject } from './helpers/css-rules.mjs';
+import { cmpSpec, cssFiles, declarations, overrides, parseRules, specificity, stripComments, subject } from './helpers/css-rules.mjs';
 import { installFakeDom, restoreGlobals } from './helpers/fake-dom.mjs';
 import { code, effects, namedFn, namedImports } from './helpers/source.mjs';
 
@@ -204,6 +204,25 @@ function unpausedUnderOverlay(css) {
       }
     }
   }
+  // 按主体比对之外还有一个口子：同一个元素常挂着好几个类（.spot.spotA），写在另一个类上的
+  // animation-play-state: running（比如 Ambient 的 .glowOn .spot）也会作用到它身上，按主体比对不出来。
+  // 所以凡是这份样式表里写明 running 的规则，每一条暂停规则都得在层叠上压过它
+  if (endless.size > 0) {
+    for (const rule of plain) {
+      if (!declarations(rule.body).some(([p, v]) => p === 'animation-play-state' && v === 'running')) continue;
+      for (const selector of rule.selector.split(',')) {
+        for (const pause of pauses) {
+          for (const pauseSel of pause.selector.split(',')) {
+            if (!OVERLAY.test(pauseSel)) continue;
+            const order = cmpSpec(specificity(pauseSel), specificity(selector));
+            if (!(order > 0 || (order === 0 && pause.start > rule.start))) {
+              offenders.push(`${selector.trim()} { animation-play-state: running } 压得过 ${pauseSel.trim()}`);
+            }
+          }
+        }
+      }
+    }
+  }
   return { offenders, covered: [...covered], pauses };
 }
 
@@ -263,6 +282,11 @@ test('the overlay pause guard has teeth', () => {
       .offenders,
     [],
   );
+  // 写在同一元素另一个类上的 running（Ambient 的 .glowOn .spot 那种）：特异性 (0,3,0) 且写在后面，
+  // 就压过了暂停——按主体比对不出来，另有一道核
+  const mixed = `.spotA { animation: drift 9s infinite; }\n${PAUSE} .spotA { animation-play-state: paused; }\n`;
+  assert.deepEqual(unpausedUnderOverlay(`${mixed}.glowOn .spot { animation-play-state: running; }`).offenders, []);
+  assert.equal(unpausedUnderOverlay(`${mixed}.stage .glowOn .spot { animation-play-state: running; }`).offenders.length, 1);
 });
 
 test('the unlock overlay holds the mark too, for exactly as long as it is mounted', () => {
