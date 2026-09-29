@@ -74,7 +74,10 @@ type Stage = 'stowed' | 'dropping' | 'resting' | 'flying';
 /** 程序聚焦时不亮焦点环（FocusOptions.focusVisible，TS 的 DOM 库还没收录这个字段） */
 const QUIET_FOCUS: FocusOptions & { focusVisible?: boolean } = { focusVisible: false };
 
-/** 头带上的坐标纸与函数曲线，呼应经典区封面。视口与头带同比例（300 × 100），不拉伸 */
+/**
+ * 头带上的坐标纸与函数曲线，呼应经典区封面。viewBox 是 300 × 100，头带本身是 300u × 104u：
+ * 按 SVG 默认的 xMidYMid meet 等比缩放（1 个 viewBox 单位 = 1u），上下各留 2u 空白，不拉伸
+ */
 function BandArt() {
   return (
     <svg className={styles.bandArt} viewBox="0 0 300 100" aria-hidden="true" focusable="false">
@@ -256,7 +259,7 @@ export default function IdBadge() {
             </span>
 
             <div className={styles.flyer}>
-              <div className={`${styles.fit} ${opened ? styles.fitOpen : ''}`}>
+              <div className={styles.fit}>
                 {/* 翻开后正面朝里，卡片按钮的背面收不到点击，
                     所以整个跨页兜住 toggle：合上/翻开都点得动 */}
                 <div

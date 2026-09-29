@@ -590,6 +590,42 @@ test('material feedback lives in one small holo patch that follows the glare, pl
   assert.equal(cascade(css, '.sheen', { media: '(prefers-reduced-motion: reduce)' }).display, 'none');
 });
 
+test('every styles.* the component uses exists in the stylesheet (no "undefined" in a class list)', () => {
+  // 早先 .fit 上挂过一个样式表里没有的 styles.fitOpen：CSS Modules 取不到就是 undefined，
+  // class 里真出现一个 "undefined"（审查实测）
+  const src = code(fs.readFileSync(componentPath, 'utf8'));
+  const defined = new Set(
+    parseRules(stripComments(fs.readFileSync(cssPath, 'utf8'))).flatMap((rule) =>
+      [...rule.selector.matchAll(/\.([\w-]+)/g)].map((m) => m[1]),
+    ),
+  );
+  const used = [...new Set([...src.matchAll(/styles\.(\w+)/g)].map((m) => m[1]))];
+  assert.ok(used.length > 40);
+  assert.deepEqual(used.filter((name) => !defined.has(name)), [], '这些类名样式表里没有');
+});
+
+test('the smallest print on the card still has a readable floor on a 375px screen', () => {
+  const css = fs.readFileSync(cssPath, 'utf8');
+  // 375 宽：页宽 (375 − 32) / 2 = 171.5px，1u ≈ 0.572px。卡上尺寸等比缩，小字缩到 6px 以下就只剩一团灰，
+  // 这几样给最小字号（做法同 .backCaption）
+  const u = 171.5 / 300;
+  const fontSize = (value) => {
+    const size = /max\((\d+(?:\.\d+)?)px, calc\(var\(--u\) \* ([\d.]+)\)\)/.exec(value ?? '');
+    return size ? Math.max(Number(size[1]), Number(size[2]) * u) : NaN;
+  };
+  for (const [selector, prop, floor] of [
+    ['.fieldLabel', 'font', 6],
+    ['.serial', 'font', 6],
+    ['.title', 'font-size', 6],
+    ['.backCaption', 'font', 7],
+  ]) {
+    const size = fontSize(cascade(css, selector)[prop]);
+    assert.ok(size >= floor, `${selector} 在 375 宽时只有 ${size.toFixed(2)}px`);
+  }
+  // 微缩印字本来就是要小（防伪线），不在此列
+  assert.doesNotMatch(cascade(css, '.microprint').font, /max\(/);
+});
+
 test('the stowed badge is a 3D ribbon anchored to the setup stage corner', () => {
   const css = fs.readFileSync(cssPath, 'utf8');
   const examCss = fs.readFileSync('src/components/exam/Exam.module.css', 'utf8');
