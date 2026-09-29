@@ -145,6 +145,15 @@ test('the key handler is wired to the card and the stow button while the overlay
   assert.equal(jsxByClass(src, 'card')[0]?.attrs.get('ref'), '{badgeRef}');
 });
 
+test('once opened, a keyboard focus on the flipped-away card still shows, as a ring around the whole spread', () => {
+  const css = fs.readFileSync(cssPath, 'utf8');
+  // 翻开后卡片按钮转到了背面，它自己的焦点环跟着看不见；焦点在它身上时整个跨页外画一圈
+  const ring = cascade(css, '.spreadOpen:has(.card:focus-visible)');
+  assert.equal(ring.outline, '2px solid #ffffff');
+  assert.equal(ring['outline-offset'], cascade(css, '.card:focus-visible')['outline-offset'], '与合上时同一圈');
+  assert.equal(ring['border-radius'], 'var(--card-r)');
+});
+
 /** 'translateY(calc(var(--u) * 3)) rotate(4.2deg)' 里某个变换函数的参数（括号可以嵌套） */
 function transformArg(value, fn) {
   const at = String(value ?? '').indexOf(`${fn}(`);

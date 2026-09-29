@@ -450,6 +450,14 @@
   transform: translateX(0);
 }
 
+/* 翻开后，卡片按钮（此时读作「合上工牌」）转到了背面，它自己的焦点环也跟着看不见。
+   键盘焦点在它身上时，在整个跨页外画同样一圈白色焦点环——焦点在哪一眼看得到 */
+.spreadOpen:has(.card:focus-visible) {
+  border-radius: var(--card-r);
+  outline: 2px solid #ffffff;
+  outline-offset: calc(var(--u) * 5);
+}
+
 .page {
   position: absolute;
   top: 0;
