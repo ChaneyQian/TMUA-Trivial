@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import test from 'node:test';
 
+import { TURN_MS } from '../src/components/deck/turnGuard.ts';
 import { ZONE_IDS, ringOffset, stepZone } from '../src/components/deck/zones.ts';
 import { indexForLibraryMode } from '../src/lib/records.ts';
 import {
@@ -11,12 +12,27 @@ import {
   FX_OFF_ROOT,
   overrides,
   parseRules,
+  parseTransition,
   px,
   splitValue,
   stripComments,
   subject,
+  timeMs,
 } from './helpers/css-rules.mjs';
 import { readExamIndex } from './helpers/exam-data.mjs';
+import {
+  attrValue,
+  balanced,
+  code,
+  effects,
+  fnBody,
+  jsxByClass,
+  jsxChildren,
+  jsxOpening,
+  namedFn,
+  namedImports,
+  squash,
+} from './helpers/source.mjs';
 
 const zonesPath = 'src/components/deck/zones.ts';
 const deckPath = 'src/components/deck/CardDeck.tsx';
@@ -352,17 +368,19 @@ test('the deck spreads out in three width tiers, and each container holds exactl
 });
 
 test('a card off the front shows no clipped text: only a title that fits its exposed strip, swapped by a cross-fade', () => {
-  const deck = fs.readFileSync(deckPath, 'utf8');
+  const deck = code(fs.readFileSync(deckPath, 'utf8'));
   const css = stripComments(fs.readFileSync(deckCssPath, 'utf8'));
   const rules = parseRules(css);
 
-  // 结构：每张牌左右各一份侧位标题（读屏跳过），字就是卡名
+  // 结构：每张牌左右各一份侧位标题（读屏跳过），字就是卡名。按标签结构取，属性写在哪个位置都行
+  const sideTitles = jsxByClass(deck, 'sideTitle');
   for (const side of ['L', 'R']) {
-    assert.match(
-      deck,
-      new RegExp(String.raw`<div className=\{\`\$\{styles\.sideTitle\} \$\{styles\.sideTitle${side}\}\`\} aria-hidden="true">\s*\{t\.zone\.title\[zone\.id\]\}\s*</div>`),
-    );
+    const tag = sideTitles.find((t) => new RegExp(`styles\\.sideTitle${side}\\b`).test(t.attrs.get('className')));
+    assert.ok(tag, `缺 .sideTitle${side}`);
+    assert.ok(['"true"', "'true'", '{true}'].includes(tag.attrs.get('aria-hidden')), `.sideTitle${side} 要对读屏隐藏`);
+    assert.equal(squash(jsxChildren(deck, tag)), '{t.zone.title[zone.id]}');
   }
+  assert.equal(sideTitles.length, 2, '每张牌只有左右两份侧位标题');
 
   // 非前位：正文整块淡出；窄屏连编号、徽章也淡出（露边太窄，它们会被前牌切成半个）
   for (const slot of ['slotLeft', 'slotRight', 'slotBack']) {
@@ -408,11 +426,12 @@ test('a card off the front shows no clipped text: only a title that fits its exp
     }
   }
 
-  // 交叉淡变：只动 opacity；淡入的一方等淡出的一方走完才来，同一张卡上不会同时浮着两行标题
+  // 交叉淡变：只动 opacity；淡入的一方等淡出的一方走完才来，同一张卡上不会同时浮着两行标题。
+  // 按 transition 简写解析、时间求成毫秒：120ms 与 0.12s、先写缓动还是先写延迟都一样
   const timing = (value) => {
-    const m = value.match(/^opacity (\d+)ms [\w-]+(?: (\d+)ms)?$/);
-    assert.ok(m, `只许 opacity 的过渡：${value}`);
-    return { duration: Number(m[1]), delay: Number(m[2] ?? 0) };
+    const items = parseTransition(value);
+    assert.ok(items.length === 1 && items[0].property === 'opacity', `只许 opacity 的过渡：${value}`);
+    return { duration: timeMs(items[0].duration), delay: timeMs(items[0].delay) };
   };
   const pairs = [
     ['.body', '.slotFront .body', null],
@@ -426,7 +445,7 @@ test('a card off the front shows no clipped text: only a title that fits its exp
     const into = timing(cascade(css, inSel, { media }).transition);
     assert.equal(out.delay, 0, `${outSel} 淡出不等`);
     assert.ok(into.delay >= out.duration, `${inSel} 淡入（延迟 ${into.delay}ms）没等 ${outSel} 淡出（${out.duration}ms）走完`);
-    assert.ok(into.delay + into.duration <= 350, `${inSel} 的淡入要在转牌（350ms）内走完`);
+    assert.ok(into.delay + into.duration <= TURN_MS, `${inSel} 的淡入要在转牌（${TURN_MS}ms）内走完`);
   }
 
   // 光效关：这些交叉淡变直接切换——每条过渡都有一条光效关的 transition: none 选中它的全部元素、
@@ -487,9 +506,11 @@ test('the side title never runs under the front card, in any tier and at any car
 });
 
 test('a card that just turned ignores clicks for as long as it is still sliding', async () => {
-  const { TURN_MS, acceptsActivation } = await import('../src/components/deck/turnGuard.ts');
-  const deck = fs.readFileSync(deckPath, 'utf8');
-  const css = fs.readFileSync(deckCssPath, 'utf8');
+  const { acceptsActivation } = await import('../src/components/deck/turnGuard.ts');
+  const deckSrc = fs.readFileSync(deckPath, 'utf8');
+  // 剥掉注释再看接线：被注释掉的守卫不算数
+  const deck = code(deckSrc);
+  const css = stripComments(fs.readFileSync(deckCssPath, 'utf8'));
 
   // 纯函数：上次转牌的时刻 + 当前时刻 → 接不接受这次激活
   assert.equal(TURN_MS, 350);
@@ -504,34 +525,70 @@ test('a card that just turned ignores clicks for as long as it is still sliding'
   assert.equal(acceptsActivation(1000, 1200, 150), true, '窗口可配');
 
   // 守卫窗口与槽位位移的过渡只有一个出处：组件把 TURN_MS 写成 --turn-ms，样式表的转牌过渡读它
-  assert.match(deck, /import \{ TURN_MS, acceptsActivation \} from '\.\/turnGuard';/);
-  assert.match(deck, /style=\{\{ '--turn-ms': `\$\{TURN_MS\}ms` \} as CSSProperties\}/);
-  const code = css.replace(/\/\*[\s\S]*?\*\//g, '');
-  const card = code.match(/\n\.card \{[^}]*\}/)?.[0] ?? '';
-  const transition = card.match(/transition:([^;]*);/)?.[1] ?? '';
+  const fromGuard = namedImports(deckSrc, './turnGuard');
+  assert.ok(fromGuard.has('TURN_MS') && fromGuard.has('acceptsActivation'), '组件要从 ./turnGuard 拿常量与判定');
+  const root = jsxOpening(deck, 'styles.deck}');
+  assert.match(attrValue(root.attrs.get('style')) ?? '', /['"]--turn-ms['"]: `\$\{TURN_MS\}ms`/, '--turn-ms 要由 TURN_MS 写出');
+  const slide = parseTransition(cascade(css, '.card').transition);
+  const env = { '--turn-ms': TURN_MS };
   for (const prop of ['transform', 'opacity']) {
-    assert.match(transition, new RegExp(`${prop} var\\(--turn-ms\\)`), `槽位的 ${prop} 过渡要读 --turn-ms`);
+    const item = slide.find((t) => t.property === prop);
+    assert.ok(item && item.duration.includes('var(--turn-ms)'), `槽位的 ${prop} 过渡要读 --turn-ms`);
+    assert.equal(timeMs(item.duration, env), TURN_MS);
   }
-  assert.doesNotMatch(code, /350ms/, '转牌相关的过渡不许再各写一个 350ms');
+  assert.equal(timeMs(slide.find((t) => t.property === 'z-index')?.delay, env), TURN_MS / 2, '层级在转牌的正中翻面');
+  // 别处不再各写一个与 TURN_MS 等长的时长（写成 350ms 还是 0.35s 都算）
+  for (const rule of parseRules(css)) {
+    for (const [prop, value] of declarations(rule.body)) {
+      if (!/^(transition|animation)(-duration|-delay)?$/.test(prop)) continue;
+      for (const token of splitValue(value.replace(/,/g, ' '))) {
+        if (/^(?:\d*\.)?\d+m?s$/.test(token)) {
+          assert.notEqual(timeMs(token), TURN_MS, `${rule.selector} 的 ${prop} 又各写了一个 ${token}，该读 var(--turn-ms)`);
+        }
+      }
+    }
+  }
 
-  // 接线：命中层与快速开始在动作之前先过守卫；点侧牌当下就记转牌时刻；前牌一变就记一笔
-  const hit = deck.slice(deck.indexOf('className={styles.hit}'));
-  assert.match(hit, /onClick=\{\(\) => \{\s*[^}]*?if \(!settled\(\)\) return;\s*if \(isFront\) \{\s*onOpen\(zone\.id\);/);
-  assert.match(hit, /turnedAtRef\.current = performance\.now\(\);\s*onFront\(zone\.id\);/);
-  const quick = deck.slice(deck.indexOf('className={styles.quickBtn}'), deck.indexOf('className={styles.hit}'));
-  assert.ok(quick.indexOf('if (!settled()) return;') < quick.indexOf('quickStart.onStart();'));
-  assert.ok(quick.indexOf('if (!settled()) return;') > 0, '快速开始要过守卫');
-  assert.match(deck, /const settled = \(\) => acceptsActivation\(turnedAtRef\.current, performance\.now\(\)\);/);
-  assert.match(deck, /if \(shownFrontRef\.current === front\) return;\s*shownFrontRef\.current = front;\s*turnedAtRef\.current = performance\.now\(\);/);
+  // 接线（在剥过注释、归一过空白的代码上按结构查，改名、换序、换行都不影响）：
+  // 守卫函数就是「拿转牌时刻与此刻去问 acceptsActivation」的那个，名字不论
+  const guardDecl = deck.match(/const (\w+) = \(([^()]*)\) => acceptsActivation\((\w+)\.current, performance\.now\(\)/);
+  assert.ok(guardDecl, '找不到守卫函数（拿转牌时刻与此刻去问 acceptsActivation）');
+  const [, guard, , turnedRef] = guardDecl;
+  const guardReturn = new RegExp(`if \\(!${guard}\\([^()]*(?:\\([^()]*\\))?[^()]*\\)\\) return;`);
+  const handler = (anchor) => fnBody(attrValue(jsxOpening(deck, anchor).attrs.get('onClick')));
 
-  // 键盘：Enter 展开不经过守卫；焦点在牌里的按钮（快速开始）上时，Enter / 空格归按钮自己
-  const keys = deck.slice(deck.indexOf('const onKeyDown'), deck.indexOf('const onTouchStart'));
-  assert.doesNotMatch(keys, /settled\(\)/);
-  assert.match(keys, /if \(target && target !== e\.currentTarget && target\.tagName === 'BUTTON'\) return;\s*e\.preventDefault\(\);\s*onOpen\(front\);/);
+  // 快速开始：开考之前先过守卫
+  const quick = handler('className={styles.quickBtn}');
+  const quickGuard = quick.search(guardReturn);
+  assert.ok(quickGuard >= 0, '快速开始要过守卫');
+  assert.ok(quickGuard < quick.indexOf('quickStart.onStart()'), '守卫要在开考之前');
+
+  // 命中层：展开前牌之前先过守卫（守卫写在分支外还是写进前牌那一支都行）；
+  // 点侧牌那一支在转牌当下就记上时刻（与 onFront 谁先谁后不论，同一拍）
+  const hit = handler('className={styles.hit}');
+  const hitGuard = hit.search(guardReturn);
+  assert.ok(hitGuard >= 0 && hitGuard < hit.indexOf('onOpen(zone.id)'), '命中层展开前牌之前要过守卫');
+  const frontIf = hit.indexOf('if (isFront) {');
+  assert.ok(frontIf >= 0, '命中层按前牌 / 侧牌分两支');
+  const sideBranch = hit.replace(balanced(hit, hit.indexOf('{', frontIf)), '');
+  assert.match(sideBranch, new RegExp(`${turnedRef}\\.current = performance\\.now\\(\\);`), '点侧牌当下就记转牌时刻');
+  assert.match(sideBranch, /onFront\(zone\.id\);/);
+
+  // 前牌不论因何而变，变了之后都记一笔
+  const frontEffect = effects(deck).find((e) => e.deps?.length === 1 && e.deps[0] === 'front');
+  assert.ok(frontEffect, '找不到依赖 [front] 的 effect');
+  assert.match(frontEffect.body, new RegExp(`${turnedRef}\\.current = performance\\.now\\(\\);`), '前牌一变就记转牌时刻');
+
+  // 键盘：Enter 展开不经过守卫；焦点在牌里的按钮上时，Enter / 空格让给按钮自己（在展开之前先让）
+  const keys = fnBody(namedFn(deck, 'onKeyDown'));
+  assert.doesNotMatch(keys, new RegExp(`\\b${guard}\\(`), '键盘展开不经过守卫');
+  const enter = keys.slice(keys.search(/e\.key === ['"]Enter['"]/));
+  const yieldAt = enter.search(/if \([^;]*(?:\.tagName === ['"]BUTTON['"]|instanceof HTMLButtonElement)[^;]*\) return;/);
+  assert.ok(yieldAt >= 0 && yieldAt < enter.indexOf('onOpen(front)'), '焦点在按钮上时 Enter / 空格要让给按钮');
 });
 
 test('a side or back card keeps its quick start in the layout but it can be neither clicked nor focused', () => {
-  const deck = fs.readFileSync(deckPath, 'utf8');
+  const deck = code(fs.readFileSync(deckPath, 'utf8'));
   const css = stripComments(fs.readFileSync(deckCssPath, 'utf8'));
 
   // 样式一层：层叠后必须是 visibility: hidden（或 display: none）——两样都把按钮移出 Tab 序、
@@ -549,23 +606,14 @@ test('a side or back card keeps its quick start in the layout but it can be neit
     }
   }
 
-  // 结构一层：挂 .quickIdle 的那个容器自己带 inert 与 aria-hidden（不单靠样式兜着），按钮在它里面
-  const open = deck.match(/<div\s+className=\{`[^`]*styles\.quickIdle[^`]*`\}([^>]*)>/);
+  // 结构一层：挂 .quickIdle 的那个容器自己带 inert 与 aria-hidden（不单靠样式兜着），按钮在它里面。
+  // 按标签结构取：属性写在哪个位置都行
+  const [open] = jsxByClass(deck, 'quickIdle');
   assert.ok(open, '找不到挂 .quickIdle 的容器');
-  const idleWhen = String.raw`\{(?:!isFront|isFront \? undefined : true)\}`;
-  assert.match(open[1], new RegExp(`inert=${idleWhen}`), '后牌的快速开始要 inert：不可点、不可聚焦、读屏跳过');
-  assert.match(open[1], new RegExp(`aria-hidden=${idleWhen}`));
-  let depth = 0;
-  let end = open.index;
-  for (const tag of deck.slice(open.index).matchAll(/<div\b|<\/div>/g)) {
-    depth += tag[0] === '</div>' ? -1 : 1;
-    if (depth === 0) {
-      end = open.index + tag.index;
-      break;
-    }
-  }
-  const area = deck.slice(open.index, end);
-  assert.match(area, /className=\{styles\.quickBtn\}/, '快速开始按钮得在这个 inert 容器里');
+  const idleWhen = /^(?:!isFront|isFront \? undefined : true)$/;
+  assert.match(attrValue(open.attrs.get('inert')) ?? '', idleWhen, '后牌的快速开始要 inert：不可点、不可聚焦、读屏跳过');
+  assert.match(attrValue(open.attrs.get('aria-hidden')) ?? '', idleWhen);
+  assert.match(jsxChildren(deck, open), /className=\{styles\.quickBtn\}/, '快速开始按钮得在这个 inert 容器里');
   assert.equal(subject('.quickIdle .quickBtn'), 'quickBtn');
 });
 

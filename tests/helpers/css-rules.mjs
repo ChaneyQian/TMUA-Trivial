@@ -219,6 +219,53 @@ export function evalLength(value, env = {}) {
 /** 只含 px 的长度：'48px'、'calc(40px + 8px)'、'calc(56px - 8px)'；认不出返回 NaN */
 export const px = (value) => evalLength(value);
 
+/** 时间求值成毫秒：'120ms'、'0.12s'、'var(--turn-ms)'（env 里给毫秒数）、'calc(var(--turn-ms) / 2)'；认不出返回 NaN */
+export function timeMs(value, env = {}) {
+  const expr = String(value)
+    .trim()
+    .replace(/(\d*\.?\d+)ms\b/g, '$1')
+    .replace(/(\d*\.?\d+)s\b/g, '($1 * 1000)');
+  return evalLength(expr, env);
+}
+
+/** 按顶层逗号切分（括号里的逗号不切）：transition 列表、cubic-bezier 的参数不会被拆开 */
+function splitCommas(value) {
+  const parts = [];
+  let depth = 0;
+  let current = '';
+  for (const ch of String(value)) {
+    if (ch === '(') depth++;
+    else if (ch === ')') depth--;
+    if (ch === ',' && depth === 0) {
+      parts.push(current.trim());
+      current = '';
+    } else current += ch;
+  }
+  if (current.trim()) parts.push(current.trim());
+  return parts;
+}
+
+const EASING = /^(?:ease|ease-in|ease-out|ease-in-out|linear|step-start|step-end)$|^(?:cubic-bezier|steps|linear)\(/;
+const TIME = /^-?(?:\d*\.)?\d+m?s$|^(?:var|calc)\(/;
+
+/**
+ * transition 简写拆成一项一项：[{ property, duration, delay, easing }]，时间保持原文（交给 timeMs 求值）。
+ * 写法不论：'opacity 120ms ease 120ms'、'opacity 0.12s 0.12s ease-out'、'transform var(--turn-ms) cubic-bezier(…)'
+ */
+export function parseTransition(value) {
+  if (!value || value.trim() === 'none') return [];
+  return splitCommas(value).map((item) => {
+    const tokens = splitValue(item);
+    const times = tokens.filter((t) => TIME.test(t));
+    return {
+      property: tokens.find((t) => !TIME.test(t) && !EASING.test(t)) ?? 'all',
+      duration: times[0] ?? '0s',
+      delay: times[1] ?? '0s',
+      easing: tokens.find((t) => EASING.test(t)) ?? 'ease',
+    };
+  });
+}
+
 /**
  * 「光效关」守卫：凡跑无限循环的主体（伪元素单独算），其每一条动画声明（含只改 name / duration 的变体）
  * 都得被一条 :root[data-fx='off'] 规则用 animation: none（或 animation-name: none）真正压住——
