@@ -111,11 +111,10 @@ function focusRing() {
   return { make, focused: () => active, set: (el) => (active = el) };
 }
 
-/** 假按键事件：记下有没有被 preventDefault / stopPropagation */
+/** 假按键事件：记下有没有被 preventDefault */
 function key(k, mods = {}) {
-  const e = { key: k, shiftKey: false, ...mods, prevented: false, stopped: false };
+  const e = { key: k, shiftKey: false, ...mods, prevented: false };
   e.preventDefault = () => (e.prevented = true);
-  e.stopPropagation = () => (e.stopped = true);
   return e;
 }
 
@@ -149,12 +148,13 @@ test('Tab and Shift+Tab cycle between the card and the stow button; Esc stows; o
   press(key('Tab', { shiftKey: true }));
   assert.equal(ring.focused(), stowBtn);
 
-  // Esc：收起，并拦下冒泡（设置页那边的 Esc「退回选区」不再跟着触发）；不动焦点
+  // Esc：收起、不动焦点。设置页那边的 Esc「退回选区」不靠这里拦冒泡（window 是冒泡的最后一站），
+  // 靠的是 ExamApp 自己「有 aria-modal 对话框就不动」的判断，见 progress.test
   ring.set(card);
   e = key('Escape');
   assert.equal(press(e), true);
   assert.equal(stowed, 1);
-  assert.equal(e.stopped, true);
+  assert.equal(e.prevented, false);
   assert.equal(ring.focused(), card);
 
   // 其它键、以及带 Alt / Ctrl / Meta 的 Tab（浏览器与系统的组合键）一概不拦

@@ -14,7 +14,6 @@ export interface BadgeKeyEvent {
   ctrlKey?: boolean;
   metaKey?: boolean;
   preventDefault(): void;
-  stopPropagation(): void;
 }
 
 export interface Focusable {
@@ -40,8 +39,12 @@ export function nextFocus<T extends Focusable>(
 }
 
 /**
- * 浮层开着时挂在 window 上的 keydown：Esc 收起（并拦下冒泡，设置页那边的 Esc「退回选区」不再跟着触发）；
- * Tab / Shift+Tab 在停靠点之间循环（拦下默认的焦点移动）。处理了返回 true
+ * 浮层开着时挂在 window 上的 keydown：Esc 收起；Tab / Shift+Tab 在停靠点之间循环（拦下默认的焦点移动）。
+ * 处理了返回 true。
+ *
+ * Esc 不拦冒泡：这个监听挂在 window 上，是冒泡的最后一站，拦了也没有下家。设置页那边的 Esc
+ * 「退回选区」（ExamApp 里 .stage 的 onKeyDown）早在冒泡途中就跑过了——挡住它的是那里自己的判断：
+ * 页面上有 aria-modal 的对话框（这张工牌浮层）就不动
  */
 export function onBadgeKey(
   e: BadgeKeyEvent,
@@ -50,7 +53,6 @@ export function onBadgeKey(
   stow: () => void,
 ): boolean {
   if (e.key === 'Escape') {
-    e.stopPropagation();
     stow();
     return true;
   }
