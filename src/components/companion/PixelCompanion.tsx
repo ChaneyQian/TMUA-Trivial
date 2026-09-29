@@ -9,7 +9,7 @@ import {
   type PointerEvent as ReactPointerEvent,
 } from 'react';
 import { useFx } from '@/lib/useFx';
-import { framePlan, shownFrame } from './framePlan';
+import { framePlan, settleHeld, shownFrame } from './framePlan';
 import styles from './PixelCompanion.module.css';
 
 type Point = { x: number; y: number };
@@ -285,7 +285,18 @@ export default function PixelCompanion() {
   useEffect(() => {
     const config = ANIMATIONS[animation.state];
     const plan = framePlan(config.loop, reducedMotion, fxOff);
-    if (plan === 'hold') return;
+    if (plan === 'hold') {
+      // 冻住：状态里的帧也归零，重新打开时从第 0 帧播起，不跳回冻结前的那一帧（见 ./framePlan）
+      if (animation.frame === 0) return;
+      const timer = window.setTimeout(
+        () =>
+          setAnimation((current) =>
+            current.state === animation.state && current.run === animation.run ? settleHeld(current) : current,
+          ),
+        0,
+      );
+      return () => window.clearTimeout(timer);
+    }
     if (plan === 'skip') {
       const timer = window.setTimeout(
         () => setAnimation((current) => ({ ...current, state: current.after, frame: 0 })),
