@@ -299,6 +299,8 @@
     transparent 100%
   );
   filter: drop-shadow(0 1px 1px rgb(0 0 0 / 40%));
+  /* 扣件和织带一样收点击：点到金属件不算点背景，不会把工牌收起 */
+  pointer-events: auto;
 }
 
 /* 压扣：两股织带的末端收在这块金属里 */
@@ -315,6 +317,7 @@
     0 1px 2px rgb(0 0 0 / 42%),
     inset 0 1px 0 rgb(255 255 255 / 85%),
     inset 0 -1px 0 rgb(0 0 0 / 18%);
+  pointer-events: auto;
 }
 
 /* 压痕：一道横向的冲压线 */
@@ -373,6 +376,9 @@
     inset calc(var(--u) * -1.2) 0 0 rgb(40 46 60 / 30%),
     inset 0 1px 0 rgb(255 255 255 / 75%),
     inset 0 -1px 0 rgb(0 0 0 / 22%);
+  /* 鸭嘴扣连同扣舌收点击：压在卡顶那一小块（约 30 × 19u）点了什么都不发生——
+     点金属扣既不该收起工牌，也不该翻卡 */
+  pointer-events: auto;
 }
 
 /* 铆钉 */
