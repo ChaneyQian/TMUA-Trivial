@@ -3,7 +3,7 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import test from 'node:test';
 
-import { cascade, declarations, evalLength, parseRules, stripComments, subject } from './helpers/css-rules.mjs';
+import { cascade, declarations, evalLength, parseRules, splitValue, stripComments, subject } from './helpers/css-rules.mjs';
 import { attrValue, balanced, calls, code, effects, fnBody, jsxByClass, jsxChildren } from './helpers/source.mjs';
 import ts from 'typescript';
 
@@ -640,7 +640,16 @@ test('the front tilts ±8° on an inner layer, pivots on the punch hole and leve
   // 聚焦发生在落到「挂着」的那一刻；autoDropRef 在首登落下前置 true、点丝带取出时置 false
   const focusEffect = effects(src).find(({ body }) => body.includes('badgeRef.current?.focus('));
   assert.deepEqual(focusEffect?.deps, ['stage']);
-  assert.match(focusEffect.body, /^if \(stage === 'resting'\) badgeRef\.current\?\.focus\(/);
+  // 把这段 effect 按四个阶段 × 是否自动落下真跑一遍：只在落到「挂着」时聚焦一次，自动落下时静默
+  const runFocus = runnable(focusEffect.body, ['stage', 'badgeRef', 'autoDropRef', 'QUIET_FOCUS']);
+  for (const stage of ['stowed', 'dropping', 'resting', 'flying']) {
+    for (const auto of [true, false]) {
+      const got = [];
+      runFocus(stage, { current: { focus: (...args) => got.push(args) } }, { current: auto }, QUIET);
+      assert.equal(got.length, stage === 'resting' ? 1 : 0, `${stage} 时聚焦了 ${got.length} 次`);
+      if (got.length) assert.equal(got[0][0] === QUIET, auto, auto ? '自动落下要静默聚焦' : '点丝带取出不该静默');
+    }
+  }
   const firstVisit = effects(src).find(({ body }) => body.includes('localStorage.getItem(SEEN_KEY)'));
   const armed = firstVisit?.body.indexOf('autoDropRef.current = true;') ?? -1;
   assert.ok(armed >= 0 && armed < firstVisit.body.indexOf("setStage('dropping')"), '首登落下之前要记下「这是自动落下」');
@@ -696,26 +705,68 @@ test('every styles.* the component uses exists in the stylesheet (no "undefined"
   assert.deepEqual(used.filter((name) => !defined.has(name)), [], '这些类名样式表里没有');
 });
 
+/**
+ * CSS 长度表达式求值（单位 px）：认 px、rem（16）、vw / vh（给定视口）、var(--u)、calc、min、max、clamp
+ * 与 + − × ÷。写成 max(6px, …) 还是 clamp(6px, …, …)、min 套 max，都按真值算，不按写法认
+ */
+function cssPx(value, { u = 1, vw = 0, vh = 0 } = {}) {
+  const expr = String(value ?? '')
+    .trim()
+    .replace(/var\(--u\)/g, `(${u})`)
+    .replace(/(\d*\.?\d+)vw\b/g, (_, n) => `(${n} * ${vw} / 100)`)
+    .replace(/(\d*\.?\d+)vh\b/g, (_, n) => `(${n} * ${vh} / 100)`)
+    .replace(/(\d*\.?\d+)rem\b/g, (_, n) => `(${n} * 16)`)
+    .replace(/(\d*\.?\d+)px\b/g, '$1')
+    .replace(/\bclamp\(/g, '__clamp(')
+    .replace(/\bmin\(/g, '__min(')
+    .replace(/\bmax\(/g, '__max(')
+    .replace(/\bcalc\(/g, '(');
+  if (!/^[\d.\s+\-*/(),_a-z]+$/.test(expr)) return Number.NaN;
+  try {
+    return Number(
+      Function('__clamp', '__min', '__max', `"use strict"; return (${expr});`)(
+        (lo, v, hi) => Math.max(lo, Math.min(v, hi)),
+        Math.min,
+        Math.max,
+      ),
+    );
+  } catch {
+    return Number.NaN;
+  }
+}
+
+/** font 简写里的字号（斜杠前那一段）；font-size 直接用 */
+function fontSizeOf(rule) {
+  if (rule['font-size']) return rule['font-size'];
+  const tokens = splitValue(rule.font ?? '');
+  const slash = tokens.indexOf('/');
+  return slash > 0 ? tokens[slash - 1] : tokens.at(-2);
+}
+
 test('the smallest print on the card still has a readable floor on a 375px screen', () => {
   const css = fs.readFileSync(cssPath, 'utf8');
-  // 375 宽：页宽 (375 − 32) / 2 = 171.5px，1u ≈ 0.572px。卡上尺寸等比缩，小字缩到 6px 以下就只剩一团灰，
-  // 这几样给最小字号（做法同 .backCaption）
-  const u = 171.5 / 300;
-  const fontSize = (value) => {
-    const size = /max\((\d+(?:\.\d+)?)px, calc\(var\(--u\) \* ([\d.]+)\)\)/.exec(value ?? '');
-    return size ? Math.max(Number(size[1]), Number(size[2]) * u) : NaN;
-  };
-  for (const [selector, prop, floor] of [
-    ['.fieldLabel', 'font', 6],
-    ['.serial', 'font', 6],
-    ['.title', 'font-size', 6],
-    ['.backCaption', 'font', 7],
+  // 求值器自检：等价写法得出同一个下限（max、clamp、min 套 max 都认）
+  assert.equal(cssPx('max(6px, calc(var(--u) * 7.8))', { u: 0.5 }), 6);
+  assert.equal(cssPx('clamp(6px, calc(var(--u) * 7.8), 40px)', { u: 0.5 }), 6);
+  assert.equal(cssPx('min(40px, max(6px, calc(var(--u) * 7.8)))', { u: 0.5 }), 6);
+  assert.equal(cssPx('calc(var(--u) * 7.8)', { u: 1 }), 7.8);
+
+  // 页宽按样式表里的定义现算：min(300px, (100vw − 2rem) / 2, (100vh − 7.5rem) × 54 / 85.6)；1u = 页宽 / 300
+  const pageW = cssPx(cascade(css, '.stage')['--page-w'], { vw: 375, vh: 812 });
+  assert.equal(pageW, 171.5);
+  const u = pageW / 300;
+  // 卡上尺寸等比缩，小字缩到 6px 以下就只剩一团灰：这几样给最小字号
+  for (const [selector, floor] of [
+    ['.fieldLabel', 6],
+    ['.serial', 6],
+    ['.title', 6],
+    ['.backCaption', 7],
   ]) {
-    const size = fontSize(cascade(css, selector)[prop]);
+    const size = cssPx(fontSizeOf(cascade(css, selector)), { u });
     assert.ok(size >= floor, `${selector} 在 375 宽时只有 ${size.toFixed(2)}px`);
   }
-  // 微缩印字本来就是要小（防伪线），不在此列
-  assert.doesNotMatch(cascade(css, '.microprint').font, /max\(/);
+  // 微缩印字本来就是要小（防伪线），不在此列：它就该跟着缩
+  assert.ok(cssPx(fontSizeOf(cascade(css, '.microprint')), { u }) < 3);
 });
 
 test('the stowed badge is a 3D ribbon anchored to the setup stage corner', () => {

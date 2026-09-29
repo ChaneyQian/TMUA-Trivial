@@ -134,12 +134,24 @@ test('a spotlight mounted under an open overlay stays dark until it goes; detach
 test('the badge holds the overlay mark for exactly as long as it is on screen', () => {
   const badge = code(fs.readFileSync('src/components/badge/IdBadge.tsx', 'utf8'));
   assert.ok(namedImports(badge, '@/lib/overlay').has('holdOverlay'));
-  // visible = 落下、挂着、收起途中都算；收好（stowed）才摘。effect 的清理就是 release
   const held = effects(badge).filter(({ body }) => body.includes('holdOverlay('));
   assert.equal(held.length, 1, '只在一处挂标记');
   assert.deepEqual(held[0].deps, ['visible']);
-  assert.equal(held[0].body, 'if (!visible) return; return holdOverlay();');
-  assert.match(badge, /const visible = stage !== 'stowed';/);
+  // 按语义判——把这段 effect 真跑一遍：不在屏上什么都不挂；在屏上挂一份，清理函数就是那份的 release
+  const run = new Function('visible', 'holdOverlay', held[0].body);
+  const release = () => {};
+  let holds = 0;
+  const hold = () => (holds++, release);
+  assert.equal(run(false, hold), undefined, '不在屏上不该挂标记');
+  assert.equal(holds, 0);
+  assert.equal(run(true, hold), release, '清理函数得是 release，收好时标记才会摘掉');
+  assert.equal(holds, 1);
+  // visible 的口径：落下、挂着、收起途中都算，收好（stowed）才不算——把定义按四个阶段求一遍
+  const visibleExpr = /const visible = ([^;]+);/.exec(badge)?.[1];
+  assert.ok(visibleExpr, '找不到 visible 的定义');
+  const visibleIn = new Function('stage', `return (${visibleExpr});`);
+  for (const stage of ['dropping', 'resting', 'flying']) assert.equal(Boolean(visibleIn(stage)), true, `${stage} 时浮层在屏上`);
+  assert.equal(Boolean(visibleIn('stowed')), false);
 
   // 聚光那头：现判与订阅都从 lib/overlay 来（行为见上面几条）；它自己不往 <html> 上写（见 ambient.test）
   const spot = code(fs.readFileSync('src/components/ambient/spotlight.ts', 'utf8'));
