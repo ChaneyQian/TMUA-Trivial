@@ -85,6 +85,38 @@ export function subject(selector) {
   return pseudo ? `${classes}::${pseudo[1]}` : classes;
 }
 
+const PSEUDO_ELEMENT = /^::?(before|after|first-line|first-letter|marker|placeholder|backdrop|selection)$/;
+
+/** 选择器里的限定条件：类名、属性选择器、伪类（伪元素归主体管，不在这里） */
+function qualifiers(selector) {
+  const plain = unwrapGlobal(selector);
+  return new Set(
+    [
+      ...(plain.match(/\.[\w-]+/g) || []),
+      ...(plain.match(/\[[^\]]*\]/g) || []),
+      ...(plain.match(/(?<!:):(?!:)[\w-]+(?:\([^)]*\))?/g) || []),
+    ].filter((q) => !PSEUDO_ELEMENT.test(q)),
+  );
+}
+
+/** 「光效关」开关本身的限定条件：写在 :root 上的 data-fx='off' */
+export const FX_OFF_ROOT = [':root', "[data-fx='off']"];
+
+/**
+ * offSel（规则 off 里的一条选择器）是不是真把 sel（规则 rule 里的一条）选中的每个元素都压住了：
+ * - 主体相同（伪元素单独算）；
+ * - 它用到的限定条件（类、属性、伪类）除开关本身（allow）之外全都出现在 sel 里——
+ *   即它选中的是 sel 的超集：`.slotFront .body` 只管前牌的正文，盖不住所有 `.body`；
+ * - 层叠上赢：特异性更高，或相同且写在后面。
+ */
+export function overrides(off, offSel, rule, sel, { allow = [] } = {}) {
+  if (subject(offSel) !== subject(sel)) return false;
+  const want = qualifiers(sel);
+  for (const q of qualifiers(offSel)) if (!want.has(q) && !allow.includes(q)) return false;
+  const order = cmpSpec(specificity(offSel), specificity(sel));
+  return order > 0 || (order === 0 && off.start > rule.start);
+}
+
 export function declarations(body) {
   return body
     .split(';')
@@ -156,11 +188,13 @@ export function cascade(css, selector, { media = null } = {}) {
 }
 
 /**
- * 长度表达式求值（单位 px）：env['%'] 是百分比的基准，env['--x'] 是 var(--x) 的值。
- * 只认 px / % / var() / calc() 与 + − × ÷、括号；auto 之类的关键字、缺了的变量都返回 NaN
+ * 长度表达式求值（单位 px）：env['%'] 是百分比的基准，env['--x'] 是 var(--x) 的值，
+ * env.rem 是根字号（默认 16：站点没改 html 的字号）。
+ * 只认 px / rem / % / var() / calc() 与 + − × ÷、括号；auto 之类的关键字、缺了的变量都返回 NaN
  */
 export function evalLength(value, env = {}) {
   let missing = false;
+  const rem = env.rem ?? 16;
   const expr = String(value)
     .trim()
     .replace(/var\((--[\w-]+)\)/g, (_, name) => {
@@ -171,6 +205,7 @@ export function evalLength(value, env = {}) {
       if (!('%' in env)) missing = true;
       return `(${n} / 100 * ${env['%']})`;
     })
+    .replace(/(\d*\.?\d+)rem\b/g, (_, n) => `(${n} * ${rem})`)
     .replace(/(\d*\.?\d+)px\b/g, '$1')
     .replace(/\bcalc\(/g, '(');
   if (missing || !/^[\d.\s+\-*/()]+$/.test(expr)) return Number.NaN;
@@ -215,15 +250,12 @@ export function endlessOffenders(css) {
       for (const selector of rule.selector.split(',')) {
         const subj = subject(selector);
         if (!endless.has(subj)) continue;
-        const spec = specificity(selector);
         const won = offRules.some(
           (off) =>
             declarations(off.body).some(([p, v]) => (p === 'animation' || p === 'animation-name') && v === 'none') &&
-            off.selector.split(',').some((offSel) => {
-              if (!OFF.test(offSel) || subject(offSel) !== subj) return false;
-              const order = cmpSpec(specificity(offSel), spec);
-              return order > 0 || (order === 0 && off.start > rule.start);
-            }),
+            off.selector
+              .split(',')
+              .some((offSel) => OFF.test(offSel) && overrides(off, offSel, rule, selector, { allow: FX_OFF_ROOT })),
         );
         if (won) covered.push(subj);
         else offenders.push(`${selector.trim()} { ${prop}: ${value} }`);

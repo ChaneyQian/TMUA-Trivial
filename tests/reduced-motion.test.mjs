@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import test from 'node:test';
 
-import { cmpSpec, cssFiles, declarations, parseRules, specificity, stripComments, subject } from './helpers/css-rules.mjs';
+import { cssFiles, declarations, overrides, parseRules, stripComments, subject } from './helpers/css-rules.mjs';
 
 /**
  * 减动效纪律的源码级守卫。
@@ -46,17 +46,13 @@ function uncoveredMotion(css) {
       if (family === 'transition' && !MOTION.test(value)) continue;
 
       for (const selector of rule.selector.split(',')) {
-        const subj = subject(selector);
-        if (!subj) continue;
-        const spec = specificity(selector);
-        const won = reduced.some((off) => {
-          if (!declarations(off.body).some(([p, v]) => p === family && v === 'none')) return false;
-          return off.selector.split(',').some((offSel) => {
-            if (subject(offSel) !== subj) return false;
-            const order = cmpSpec(specificity(offSel), spec);
-            return order > 0 || (order === 0 && off.start > rule.start);
-          });
-        });
+        if (!subject(selector)) continue;
+        // 降级规则得选中这条动效规则选中的全部元素（超集），并在层叠上赢它
+        const won = reduced.some(
+          (off) =>
+            declarations(off.body).some(([p, v]) => p === family && v === 'none') &&
+            off.selector.split(',').some((offSel) => overrides(off, offSel, rule, selector)),
+        );
         if (!won) misses.push(`${selector.trim()} { ${prop}: ${value} }`);
       }
     }
@@ -146,6 +142,20 @@ test('the specificity guard has teeth', () => {
     uncoveredMotion(pseudo.replace('.dot { transition: none; }', '.dot, .dot::after { transition: none; }')),
     [],
   );
+
+  // 降级规则得选中全部：加了限定的 `.slotFront .body` 只管前牌那块正文，特异性再高也盖不住
+  // 所有 `.body`；只在深色主题下生效的那条同理
+  const narrower = `
+    .body { transition: opacity 120ms ease; }
+    @media (prefers-reduced-motion: reduce) { .slotFront .body { transition: none; } }
+  `;
+  assert.equal(uncoveredMotion(narrower).length, 1, '只关了前牌的正文，侧牌的淡出照走');
+  assert.deepEqual(uncoveredMotion(narrower.replace('.slotFront .body {', '.body, .slotFront .body {')), []);
+  const themed = `
+    .glare { transition: opacity 280ms ease; }
+    @media (prefers-reduced-motion: reduce) { :global([data-theme='dark']) .glare { transition: none; } }
+  `;
+  assert.equal(uncoveredMotion(themed).length, 1, '只在深色主题下关，浅色与护眼照动');
 
   // 配色类补间不在本纪律内：它不产生位移，硬关掉只会让按钮 hover 变生硬
   const tint = `

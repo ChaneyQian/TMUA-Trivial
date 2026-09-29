@@ -152,6 +152,14 @@ test('the endless-animation guard counts a pseudo-element as a subject of its ow
   assert.deepEqual(endlessOffenders(fixed).offenders, []);
   // 光效关规则自己带回无限循环也要抓
   assert.equal(endlessOffenders(`${fixed}\n${OFF_ROOT} .other { animation: spin 1s infinite; }`).offenders.length, 1);
+
+  // 关闭规则得选中全部：多了一层限定（只管药丸悬停时的那颗点）的，特异性再高也不算管住了
+  const narrower = `
+    .pillDot { animation: breath 2s infinite; }
+    ${OFF_ROOT} .pill:hover .pillDot { animation: none; }
+  `;
+  assert.equal(endlessOffenders(narrower).offenders.length, 1);
+  assert.deepEqual(endlessOffenders(`${narrower}\n${OFF_ROOT} .pillDot { animation: none; }`).offenders, []);
 });
 
 /** ExamApp / useCardTilt 里「光效开着」的判断：认 fx === 'on' 与 fx !== 'off' 两种等价写法 */
