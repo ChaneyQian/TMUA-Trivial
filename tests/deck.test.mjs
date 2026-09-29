@@ -4,7 +4,18 @@ import test from 'node:test';
 
 import { ZONE_IDS, ringOffset, stepZone } from '../src/components/deck/zones.ts';
 import { indexForLibraryMode } from '../src/lib/records.ts';
-import { cascade, declarations, evalLength, parseRules, px, splitValue, stripComments, subject } from './helpers/css-rules.mjs';
+import {
+  cascade,
+  declarations,
+  evalLength,
+  FX_OFF_ROOT,
+  overrides,
+  parseRules,
+  px,
+  splitValue,
+  stripComments,
+  subject,
+} from './helpers/css-rules.mjs';
 import { readExamIndex } from './helpers/exam-data.mjs';
 
 const zonesPath = 'src/components/deck/zones.ts';
@@ -333,6 +344,141 @@ test('the deck spreads out in three width tiers, and each container holds exactl
   const pad = wide['--viewport-pad'].match(/^calc\(var\(--card-w\) \* ([\d.]+)\)$/);
   assert.ok(pad, '中宽屏的上内边距按卡宽取');
   assert.ok(Number(pad[1]) >= strip(wide) * (10 / 7), '上内边距接不住第三层退出去的那截');
+});
+
+test('a card off the front shows no clipped text: only a title that fits its exposed strip, swapped by a cross-fade', () => {
+  const deck = fs.readFileSync(deckPath, 'utf8');
+  const css = stripComments(fs.readFileSync(deckCssPath, 'utf8'));
+  const rules = parseRules(css);
+
+  // 结构：每张牌左右各一份侧位标题（读屏跳过），字就是卡名
+  for (const side of ['L', 'R']) {
+    assert.match(
+      deck,
+      new RegExp(String.raw`<div className=\{\`\$\{styles\.sideTitle\} \$\{styles\.sideTitle${side}\}\`\} aria-hidden="true">\s*\{t\.zone\.title\[zone\.id\]\}\s*</div>`),
+    );
+  }
+
+  // 非前位：正文整块淡出；窄屏连编号、徽章也淡出（露边太窄，它们会被前牌切成半个）
+  for (const slot of ['slotLeft', 'slotRight', 'slotBack']) {
+    assert.equal(cascade(css, `.${slot} .body`).opacity, '0', `${slot} 的正文没淡出`);
+    for (const chip of ['no', 'badge']) {
+      assert.equal(cascade(css, `.${slot} .${chip}`, { media: '(max-width: 639px)' }).opacity, '0', `窄屏 ${slot} 的 .${chip}`);
+    }
+  }
+  // 侧位标题平时不显示；只在中宽屏、只在对应的那一侧显示（左侧牌显示贴左的那份，右侧牌贴右的）
+  assert.equal(cascade(css, '.sideTitle').opacity, '0');
+  assert.equal(cascade(css, '.slotLeft .sideTitleL', { media: '(min-width: 640px)' }).opacity, '1');
+  assert.equal(cascade(css, '.slotRight .sideTitleR', { media: '(min-width: 640px)' }).opacity, '1');
+  for (const rule of rules) {
+    for (const selector of rule.selector.split(',')) {
+      const subj = subject(selector);
+      if (!/^sideTitle[LR]?$/.test(subj)) continue;
+      for (const [prop, value] of declarations(rule.body)) {
+        if (prop !== 'opacity' || value === '0') continue;
+        const side = subj.slice(-1);
+        assert.match(selector, side === 'L' ? /\.slotLeft\b/ : /\.slotRight\b/, `${selector.trim()} 让侧位标题出现在了别的槽位`);
+        assert.equal(rule.at, '@media (min-width: 640px)', '窄屏的露边放不下一行字，不给侧位标题');
+      }
+    }
+  }
+
+  // 贴外侧、对齐写死：位置与对齐只由 .sideTitleL / .sideTitleR 自己定，与槽位、屏宽无关——
+  // 转牌时槽位类名一换，字不会跳到另一边；随槽位变的只许是 opacity 与 transition（正文同理）
+  assert.equal(cascade(css, '.sideTitleL')['text-align'], 'left');
+  assert.ok(cascade(css, '.sideTitleL').left, '左侧那份贴左');
+  assert.equal(cascade(css, '.sideTitleR')['text-align'], 'right');
+  assert.ok(cascade(css, '.sideTitleR').right, '右侧那份贴右');
+  assert.equal(cascade(css, '.sideTitle').position, 'absolute');
+  assert.equal(cascade(css, '.sideTitle')['pointer-events'], 'none');
+  assert.match(cascade(css, '.sideTitle')['overflow-wrap'] ?? '', /^(break-word|anywhere)$/, '长单词要折进露出的宽度里');
+  for (const rule of rules) {
+    for (const selector of rule.selector.split(',')) {
+      const subj = subject(selector);
+      if (!/^(sideTitle[LR]?|body)$/.test(subj)) continue;
+      if (selector.trim() === `.${subj}` && rule.at === null) continue;
+      for (const [prop] of declarations(rule.body)) {
+        assert.ok(['opacity', 'transition', 'animation'].includes(prop), `${rule.at ?? ''} ${selector.trim()} 随槽位 / 屏宽改了 ${prop}`);
+      }
+    }
+  }
+
+  // 交叉淡变：只动 opacity；淡入的一方等淡出的一方走完才来，同一张卡上不会同时浮着两行标题
+  const timing = (value) => {
+    const m = value.match(/^opacity (\d+)ms [\w-]+(?: (\d+)ms)?$/);
+    assert.ok(m, `只许 opacity 的过渡：${value}`);
+    return { duration: Number(m[1]), delay: Number(m[2] ?? 0) };
+  };
+  const pairs = [
+    ['.body', '.slotFront .body', null],
+    ['.sideTitle', '.slotLeft .sideTitleL', '(min-width: 640px)'],
+    ['.sideTitle', '.slotRight .sideTitleR', '(min-width: 640px)'],
+    ['.no', '.slotFront .no', null],
+    ['.badge', '.slotFront .badge', null],
+  ];
+  for (const [outSel, inSel, media] of pairs) {
+    const out = timing(cascade(css, outSel).transition);
+    const into = timing(cascade(css, inSel, { media }).transition);
+    assert.equal(out.delay, 0, `${outSel} 淡出不等`);
+    assert.ok(into.delay >= out.duration, `${inSel} 淡入（延迟 ${into.delay}ms）没等 ${outSel} 淡出（${out.duration}ms）走完`);
+    assert.ok(into.delay + into.duration <= 350, `${inSel} 的淡入要在转牌（350ms）内走完`);
+  }
+
+  // 光效关：这些交叉淡变直接切换——每条过渡都有一条光效关的 transition: none 选中它的全部元素、
+  // 并在层叠上压住它（`.slotFront .body` 那条只管前牌，盖不住侧牌正文的淡出）。
+  // 减动效那一侧由 reduced-motion.test 的通用守卫逐条查
+  const OFF = /\[data-fx='off'\]/;
+  const offRules = rules.filter((rule) => OFF.test(rule.selector));
+  for (const rule of rules) {
+    if (rule.inReduced || OFF.test(rule.selector)) continue;
+    const moving = declarations(rule.body).some(([prop, value]) => prop === 'transition' && value !== 'none');
+    if (!moving) continue;
+    for (const selector of rule.selector.split(',')) {
+      if (!/^(sideTitle[LR]?|body|no|badge)$/.test(subject(selector))) continue;
+      const won = offRules.some(
+        (off) =>
+          declarations(off.body).some(([p, v]) => p === 'transition' && v === 'none') &&
+          off.selector.split(',').some((offSel) => overrides(off, offSel, rule, selector, { allow: FX_OFF_ROOT })),
+      );
+      assert.ok(won, `光效关时 ${selector.trim()} 的淡变没被压成直接切换`);
+    }
+  }
+});
+
+test('the side title never runs under the front card, in any tier and at any card size', () => {
+  const css = stripComments(fs.readFileSync(deckCssPath, 'utf8'));
+  const deckVars = (media) => cascade(css, '.deck', { media });
+  const narrow = deckVars(null);
+  const medium = { ...narrow, ...deckVars('(min-width: 640px)') };
+  const wide = { ...medium, ...deckVars('(min-width: 1024px)') };
+
+  // 侧位标题的纵向范围（离卡心的距离，单位卡宽 W）：顶 = 封面底边 + 上边距；两行字的底
+  const REM = 16;
+  const coverFrac = Number(cascade(css, '.card')['--cover-frac']);
+  const title = cascade(css, '.sideTitle');
+  const top = title.top.match(/^calc\(var\(--cover-frac\) \* 100% \+ ([\d.]+)rem\)$/);
+  assert.ok(top, '侧位标题的 top 要与正文标题同一行：封面底边 + .body 的上内边距');
+  const fontPx = Number.parseFloat(title['font-size']) * REM;
+  const blockPx = Number.parseFloat(title['padding-top']) * fontPx + 2 * Number(title['line-height']) * fontPx;
+  const H = 10 / 7;
+  const pad = Number.parseFloat(cascade(css, '.sideTitleL').left) * REM;
+  assert.equal(cascade(css, '.sideTitleR').right, cascade(css, '.sideTitleL').left);
+
+  const check = (name, vars, cardW) => {
+    const s = Number(vars['--slot-scale']);
+    const theta = (Number.parseFloat(vars['--slot-rot']) * Math.PI) / 180;
+    const x = Number.parseFloat(vars['--slot-x']) / 100;
+    // 侧牌自身坐标里、离卡心纵向 v 处露在前牌之外的宽度（单位 W）；左右两张镜像对称
+    const exposed = (v) => 0.5 - (0.5 - x) / (s * Math.cos(theta)) - v * Math.tan(theta);
+    const vTop = coverFrac * H - H / 2 + (Number(top[1]) * REM) / cardW;
+    const vBottom = vTop + blockPx / cardW;
+    const strip = Math.min(exposed(vTop), exposed(vBottom)) * cardW;
+    const read = evalLength(vars['--side-read'], { '--card-w': cardW });
+    assert.ok(read + pad + 4 <= strip, `${name} ${cardW}px：侧位标题最宽 ${read.toFixed(1)}px + 外侧 ${pad}px，露出的只有 ${strip.toFixed(1)}px`);
+    assert.ok(read >= 4 * fontPx, `${name} ${cardW}px：侧位标题连四个汉字都放不下（${read.toFixed(1)}px）`);
+  };
+  check('中屏', medium, 340);
+  for (const cardW of [340, 360, 400]) check('宽屏', wide, cardW);
 });
 
 test('a card that just turned ignores clicks for as long as it is still sliding', async () => {

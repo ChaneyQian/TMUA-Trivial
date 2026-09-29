@@ -356,6 +356,16 @@ export default function CardDeck({
                       )}
                     </div>
 
+                    {/* 侧位标题：左右各一份，对齐写死（贴外侧），只在对应的侧位淡入；正文在非前位整块淡出。
+                        转牌时只交叉淡变、从不改对齐，所以没有文字瞬跳（见 Deck.module.css）。
+                        读屏已有正文与命中层上的卡名，这两份不念 */}
+                    <div className={`${styles.sideTitle} ${styles.sideTitleL}`} aria-hidden="true">
+                      {t.zone.title[zone.id]}
+                    </div>
+                    <div className={`${styles.sideTitle} ${styles.sideTitleR}`} aria-hidden="true">
+                      {t.zone.title[zone.id]}
+                    </div>
+
                     <button
                       type="button"
                       className={styles.hit}
