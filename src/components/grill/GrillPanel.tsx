@@ -16,7 +16,7 @@
 // 面板照旧不认得 9.0 的解锁规则：范围由外层划好递进来（topicScope），
 // 这里既不判断也不绕过。
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useId, useMemo, useRef, useState } from 'react';
 
 import { EXAM_DATA } from '@/lib/config';
 import type { IndexEntry } from '@/lib/exam';
@@ -36,6 +36,7 @@ import {
   weakTopics,
   type TopicsData,
 } from '@/lib/topics';
+import SegmentedGroup from '../setup/SegmentedGroup';
 import examStyles from '../exam/Exam.module.css';
 import styles from './Grill.module.css';
 
@@ -104,6 +105,8 @@ export default function GrillPanel({
   receipt,
 }: Props) {
   const { t } = useLang();
+  // 抽题范围 / 题目数量两组单选的组标题 id（aria-labelledby）
+  const idBase = useId();
 
   // ---- 1. 诊断绑定集 ----
   const bound = boundCount(records);
@@ -274,35 +277,30 @@ export default function GrillPanel({
               </>
             ) : (
               <>
-                <div className={examStyles.fieldLabel}>{t.setup.fieldPick}</div>
-                <div className={examStyles.segRow}>
-                  {modes.map((mode) => (
-                    <button
-                      key={mode.id}
-                      type="button"
-                      className={`${examStyles.segBtn} ${pickMode === mode.id ? examStyles.segActive : ''}`}
-                      onClick={() => onPickMode(mode.id)}
-                    >
-                      {mode.label}
-                      <span className={examStyles.segHint}>{mode.hint}</span>
-                    </button>
-                  ))}
+                {/* 两组都是 ARIA 单选组，和配置面板同一个组件（见 setup/SegmentedGroup） */}
+                <div className={examStyles.fieldLabel} id={`${idBase}-pick`}>
+                  {t.setup.fieldPick}
                 </div>
+                <SegmentedGroup
+                  labelledBy={`${idBase}-pick`}
+                  value={pickMode}
+                  onChange={onPickMode}
+                  options={modes.map((mode) => ({ value: mode.id, label: mode.label, hint: mode.hint }))}
+                />
 
-                <div className={examStyles.fieldLabel}>{t.grill.fieldCount(available)}</div>
-                <div className={examStyles.segRow}>
-                  {choices.map((n, i) => (
-                    <button
-                      key={n}
-                      type="button"
-                      className={`${examStyles.segBtn} ${count === n ? examStyles.segActive : ''}`}
-                      onClick={() => onCount(n)}
-                    >
-                      {/* 最后一档就是「全部」，省得用户自己算上限 */}
-                      {i === choices.length - 1 && n === available ? `${t.grill.countAll} (${n})` : n}
-                    </button>
-                  ))}
+                <div className={examStyles.fieldLabel} id={`${idBase}-count`}>
+                  {t.grill.fieldCount(available)}
                 </div>
+                <SegmentedGroup
+                  labelledBy={`${idBase}-count`}
+                  value={count}
+                  onChange={onCount}
+                  options={choices.map((n, i) => ({
+                    value: n,
+                    // 最后一档就是「全部」，省得用户自己算上限
+                    label: i === choices.length - 1 && n === available ? `${t.grill.countAll} (${n})` : n,
+                  }))}
+                />
 
                 <button
                   className={examStyles.startBtn}

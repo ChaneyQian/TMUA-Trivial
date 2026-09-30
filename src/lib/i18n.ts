@@ -72,6 +72,8 @@ const zh = {
     fieldMode: '模式',
     fieldPick: '抽题范围',
     fieldCount: (n: number) => `题目数量(题库可用 ${n} 题)`,
+    // 题数那行的自定义输入框：不在 5 / 10 / 20 的单选组里，读屏得有自己的名字
+    countCustom: '自定义题数',
     fieldMinutes: '限时(分钟)',
     questions: (n: number) => `${n} 题`,
     practice: '练习',
@@ -351,6 +353,7 @@ const en: Strings = {
     fieldMode: 'Mode',
     fieldPick: 'Question Selection',
     fieldCount: (n: number) => `Number of Questions (${n} available)`,
+    countCustom: 'Custom number of questions',
     fieldMinutes: 'Time Limit (minutes)',
     questions: (n: number) => `${n} Qs`,
     practice: 'Practice',

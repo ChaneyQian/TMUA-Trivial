@@ -31,13 +31,15 @@ import {
   saveLogicFilter,
   validCompletedCount,
 } from '../src/lib/records.ts';
+import { segmentedGroups } from './helpers/segmented-groups.mjs';
 import { attrValue, code, jsxOpening } from './helpers/source.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const examPath = 'src/components/exam/ExamApp.tsx';
 const cssPath = 'src/components/exam/Exam.module.css';
-/** 经典区 / 9.0 区的配置面板（P8-A3 从 ExamApp 拆出） */
+/** 经典区 / 9.0 区的配置面板（P8-A3 从 ExamApp 拆出），与它的五组分段单选 */
 const panelPath = 'src/components/setup/SetupPanel.tsx';
+const groupPath = 'src/components/setup/SegmentedGroup.tsx';
 
 /**
  * 一份混了各种标记的小索引，用来看清每层滤网各自丢掉了谁。
@@ -519,11 +521,17 @@ test('the setup panel wires the filter into the pick pool and nowhere else', () 
   assert.match(panel, /t\.setup\.logicAll/, '文案必须走字典');
   assert.match(panel, /t\.setup\.logicOnly/, '文案必须走字典');
   assert.match(panel, /t\.setup\.logicExclude/, '文案必须走字典');
-  // 选中态得报出去。刻意**不**用 radiogroup / radio：没有 roving tabindex
-  // 与方向键，报出单选组却按键无反应比原生勾选框更糟；和同屏另外三组保持一致
-  assert.match(panel, /aria-pressed=\{logicFilter === value\}/);
-  assert.equal(panel.includes('role="radio"'), false, '没有方向键就别声称自己是单选组');
-  assert.equal(panel.includes('role="radiogroup"'), false, '同上');
+  // 选中态得报出去。P8-A3 起三档是一组 ARIA 单选组，与同屏另外四组同一个组件（SegmentedGroup）：
+  // radiogroup / radio + aria-checked、roving tabindex、方向键移动并选中都在那里（契约与按键行为见 setup.test）。
+  // 当前档位就是这组的值，改档走会落盘的 chooseLogicReasoning，组名是「逻辑推理题」那个字段标题
+  const logicGroup = segmentedGroups(panel).find((group) => group.value === 'logicFilter');
+  assert.ok(logicGroup, '逻辑推理三档得是一组 SegmentedGroup，值是 logicFilter');
+  assert.equal(logicGroup.onChange, 'chooseLogicReasoning');
+  assert.equal(logicGroup.label, '{t.setup.logicReasoning}', '组名指向「逻辑推理题」字段标题');
+  assert.equal(panel.includes('aria-pressed'), false, '单选组用 aria-checked 报选中态，不再用 aria-pressed');
+  // 三档的选项正是那三个取值，没有第四档
+  const logicValues = [...logicGroup.options.matchAll(/\['(\w+)', t\.setup\.logic\w+\]/g)].map((m) => m[1]);
+  assert.deepEqual(logicValues, ['all', 'only', 'exclude']);
   const switchAt = panel.indexOf('logicCov.logic > 0');
   assert.ok(
     panel.indexOf('t.setup.fieldBank') < switchAt && switchAt < panel.indexOf('t.setup.fieldMode'),
@@ -543,14 +551,20 @@ test('the segmented control borrows the existing panel styling instead of invent
   const panel = code(fs.readFileSync(panelPath, 'utf8'));
   const css = fs.readFileSync(cssPath, 'utf8');
 
-  // 和「模式」「抽题范围」同款：fieldLabel 起标题 + segRow 装 segBtn，选中态 segActive
-  assert.match(panel, /styles\.fieldLabel\}>\{t\.setup\.logicReasoning\}/);
-  assert.match(panel, /styles\.fieldLabel\}>\{t\.setup\.logicReasoning\}<\/div> ?<div className=\{styles\.segRow\}>/);
-  assert.match(
-    panel,
-    /styles\.segBtn\} \$\{logicFilter === value \? styles\.segActive : ''\}/,
-    '选中态复用 segActive',
-  );
+  // 和「模式」「抽题范围」同款：fieldLabel 起标题，下面是同一个分段单选组（SegmentedGroup），
+  // 它的容器就是 segRow、每项就是 segBtn、选中项叠 segActive——同一套样式，没有另起一份
+  const logicGroup = segmentedGroups(panel).find((group) => group.value === 'logicFilter');
+  assert.ok(logicGroup, '逻辑推理三档得是一组 SegmentedGroup');
+  const title = jsxOpening(panel, `id={${logicGroup.labelledBy}}`);
+  assert.match(attrValue(title.attrs.get('className')), /^styles\.fieldLabel$/);
+  assert.ok(title.start < logicGroup.tag.start, '标题在组的上面');
+  const group = code(fs.readFileSync(groupPath, 'utf8'));
+  const root = jsxOpening(group, 'role="radiogroup"');
+  assert.match(attrValue(root.attrs.get('className')), /examStyles\.segRow\b/);
+  const item = jsxOpening(group, 'role="radio"');
+  const itemClass = attrValue(item.attrs.get('className'));
+  assert.match(itemClass, /examStyles\.segBtn\b/);
+  assert.match(itemClass, /\? examStyles\.segActive\b/, '选中态复用 segActive');
   assert.match(css, /\.segBtn \{[^}]*border-radius: 8px;/s);
   assert.match(css, /\.segBtn \{[^}]*var\(--surface-alt\)/s);
   assert.match(css, /\.segActive \{[^}]*var\(--accent\)/s);

@@ -1,0 +1,23 @@
+/* 配置面板（SetupPanel）自己的几条。卡片、字段标题、分段按钮沿用 Exam.module.css 的
+   setupCard / fieldLabel / segRow / segBtn，这里只补它们管不到的排版。 */
+
+/* 题目数量那一行：5 / 10 / 20 三档是单选组，自定义题数框在组外、自己占一个 Tab 位，
+   两者照旧排在同一行 */
+.countRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+/* 窄屏：.segBtn 的 8rem 起步宽会把三档挤成两行、题数框再掉到第三行。
+   三档都只有一两位数，起步宽收到 3rem：三档 + 题数框一行放得下（375px 下约 309px 宽），
+   三档把题数框之外的宽度均分 */
+@media (max-width: 640px) {
+  .countPresets {
+    flex: 1 1 auto;
+  }
+
+  .countPresets > button {
+    flex: 1 1 3rem;
+  }
+}

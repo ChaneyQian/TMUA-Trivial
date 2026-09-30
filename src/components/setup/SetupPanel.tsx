@@ -3,14 +3,17 @@
 // 经典区 / 9.0 区的配置面板：题库、逻辑推理题、模式、抽题范围、题目数量（Mock 另有限时），
 // 收尾是开始按钮。
 //
-// 从 ExamApp 原样搬出来的（Design §22 P8-A3，R2 拆分的第一刀）：状态一律还在 ExamApp，
+// 从 ExamApp 拆出来的（Design §22 P8-A3，R2 拆分的第一刀）：状态一律还在 ExamApp，
 // 这里只管画和回调——抽题池、题数、兜底题库这些口径都在外层算好了递进来，
-// 面板不重新推一遍，免得同一个数有两个出处。
+// 面板不重新推一遍，免得同一个数有两个出处。五组选项都是 SegmentedGroup（ARIA 单选组）。
 
+import { useId } from 'react';
 import type { ZoneId } from '@/components/deck/zones';
 import { useLang } from '@/lib/LangContext';
 import type { LibraryMode, LogicCoverage, LogicFilter, PickMode } from '@/lib/records';
 import styles from '../exam/Exam.module.css';
+import SegmentedGroup from './SegmentedGroup';
+import panelStyles from './SetupPanel.module.css';
 
 /** 题库按钮的取值：各库 + 混合 */
 export type Db = 'TMUA' | 'TMUA_MOCK' | 'MAT' | 'SMC' | 'ECAA' | 'AMC' | 'ALL';
@@ -81,30 +84,34 @@ export default function SetupPanel({
   onStart,
 }: Props) {
   const { t } = useLang();
+  // 五组单选各有一个组标题，aria-labelledby 指过去；限时框同理
+  const idBase = useId();
+  const labelId = (field: 'bank' | 'logic' | 'mode' | 'pick' | 'count' | 'minutes') => `${idBase}-${field}`;
 
   return (
     <div className={styles.setupCard}>
       <div className={styles.setupTitle}>{t.zone.title[zone]}</div>
       <div className={styles.setupSub}>{t.setup.sub}</div>
 
-      <div className={styles.fieldLabel}>{t.setup.fieldBank}</div>
-      <div className={styles.segRow}>
-        {bankChoices.map((d) => (
-          <button
-            key={d}
-            className={`${styles.segBtn} ${db === d ? styles.segActive : ''}`}
-            onClick={() => setDb(d)}
-            disabled={d !== 'ALL' && poolCounts[d] === 0}
-          >
-            {dbName(d)}
-            <span className={styles.segHint}>
-              {d === 'ALL'
-                ? t.setup.questions(Object.values(poolCounts).reduce((a, b) => a + b, 0))
-                : t.setup.questions(poolCounts[d] || 0)}
-            </span>
-          </button>
-        ))}
+      <div className={styles.fieldLabel} id={labelId('bank')}>
+        {t.setup.fieldBank}
       </div>
+      {/* 当前区里一道题都抽不到的库（比如「仅逻辑题」把它清空了）置灰、方向键跳过它，
+          但不从这排里消失——消失了就找不到「勾回来能救它」这条路 */}
+      <SegmentedGroup
+        labelledBy={labelId('bank')}
+        value={db}
+        onChange={setDb}
+        options={bankChoices.map((d) => ({
+          value: d,
+          label: dbName(d),
+          hint:
+            d === 'ALL'
+              ? t.setup.questions(Object.values(poolCounts).reduce((a, b) => a + b, 0))
+              : t.setup.questions(poolCounts[d] || 0),
+          disabled: d !== 'ALL' && poolCounts[d] === 0,
+        }))}
+      />
       {/* 互斥之后同名库在两个区指的不是同一批题：9.0 的 TMUA 是回忆题、
           MAT 是老卷与回忆题——按钮上只有题数，而题数恰恰是用户最不会
           去做减法的东西，得把范围说破 */}
@@ -122,100 +129,84 @@ export default function SetupPanel({
           覆盖率披露已按用户裁定移除（2026-08-23）：那是维护者视角的打标
           进度报告，普通学生不需要读。抽题池的真实数字在题数档位里，
           空池时另有「切回全部可再抽 N 道」的操作提示兑底。
-          刻意不按 ARIA 单选组来标（radiogroup / radio 那一套）：没有 roving
-          tabindex 和方向键，报出单选组却按不动比不报更糟。和同屏另外三组一致，
-          用裸按钮 + aria-pressed；四组统一的可访问性另立任务 */}
+          五组统一成 ARIA 单选组（P8-A3）：radiogroup / radio + roving tabindex，
+          ←→↑↓ / Home / End 移动并选中，Tab 进出整组只停一次（见 SegmentedGroup） */}
       {logicCov.logic > 0 && (
         <>
-          <div className={styles.fieldLabel}>{t.setup.logicReasoning}</div>
-          <div className={styles.segRow}>
-            {(
+          <div className={styles.fieldLabel} id={labelId('logic')}>
+            {t.setup.logicReasoning}
+          </div>
+          <SegmentedGroup
+            labelledBy={labelId('logic')}
+            value={logicFilter}
+            onChange={chooseLogicReasoning}
+            options={(
               [
                 ['all', t.setup.logicAll],
                 ['only', t.setup.logicOnly],
                 ['exclude', t.setup.logicExclude],
               ] as [LogicFilter, string][]
-            ).map(([value, label]) => (
-              <button
-                key={value}
-                aria-pressed={logicFilter === value}
-                className={`${styles.segBtn} ${logicFilter === value ? styles.segActive : ''}`}
-                onClick={() => chooseLogicReasoning(value)}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
+            ).map(([value, label]) => ({ value, label }))}
+          />
         </>
       )}
 
-      <div className={styles.fieldLabel}>{t.setup.fieldMode}</div>
-      <div className={styles.segRow}>
-        <button
-          className={`${styles.segBtn} ${mode === 'practice' ? styles.segActive : ''}`}
-          onClick={() => setMode('practice')}
-        >
-          {t.setup.practiceLabel}
-          <span className={styles.segHint}>{t.setup.practiceHint}</span>
-        </button>
-        <button
-          className={`${styles.segBtn} ${mode === 'mock' ? styles.segActive : ''}`}
-          onClick={() => setMode('mock')}
-        >
-          {t.setup.mockLabel}
-          <span className={styles.segHint}>{t.setup.mockHint}</span>
-        </button>
+      <div className={styles.fieldLabel} id={labelId('mode')}>
+        {t.setup.fieldMode}
       </div>
+      <SegmentedGroup
+        labelledBy={labelId('mode')}
+        value={mode}
+        onChange={setMode}
+        options={[
+          { value: 'practice', label: t.setup.practiceLabel, hint: t.setup.practiceHint },
+          { value: 'mock', label: t.setup.mockLabel, hint: t.setup.mockHint },
+        ]}
+      />
 
-      <div className={styles.fieldLabel}>{t.setup.fieldPick}</div>
-      <div className={styles.segRow}>
-        <button
-          className={`${styles.segBtn} ${pickMode === 'random' ? styles.segActive : ''}`}
-          onClick={() => setPickMode('random')}
-        >
-          {t.setup.pickRandom}
-          <span className={styles.segHint}>{t.setup.pickRandomHint}</span>
-        </button>
-        <button
-          className={`${styles.segBtn} ${pickMode === 'wrong-and-new' ? styles.segActive : ''}`}
-          onClick={() => setPickMode('wrong-and-new')}
-        >
-          {t.setup.pickWrongNew}
-          <span className={styles.segHint}>{t.setup.pickWrongNewHint}</span>
-        </button>
-        <button
-          className={`${styles.segBtn} ${pickMode === 'new-only' ? styles.segActive : ''}`}
-          onClick={() => setPickMode('new-only')}
-        >
-          {t.setup.pickNewOnly}
-          <span className={styles.segHint}>{t.setup.pickNewOnlyHint}</span>
-        </button>
+      <div className={styles.fieldLabel} id={labelId('pick')}>
+        {t.setup.fieldPick}
       </div>
+      <SegmentedGroup
+        labelledBy={labelId('pick')}
+        value={pickMode}
+        onChange={setPickMode}
+        options={[
+          { value: 'random', label: t.setup.pickRandom, hint: t.setup.pickRandomHint },
+          { value: 'wrong-and-new', label: t.setup.pickWrongNew, hint: t.setup.pickWrongNewHint },
+          { value: 'new-only', label: t.setup.pickNewOnly, hint: t.setup.pickNewOnlyHint },
+        ]}
+      />
 
-      <div className={styles.fieldLabel}>{t.setup.fieldCount(totalPool)}</div>
-      <div className={styles.segRow}>
-        {[5, 10, 20].map((n) => (
-          <button
-            key={n}
-            className={`${styles.segBtn} ${count === n ? styles.segActive : ''}`}
-            onClick={() => setCountAnd(n)}
-          >
-            {n}
-          </button>
-        ))}
+      <div className={styles.fieldLabel} id={labelId('count')}>
+        {t.setup.fieldCount(totalPool)}
+      </div>
+      {/* 三档预设是单选组；自定义题数框不在组里，自己占一个 Tab 位。
+          框里的数不等于任何一档时组内没有选中项，Tab 位落在第一档（见 lib/segmented 的 tabStopIndex） */}
+      <div className={panelStyles.countRow}>
+        <SegmentedGroup
+          className={panelStyles.countPresets}
+          labelledBy={labelId('count')}
+          value={count}
+          onChange={setCountAnd}
+          options={[5, 10, 20].map((n) => ({ value: n, label: n }))}
+        />
         <input
           className={styles.numInput}
           type="number"
           min={1}
           max={100}
           value={count}
+          aria-label={t.setup.countCustom}
           onChange={(e) => setCountAnd(Math.max(1, Math.min(100, Number(e.target.value) || 1)))}
         />
       </div>
 
       {mode === 'mock' && (
         <>
-          <div className={styles.fieldLabel}>{t.setup.fieldMinutes}</div>
+          <div className={styles.fieldLabel} id={labelId('minutes')}>
+            {t.setup.fieldMinutes}
+          </div>
           <div className={styles.segRow}>
             <input
               className={styles.numInput}
@@ -223,6 +214,7 @@ export default function SetupPanel({
               min={1}
               max={300}
               value={minutes}
+              aria-labelledby={labelId('minutes')}
               onChange={(e) => onMinutes(Math.max(1, Math.min(300, Number(e.target.value) || 1)))}
             />
           </div>
