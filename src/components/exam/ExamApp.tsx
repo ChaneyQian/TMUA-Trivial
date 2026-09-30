@@ -8,6 +8,7 @@ import AmbientBackdrop from '@/components/ambient/AmbientBackdrop';
 import IdBadge from '@/components/badge/IdBadge';
 import FxToggle from '@/components/FxToggle';
 import LangToggle from '@/components/LangToggle';
+import ThemeToggle from '@/components/ThemeToggle';
 import CardDeck from '@/components/deck/CardDeck';
 import { ZONES, zoneById, type ZoneId } from '@/components/deck/zones';
 import ProgressPanel from '@/components/progress/ProgressPanel';
@@ -1172,8 +1173,10 @@ export default function ExamApp() {
           }}
         >
           <IdBadge />
-          {/* 光效开关挨在中/英钮左边；和它一样只在设置页（选区 / 配置 / 进度三个视图）出现，答题页没有。
-              树序排在中/英钮前面：Tab 的先后与视觉上从左到右一致 */}
+          {/* 右上角一簇圆钮，从左到右：配色、光效、中/英。和中/英钮一样只在设置页（选区 / 配置 / 进度三个视图）
+              出现，答题页没有（那里保留顶栏的配色下拉框，两处读写同一个 lib/theme）。
+              树序与视觉从左到右一致：Tab 的先后不跳 */}
+          <ThemeToggle />
           <FxToggle />
           <LangToggle />
           {/* 公告只在 setup 相挂载：考试进行中不该有任何浮层打扰 */}

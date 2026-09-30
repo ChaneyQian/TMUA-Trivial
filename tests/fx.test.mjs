@@ -335,7 +335,8 @@ test('the effects toggle is a round button beside the language one, in the setup
   assert.ok(at > exam.indexOf("if (phase === 'setup' || phase === 'loading') {"));
   assert.ok(at < exam.search(/if \(phase === 'diagnostic'\) \{/));
 
-  // 窄屏的配置页：两颗圆钮占着页签第一行的右端，用右浮动的占位让出来（宽度装得下两颗钮）
+  // 窄屏的配置页：圆钮占着页签第一行的右端，用右浮动的占位让出来（2026-09-30 起是三颗：配色、光效、中/英，
+  // 占位宽度由 tests/theme.test 按配色钮的位置核；这里至少装得下光效与中/英两颗）
   const reserve = cascade(examCss, '.zoneTabs::before', { media: '(max-width: 639px)' });
   assert.equal(reserve.float, 'right');
   assert.ok(px(reserve.width) >= px(lang.width) * 2 + 8, '让出来的宽度装不下两颗圆钮');

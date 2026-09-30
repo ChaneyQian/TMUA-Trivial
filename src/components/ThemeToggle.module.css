@@ -1,0 +1,234 @@
+/* 大厅的配色圆钮 + 弹层。圆钮的外观、悬停 / 按下、焦点环、减动效都沿用 LangToggle.module.css 的 .toggle，
+   这里只管三件事：这一簇的位置、图标、弹层。
+   位置：光效钮左边——中/英钮 right: 0、光效钮 right: 48px（40px 钮宽 + 8px 缝），这颗再往左一格：96px。
+   钮本身仍是 .toggle 的 top: 0 / right: 0，只是相对这层 .anchor 定位（.anchor 占住那一格 40 × 40） */
+
+.anchor {
+  position: absolute;
+  top: 0;
+  right: 96px;
+  /* 高过舞台里的卡组与面板（弹层要盖在它们上面），低过工牌浮层（900）与片头（950） */
+  z-index: 7;
+  width: 40px;
+  height: 40px;
+}
+
+.icon {
+  display: block;
+  overflow: visible;
+}
+
+/* 调色板轮廓随按钮文字色（平时次要文字色、悬停变正文色），一颗强调色的颜料点，另两颗随文字色 */
+.palette {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linejoin: round;
+}
+
+.dot {
+  fill: currentColor;
+}
+
+.dotAccent {
+  fill: var(--accent);
+}
+
+/* 弹层：右缘与舞台右缘对齐（right: -96px 抵掉 .anchor 的偏移），在 375px 宽下也不出左界；
+   小三角对准这颗圆钮的中心（离舞台右缘 96 + 20 = 116px） */
+.popover {
+  position: absolute;
+  top: 50px;
+  right: -96px;
+  width: 252px;
+  box-sizing: border-box;
+  padding: 10px 12px 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--text);
+  box-shadow:
+    0 12px 32px rgb(0 0 0 / 16%),
+    0 1px 3px rgb(0 0 0 / 10%);
+  font-family: var(--font-ui);
+  transform-origin: calc(100% - 116px) 0;
+  animation: popIn 150ms cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+.popover::before {
+  position: absolute;
+  top: -6px;
+  right: 111px;
+  width: 10px;
+  height: 10px;
+  border-top: 1px solid var(--border);
+  border-left: 1px solid var(--border);
+  background: var(--surface);
+  transform: rotate(45deg);
+  content: '';
+}
+
+.title {
+  margin-bottom: 8px;
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+}
+
+.options {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.option {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 5px;
+  padding: 0;
+  border: 0;
+  border-radius: 10px;
+  background: none;
+  color: var(--text-muted);
+  font-family: var(--font-ui);
+  font-size: 0.74rem;
+  cursor: pointer;
+  transition: transform 100ms cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+.option:hover {
+  color: var(--text);
+}
+
+.option:active {
+  transform: scale(0.97);
+}
+
+.option[aria-checked='true'] {
+  color: var(--text);
+  font-weight: 600;
+}
+
+/* 色块：那一套配色的缩样——底色上一张卡，卡上一行正文、一颗强调色的按钮。
+   颜色照抄 app/globals.css 的三套变量（测试逐个对拍），不随当前主题变 */
+.swatch {
+  position: relative;
+  display: block;
+  height: 46px;
+  overflow: hidden;
+  border: 1px solid var(--sw-border);
+  border-radius: 8px;
+  background: var(--sw-bg);
+}
+
+.swatchCard {
+  position: absolute;
+  top: 8px;
+  right: 12px;
+  bottom: -1px;
+  left: 8px;
+  border: 1px solid var(--sw-border);
+  border-bottom: 0;
+  border-radius: 5px 5px 0 0;
+  background: var(--sw-surface);
+}
+
+.swatchCard::before,
+.swatchCard::after {
+  position: absolute;
+  left: 7px;
+  border-radius: 3px;
+  content: '';
+}
+
+/* 一行正文 */
+.swatchCard::before {
+  top: 8px;
+  width: 58%;
+  height: 3px;
+  background: var(--sw-text);
+}
+
+/* 一颗强调色的按钮 */
+.swatchCard::after {
+  top: 17px;
+  width: 42%;
+  height: 7px;
+  background: var(--sw-accent);
+}
+
+/* 选中：色块外一圈当前主题的强调色，右上角一个对勾 */
+.option[aria-checked='true'] .swatch {
+  box-shadow: 0 0 0 2px var(--accent);
+}
+
+.option[aria-checked='true'] .swatch::after {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  display: grid;
+  place-items: center;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--surface);
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1;
+  content: '✓';
+}
+
+.swatchLight {
+  --sw-bg: #f5f6f8;
+  --sw-surface: #ffffff;
+  --sw-text: #1a1a2e;
+  --sw-accent: #4a6cf7;
+  --sw-border: #e1e4e8;
+}
+
+.swatchDark {
+  --sw-bg: #121212;
+  --sw-surface: #1e1e2e;
+  --sw-text: #e4e4ec;
+  --sw-accent: #7b93ff;
+  --sw-border: #333355;
+}
+
+.swatchSepia {
+  --sw-bg: #f4ecd8;
+  --sw-surface: #faf4e4;
+  --sw-text: #3d3226;
+  --sw-accent: #8b5e2f;
+  --sw-border: #d8ccae;
+}
+
+.label {
+  text-align: center;
+  white-space: nowrap;
+}
+
+@keyframes popIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* 减动效：弹层瞬时出现，色块按下不缩 */
+  .popover,
+  .option {
+    animation: none;
+    transition: none;
+  }
+
+  .option:active {
+    transform: none;
+  }
+}

@@ -18,6 +18,12 @@ const zh = {
   langToggle: { label: 'EN', aria: '切换到英文', title: '中 / EN' },
   // 光效开关：标签只说它是什么，开 / 关由 aria-pressed 表达（标签再念一遍状态会重复）；悬停提示说明什么时候该关
   fxToggle: { aria: '光效', title: '卡顿时可以关掉' },
+  // 配色圆钮（大厅右上角，光效钮左边）：标签也是弹层与单选组的名字；三项按 lib/theme 的 THEMES 顺序
+  themeToggle: {
+    aria: '配色',
+    title: '配色：浅色 / 深色 / 护眼',
+    options: { light: '浅色', dark: '深色', sepia: '护眼' },
+  },
 
   zone: {
     title: { classic: '经典题库', grill: '复烤区', trivial: '9.0 Trivial', board: '标化题库' },
@@ -308,6 +314,11 @@ export type Strings = typeof zh;
 const en: Strings = {
   langToggle: { label: '中', aria: 'Switch to Chinese', title: '中 / EN' },
   fxToggle: { aria: 'Visual effects', title: 'Turn off if things feel laggy' },
+  themeToggle: {
+    aria: 'Color scheme',
+    title: 'Color scheme: Light / Dark / Sepia',
+    options: { light: 'Light', dark: 'Dark', sepia: 'Sepia' },
+  },
 
   zone: {
     title: {

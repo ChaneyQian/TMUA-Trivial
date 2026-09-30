@@ -351,6 +351,15 @@
   }
 }
 
+/* 窄屏：舞台右上角那簇三颗圆钮（配色、光效、中/英，占 136 × 40）压在面板顶边上。视口窄于约 372px 时
+   「返回 + 标题」这一行会伸到最左那颗底下（360 宽英文压上 8px）：这一档把这一行挪到圆钮底边之下。
+   断点与卡组标题让位的同一档（Deck.module.css 的 max-width: 439px），两处一起变 */
+@media (max-width: 439px) {
+  .head {
+    padding-top: 30px;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .back,
   .ghost {
