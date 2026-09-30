@@ -10,6 +10,7 @@
 import { useEffect, useRef, type CSSProperties } from 'react';
 import { useCardTilt } from '@/components/fx/useCardTilt';
 import BusySpinner from '@/components/setup/BusySpinner';
+import { playIntro } from '@/lib/intro';
 import { useLang } from '@/lib/LangContext';
 import examStyles from '../exam/Exam.module.css';
 import styles from './Deck.module.css';
@@ -432,7 +433,15 @@ export default function CardDeck({
           </span>
           {hint}
         </div>
-        <div className={styles.keys}>{t.deck.keys}</div>
+        <div className={styles.keys}>
+          {t.deck.keys}
+          <span aria-hidden="true"> · </span>
+          {/* 片头的重播入口（lib/intro）：链接的样子、按钮的语义（它不去别的页面），Tab 得到、Enter / 空格就播。
+              把自己交过去：片头关了焦点回到这里（Safari 点按钮不给焦点，不能靠 activeElement） */}
+          <button type="button" className={styles.introLink} onClick={(e) => playIntro(e.currentTarget)}>
+            {t.intro.watch}
+          </button>
+        </div>
       </div>
     </div>
   );

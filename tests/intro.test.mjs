@@ -16,6 +16,7 @@ import {
   shouldAutoplayIntro,
   takeIntroOpener,
 } from '../src/lib/intro.ts';
+import { cascade } from './helpers/css-rules.mjs';
 import { attrValue, balanced, code, effects, jsxChildren, jsxOpening, namedImports } from './helpers/source.mjs';
 
 // 大厅片头（用户 2026-09-30：「把片头放到站点首页，首次进站播一次可跳过，为教程」）。这一组盯：
@@ -471,6 +472,36 @@ test('the intro lives in the lobby only, and the badge and notice wait for it on
   assert.deepEqual(opened, [], '片头在播：公告不弹');
   pending();
   assert.deepEqual(opened, [true], '片头关了：照原逻辑弹出');
+});
+
+test('the deck hint row ends with a keyboard-operable watch-intro link that replays it', () => {
+  const deck = code(fs.readFileSync('src/components/deck/CardDeck.tsx', 'utf8'));
+  assert.ok(namedImports(deck, '@/lib/intro').has('playIntro'));
+  // 在提示行（「← → 切换功能区 · Enter 展开 · 也可左右滑动」那一行）里，排在那句提示之后
+  const keys = jsxOpening(deck, 'className={styles.keys}');
+  assert.ok(keys, '找不到提示行');
+  const inner = jsxChildren(deck, keys);
+  assert.ok(inner.trimStart().startsWith('{t.deck.keys}'), '提示原文在前');
+  const link = jsxOpening(inner, 'className={styles.introLink}');
+  assert.ok(link && link.name === 'button', '是真按钮（键盘可达、Enter / 空格可按），不是 <a> 或 <span>');
+  assert.ok(inner.indexOf('{t.deck.keys}') < link.start, '链接在提示之后');
+  assert.equal(attrValue(link.attrs.get('type')), 'button');
+  assert.equal(link.attrs.has('tabIndex'), false, '不许被挪出 Tab 序');
+  assert.equal(jsxChildren(inner, link).trim(), '{t.intro.watch}');
+  assert.equal(DICT.zh.intro.watch, '看片头');
+  assert.equal(DICT.en.intro.watch, 'Watch intro');
+  // 按语义判：点下去就是 playIntro，并把按钮自己交过去（关了焦点回来）
+  const plays = [];
+  const onClick = new Function('playIntro', `return (${attrValue(link.attrs.get('onClick'))});`)((from) => plays.push(from));
+  const button = { name: 'watch' };
+  onClick({ currentTarget: button });
+  assert.deepEqual(plays, [button]);
+
+  // 样式：看得出是链接（下划线），不折行
+  const css = fs.readFileSync('src/components/deck/Deck.module.css', 'utf8');
+  const rule = cascade(css, '.introLink');
+  assert.equal(rule['text-decoration'], 'underline');
+  assert.equal(rule['white-space'], 'nowrap');
 });
 
 // ---------------------------------------------------------------------------

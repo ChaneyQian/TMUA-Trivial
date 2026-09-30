@@ -735,6 +735,25 @@
   font-size: 0.72rem;
 }
 
+/* 「看片头」：提示行末尾的链接式按钮。字色取正文色（比周围的次要文字深一档，也比强调色在浅底上
+   对比更足），下划线用强调色表明它能点；不折行，免得「看片头」被拆在两行 */
+.introLink {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--text);
+  font: inherit;
+  text-decoration: underline;
+  text-decoration-color: var(--accent);
+  text-underline-offset: 2px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.introLink:hover {
+  color: var(--accent);
+}
+
 .dots {
   display: flex;
   gap: 0.35rem;
