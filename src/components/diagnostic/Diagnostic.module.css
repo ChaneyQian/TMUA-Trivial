@@ -168,14 +168,21 @@
 
 /* ============ 运行时补丁 ============ */
 
-.oneWay {
-  color: var(--text-muted);
+/* 副栏上的两条提示（规则一句、滚存秒数）。CBT 副栏是固定色 #647fb8，不随主题变——
+   原先用主题 token（--text-muted / --accent）写字，三套主题实测只有 1.10–1.52 : 1，几乎看不见；
+   就算写白字也只有 3.99 : 1，小字不够 4.5。所以垫一块与主顶栏同色的 #3c5c9e、写白字（和顶栏标题
+   同一套）：WCAG 2 相对亮度 L(#3c5c9e) = 0.1108，对比度 (1 + 0.05) / (0.1108 + 0.05) = 6.53 : 1。
+   全是固定色，三套主题同一个数。只加左右内边距：行高不变，副栏不长高 */
+.oneWay,
+.bank {
+  padding: 0 0.5rem;
+  border-radius: 999px;
+  background: #3c5c9e;
+  color: #fff;
   font-size: 0.78rem;
 }
 
 .bank {
-  color: var(--accent);
-  font-size: 0.78rem;
   font-variant-numeric: tabular-nums;
 }
 
