@@ -1,0 +1,54 @@
+/* 题数上滑替换（RollingText）：新旧两份叠在同一格里，旧的上移淡出、新的自下淡入，约 220ms。
+   只动 transform / opacity；格子裁掉滑出去的那截，不压到上面那行库名。
+   操作反馈：光效关时照播；减动效下瞬时换（旧的直接不画）。 */
+
+.roll {
+  display: inline-grid;
+  overflow: hidden;
+  vertical-align: bottom;
+}
+
+.roll > * {
+  grid-area: 1 / 1;
+}
+
+.in {
+  animation: rollIn 220ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+.out {
+  animation: rollOut 220ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+@keyframes rollIn {
+  from {
+    opacity: 0;
+    transform: translateY(70%);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes rollOut {
+  from {
+    opacity: 1;
+    transform: none;
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-70%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .in,
+  .out {
+    animation: none;
+  }
+
+  .out {
+    display: none;
+  }
+}

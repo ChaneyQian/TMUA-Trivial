@@ -5,7 +5,8 @@ import test from 'node:test';
 // 大厅的通用手感（Design §22 P8-A4）：键盘焦点环、按压态、开始按钮（扫光 / 下沉 / 抽题转圈防连点）、
 // 题库按钮题数的上滑替换。答题页与 Diagnostic 不受影响。
 import { cascade, declarations, parseRules, parseTransition, stripComments, subject, timeMs } from './helpers/css-rules.mjs';
-import { attrValue, calls, code, fnBody, fnParams, jsxChildren, jsxOpening, namedFn } from './helpers/source.mjs';
+import { segmentedGroups } from './helpers/segmented-groups.mjs';
+import { attrValue, calls, code, effects, fnBody, fnParams, jsxChildren, jsxOpening, namedFn } from './helpers/source.mjs';
 
 const EXAM = 'src/components/exam/ExamApp.tsx';
 const EXAM_CSS = 'src/components/exam/Exam.module.css';
@@ -282,4 +283,75 @@ test('the start buttons sweep a slanted light across once on hover, as pure deco
   assert.ok(code(fs.readFileSync('src/components/grill/GrillPanel.tsx', 'utf8')).includes('className={examStyles.startBtn}'));
   assert.doesNotMatch(code(fs.readFileSync(EXAM, 'utf8')), /styles\.startBtn\b/);
   assert.doesNotMatch(code(fs.readFileSync(RUNNER, 'utf8')), /Styles\.startBtn\b|styles\.startBtn\b/);
+});
+
+// ---------------------------------------------------------------------------
+// 题库按钮题数的上滑替换（P8-A4 第 8 条）
+
+const { ROLL_MS, rollTo, settleRoll, startRoll } = await import('../src/lib/rolling.ts');
+
+test('a changed count rolls the old number out and the new one in, never on the first frame', () => {
+  // 刚挂上：只有一份、gen 0（不播）
+  const first = startRoll('359 题');
+  assert.deepEqual(first, { text: '359 题', prev: null, gen: 0 });
+  // 没变：原样返回同一个对象（渲染期调用不会来回重渲染）
+  assert.equal(rollTo(first, '359 题'), first);
+  // 变了：新的进场、旧的退场，gen + 1（动画元素的 key 跟着换新，从头播）
+  const second = rollTo(first, '41 题');
+  assert.deepEqual(second, { text: '41 题', prev: '359 题', gen: 1 });
+  // 一轮还没播完又变：退场的是眼前那份，gen 再 + 1
+  const third = rollTo(second, '0 题');
+  assert.deepEqual(third, { text: '0 题', prev: '41 题', gen: 2 });
+  // 上一轮的收尾迟到了（gen 对不上）：别动，让新的那轮自己收尾
+  assert.equal(settleRoll(third, 1), third);
+  // 这一轮播完：摘掉退场的那份，显示的文字与 gen 不变
+  assert.deepEqual(settleRoll(third, 2), { text: '0 题', prev: null, gen: 2 });
+  const settled = settleRoll(third, 2);
+  assert.equal(settleRoll(settled, 2), settled, '已经收过尾的原样返回');
+
+  // 组件：渲染期按 rollTo 换档；到点（ROLL_MS 之后）按 gen 收尾；退场那份不念；首帧不挂动画；key 随 gen 换新
+  const roll = code(fs.readFileSync('src/components/setup/RollingText.tsx', 'utf8'));
+  assert.match(roll, /useState\(\(\) => startRoll\(text\)\)/);
+  assert.match(roll, /const next = rollTo\(roll, text\); if \(next !== roll\) setRoll\(next\);/);
+  const [settle] = effects(roll);
+  assert.deepEqual([...settle.deps].sort(), ['gen', 'prev']);
+  assert.match(settle.body, /setTimeout\(\(\) => setRoll\(\((\w+)\) => settleRoll\(\1, gen\)\), ROLL_MS(?: \+ \d+)?\)/);
+  assert.match(settle.body, /return \(\) => window\.clearTimeout\(timer\);/, '卸载 / 又换一轮时撤掉计时器');
+  const out = jsxOpening(roll, 'className={styles.out}');
+  assert.equal(attrValue(out.attrs.get('aria-hidden')), 'true', '退场那份读屏不念');
+  assert.equal(attrValue(out.attrs.get('key')), '`out-${gen}`');
+  const incoming = jsxOpening(roll, 'className={gen > 0 ? styles.in : undefined}');
+  assert.ok(incoming, '首帧（gen 0）不挂进场动画');
+  assert.equal(attrValue(incoming.attrs.get('key')), '`in-${gen}`');
+
+  // 挂在题库按钮的「N 题」上
+  const panel = code(fs.readFileSync('src/components/setup/SetupPanel.tsx', 'utf8'));
+  const bank = segmentedGroups(panel).find((group) => group.value === 'db');
+  assert.match(bank.options, /hint: \(?<RollingText text=\{/);
+
+  // 样式：220ms 上下、只动 transform / opacity；旧的往上走、新的从下来；格子裁掉滑出去的部分；
+  // 减动效下瞬时（旧的直接不画）；光效开关不管它（操作反馈）
+  const sheet = css('src/components/setup/RollingText.module.css');
+  const rules = parseRules(fs.readFileSync('src/components/setup/RollingText.module.css', 'utf8'));
+  assert.equal(cascade(sheet, '.roll')['overflow-x'], 'hidden');
+  for (const [cls, dir] of [
+    ['in', 1],
+    ['out', -1],
+  ]) {
+    const animation = cascade(sheet, `.${cls}`).animation;
+    const [name, duration] = animation.split(/\s+/);
+    assert.ok(Math.abs(timeMs(duration) - ROLL_MS) <= 40, `.${cls} ${duration} 与 ROLL_MS 对不上`);
+    assert.doesNotMatch(animation, /\binfinite\b/);
+    const frames = rules.filter((rule) => rule.at === `@keyframes ${name}`);
+    for (const frame of frames) {
+      for (const [prop] of declarations(frame.body)) assert.ok(['transform', 'opacity'].includes(prop), `${name} 动了 ${prop}`);
+    }
+    const moving = frames.map((frame) => Number(/translateY\((-?[\d.]+)%\)/.exec(frame.body)?.[1])).find((v) => Number.isFinite(v));
+    assert.equal(Math.sign(moving), dir, `.${cls} 的方向不对（旧的往上、新的从下）`);
+  }
+  const reduced = { media: '(prefers-reduced-motion: reduce)' };
+  assert.equal(cascade(sheet, '.in', reduced).animation, 'none');
+  assert.equal(cascade(sheet, '.out', reduced).animation, 'none');
+  assert.equal(cascade(sheet, '.out', reduced).display, 'none');
+  assert.ok(!rules.some((rule) => /data-fx/.test(rule.selector)), '题数滚动是操作反馈，光效关时照播');
 });

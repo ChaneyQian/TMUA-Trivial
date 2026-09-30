@@ -13,6 +13,7 @@ import { useLang } from '@/lib/LangContext';
 import type { LibraryMode, LogicCoverage, LogicFilter, PickMode } from '@/lib/records';
 import styles from '../exam/Exam.module.css';
 import BusySpinner from './BusySpinner';
+import RollingText from './RollingText';
 import SegmentedGroup from './SegmentedGroup';
 import panelStyles from './SetupPanel.module.css';
 
@@ -98,7 +99,8 @@ export default function SetupPanel({
         {t.setup.fieldBank}
       </div>
       {/* 当前区里一道题都抽不到的库（比如「仅逻辑题」把它清空了）置灰、方向键跳过它，
-          但不从这排里消失——消失了就找不到「勾回来能救它」这条路 */}
+          但不从这排里消失——消失了就找不到「勾回来能救它」这条路。
+          按钮下的「N 题」换数时上滑替换一次（切逻辑推理档、换区都会让它变） */}
       <SegmentedGroup
         labelledBy={labelId('bank')}
         value={db}
@@ -106,10 +108,15 @@ export default function SetupPanel({
         options={bankChoices.map((d) => ({
           value: d,
           label: dbName(d),
-          hint:
-            d === 'ALL'
-              ? t.setup.questions(Object.values(poolCounts).reduce((a, b) => a + b, 0))
-              : t.setup.questions(poolCounts[d] || 0),
+          hint: (
+            <RollingText
+              text={
+                d === 'ALL'
+                  ? t.setup.questions(Object.values(poolCounts).reduce((a, b) => a + b, 0))
+                  : t.setup.questions(poolCounts[d] || 0)
+              }
+            />
+          ),
           disabled: d !== 'ALL' && poolCounts[d] === 0,
         }))}
       />
