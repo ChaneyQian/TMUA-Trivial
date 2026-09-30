@@ -46,6 +46,12 @@ export const BADGE_SEEN_KEY = 'mcq-test:badge-seen:v1';
 export const NOTICE_KEY = 'mcq-test:notice:v1';
 
 /**
+ * 大厅片头是否已经看过（跳过、播完、加载失败都算）。有值就不再自动播；
+ * 减动效 / 省流量只是不自动播，不写它（见 lib/intro.ts）
+ */
+export const INTRO_SEEN_KEY = 'mcq-test:intro-seen:v1';
+
+/**
  * 逻辑推理题开关。三档（2026-09-16 起）：'all' / 'only' / 'exclude'，缺省即 'all'。
  * 两态时代存的是 '1' / '0'，读取端就地映射（'1' → all、'0' → exclude），
  * 所以这里不另开 v2：存量用户的选择要原样接上。

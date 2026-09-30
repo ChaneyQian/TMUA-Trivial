@@ -8,6 +8,7 @@
 // 落盘写在收起的 handler 里而不是 effect 里，免得首帧默认值把已读盖掉。
 
 import { useEffect, useState } from 'react';
+import { afterIntro } from '@/lib/intro';
 import { useLang } from '@/lib/LangContext';
 import { NOTICE_KEY } from '@/lib/storage';
 import styles from './Notice.module.css';
@@ -19,12 +20,15 @@ export default function NoticeBoard() {
   // 首帧一律收起：既避免水合不匹配，也让入场动画从「药丸已在」的世界里弹出来
   const [open, setOpen] = useState(false);
 
+  // 首次进站的片头在播时先等它关（lib/intro 的 afterIntro），关了再按原逻辑弹；片头不自动播时立刻照旧
   useEffect(() => {
-    try {
-      if (localStorage.getItem(NOTICE_KEY) !== NOTICE_ID) setOpen(true);
-    } catch {
-      /* 无痕模式拿不到 localStorage：每次都弹，宁多勿漏 */
-    }
+    return afterIntro(() => {
+      try {
+        if (localStorage.getItem(NOTICE_KEY) !== NOTICE_ID) setOpen(true);
+      } catch {
+        /* 无痕模式拿不到 localStorage：每次都弹，宁多勿漏 */
+      }
+    });
   }, []);
 
   const dismiss = () => {

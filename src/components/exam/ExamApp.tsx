@@ -15,6 +15,7 @@ import DiagnosticIntro from '@/components/diagnostic/DiagnosticIntro';
 import DiagnosticRunner from '@/components/diagnostic/DiagnosticRunner';
 import DiagnosticResult from '@/components/diagnostic/DiagnosticResult';
 import GrillPanel from '@/components/grill/GrillPanel';
+import IntroOverlay from '@/components/intro/IntroOverlay';
 import NoticeBoard from '@/components/notice/NoticeBoard';
 import SetupPanel, { type Db, type Mode } from '@/components/setup/SetupPanel';
 import { holdOverlay } from '@/lib/overlay';
@@ -1181,6 +1182,8 @@ export default function ExamApp() {
           <LangToggle />
           {/* 公告只在 setup 相挂载：考试进行中不该有任何浮层打扰 */}
           <NoticeBoard />
+          {/* 片头（首次进站自动播一次，卡组底下可重播）：同样只在大厅。首登的工牌与公告排在它后面（lib/intro） */}
+          <IntroOverlay />
 
           {deckLive && (
             <CardDeck

@@ -1,0 +1,118 @@
+/* 大厅片头（IntroOverlay）：全屏遮罩里居中一块 16:9 的画框。
+   画框按视口等比缩放、不裁切：宽取「视口宽 − 两边留白」与「(视口高 − 上下留白) × 16/9」里较小的那个，
+   四周露出的是遮罩的深色（等于黑边）；视频本身 object-fit: contain，再保一道不裁。
+   动效只有两处、都只动 opacity / transform：出现时淡入（画框轻轻放大到位），关的时候整层淡出。
+   它们是开关片头的过渡、不是装饰，光效开关不管；减动效下一律瞬时（文末的降级块） */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  /* 盖过公告（40）、小助手（60）、工牌浮层（900）；低于 9.0 解锁过渡层（1000，更稀有、更该压在最上面） */
+  z-index: 950;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgb(6 8 14 / 94%);
+  animation: introIn 240ms ease-out;
+  transition: opacity 360ms ease;
+}
+
+/* 播完 / 跳过：整层淡出（FADE_MS = 360，组件里等它走完才真正关） */
+.leaving {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* 上下各留 56px：右上角的「跳过」不压在画面上 */
+.frame {
+  --frame-w: min(100vw - 32px, (100vh - 112px) * 16 / 9, 1280px);
+  width: var(--frame-w);
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border-radius: 10px;
+  /* 海报图到位之前垫的底色：片头首尾都是这种浅灰底 */
+  background: #f3f4f6;
+  box-shadow: 0 18px 60px rgb(0 0 0 / 45%);
+  animation: frameIn 320ms cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+/* 手机地址栏伸缩时 100vh 偏大：认 dvh 的浏览器按可见高度算 */
+@supports (height: 100dvh) {
+  .frame {
+    --frame-w: min(100vw - 32px, (100dvh - 112px) * 16 / 9, 1280px);
+  }
+}
+
+.video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: transparent;
+}
+
+.skip {
+  position: absolute;
+  top: max(14px, env(safe-area-inset-top));
+  right: max(14px, env(safe-area-inset-right));
+  min-width: 64px;
+  min-height: 36px;
+  padding: 0 16px;
+  border: 1px solid rgb(255 255 255 / 35%);
+  border-radius: 999px;
+  background: rgb(255 255 255 / 12%);
+  color: #fff;
+  font-family: var(--font-ui);
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: transform 140ms cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+.skip:hover {
+  background: rgb(255 255 255 / 22%);
+}
+
+.skip:active {
+  transform: scale(0.96);
+}
+
+.skip:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 3px;
+}
+
+@keyframes introIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes frameIn {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* 减动效（只可能是手动点「看片头」进来的）：出现、淡出、按压都瞬时 */
+  .overlay,
+  .frame,
+  .skip {
+    animation: none;
+    transition: none;
+  }
+
+  .skip:active {
+    transform: none;
+  }
+}

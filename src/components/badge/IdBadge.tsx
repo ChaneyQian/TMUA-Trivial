@@ -9,6 +9,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useCardTilt } from '@/components/fx/useCardTilt';
+import { afterIntro } from '@/lib/intro';
 import { holdOverlay } from '@/lib/overlay';
 import { BADGE_SEEN_KEY as SEEN_KEY } from '@/lib/storage';
 import { badgeStops, onBadgeKey } from './focusTrap';
@@ -135,18 +136,23 @@ export default function IdBadge() {
 
   useEffect(() => () => clearTimers(), [clearTimers]);
 
-  // 首登才主动落下；之后默认收着，靠丝带召回
-  useEffect(() => {
-    let seen = true;
-    try {
-      seen = !!localStorage.getItem(SEEN_KEY);
-      if (!seen) localStorage.setItem(SEEN_KEY, '1');
-    } catch {}
-    if (seen) return;
-    autoDropRef.current = true;
-    setStage('dropping');
-    after(DROP_MS, () => setStage('resting'));
-  }, [after]);
+  // 首登才主动落下；之后默认收着，靠丝带召回。
+  // 首次进站的片头在播时先等它关（lib/intro 的 afterIntro）：两层整屏遮罩不叠在一起；片头不自动播时立刻照旧
+  useEffect(
+    () =>
+      afterIntro(() => {
+        let seen = true;
+        try {
+          seen = !!localStorage.getItem(SEEN_KEY);
+          if (!seen) localStorage.setItem(SEEN_KEY, '1');
+        } catch {}
+        if (seen) return;
+        autoDropRef.current = true;
+        setStage('dropping');
+        after(DROP_MS, () => setStage('resting'));
+      }),
+    [after],
+  );
 
   const show = useCallback(() => {
     clearTimers();

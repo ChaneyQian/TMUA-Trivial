@@ -111,6 +111,13 @@ const zh = {
     note: '主观上个人认为适合 7.5–9.0 选手的 Mock 卷内容。',
   },
 
+  // 大厅片头（components/intro）：对话框的读屏名、右上角的跳过、卡组底下提示行末尾的重播入口
+  intro: {
+    aria: '片头教程',
+    skip: '跳过',
+    watch: '看片头',
+  },
+
   records: {
     field: '做题记录（可选）',
     seen: '已做',
@@ -388,6 +395,12 @@ const en: Strings = {
     itemMat: 'MAT 2024–2025 recalled MCQs',
     itemTmuaCn: 'TMUA CN 2024–2025 recalled papers',
     note: 'Subjectively, the Mock content here suits 7.5–9.0 scorers — a personal take.',
+  },
+
+  intro: {
+    aria: 'Intro tutorial',
+    skip: 'Skip',
+    watch: 'Watch intro',
   },
 
   records: {
