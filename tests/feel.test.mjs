@@ -292,27 +292,32 @@ const { ROLL_MS, rollTo, settleRoll, startRoll } = await import('../src/lib/roll
 
 test('a changed count rolls the old number out and the new one in, never on the first frame', () => {
   // 刚挂上：只有一份、gen 0（不播）
-  const first = startRoll('359 题');
-  assert.deepEqual(first, { text: '359 题', prev: null, gen: 0 });
-  // 没变：原样返回同一个对象（渲染期调用不会来回重渲染）
-  assert.equal(rollTo(first, '359 题'), first);
-  // 变了：新的进场、旧的退场，gen + 1（动画元素的 key 跟着换新，从头播）
-  const second = rollTo(first, '41 题');
-  assert.deepEqual(second, { text: '41 题', prev: '359 题', gen: 1 });
+  const first = startRoll('359 题', 359);
+  assert.deepEqual(first, { key: 359, text: '359 题', prev: null, gen: 0 });
+  // 什么都没变：原样返回同一个对象（渲染期调用不会来回重渲染）
+  assert.equal(rollTo(first, '359 题', 359), first);
+  // 数没变、只是换了语言：就地换字，不播（gen 不动、没有退场的那份）
+  const english = rollTo(first, '359 Qs', 359);
+  assert.deepEqual(english, { key: 359, text: '359 Qs', prev: null, gen: 0 });
+  // 数变了：新的进场、旧的退场，gen + 1（动画元素的 key 跟着换新，从头播）
+  const second = rollTo(english, '41 Qs', 41);
+  assert.deepEqual(second, { key: 41, text: '41 Qs', prev: '359 Qs', gen: 1 });
   // 一轮还没播完又变：退场的是眼前那份，gen 再 + 1
-  const third = rollTo(second, '0 题');
-  assert.deepEqual(third, { text: '0 题', prev: '41 题', gen: 2 });
+  const third = rollTo(second, '0 Qs', 0);
+  assert.deepEqual(third, { key: 0, text: '0 Qs', prev: '41 Qs', gen: 2 });
   // 上一轮的收尾迟到了（gen 对不上）：别动，让新的那轮自己收尾
   assert.equal(settleRoll(third, 1), third);
   // 这一轮播完：摘掉退场的那份，显示的文字与 gen 不变
-  assert.deepEqual(settleRoll(third, 2), { text: '0 题', prev: null, gen: 2 });
+  assert.deepEqual(settleRoll(third, 2), { key: 0, text: '0 Qs', prev: null, gen: 2 });
   const settled = settleRoll(third, 2);
   assert.equal(settleRoll(settled, 2), settled, '已经收过尾的原样返回');
+  // 不给 key 时就按文字认
+  assert.equal(rollTo(startRoll('a'), 'b').gen, 1);
 
-  // 组件：渲染期按 rollTo 换档；到点（ROLL_MS 之后）按 gen 收尾；退场那份不念；首帧不挂动画；key 随 gen 换新
+  // 组件：渲染期按 rollTo（按数）换档；到点（ROLL_MS 之后）按 gen 收尾；退场那份不念；首帧不挂动画；key 随 gen 换新
   const roll = code(fs.readFileSync('src/components/setup/RollingText.tsx', 'utf8'));
-  assert.match(roll, /useState\(\(\) => startRoll\(text\)\)/);
-  assert.match(roll, /const next = rollTo\(roll, text\); if \(next !== roll\) setRoll\(next\);/);
+  assert.match(roll, /useState\(\(\) => startRoll\(text, value\)\)/);
+  assert.match(roll, /const next = rollTo\(roll, text, value\); if \(next !== roll\) setRoll\(next\);/);
   const [settle] = effects(roll);
   assert.deepEqual([...settle.deps].sort(), ['gen', 'prev']);
   assert.match(settle.body, /setTimeout\(\(\) => setRoll\(\((\w+)\) => settleRoll\(\1, gen\)\), ROLL_MS(?: \+ \d+)?\)/);
@@ -324,10 +329,13 @@ test('a changed count rolls the old number out and the new one in, never on the 
   assert.ok(incoming, '首帧（gen 0）不挂进场动画');
   assert.equal(attrValue(incoming.attrs.get('key')), '`in-${gen}`');
 
-  // 挂在题库按钮的「N 题」上
+  // 挂在题库按钮的「N 题」上：值就是那个题数，文字是同一个数套字典
   const panel = code(fs.readFileSync('src/components/setup/SetupPanel.tsx', 'utf8'));
   const bank = segmentedGroups(panel).find((group) => group.value === 'db');
-  assert.match(bank.options, /hint: \(?<RollingText text=\{/);
+  const hint = jsxOpening(bank.options, '<RollingText');
+  assert.ok(hint, '题库按钮的 hint 得是 RollingText');
+  const count = attrValue(hint.attrs.get('value'));
+  assert.equal(attrValue(hint.attrs.get('text')), `t.setup.questions(${count})`, '文字与值是同一个数');
 
   // 样式：220ms 上下、只动 transform / opacity；旧的往上走、新的从下来；格子裁掉滑出去的部分；
   // 减动效下瞬时（旧的直接不画）；光效开关不管它（操作反馈）

@@ -105,20 +105,15 @@ export default function SetupPanel({
         labelledBy={labelId('bank')}
         value={db}
         onChange={setDb}
-        options={bankChoices.map((d) => ({
-          value: d,
-          label: dbName(d),
-          hint: (
-            <RollingText
-              text={
-                d === 'ALL'
-                  ? t.setup.questions(Object.values(poolCounts).reduce((a, b) => a + b, 0))
-                  : t.setup.questions(poolCounts[d] || 0)
-              }
-            />
-          ),
-          disabled: d !== 'ALL' && poolCounts[d] === 0,
-        }))}
+        options={bankChoices.map((d) => {
+          const n = d === 'ALL' ? Object.values(poolCounts).reduce((a, b) => a + b, 0) : poolCounts[d] || 0;
+          return {
+            value: d,
+            label: dbName(d),
+            hint: <RollingText value={n} text={t.setup.questions(n)} />,
+            disabled: d !== 'ALL' && poolCounts[d] === 0,
+          };
+        })}
       />
       {/* 互斥之后同名库在两个区指的不是同一批题：9.0 的 TMUA 是回忆题、
           MAT 是老卷与回忆题——按钮上只有题数，而题数恰恰是用户最不会

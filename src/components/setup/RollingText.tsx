@@ -1,6 +1,7 @@
 'use client';
 
 // 题库按钮下的「N 题」：数变了就一次上滑替换——旧的上移淡出、新的自下淡入（约 220ms，Design §22 P8-A4）。
+// 只认数（value）：切语言时「359 题」变「359 Qs」，数没变，就地换字、不滑。
 // 首帧（刚挂上）不播；减动效下瞬时换（样式表）；它是操作反馈，光效关时照播。
 // 退场的那份只活一轮动画，读屏不念（aria-hidden）：按钮的名字始终是新的那个数。
 // 状态怎么推演见 lib/rolling。
@@ -9,10 +10,10 @@ import { useEffect, useState } from 'react';
 import { ROLL_MS, rollTo, settleRoll, startRoll } from '@/lib/rolling';
 import styles from './RollingText.module.css';
 
-export default function RollingText({ text }: { text: string }) {
-  const [roll, setRoll] = useState(() => startRoll(text));
-  // 文字变了就在渲染期换档（React「随 props 调整 state」的写法）：同一帧里新旧两份一起出场，不闪一帧旧数
-  const next = rollTo(roll, text);
+export default function RollingText({ text, value }: { text: string; value: number }) {
+  const [roll, setRoll] = useState(() => startRoll(text, value));
+  // 数变了就在渲染期换档（React「随 props 调整 state」的写法）：同一帧里新旧两份一起出场，不闪一帧旧数
+  const next = rollTo(roll, text, value);
   if (next !== roll) setRoll(next);
 
   // 播完摘掉退场的那份。按时间摘、不等 animationend：减动效下动画不播，那个事件根本不会来
