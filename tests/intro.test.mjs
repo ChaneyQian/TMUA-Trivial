@@ -350,6 +350,62 @@ test('ended fades it out, skip and Esc fade it out, and a load failure closes it
   }
 });
 
+test('unmounting mid-fade still closes the intro, so a click-through to quick start cannot lose the seen flag', () => {
+  // 审查 2026-10-01：淡出的 360ms 里遮罩不接指针，点击穿到大厅上点了「快速开始」，大厅连同片头一起卸载，
+  // 淡出计时被撤、closeIntro 不跑——「已看」没写，回大厅 / 下次进站又重播。按语义判：把 finish 与卸载清理真跑一遍
+  const src = code(fs.readFileSync(OVERLAY, 'utf8'));
+  const finish = effects(src, 'useCallback').find(({ body }) => body.includes('doneRef.current = true'));
+  const unmount = effects(src).find(({ body, deps }) => deps?.length === 0 && body.includes('fadeTimerRef') && body.includes('closeIntro'));
+  assert.ok(finish && unmount, '找不到 finish 或卸载清理');
+  const runFinish = runnable(finish.body, ['fade', 'doneRef', 'videoRef', 'window', 'closeIntro', 'setLeaving', 'fadeTimerRef', 'FADE_MS']);
+  const mount = runnable(`return (${unmount.body});`, ['fadeTimerRef', 'window', 'closeIntro']);
+
+  const scene = () => {
+    const timers = new Map();
+    let next = 1;
+    const log = [];
+    const win = {
+      matchMedia: () => ({ matches: false }),
+      setTimeout: (fn) => (timers.set(next, fn), next++),
+      clearTimeout: (id) => (log.push(`clear:${id}`), timers.delete(id)),
+    };
+    const fadeTimerRef = { current: null };
+    const close = () => log.push('close');
+    const fire = () => {
+      for (const [id, fn] of [...timers]) {
+        timers.delete(id);
+        fn();
+      }
+    };
+    const doFinish = () => runFinish(true, { current: false }, { current: { pause() {} } }, win, close, () => {}, fadeTimerRef, 360);
+    const cleanup = () => mount(fadeTimerRef, win, close)();
+    return { log, fadeTimerRef, fire, doFinish, cleanup };
+  };
+
+  // 淡出途中卸载：当场关（且只关一次），撤掉的计时不会再补一次
+  let s = scene();
+  s.doFinish();
+  assert.deepEqual(s.log, [], '还在淡出，没关');
+  s.cleanup();
+  assert.deepEqual(s.log, ['clear:1', 'close'], '卸载时还有待关的计时：撤掉它、当场关');
+  s.fire();
+  assert.equal(s.log.filter((l) => l === 'close').length, 1);
+
+  // 淡出走完才卸载：计时里已经关过，卸载什么都不做
+  s = scene();
+  s.doFinish();
+  s.fire();
+  assert.deepEqual(s.log, ['close']);
+  assert.equal(s.fadeTimerRef.current, null, '计时跑完要清掉记号');
+  s.cleanup();
+  assert.deepEqual(s.log, ['close'], '不重复关');
+
+  // 没在淡出就卸载（比如 StrictMode 的模拟卸载）：什么都不做
+  s = scene();
+  s.cleanup();
+  assert.deepEqual(s.log, []);
+});
+
 test('it is a labelled modal dialog that takes focus, holds the overlay mark and locks the page behind', () => {
   const src = code(fs.readFileSync(OVERLAY, 'utf8'));
   const dialog = jsxOpening(src, 'role="dialog"');

@@ -68,12 +68,21 @@ function IntroDialog({ auto }: { auto: boolean }) {
       return;
     }
     setLeaving(true);
-    fadeTimerRef.current = window.setTimeout(closeIntro, FADE_MS);
+    fadeTimerRef.current = window.setTimeout(() => {
+      fadeTimerRef.current = null;
+      closeIntro();
+    }, FADE_MS);
   }, []);
 
+  // 淡出期间遮罩不接指针（.leaving 的 pointer-events: none），点击会穿到大厅上：这 360ms 里点「快速开始」
+  // 进了答题页，整个大厅连同片头一起卸载，淡出的计时被撤——片头就再也关不上，「已看」没写，
+  // 回大厅 / 下次进站又重播（审查 2026-10-01）。卸载时若还有待关的计时，当场关掉
   useEffect(
     () => () => {
-      if (fadeTimerRef.current !== null) window.clearTimeout(fadeTimerRef.current);
+      if (fadeTimerRef.current === null) return;
+      window.clearTimeout(fadeTimerRef.current);
+      fadeTimerRef.current = null;
+      closeIntro();
     },
     [],
   );
