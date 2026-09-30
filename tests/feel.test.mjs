@@ -4,7 +4,7 @@ import test from 'node:test';
 
 // 大厅的通用手感（Design §22 P8-A4）：键盘焦点环、按压态、开始按钮（扫光 / 下沉 / 抽题转圈防连点）、
 // 题库按钮题数的上滑替换。答题页与 Diagnostic 不受影响。
-import { declarations, parseRules, stripComments } from './helpers/css-rules.mjs';
+import { cascade, declarations, parseRules, parseTransition, stripComments, subject, timeMs } from './helpers/css-rules.mjs';
 import { code, jsxChildren, jsxOpening } from './helpers/source.mjs';
 
 const EXAM = 'src/components/exam/ExamApp.tsx';
@@ -83,4 +83,50 @@ test('keyboard focus gets one accent ring across the lobby, at zero specificity,
   }
   assert.equal(wraps, 2, '.wrap 只是设置页与成绩页的根');
   assert.doesNotMatch(runner, /styles\.wrap\b/);
+});
+
+/** 一个类的按压规则：顶格（不在媒体查询里）、主体是这个类、带 :active 的规则，声明合在一起 */
+function pressOf(cssText, cls) {
+  const out = {};
+  for (const rule of parseRules(cssText)) {
+    if (rule.at !== null) continue;
+    for (const selector of rule.selector.split(',')) {
+      if (subject(selector) === cls && /:active\b/.test(selector)) Object.assign(out, Object.fromEntries(declarations(rule.body)));
+    }
+  }
+  return out;
+}
+
+test('buttons in the setup, grill and progress panels press in to 0.97 and dim, over 80–120ms', () => {
+  const pressed = [
+    [EXAM_CSS, ['segBtn', 'startBtn', 'zoneBack', 'zoneTab']],
+    ['src/components/grill/Grill.module.css', ['ghost', 'retry']],
+    ['src/components/progress/Progress.module.css', ['back', 'ghost']],
+  ];
+  for (const [file, classes] of pressed) {
+    const sheet = css(file);
+    for (const cls of classes) {
+      const press = pressOf(sheet, cls);
+      assert.match(press.transform ?? '', /\bscale\(0\.97\)/, `${file} .${cls} 按下去要微缩到 0.97`);
+      const dim = Number(/brightness\(([\d.]+)\)/.exec(press.filter ?? '')?.[1]);
+      assert.ok(dim >= 0.88 && dim < 1, `${file} .${cls} 按下去要略压暗（brightness ${press.filter}）`);
+      // 只补间 transform，80–120ms；压暗是一瞬间的状态切换（filter 不进过渡）
+      const tween = parseTransition(cascade(sheet, `.${cls}`).transition ?? '');
+      const move = tween.find((t) => t.property === 'transform');
+      assert.ok(move, `${file} .${cls} 的按压要有 transform 过渡`);
+      const ms = timeMs(move.duration);
+      assert.ok(ms >= 80 && ms <= 120, `${file} .${cls} 的按压过渡 ${move.duration}，要在 80–120ms`);
+      assert.ok(!tween.some((t) => /filter/.test(t.property)), `${file} .${cls} 的 filter 不进过渡`);
+    }
+  }
+  // 开始按钮是「下沉」：除了微缩还往下落
+  assert.match(pressOf(css(EXAM_CSS), 'startBtn').transform, /translateY\((?:1|2)px\)/);
+
+  // 不作用于卡组的牌、命中层与工牌：那几层一条 :active 规则都没有（进度条那颗小钮原样保留它的 1px 下移）
+  const deck = css('src/components/deck/Deck.module.css');
+  for (const cls of ['card', 'tilt', 'face', 'hit', 'quickBtn', 'viewport']) {
+    assert.deepEqual(pressOf(deck, cls), {}, `卡组的 .${cls} 不该有按压态`);
+  }
+  const badge = parseRules(css('src/components/badge/IdBadge.module.css'));
+  assert.ok(!badge.some((rule) => /:active\b/.test(rule.selector)), '工牌不该有按压态');
 });

@@ -131,7 +131,7 @@
   font-family: var(--font-ui);
   font-size: 0.82rem;
   cursor: pointer;
-  transition: transform 160ms cubic-bezier(0.2, 0.7, 0.2, 1), opacity 160ms ease;
+  transition: transform 100ms cubic-bezier(0.2, 0.7, 0.2, 1), opacity 160ms ease;
 }
 
 .ghost:hover {
@@ -139,8 +139,10 @@
   color: var(--accent);
 }
 
-.ghost:active {
-  transform: translateY(1px);
+/* 按压态（P8-A4）：与配置面板同一套——微缩 0.97、略压暗，只补间 transform */
+.ghost:active:not(:disabled) {
+  transform: scale(0.97);
+  filter: brightness(0.94);
 }
 
 .ghost:disabled {
@@ -160,6 +162,12 @@
   font-size: 0.76rem;
   font-weight: 600;
   cursor: pointer;
+  transition: transform 100ms cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+.retry:active:not(:disabled) {
+  transform: scale(0.97);
+  filter: brightness(0.94);
 }
 
 .retry:disabled {
@@ -278,7 +286,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .ghost {
+  .ghost,
+  .retry {
     transition: none;
   }
 }
