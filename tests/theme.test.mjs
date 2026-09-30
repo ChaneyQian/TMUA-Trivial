@@ -395,3 +395,26 @@ test('narrow screens make room for three round buttons, not two', () => {
   const headTop = px(cascade(progressCss, '.head', { media: '(max-width: 439px)' })['padding-top']);
   assert.ok(panelTop + headTop >= clusterHeight, `进度面板的返回钮与标题离面板顶边 ${panelTop + headTop}px，没让到圆钮底下`);
 });
+
+test('the zone tabs keep clear of the round-button cluster at wide widths too (≥ 640)', () => {
+  // 审查 2026-10-01：≥ 640 时页签是一排 flex，原先右端没给圆钮簇留位，英文最后一个页签伸到配色钮底下（640 宽压 40px）。
+  // 几何：圆钮簇贴着舞台右缘、宽 W（最左那颗的右偏移 + 钮宽）、高 H；页签这一排的内容右缘 = 舞台宽 − 右内边距。
+  // 只要右内边距 ≥ W，不论舞台多宽（608–640px）、折几行、中英文，页签都在圆钮簇左边
+  const examCss = fs.readFileSync('src/components/exam/Exam.module.css', 'utf8');
+  const lang = cascade(fs.readFileSync('src/components/LangToggle.module.css', 'utf8'), '.toggle');
+  const W = px(cascade(fs.readFileSync(TOGGLE_CSS, 'utf8'), '.anchor').right) + px(lang.width);
+  assert.equal(W, 136, '圆钮簇的宽度变了，核一下窄屏与宽屏两处让位');
+
+  const base = cascade(examCss, '.zoneTabs');
+  assert.equal(base.display, 'flex', '宽屏是一排 flex：右内边距对每一行都生效（不像浮动只管第一行）');
+  assert.equal(base['flex-wrap'], 'wrap');
+  assert.equal(base['padding-right'], undefined, '顶格规则不该另写右内边距（会和窄屏的浮动占位叠加）');
+  const wide = cascade(examCss, '.zoneTabs', { media: '(min-width: 640px)' });
+  const pr = px(wide['padding-right']);
+  for (const stage of [608, 620, 640]) {
+    const contentRight = stage - pr;
+    assert.ok(contentRight <= stage - W, `舞台 ${stage}px：页签右缘 ${contentRight} 伸进了圆钮簇（左缘 ${stage - W}）`);
+  }
+  // 窄屏那一档不吃这条右内边距（那里靠浮动占位只让第一行）
+  assert.equal(cascade(examCss, '.zoneTabs', { media: '(max-width: 639px)' })['padding-right'], undefined);
+});
