@@ -8,7 +8,8 @@ import test from 'node:test';
 import { DICT } from '../src/lib/i18n.ts';
 import { nextSegIndex } from '../src/lib/segmented.ts';
 import { segmentedGroups } from './helpers/segmented-groups.mjs';
-import { attrValue, code, fnBody, fnParams, jsxChildren, jsxOpening, namedFn } from './helpers/source.mjs';
+import { cascade, parseRules, parseTransition, stripComments, timeMs } from './helpers/css-rules.mjs';
+import { attrValue, code, effects, fnBody, fnParams, jsxChildren, jsxOpening, namedFn } from './helpers/source.mjs';
 
 const GROUP = 'src/components/setup/SegmentedGroup.tsx';
 const PANEL = 'src/components/setup/SetupPanel.tsx';
@@ -200,4 +201,112 @@ test('arrow keys move focus and selection together, and keys outside the contrac
   g = setup([true, true], -1);
   assert.equal(g.press(0, 'ArrowRight'), false);
   assert.deepEqual([g.focused, g.changed], [[], []]);
+});
+
+// ---------------------------------------------------------------------------
+// 滑动选中块（P8-A3 第 3 条）
+
+test('the sliding block is re-measured on selection, and re-placed on size, language and font changes', () => {
+  const group = read(GROUP);
+  // 两个挂点：组容器与指示块（指示块不念）
+  const root = jsxOpening(group, 'role="radiogroup"');
+  const rowRef = attrValue(root.attrs.get('ref'));
+  const bar = jsxOpening(group, 'styles.indicator');
+  assert.ok(bar && rowRef, '组容器与指示块都得挂 ref');
+  const barRef = attrValue(bar.attrs.get('ref'));
+  assert.equal(attrValue(bar.attrs.get('aria-hidden')), 'true', '指示块纯装饰，读屏不念');
+  // 摆放交给 lib/segmented 的 placeIndicator，量的是这两个节点与各项，结果记回「此刻停在哪」
+  assert.match(group, /const place = useCallback\(\(animate(?:: boolean)?\) =>/);
+  const [placeFn] = effects(group, 'useCallback');
+  assert.deepEqual(placeFn.deps, [], 'place 只读 ref，不随渲染重建');
+  assert.match(
+    placeFn.body,
+    new RegExp(String.raw`(\w+)\.current = placeIndicator\(\w+, \w+, itemRefs\.current, \w+\.current, \1\.current, animate\);`),
+  );
+  assert.match(placeFn.body, new RegExp(String.raw`\b${rowRef}\.current\b`));
+  assert.match(placeFn.body, new RegExp(String.raw`\b${barRef}\.current\b`));
+
+  // 选中项变了才滑：把那段 layout effect 原样跑起来，看它交给 place 的 animate
+  const [layout] = effects(group, 'useLayoutEffect');
+  assert.ok(layout.deps.includes('optionsKey') && layout.deps.includes('checked'), '选项或选中项变了都得重摆');
+  const runLayout = new Function('itemRefs', 'options', 'checkedRef', 'checked', 'placedRef', 'optionsKey', 'place', layout.body);
+  const placedRef = { current: null };
+  const calls = [];
+  const step = (key, checked) =>
+    runLayout({ current: [] }, [], { current: 0 }, checked, placedRef, key, (animate) => calls.push(animate));
+  step('a|b|c', 0); // 首帧
+  step('a|b|c', 2); // 同一组选项里换选中项
+  step('a|b|c', 2); // 没变（别的依赖触发的重跑）
+  step('x|b', 1); // 换区后选项变了
+  step('x|b', 0);
+  assert.deepEqual(calls, [false, true, false, false, true], '只有「同一组选项、选中项变了」才滑，其余一律就地摆');
+
+  // 尺寸会变的几种情况都就地重摆：ResizeObserver 盯着组容器与每一项，字体到位再摆一次，卸载时撤掉
+  const resize = effects(group).find((e) => e.body.includes('ResizeObserver'));
+  assert.ok(resize, '得有盯尺寸的 effect');
+  assert.ok(resize.deps.includes('optionsKey'), '选项变了要重新挂观察');
+  const runResize = new Function('rowRef', 'place', 'itemRefs', 'ResizeObserver', 'document', resize.body);
+  const observed = [];
+  let observerCallback = null;
+  let disconnected = 0;
+  class FakeObserver {
+    constructor(callback) {
+      observerCallback = callback;
+    }
+    observe(node) {
+      observed.push(node);
+    }
+    disconnect() {
+      disconnected++;
+    }
+  }
+  let fontsReady;
+  const fakeDocument = { fonts: { ready: { then: (fn) => (fontsReady = fn) } } };
+  const placed = [];
+  const rowNode = { id: 'row' };
+  const items = [{ id: 'a' }, { id: 'b' }];
+  const cleanup = runResize({ current: rowNode }, (animate) => placed.push(animate), { current: items }, FakeObserver, fakeDocument);
+  assert.deepEqual(observed, [rowNode, ...items], '组容器（宽度、换行）与每一项（文字、语言、字体）都盯着');
+  observerCallback();
+  fontsReady();
+  assert.deepEqual(placed, [false, false], '尺寸变了、字体到位：就地重摆，不滑');
+  cleanup();
+  assert.equal(disconnected, 1);
+  fontsReady();
+  assert.deepEqual(placed, [false, false], '卸载之后字体才到位：不再碰');
+});
+
+test('the block moves on the compositor bar one documented width tween, and only shows while one row holds the group', () => {
+  const css = stripComments(fs.readFileSync('src/components/setup/SegmentedGroup.module.css', 'utf8'));
+  // 组容器是指示块的定位参照，并把它 z-index: -1 的那一层圈在组里（不然沉到卡片底色下面去）
+  const group = cascade(css, '.group');
+  assert.equal(group.position, 'relative');
+  assert.equal(group.isolation, 'isolate');
+
+  const bar = cascade(css, '.indicator');
+  assert.equal(bar.position, 'absolute');
+  assert.equal(bar['z-index'], '-1');
+  assert.equal(bar['pointer-events'], 'none');
+  assert.match(bar.transform, /^translate\(var\(--seg-x(?:, [^)]*)?\), var\(--seg-y(?:, [^)]*)?\)\)$/);
+  assert.match(bar.width, /^var\(--seg-w\b/);
+  assert.match(bar.height, /^var\(--seg-h\b/);
+  // 只补间位移与宽度（宽度是需求允许、样式表里注明了理由的那一处例外），时长一致、不拖沓
+  const tween = parseTransition(bar.transition);
+  assert.deepEqual(tween.map((t) => t.property).sort(), ['transform', 'width']);
+  for (const t of tween) {
+    const ms = timeMs(t.duration);
+    assert.ok(ms >= 150 && ms <= 320, `${t.property} ${t.duration}`);
+  }
+  // 减动效：瞬移
+  assert.equal(cascade(css, '.indicator', { media: '(prefers-reduced-motion: reduce)' }).transition, 'none');
+
+  // 平时藏着；一行排得下、量好了（data-slide="on"）才显出来
+  assert.equal(bar.visibility, 'hidden');
+  assert.equal(cascade(css, ".group[data-slide='on'] > .indicator").visibility, 'visible');
+  // 没选中的项不自带底色（指示块从底下滑过透得出来）；选中项只在指示块在场时让出底色，
+  // 折成多行时它自己的 .segActive 底色照留
+  assert.equal(cascade(css, ".group .item:not([aria-checked='true'])").background, 'transparent');
+  assert.equal(cascade(css, ".group[data-slide='on'] .item[aria-checked='true']").background, 'transparent');
+  const override = parseRules(css).filter((rule) => /aria-checked='true'\]/.test(rule.selector) && !/:not\(/.test(rule.selector));
+  assert.ok(override.every((rule) => /\[data-slide='on'\]/.test(rule.selector)), '选中项让出底色只能发生在指示块在场时');
 });

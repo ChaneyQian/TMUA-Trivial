@@ -1,0 +1,65 @@
+/* 分段单选组（SegmentedGroup）。项的底子（字号、内边距、描边、圆角、悬停、禁用）沿用 Exam.module.css 的
+   .segRow / .segBtn / .segActive，这里只管两件事：组内的项不自带底色（指示块从底下滑过要透得出来），
+   和那块滑动的指示块。
+   选择器一律写成「组 + 项」两个类起步：两份样式表打包后的先后不由我们定，特异性 (0,2,0) 以上
+   才稳压 .segBtn / .segActive 的 (0,1,0)。 */
+
+.group {
+  position: relative;
+  /* 指示块 z-index: -1 只沉到组这一层：不隔离的话它会沉到配置卡的底色下面去，整块看不见 */
+  isolation: isolate;
+}
+
+/* 组内没选中的项不自带底色，只留描边：指示块滑过它们的时候透得出来。
+   两种状态下都这样（指示块在不在场），同一屏上折行的组与一行的组长得一样 */
+.group .item:not([aria-checked='true']) {
+  background: transparent;
+}
+
+/* 选中项：.segActive 那一身（底色 + 强调色描边与文字）原样留着——折成多行、或者还没量好的那一瞬，
+   它就是选中态本身。一行排得下、指示块在场（data-slide="on"）时，底色让给指示块：
+   换选中项的那一下，描边与文字立刻换过去，底色由指示块从旧的那项滑过来 */
+.group[data-slide='on'] .item[aria-checked='true'] {
+  background: transparent;
+}
+
+/* 滑动的指示块：就是选中项的底色（描边由选中项自己画在它上面）。
+   位移走 transform。宽度直接补间 width，不用 scaleX——两个理由：
+   ① 组里各项宽度差得多（「MAT」约 70px、「TMUA Mock」约 110px，差 57%），scaleX 会把 8px 圆角
+      横向压扁 / 拉长，滑到一半的块一眼看得出变形；
+   ② 这块是绝对定位的小元素（约 100 × 44），改 width 只重排它自己，不推动任何兄弟节点，
+      每帧的代价是一次小面积重绘。这是本组件里唯一一处不走 transform / opacity 的动效（需求 P8-A3 第 3 条允许）。
+   高度换语言时才会变，不补间 */
+.indicator {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: -1;
+  box-sizing: border-box;
+  width: var(--seg-w, 0px);
+  height: var(--seg-h, 0px);
+  border-radius: 8px;
+  background: var(--accent-light);
+  pointer-events: none;
+  visibility: hidden;
+  transform: translate(var(--seg-x, 0px), var(--seg-y, 0px));
+  transition:
+    transform 240ms cubic-bezier(0.2, 0.7, 0.2, 1),
+    width 240ms cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+.group[data-slide='on'] > .indicator {
+  visibility: visible;
+}
+
+/* 选中项正好被禁用（「仅逻辑题」把当前库清空了）：跟 .segBtn:disabled 的 0.55 一起淡 */
+.indicator[data-dim='true'] {
+  opacity: 0.55;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* 减动效：换选中项时指示块瞬移，不滑 */
+  .indicator {
+    transition: none;
+  }
+}

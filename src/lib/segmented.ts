@@ -1,7 +1,8 @@
-// 分段单选组（components/setup/SegmentedGroup）的纯逻辑，node --test 直接测，不碰 DOM、不认 React：
+// 分段单选组（components/setup/SegmentedGroup）的逻辑，node --test 直接测，不碰 document / window、不认 React：
 //   1. 键盘：当前索引 + 按键 + 禁用表 → 焦点（连同选中）该落到第几项
 //   2. roving tabindex：整组只留一个 Tab 位，落在哪一项
-//   3. 滑动指示块：各项的布局盒 + 选中项 → 指示块画在哪；折成多行、没有选中项时不画
+//   3. 滑动指示块：各项的布局盒 + 选中项 → 指示块画在哪；折成多行、没有选中项时不画；
+//      以及把它摆上去的那一步（placeIndicator，经由参数里的最小接口写元素）
 //
 // 键盘契约照 WAI-ARIA 的单选组：←/↑ 上一项、→/↓ 下一项，到头绕回另一头；选择跟随焦点。
 // 另加 Home / End（需求 §22 P8-A3）。禁用项一律跳过——它本来也拿不到焦点。
@@ -72,4 +73,75 @@ export function indicatorBox(items: readonly SegBox[], checked: number): SegBox 
 export function sameBox(a: SegBox | null, b: SegBox | null): boolean {
   if (!a || !b) return a === b;
   return a.x === b.x && a.y === b.y && a.w === b.w && a.h === b.h;
+}
+
+// ---- 指示块的摆放 ----
+// 下面这个函数要写 DOM，但只经由参数里这几样最小的接口（真 DOM 元素天然满足；测试拿普通对象代替），
+// 不碰 document / window，node --test 照样直接测。
+
+/** 组容器：只用到它的 dataset（data-slide="on" 表示指示块在场） */
+export interface SlideRow {
+  dataset: Record<string, string | undefined>;
+}
+
+/** 指示块：位置写成 CSS 变量；就地摆好时要临时关掉过渡，再读一次 offsetWidth 逼浏览器先把样式算掉 */
+export interface SlideBar {
+  dataset: Record<string, string | undefined>;
+  style: { transition: string; setProperty(name: string, value: string): void };
+  readonly offsetWidth: number;
+}
+
+/** 组里的一项：布局值（相对组容器）与是否禁用 */
+export interface SlideItem {
+  readonly offsetLeft: number;
+  readonly offsetTop: number;
+  readonly offsetWidth: number;
+  readonly offsetHeight: number;
+  readonly disabled?: boolean;
+}
+
+/**
+ * 量一遍各项、把指示块摆到选中项上；返回它此刻停在哪（null＝不画）。
+ * - 不画（没有选中项 / 折成多行 / 还没排版 / 有项还没挂上）：摘掉 row 的 data-slide，选中项自己带底色
+ * - 位置尺寸与 shown 相同：什么都不写——正在走的滑动不能被一次重复测量（ResizeObserver、字体到位）打断
+ * - animate 且指示块本来就在场：只写新位置，由样式表里的过渡滑过去
+ * - 其余（首帧、从不画变成画、改尺寸 / 换语言后的重摆）：就地摆好——先关过渡、写值、读一次 offsetWidth
+ *   让浏览器按「没有过渡」把新值算掉，再把过渡交还（交还之后的值没变，不会补一段滑动）
+ */
+export function placeIndicator(
+  row: SlideRow,
+  bar: SlideBar,
+  items: readonly (SlideItem | null | undefined)[],
+  checked: number,
+  shown: SegBox | null,
+  animate: boolean,
+): SegBox | null {
+  const boxes: SegBox[] = [];
+  for (const item of items) {
+    if (item) boxes.push({ x: item.offsetLeft, y: item.offsetTop, w: item.offsetWidth, h: item.offsetHeight });
+  }
+  const box = boxes.length === items.length ? indicatorBox(boxes, checked) : null;
+  if (!box) {
+    delete row.dataset.slide;
+    return null;
+  }
+  // 选中项正好被禁用（比如「仅逻辑题」把当前库清空了）：指示块跟着它一起淡
+  bar.dataset.dim = String(Boolean(items[checked]?.disabled));
+  if (shown && sameBox(shown, box)) return shown;
+  const write = () => {
+    bar.style.setProperty('--seg-x', `${box.x}px`);
+    bar.style.setProperty('--seg-y', `${box.y}px`);
+    bar.style.setProperty('--seg-w', `${box.w}px`);
+    bar.style.setProperty('--seg-h', `${box.h}px`);
+  };
+  if (animate && shown) {
+    write();
+    return box;
+  }
+  bar.style.transition = 'none';
+  write();
+  row.dataset.slide = 'on';
+  void bar.offsetWidth;
+  bar.style.transition = '';
+  return box;
 }

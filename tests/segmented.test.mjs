@@ -3,7 +3,7 @@ import test from 'node:test';
 
 // 分段单选组的纯逻辑（lib/segmented）：键盘、roving tabindex 的 Tab 位、滑动指示块的落点。
 // 组件（components/setup/SegmentedGroup）只把这三样接到 DOM 上，接线另见 setup.test。
-import { indicatorBox, nextSegIndex, sameBox, tabStopIndex } from '../src/lib/segmented.ts';
+import { indicatorBox, nextSegIndex, placeIndicator, sameBox, tabStopIndex } from '../src/lib/segmented.ts';
 
 const enabled = (n) => Array.from({ length: n }, () => false);
 
@@ -145,4 +145,108 @@ test('sameBox compares position and size, and treats two missing boxes as the sa
   assert.equal(sameBox(null, null), true);
   assert.equal(sameBox(a, null), false);
   assert.equal(sameBox(null, a), false);
+});
+
+// ---- 指示块的摆放（placeIndicator）：拿普通对象代替 DOM，记下它写了什么、按什么顺序写 ----
+
+const item = (x, y, w, h, disabled = false) => ({ offsetLeft: x, offsetTop: y, offsetWidth: w, offsetHeight: h, disabled });
+
+/** 组容器与指示块的替身。log 按先后记下：改过渡、写变量（连同当时的过渡值）、读 offsetWidth（逼样式先算掉） */
+function stage() {
+  const log = [];
+  let transition = '';
+  const bar = {
+    dataset: {},
+    style: {
+      get transition() {
+        return transition;
+      },
+      set transition(value) {
+        transition = value;
+        log.push(['transition', value]);
+      },
+      setProperty: (name, value) => log.push(['set', name, value, transition]),
+    },
+    get offsetWidth() {
+      log.push(['flush', transition]);
+      return 100;
+    },
+  };
+  return { row: { dataset: {} }, bar, log };
+}
+
+test('the first placement lands in place without a slide, then hands the transition back', () => {
+  const { row, bar, log } = stage();
+  const items = [item(0, 0, 80, 44), item(88, 0, 110, 44)];
+  for (const animate of [false, true]) {
+    log.length = 0;
+    // 首帧（shown 为 null）：就算调用方说要滑，也无处可滑，一律就地摆
+    const shown = placeIndicator(row, bar, items, 1, null, animate);
+    assert.deepEqual(shown, { x: 88, y: 0, w: 110, h: 44 });
+    assert.equal(row.dataset.slide, 'on', '摆好之后指示块在场');
+    assert.deepEqual(log, [
+      ['transition', 'none'],
+      ['set', '--seg-x', '88px', 'none'],
+      ['set', '--seg-y', '0px', 'none'],
+      ['set', '--seg-w', '110px', 'none'],
+      ['set', '--seg-h', '44px', 'none'],
+      ['flush', 'none'],
+      ['transition', ''],
+    ], '先关过渡、写值、逼浏览器按「没有过渡」算掉，再把过渡交还');
+  }
+});
+
+test('a new selection slides: only the new position is written, the transition is left alone', () => {
+  const { row, bar, log } = stage();
+  const items = [item(0, 0, 80, 44), item(88, 0, 110, 44), item(206, 0, 70, 44)];
+  const first = placeIndicator(row, bar, items, 0, null, false);
+  log.length = 0;
+  const next = placeIndicator(row, bar, items, 2, first, true);
+  assert.deepEqual(next, { x: 206, y: 0, w: 70, h: 44 });
+  assert.deepEqual(log, [
+    ['set', '--seg-x', '206px', ''],
+    ['set', '--seg-y', '0px', ''],
+    ['set', '--seg-w', '70px', ''],
+    ['set', '--seg-h', '44px', ''],
+  ], '滑动时不碰过渡、不强制算样式');
+  // 滑动途中又量了一次（ResizeObserver、字体到位），位置没变：一个字都不写，滑动不被打断
+  log.length = 0;
+  assert.equal(placeIndicator(row, bar, items, 2, next, false), next, '返回原来那个盒');
+  assert.deepEqual(log, []);
+  // 改了尺寸（项变宽了）又不是换选中项：就地摆，不滑
+  log.length = 0;
+  const wider = [item(0, 0, 90, 44), item(98, 0, 120, 44), item(226, 0, 70, 44)];
+  assert.deepEqual(placeIndicator(row, bar, wider, 2, next, false), { x: 226, y: 0, w: 70, h: 44 });
+  assert.deepEqual(log[0], ['transition', 'none']);
+  assert.deepEqual(log.at(-1), ['transition', '']);
+});
+
+test('wrapped rows, no selection or a missing item take the block away and write nothing', () => {
+  const { row, bar, log } = stage();
+  const shown = placeIndicator(row, bar, [item(0, 0, 80, 44), item(88, 0, 110, 44)], 0, null, false);
+  for (const [items, checked, why] of [
+    [[item(0, 0, 80, 44), item(0, 52, 110, 44)], 0, '折成两行'],
+    [[item(0, 0, 80, 44), item(88, 0, 110, 44)], -1, '没有选中项'],
+    [[item(0, 0, 80, 44), null], 0, '有一项还没挂上'],
+    [[item(0, 0, 0, 0), item(0, 0, 0, 0)], 0, '还没排版'],
+  ]) {
+    row.dataset.slide = 'on';
+    log.length = 0;
+    assert.equal(placeIndicator(row, bar, items, checked, shown, true), null, why);
+    assert.equal('slide' in row.dataset, false, `${why}：摘掉 data-slide，选中项自己带底色`);
+    assert.deepEqual(log, [], `${why}：不写任何位置`);
+  }
+  // 从不画变回画：就地出现在选中项上，不从上次的位置滑过来
+  log.length = 0;
+  placeIndicator(row, bar, [item(0, 0, 80, 44), item(88, 0, 110, 44)], 1, null, true);
+  assert.deepEqual(log[0], ['transition', 'none']);
+  assert.equal(row.dataset.slide, 'on');
+});
+
+test('the block dims along with a checked item that has been disabled', () => {
+  const { row, bar } = stage();
+  placeIndicator(row, bar, [item(0, 0, 80, 44, true), item(88, 0, 110, 44)], 0, null, false);
+  assert.equal(bar.dataset.dim, 'true');
+  placeIndicator(row, bar, [item(0, 0, 80, 44, true), item(88, 0, 110, 44)], 1, null, false);
+  assert.equal(bar.dataset.dim, 'false');
 });

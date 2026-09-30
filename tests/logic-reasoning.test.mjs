@@ -560,7 +560,12 @@ test('the segmented control borrows the existing panel styling instead of invent
   assert.ok(title.start < logicGroup.tag.start, '标题在组的上面');
   const group = code(fs.readFileSync(groupPath, 'utf8'));
   const root = jsxOpening(group, 'role="radiogroup"');
-  assert.match(attrValue(root.attrs.get('className')), /examStyles\.segRow\b/);
+  // className 可以直接写在标签上，也可以先拼进一个变量（const rowClass = …）再递过来
+  const rootClass = attrValue(root.attrs.get('className'));
+  const rootClassValue = /^\w+$/.test(rootClass)
+    ? (new RegExp(`const ${rootClass} = ([^;]+);`).exec(group)?.[1] ?? '')
+    : rootClass;
+  assert.match(rootClassValue, /examStyles\.segRow\b/);
   const item = jsxOpening(group, 'role="radio"');
   const itemClass = attrValue(item.attrs.get('className'));
   assert.match(itemClass, /examStyles\.segBtn\b/);
