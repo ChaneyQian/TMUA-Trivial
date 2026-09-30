@@ -690,6 +690,8 @@
 }
 
 .choiceRow {
+  /* 悬停色条是绝对定位的伪元素，以选项行为参照。relative 不带偏移，不动布局 */
+  position: relative;
   display: flex;
   align-items: baseline;
   gap: 0.7rem;
@@ -705,8 +707,35 @@
   cursor: pointer;
 }
 
-.choiceRow:hover {
-  background: var(--row-hover);
+/* 悬停（P8-A5）：左侧一道 3px 主题色竖条从中间伸出，底色换成行悬停色。
+   只给「此刻点得动」的选项（.choiceLive：练习未批改、Mock、Diagnostic）——批改后的选项只读，
+   成绩页的逐题卡也不是按钮，悬停都不该招手。竖条是绝对定位的伪元素、只动 transform，
+   出来收回都不挤动内容 */
+.choiceLive::before {
+  position: absolute;
+  top: 0.35rem;
+  bottom: 0.35rem;
+  left: 0;
+  width: 3px;
+  border-radius: 3px;
+  background: var(--accent);
+  content: '';
+  pointer-events: none;
+  transform: scaleY(0);
+  transform-origin: center;
+  transition: transform 140ms cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+/* 只在真能悬停的设备上。触屏点一下 :hover 会粘在那一格上：竖条赖着不走，
+   悬停底色还会把「选中」的淡底盖掉 */
+@media (hover: hover) {
+  .choiceLive:hover:not(:disabled) {
+    background: var(--row-hover);
+  }
+
+  .choiceLive:hover:not(:disabled)::before {
+    transform: scaleY(1);
+  }
 }
 
 .radio {
@@ -770,6 +799,13 @@
 .choiceText :global(.mathtext p) {
   display: inline;
   margin: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* 竖条照出，只是瞬时到位、不再伸出来 */
+  .choiceLive::before {
+    transition: none;
+  }
 }
 
 /* 练习模式批改反馈条 */

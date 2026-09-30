@@ -1721,8 +1721,10 @@ export default function ExamApp() {
             if (isGraded) {
               if (sameLabel(c.label, q.answer)) cls.push(styles.optCorrect);
               else if (selected) cls.push(styles.optWrong);
-            } else if (selected) {
-              cls.push(styles.optSelected);
+            } else {
+              // 还点得动的选项才有悬停色条；批改之后只读，不再招手
+              cls.push(styles.choiceLive);
+              if (selected) cls.push(styles.optSelected);
             }
             return (
               <button key={c.label} className={cls.join(' ')} onClick={() => selectChoice(c.label)}>

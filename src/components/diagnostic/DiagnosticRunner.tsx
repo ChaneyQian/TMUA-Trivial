@@ -258,9 +258,10 @@ export default function DiagnosticRunner({ questions, nth, onFinish, onAbandon }
 
           <div className={examStyles.choiceList}>
             {q.choices.map((c) => {
-              // 选中只有「选中」一种状态：不着对错色，不给任何反馈
+              // 选中只有「选中」一种状态：不着对错色，不给任何对错反馈。
+              // 悬停色条（choiceLive）与选中圆点是中性的操作反馈，和 Mock 一样给
               const selected = sameLabel(answers[idx] ?? null, c.label);
-              const cls = [examStyles.choiceRow];
+              const cls = [examStyles.choiceRow, examStyles.choiceLive];
               if (selected) cls.push(examStyles.optSelected);
               return (
                 <button
