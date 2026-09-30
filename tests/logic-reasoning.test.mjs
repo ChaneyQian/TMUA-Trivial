@@ -31,10 +31,13 @@ import {
   saveLogicFilter,
   validCompletedCount,
 } from '../src/lib/records.ts';
+import { attrValue, code, jsxOpening } from './helpers/source.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const examPath = 'src/components/exam/ExamApp.tsx';
 const cssPath = 'src/components/exam/Exam.module.css';
+/** 经典区 / 9.0 区的配置面板（P8-A3 从 ExamApp 拆出） */
+const panelPath = 'src/components/setup/SetupPanel.tsx';
 
 /**
  * 一份混了各种标记的小索引，用来看清每层滤网各自丢掉了谁。
@@ -490,42 +493,61 @@ test('the setup panel wires the filter into the pick pool and nowhere else', () 
   assert.match(exam, /saveLogicFilter\(next\)/);
 
   // 面板上是一组三档分段按钮，挂在「题库」那一组下面，
-  // 且只在当前范围内真有已标注的逻辑题时才渲染
-  assert.match(exam, /\{logicCov\.logic > 0 && \(/);
-  assert.equal(exam.includes('type="checkbox"'), false, '两态的勾选框应当已经换掉');
-  for (const value of ["'all'", "'only'", "'exclude'"]) {
-    assert.ok(exam.includes(`[${value}, t.setup.logic`), `${value} 这一档没接上字典`);
+  // 且只在当前范围内真有已标注的逻辑题时才渲染。
+  // 配置面板 P8-A3 起拆在 SetupPanel 里：外层把「开关生效之前」的覆盖、当前档位与落盘的 setter
+  // 原样递进去。剥注释、归一空白后按结构查——只在注释里提一句不算接上了
+  const examCode = code(exam);
+  const panelRaw = fs.readFileSync(panelPath, 'utf8');
+  const panel = code(panelRaw);
+  const panelTag = jsxOpening(examCode, '<SetupPanel');
+  assert.ok(panelTag, 'ExamApp 得挂上 SetupPanel');
+  assert.equal(attrValue(panelTag.attrs.get('logicCov')), 'logicCov', '覆盖读的是 scopedIndex 那一层（见上）');
+  assert.equal(attrValue(panelTag.attrs.get('logicFilter')), 'logicFilter');
+  assert.equal(
+    attrValue(panelTag.attrs.get('chooseLogicReasoning')),
+    'chooseLogicReasoning',
+    '面板拿到的得是那个会落盘的 setter，不是裸的 setLogicFilter',
+  );
+  assert.match(panel, /\{logicCov\.logic > 0 && \(/);
+  for (const source of [examCode, panel]) {
+    assert.equal(source.includes('type="checkbox"'), false, '两态的勾选框应当已经换掉');
   }
-  assert.match(exam, /\{t\.setup\.logicReasoning\}/, '组标题必须走字典');
-  assert.match(exam, /t\.setup\.logicAll/, '文案必须走字典');
-  assert.match(exam, /t\.setup\.logicOnly/, '文案必须走字典');
-  assert.match(exam, /t\.setup\.logicExclude/, '文案必须走字典');
+  for (const value of ["'all'", "'only'", "'exclude'"]) {
+    assert.ok(panel.includes(`[${value}, t.setup.logic`), `${value} 这一档没接上字典`);
+  }
+  assert.match(panel, /\{t\.setup\.logicReasoning\}/, '组标题必须走字典');
+  assert.match(panel, /t\.setup\.logicAll/, '文案必须走字典');
+  assert.match(panel, /t\.setup\.logicOnly/, '文案必须走字典');
+  assert.match(panel, /t\.setup\.logicExclude/, '文案必须走字典');
   // 选中态得报出去。刻意**不**用 radiogroup / radio：没有 roving tabindex
   // 与方向键，报出单选组却按键无反应比原生勾选框更糟；和同屏另外三组保持一致
-  assert.match(exam, /aria-pressed=\{logicFilter === value\}/);
-  assert.equal(exam.includes('role="radio"'), false, '没有方向键就别声称自己是单选组');
-  assert.equal(exam.includes('role="radiogroup"'), false, '同上');
-  const switchAt = exam.indexOf('logicCov.logic > 0');
+  assert.match(panel, /aria-pressed=\{logicFilter === value\}/);
+  assert.equal(panel.includes('role="radio"'), false, '没有方向键就别声称自己是单选组');
+  assert.equal(panel.includes('role="radiogroup"'), false, '同上');
+  const switchAt = panel.indexOf('logicCov.logic > 0');
   assert.ok(
-    exam.indexOf('t.setup.fieldBank') < switchAt && switchAt < exam.indexOf('t.setup.fieldMode'),
+    panel.indexOf('t.setup.fieldBank') < switchAt && switchAt < panel.indexOf('t.setup.fieldMode'),
     '这行勾选属于「题库」那一组，排在模式之前',
   );
 
   // 旧的整卷口径不该在应用层留下任何残迹
   for (const gone of ['logicReasoningApplies', 'entry.p2', '.p2 ']) {
-    assert.equal(exam.includes(gone), false, `${gone} 是 Paper 2 口径的遗留，应当删干净`);
+    for (const source of [exam, panelRaw]) {
+      assert.equal(source.includes(gone), false, `${gone} 是 Paper 2 口径的遗留，应当删干净`);
+    }
   }
 });
 
 test('the segmented control borrows the existing panel styling instead of inventing its own', () => {
-  const exam = fs.readFileSync(examPath, 'utf8');
+  // 配置面板 P8-A3 起拆在 SetupPanel 里；在剥过注释、归一过空白的代码上查
+  const panel = code(fs.readFileSync(panelPath, 'utf8'));
   const css = fs.readFileSync(cssPath, 'utf8');
 
   // 和「模式」「抽题范围」同款：fieldLabel 起标题 + segRow 装 segBtn，选中态 segActive
-  assert.match(exam, /styles\.fieldLabel\}>\{t\.setup\.logicReasoning\}/);
-  assert.match(exam, /styles\.fieldLabel\}>\{t\.setup\.logicReasoning\}<\/div>\s*<div className=\{styles\.segRow\}>/);
+  assert.match(panel, /styles\.fieldLabel\}>\{t\.setup\.logicReasoning\}/);
+  assert.match(panel, /styles\.fieldLabel\}>\{t\.setup\.logicReasoning\}<\/div> ?<div className=\{styles\.segRow\}>/);
   assert.match(
-    exam,
+    panel,
     /styles\.segBtn\} \$\{logicFilter === value \? styles\.segActive : ''\}/,
     '选中态复用 segActive',
   );
@@ -585,14 +607,16 @@ test('the frontmatter parser keeps a block list alive across blank lines and com
 
 test('an empty pool points back at the exclude setting that emptied it', () => {
   const exam = fs.readFileSync(examPath, 'utf8');
+  // 这条提示画在配置面板（SetupPanel）里；在剥过注释、归一过空白的代码上查
+  const panel = code(fs.readFileSync(panelPath, 'utf8'));
 
   // 「该题库没有可用题目」本身不指向那组按钮，而它就在同屏上方。
   // 两档对称：显示条件与控件同源（logic > 0），只有 N 不同——
   // 「排除」挡住的是已标注的逻辑题，「仅逻辑题」挡住的是当前范围里其余全部
-  assert.match(exam, /logicFilter !== 'all' &&\s*logicCov\.logic > 0 &&/);
+  assert.match(panel, /logicFilter !== 'all' && logicCov\.logic > 0 &&/);
   assert.match(
-    exam,
-    /emptyBankLogicHint\(\s*logicFilter === 'only' \? logicCov\.total - logicCov\.logic : logicCov\.logic,\s*\)/,
+    panel,
+    /emptyBankLogicHint\(logicFilter === 'only' \? logicCov\.total - logicCov\.logic : logicCov\.logic\)/,
   );
   for (const dict of Object.values(DICT)) {
     const hint = dict.setup.emptyBankLogicHint(10);
@@ -605,4 +629,5 @@ test('an empty pool points back at the exclude setting that emptied it', () => {
 
   // 覆盖率那行是开关的实话，读屏用户也得听得到
   assert.doesNotMatch(exam, /logic-coverage-note/);
+  assert.doesNotMatch(panel, /logic-coverage-note/);
 });

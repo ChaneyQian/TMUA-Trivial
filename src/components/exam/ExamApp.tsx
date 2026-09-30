@@ -16,6 +16,7 @@ import DiagnosticRunner from '@/components/diagnostic/DiagnosticRunner';
 import DiagnosticResult from '@/components/diagnostic/DiagnosticResult';
 import GrillPanel from '@/components/grill/GrillPanel';
 import NoticeBoard from '@/components/notice/NoticeBoard';
+import SetupPanel, { type Db, type Mode } from '@/components/setup/SetupPanel';
 import { holdOverlay } from '@/lib/overlay';
 import { grillBadgeCount, pickGrillQids } from '@/lib/grill';
 import { countedQids, historyFor, practiceOverview, practiceQids } from '@/lib/progress';
@@ -87,8 +88,6 @@ import styles from './Exam.module.css';
 type Phase = 'setup' | 'loading' | 'exam' | 'result' | 'diagnostic' | 'diagResult';
 /** setup 相内部的三个子视图；phase 仍是四相，exam 运行时完全不受影响 */
 type StageView = 'deck' | 'zone' | 'progress';
-type Mode = 'practice' | 'mock';
-type Db = 'TMUA' | 'TMUA_MOCK' | 'MAT' | 'SMC' | 'ECAA' | 'AMC' | 'ALL';
 /**
  * 本场是从复烤区哪一块开出来的；不是复烤区来的就是 null。
  * 成绩页的错题闭环回执（B3）和复烤区顶部的操作回执（B5）都只认这一个标记。
@@ -1314,193 +1313,36 @@ export default function ExamApp() {
               receipt={grillReceiptText()}
             />
           ) : (
-        <div className={styles.setupCard}>
-          <div className={styles.setupTitle}>{t.zone.title[frontZone]}</div>
-          <div className={styles.setupSub}>{t.setup.sub}</div>
-
-          <div className={styles.fieldLabel}>{t.setup.fieldBank}</div>
-          <div className={styles.segRow}>
-            {bankChoices.map((d) => (
-              <button
-                key={d}
-                className={`${styles.segBtn} ${db === d ? styles.segActive : ''}`}
-                onClick={() => setDb(d)}
-                disabled={d !== 'ALL' && poolCounts[d] === 0}
-              >
-                {dbName(d)}
-                <span className={styles.segHint}>
-                  {d === 'ALL'
-                    ? t.setup.questions(Object.values(poolCounts).reduce((a, b) => a + b, 0))
-                    : t.setup.questions(poolCounts[d] || 0)}
-                </span>
-              </button>
-            ))}
-          </div>
-          {/* 互斥之后同名库在两个区指的不是同一批题：9.0 的 TMUA 是回忆题、
-              MAT 是老卷与回忆题——按钮上只有题数，而题数恰恰是用户最不会
-              去做减法的东西，得把范围说破 */}
-          {libraryMode === 'hidden' && (
-            <p className={styles.zoneScopeNote}>{t.setup.trivialScopeNote}</p>
-          )}
-
-          {/* 逻辑推理三档（用户裁定 2026-09-16）：全部 / 仅逻辑题 / 排除。
-              当前 db 一道标注过的逻辑题都没有时整组不渲染——摆着也只是三个按不动的按钮。
-              注意这**不**等于「仅逻辑题」永远选不空池子：它只保证「同一个 db、
-              且不叠加抽题范围」这一种情形。叠上「仅新题」照样能归零（Start 会置灰，
-              下面那条提示负责指路）；而万一将来某个区×库组合一道 logic 标注都没有，
-              用户存着的 'only' 会配上一个隐藏了的控件——现有数据里每个组合都 > 0，
-              所以当下不触发，但这是**数据依赖**，不是结构保证。
-              覆盖率披露已按用户裁定移除（2026-08-23）：那是维护者视角的打标
-              进度报告，普通学生不需要读。抽题池的真实数字在题数档位里，
-              空池时另有「切回全部可再抽 N 道」的操作提示兑底。
-              刻意不按 ARIA 单选组来标（radiogroup / radio 那一套）：没有 roving
-              tabindex 和方向键，报出单选组却按不动比不报更糟。和同屏另外三组一致，
-              用裸按钮 + aria-pressed；四组统一的可访问性另立任务 */}
-          {logicCov.logic > 0 && (
-            <>
-              <div className={styles.fieldLabel}>{t.setup.logicReasoning}</div>
-              <div className={styles.segRow}>
-                {(
-                  [
-                    ['all', t.setup.logicAll],
-                    ['only', t.setup.logicOnly],
-                    ['exclude', t.setup.logicExclude],
-                  ] as [LogicFilter, string][]
-                ).map(([value, label]) => (
-                  <button
-                    key={value}
-                    aria-pressed={logicFilter === value}
-                    className={`${styles.segBtn} ${logicFilter === value ? styles.segActive : ''}`}
-                    onClick={() => chooseLogicReasoning(value)}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-            </>
-          )}
-
-          <div className={styles.fieldLabel}>{t.setup.fieldMode}</div>
-          <div className={styles.segRow}>
-            <button
-              className={`${styles.segBtn} ${mode === 'practice' ? styles.segActive : ''}`}
-              onClick={() => setMode('practice')}
-            >
-              {t.setup.practiceLabel}
-              <span className={styles.segHint}>{t.setup.practiceHint}</span>
-            </button>
-            <button
-              className={`${styles.segBtn} ${mode === 'mock' ? styles.segActive : ''}`}
-              onClick={() => setMode('mock')}
-            >
-              {t.setup.mockLabel}
-              <span className={styles.segHint}>{t.setup.mockHint}</span>
-            </button>
-          </div>
-
-          <div className={styles.fieldLabel}>{t.setup.fieldPick}</div>
-          <div className={styles.segRow}>
-            <button
-              className={`${styles.segBtn} ${pickMode === 'random' ? styles.segActive : ''}`}
-              onClick={() => setPickMode('random')}
-            >
-              {t.setup.pickRandom}
-              <span className={styles.segHint}>{t.setup.pickRandomHint}</span>
-            </button>
-            <button
-              className={`${styles.segBtn} ${pickMode === 'wrong-and-new' ? styles.segActive : ''}`}
-              onClick={() => setPickMode('wrong-and-new')}
-            >
-              {t.setup.pickWrongNew}
-              <span className={styles.segHint}>{t.setup.pickWrongNewHint}</span>
-            </button>
-            <button
-              className={`${styles.segBtn} ${pickMode === 'new-only' ? styles.segActive : ''}`}
-              onClick={() => setPickMode('new-only')}
-            >
-              {t.setup.pickNewOnly}
-              <span className={styles.segHint}>{t.setup.pickNewOnlyHint}</span>
-            </button>
-          </div>
-
-          <div className={styles.fieldLabel}>{t.setup.fieldCount(totalPool)}</div>
-          <div className={styles.segRow}>
-            {[5, 10, 20].map((n) => (
-              <button
-                key={n}
-                className={`${styles.segBtn} ${count === n ? styles.segActive : ''}`}
-                onClick={() => setCountAnd(n)}
-              >
-                {n}
-              </button>
-            ))}
-            <input
-              className={styles.numInput}
-              type="number"
-              min={1}
-              max={100}
-              value={count}
-              onChange={(e) => setCountAnd(Math.max(1, Math.min(100, Number(e.target.value) || 1)))}
+            <SetupPanel
+              zone={frontZone}
+              bankChoices={bankChoices}
+              db={db}
+              setDb={setDb}
+              poolCounts={poolCounts}
+              dbName={dbName}
+              libraryMode={libraryMode}
+              logicCov={logicCov}
+              logicFilter={logicFilter}
+              chooseLogicReasoning={chooseLogicReasoning}
+              mode={mode}
+              setMode={setMode}
+              pickMode={pickMode}
+              setPickMode={setPickMode}
+              totalPool={totalPool}
+              count={count}
+              setCountAnd={setCountAnd}
+              minutes={minutes}
+              onMinutes={(n) => {
+                setMinutesTouched(true);
+                setMinutes(n);
+              }}
+              busy={phase === 'loading'}
+              indexReady={!!index}
+              indexError={indexError}
+              error={error}
+              recordMessage={recordMessage}
+              onStart={() => void start()}
             />
-          </div>
-
-          {mode === 'mock' && (
-            <>
-              <div className={styles.fieldLabel}>{t.setup.fieldMinutes}</div>
-              <div className={styles.segRow}>
-                <input
-                  className={styles.numInput}
-                  type="number"
-                  min={1}
-                  max={300}
-                  value={minutes}
-                  onChange={(e) => {
-                    setMinutesTouched(true);
-                    setMinutes(Math.max(1, Math.min(300, Number(e.target.value) || 1)));
-                  }}
-                />
-              </div>
-            </>
-          )}
-
-          {/* 主操作收尾。做题记录整块已经搬进进度面板，配置面板只管「怎么考」 */}
-          <button
-            className={styles.startBtn}
-            onClick={() => void start()}
-            disabled={phase === 'loading' || !index || totalPool === 0}
-          >
-            {phase === 'loading'
-              ? t.setup.picking
-              : !index && !indexError
-                ? t.setup.bankLoading
-                : t.setup.start}
-          </button>
-          {error && <div className={styles.errMsg}>{error}</div>}
-          {indexError && <div className={styles.errMsg}>{indexError}</div>}
-          {index && totalPool === 0 && (
-            <div className={styles.errMsg}>
-              {t.setup.emptyBank}
-              {/* 池子空掉时，若有题正被这组按钮挡在外面，直接说明切回「全部」能多出多少题——
-                  那组按钮就在同屏上方，但「没有可用题目」这句话本身不指向它。
-                  两档对称：「排除」挡住的是已标注的逻辑题，「仅逻辑题」挡住的是其余全部。
-                  条件与控件的显示条件同源，免得提示指向一个没渲染出来的控件 */}
-              {logicFilter !== 'all' &&
-                logicCov.logic > 0 &&
-                ` ${t.setup.emptyBankLogicHint(
-                  logicFilter === 'only' ? logicCov.total - logicCov.logic : logicCov.logic,
-                )}`}
-            </div>
-          )}
-          <div className={styles.backLink}>{t.setup.keyboard}</div>
-
-          {/* 导入导出与统计都搬去进度面板了，这里只留一条回执，
-              好让「统计后再来一次」之后还看得见结果 */}
-          {recordMessage && (
-            <div className={styles.recordSection}>
-              <div className={styles.recordMessage}>{recordMessage}</div>
-            </div>
-          )}
-        </div>
           )}
         </div>
           )}

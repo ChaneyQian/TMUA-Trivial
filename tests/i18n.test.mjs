@@ -2,6 +2,8 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import test from 'node:test';
 
+import { code } from './helpers/source.mjs';
+
 // 外层（选区 deck + 配置面板）是中英双语的，内层（考试运行时、成绩页、
 // 工牌、宠物）刻意保持中文原文。这组测试盯两件事：
 //   1. 字典两种语言的键完全对齐，且都不是空壳
@@ -14,6 +16,7 @@ const TOGGLE_PATH = 'src/components/LangToggle.tsx';
 const DECK_PATH = 'src/components/deck/CardDeck.tsx';
 const ZONES_PATH = 'src/components/deck/zones.ts';
 const EXAM_PATH = 'src/components/exam/ExamApp.tsx';
+const SETUP_PANEL_PATH = 'src/components/setup/SetupPanel.tsx';
 
 const dict = await import('../src/lib/i18n.ts');
 
@@ -151,8 +154,11 @@ test('the outer layer renders its copy from the dictionary, not from literals', 
   assert.match(deck, /aria-label=\{t\.deck\.groupAria\}/);
   assert.match(deck, /t\.deck\.keys/);
 
-  // 配置面板的字段标签与主按钮
+  // 配置面板的字段标签与主按钮（P8-A3 起拆在 SetupPanel 里）。在剥掉注释的代码上找：
+  // 只在注释里提一句键名不算接上了字典
+  const panel = code(fs.readFileSync(SETUP_PANEL_PATH, 'utf8'));
   assert.match(exam, /useLang\(\)/);
+  assert.match(panel, /useLang\(\)/);
   for (const key of [
     't.setup.fieldBank',
     't.setup.fieldMode',
@@ -160,11 +166,11 @@ test('the outer layer renders its copy from the dictionary, not from literals', 
     't.setup.fieldCount(totalPool)',
     't.setup.start',
     't.setup.keyboard',
-    // cardBadge.comingSoon 随 P3「三区全开」一起删了；zone.sub 现在由 ExamApp 按状态覆盖
-    't.grill.emptySub',
   ]) {
-    assert.ok(exam.includes(key), `the setup panel must render ${key} from the dictionary`);
+    assert.ok(panel.includes(key), `the setup panel must render ${key} from the dictionary`);
   }
+  // cardBadge.comingSoon 随 P3「三区全开」一起删了；zone.sub 现在由 ExamApp 按状态覆盖
+  assert.ok(code(exam).includes('t.grill.emptySub'), 'the grill card subtitle must come from the dictionary');
 
   // 做题记录整块已经搬进进度面板，字典键跟着一起走
   const progress = fs.readFileSync('src/components/progress/ProgressPanel.tsx', 'utf8');

@@ -41,6 +41,8 @@ const deckPath = 'src/components/deck/CardDeck.tsx';
 const deckCssPath = 'src/components/deck/Deck.module.css';
 const examPath = 'src/components/exam/ExamApp.tsx';
 const examCssPath = 'src/components/exam/Exam.module.css';
+/** 经典区 / 9.0 区的配置面板（P8-A3 从 ExamApp 拆出） */
+const setupPanelPath = 'src/components/setup/SetupPanel.tsx';
 
 test('the deck ships four zones as one data table plus their cover art', () => {
   assert.equal(fs.existsSync(zonesPath), true, 'missing zones table');
@@ -755,12 +757,21 @@ test('the 9.0 charge bar moves into its card as a display-only progress bar', ()
 test('the primary action sits above the optional record tools, and the deck can skip the panel', () => {
   const exam = fs.readFileSync(examPath, 'utf8');
   const deck = fs.readFileSync(deckPath, 'utf8');
+  // 配置面板 P8-A3 起拆在 SetupPanel 里：剥注释、归一空白后按标签结构查，改排版、换属性先后都不影响
+  const panel = code(fs.readFileSync(setupPanelPath, 'utf8'));
+  const examCode = code(exam);
 
-  // 开始是主操作，做题记录是可选的次级功能，不该压在主操作前面
-  const startAt = exam.indexOf('styles.startBtn');
-  const recordsAt = exam.indexOf('styles.recordSection');
-  assert.ok(startAt > 0 && recordsAt > 0, 'both blocks must still exist');
-  assert.ok(startAt < recordsAt, 'the start button must be rendered before the record section');
+  // 开始是主操作，做题记录的回执是可选的次级信息，不该压在主操作前面
+  const [startTag] = jsxByClass(panel, 'startBtn');
+  const [recordTag] = jsxByClass(panel, 'recordSection');
+  assert.ok(startTag && recordTag, 'both blocks must still exist');
+  assert.ok(startTag.start < recordTag.start, 'the start button must be rendered before the record section');
+  // 面板的开始按钮把点击原样转给 onStart，不把事件对象递过去（见下面 start() 那条）
+  assert.match(attrValue(startTag.attrs.get('onClick')) ?? '', /^\(\) => (?:void )?onStart\(\)$/);
+  // ExamApp 把它挂在配置视图里，onStart 接的是同一条 start()，不带参数
+  const panelTag = jsxOpening(examCode, '<SetupPanel');
+  assert.ok(panelTag, 'ExamApp 得挂上 SetupPanel');
+  assert.match(attrValue(panelTag.attrs.get('onStart')) ?? '', /^\(\) => (?:void )?start\(\)$/);
 
   // 前牌快速开始：走同一条 start 路径，且不能顺带触发「展开面板」
   assert.match(deck, /quickStart/);
@@ -776,6 +787,7 @@ test('the primary action sits above the optional record tools, and the deck can 
   // onClick / onStart —— 事件对象会被当成 override。包一层，但仍是同步调用链
   assert.match(exam, /onStart: \(\) => void start\(\)/);
   assert.doesNotMatch(exam, /onClick=\{start\}/);
+  assert.doesNotMatch(examCode, /onStart=\{start\}/);
 });
 
 test('the two zones are exclusive, so the 9.0 badge and its bank buttons report that pool alone', () => {
@@ -811,13 +823,26 @@ test('the two zones are exclusive, so the 9.0 badge and its bank buttons report 
   assert.deepEqual(banksOf(classic), classicBanks);
   assert.ok(hiddenBanks.length > 0 && classicBanks.length > 0, '两个区都得真有库');
   assert.match(exam, /const bankChoices: Db\[\] = \[\.\.\.EXAM_DATABASES\.filter\(\(d\) => zoneCounts\[d\] > 0\), 'ALL'\];/);
-  assert.match(exam, /\{bankChoices\.map\(\(d\) => \(/);
-  assert.doesNotMatch(exam, /\['TMUA', 'TMUA_MOCK', 'MAT', 'SMC', 'ECAA', 'AMC', 'ALL'\]/);
+  // 按钮画在配置面板（SetupPanel）里：外层算好的名单与题数原样递进去，面板不再自己推一遍
+  const examCode = code(exam);
+  const panel = code(fs.readFileSync(setupPanelPath, 'utf8'));
+  const panelTag = jsxOpening(examCode, '<SetupPanel');
+  assert.ok(panelTag, 'ExamApp 得挂上 SetupPanel');
+  assert.equal(attrValue(panelTag.attrs.get('bankChoices')), 'bankChoices');
+  assert.equal(attrValue(panelTag.attrs.get('poolCounts')), 'poolCounts');
+  // 一个库一个按钮，就从 bankChoices 映射出来（回调形参叫什么都行）
+  const bankMap = /bankChoices\.map\(\(?(\w+)\)? =>/.exec(panel);
+  assert.ok(bankMap, '题库按钮得从 bankChoices 映射出来');
+  for (const source of [exam, panel]) {
+    assert.doesNotMatch(source, /\['TMUA', 'TMUA_MOCK', 'MAT', 'SMC', 'ECAA', 'AMC', 'ALL'\]/);
+  }
 
   // 显示的题数仍走 activeIndex（含逻辑开关），但「列不列这个库」只看题库范围：
   // 开关清空一个库时该置灰、不该让按钮整个消失，否则用户找不到勾回来这条路
   assert.match(exam, /for \(const e of scopedIndex\) \{\s*\n\s*if \(zoneCounts\[e\.db\] !== undefined\) zoneCounts\[e\.db\]\+\+;/);
-  assert.match(exam, /disabled=\{d !== 'ALL' && poolCounts\[d\] === 0\}/);
+  // 置灰条件：不是「混合」、且这个库在当前池子里 0 题。写成 JSX 属性还是选项对象的字段都行
+  const bank = bankMap[1];
+  assert.match(panel, new RegExp(`disabled(?:=\\{|: )${bank} !== 'ALL' && poolCounts\\[${bank}\\] === 0\\b`));
 
   // 记忆的题库若在当前区没题就兜底。互斥之前只有一个方向会落空，现在两个方向都会
   assert.match(exam, /if \(!index \|\| db === 'ALL' \|\| zoneCounts\[db\] > 0\) return;/);
