@@ -235,3 +235,51 @@ test('while an exam is being picked, both start buttons and the quick start spin
   assert.ok(rules.some((rule) => /\[data-overlay\]/.test(rule.selector) && /animation-play-state: paused/.test(rule.body)));
   assert.ok(!rules.some((rule) => /\[data-fx='off'\]/.test(rule.selector)), '光效关时转圈照转——不许有光效关的规则压它');
 });
+
+test('the start buttons sweep a slanted light across once on hover, as pure decoration', () => {
+  const sheet = css(EXAM_CSS);
+  const rules = parseRules(sheet);
+  // 亮带的舞台：按钮自己是定位参照、裁掉斜出去的部分、把亮带圈在底色之上文字之下
+  const button = cascade(sheet, '.startBtn');
+  assert.equal(button.position, 'relative');
+  assert.equal(button['overflow-x'], 'hidden');
+  assert.equal(button.isolation, 'isolate');
+  const band = cascade(sheet, '.startBtn::before');
+  assert.equal(band.position, 'absolute');
+  assert.equal(band['z-index'], '-1', '亮带垫在文字底下');
+  assert.equal(band['pointer-events'], 'none');
+  assert.equal(band.opacity, '0', '平时看不见');
+  const parked = Number(/translateX\((-?[\d.]+)%\)/.exec(band.transform)?.[1]);
+  assert.ok(parked <= -105, `平时停在按钮左外侧（${band.transform}）`);
+  const width = Number.parseFloat(band.width) / 100;
+
+  // 只在有悬停的设备上、只在可按的时候扫；走一次，不循环
+  const hover = rules.filter((rule) => rule.at === '@media (hover: hover)' && /\.startBtn:hover:not\(:disabled\)::before/.test(rule.selector));
+  assert.equal(hover.length, 1);
+  const animation = Object.fromEntries(declarations(hover[0].body)).animation;
+  assert.doesNotMatch(animation, /\binfinite\b/);
+  const name = animation.split(/\s+/)[0];
+  const ms = timeMs(animation.split(/\s+/)[1]);
+  assert.ok(ms >= 400 && ms <= 1000, `一道扫光 ${ms}ms`);
+  // 关键帧只动 transform / opacity，终点整条掠出按钮右缘
+  const frames = rules.filter((rule) => rule.at === `@keyframes ${name}`);
+  assert.ok(frames.length >= 2, `找不到 @keyframes ${name}`);
+  for (const frame of frames) {
+    for (const [prop] of declarations(frame.body)) assert.ok(['transform', 'opacity'].includes(prop), `扫光的关键帧动了 ${prop}`);
+  }
+  const end = frames.find((frame) => /^(to|100%)$/.test(frame.selector.trim()));
+  const travel = Number(/translateX\((-?[\d.]+)%\)/.exec(end.body)?.[1]) / 100;
+  assert.ok(travel * width >= 1.05, `终点没掠出右缘（${travel * 100}% × 带宽 ${width * 100}%）`);
+
+  // 装饰性：光效关时整个不画；减动效下不播（按压、转圈这些操作反馈另算，见上面几条）
+  assert.equal(cascade(sheet, ":global(:root[data-fx='off']) .startBtn::before").display, 'none');
+  const reduced = { media: '(prefers-reduced-motion: reduce)' };
+  assert.equal(cascade(sheet, '.startBtn::before', reduced).animation, 'none');
+  assert.equal(cascade(sheet, '.startBtn:hover:not(:disabled)::before', reduced).animation, 'none');
+
+  // 扫的就是这两颗开始按钮：配置面板的「开始 Test」与复烤区的「开始复烤」都用 .startBtn；答题页与 Diagnostic 不用
+  assert.ok(code(fs.readFileSync('src/components/setup/SetupPanel.tsx', 'utf8')).includes('className={styles.startBtn}'));
+  assert.ok(code(fs.readFileSync('src/components/grill/GrillPanel.tsx', 'utf8')).includes('className={examStyles.startBtn}'));
+  assert.doesNotMatch(code(fs.readFileSync(EXAM, 'utf8')), /styles\.startBtn\b/);
+  assert.doesNotMatch(code(fs.readFileSync(RUNNER, 'utf8')), /Styles\.startBtn\b|styles\.startBtn\b/);
+});
