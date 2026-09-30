@@ -28,6 +28,9 @@ const MIME = {
   '.otf': 'font/otf',
   '.map': 'application/json; charset=utf-8',
   '.txt': 'text/plain; charset=utf-8',
+  // 大厅的片头（public/intro）
+  '.webm': 'video/webm',
+  '.mp4': 'video/mp4',
 };
 
 if (!fs.existsSync(path.join(DIR, 'index.html'))) {
@@ -65,8 +68,33 @@ http
       return;
     }
     const ext = path.extname(file).toLowerCase();
+    const type = MIME[ext] || 'application/octet-stream';
+    const size = fs.statSync(file).size;
+    // 分段请求（Range）：视频要靠它——Safari 不支持分段的服务器上干脆不播，Chrome 也要靠它跳进度。
+    // 只认单段 bytes=a-b / a- / -n，别的写法按整份回
+    const range = /^bytes=(\d*)-(\d*)$/.exec(req.headers.range || '');
+    if (range && (range[1] || range[2])) {
+      const start = range[1] ? Number(range[1]) : Math.max(0, size - Number(range[2]));
+      const end = range[1] && range[2] ? Math.min(Number(range[2]), size - 1) : size - 1;
+      if (start > end || start >= size) {
+        res.writeHead(416, { 'Content-Range': `bytes */${size}` });
+        res.end();
+        return;
+      }
+      res.writeHead(206, {
+        'Content-Type': type,
+        'Content-Length': end - start + 1,
+        'Content-Range': `bytes ${start}-${end}/${size}`,
+        'Accept-Ranges': 'bytes',
+        'Cache-Control': 'no-cache',
+      });
+      fs.createReadStream(file, { start, end }).pipe(res);
+      return;
+    }
     res.writeHead(200, {
-      'Content-Type': MIME[ext] || 'application/octet-stream',
+      'Content-Type': type,
+      'Content-Length': size,
+      'Accept-Ranges': 'bytes',
       'Cache-Control': 'no-cache',
     });
     fs.createReadStream(file).pipe(res);
