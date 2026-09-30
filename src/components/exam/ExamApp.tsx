@@ -38,7 +38,8 @@ import {
 } from '@/lib/diagnostic';
 import MathText from '@/components/MathText';
 // 存储键一律从 lib/storage.ts 取，组件里不再散落字面量（见那份登记表）
-import { THEME_KEY, UNLOCK_SEEN_KEY, ZONE_KEY } from '@/lib/storage';
+import { UNLOCK_SEEN_KEY, ZONE_KEY } from '@/lib/storage';
+import { isTheme, setTheme } from '@/lib/theme';
 import {
   buildExam,
   fetchIndex,
@@ -79,6 +80,7 @@ import {
 } from '@/lib/records';
 import { useLang } from '@/lib/LangContext';
 import { useFx } from '@/lib/useFx';
+import { useTheme } from '@/lib/useTheme';
 import styles from './Exam.module.css';
 
 /**
@@ -497,10 +499,8 @@ export default function ExamApp() {
     n: number;
     right: number;
   } | null>(null);
-  // 主题只在 exam 阶段渲染(无 SSR 标记),惰性初始化读 dataset 不会造成水合不匹配
-  const [scheme, setScheme] = useState(() =>
-    typeof document === 'undefined' ? 'light' : document.documentElement.dataset.theme || 'light'
-  );
+  // 配色与大厅的配色圆钮同一个状态来源（lib/theme）：任一处切了，另一处立刻反映出来
+  const scheme = useTheme();
 
   useEffect(() => {
     if (phase === 'exam' || phase === 'diagnostic') commandPet({ state: 'waiting', moveTo: 'grade' });
@@ -1082,11 +1082,7 @@ export default function ExamApp() {
     });
 
   const changeScheme = (v: string) => {
-    setScheme(v);
-    document.documentElement.dataset.theme = v;
-    try {
-      localStorage.setItem(THEME_KEY, v);
-    } catch {}
+    if (isTheme(v)) setTheme(v);
   };
 
   // ---- 键盘流(A–L/1–9 选项、Enter 批改/下一题、←→ 切题、Shift+F 旗标)----

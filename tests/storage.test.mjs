@@ -189,8 +189,11 @@ test('the first-paint script migrates the old bare theme key exactly once', () =
 });
 
 test('the theme key is written through the registry, never as a literal', () => {
-  const exam = fs.readFileSync('src/components/exam/ExamApp.tsx', 'utf8');
-  assert.match(exam, /localStorage\.setItem\(THEME_KEY, v\)/);
-  assert.doesNotMatch(exam, /localStorage\.setItem\('theme'/);
-  assert.match(exam, /THEME_KEY[\s\S]*?from '@\/lib\/storage'/);
+  // 配色的读写收拢在 lib/theme（答题页下拉框与大厅配色圆钮共用，见 tests/theme.test）
+  const theme = fs.readFileSync('src/lib/theme.ts', 'utf8');
+  assert.match(theme, /localStorage\.setItem\(THEME_KEY, next\)/);
+  assert.match(theme, /import \{ THEME_KEY \} from '\.\/storage\.ts';/);
+  for (const file of ['src/lib/theme.ts', 'src/components/exam/ExamApp.tsx']) {
+    assert.doesNotMatch(fs.readFileSync(file, 'utf8'), /localStorage\.setItem\('theme'/);
+  }
 });
