@@ -802,6 +802,76 @@
   transform: scale(1);
 }
 
+/* ---- 批改反馈（P8-A5）：只在练习模式按下 Enter 批改的那一刻放一次 ----
+   这两个类只由 ExamApp 在「刚批改」时挂上（见 justGraded）：Mock 交卷前没有批改，Diagnostic
+   全程不给对错，成绩页逐题卡也不挂。光效关（data-fx="off"）照放——它们是操作反馈，一次性、
+   不循环，不算大厅里那种装饰 */
+
+/* 答对：被判对的选项一圈绿光由强到无。光是伪元素上静态的 box-shadow，动画只动这层的 opacity，
+   合成器改一层透明度就够、不必每帧重画阴影；外阴影只画在盒子外面，盖不到选项文字。
+   平时透明：动画不放（减动效）就什么都不剩 */
+.optPulse::after {
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  box-shadow: 0 0 0 3px rgb(46 125 50 / 30%), 0 0 16px 3px rgb(46 125 50 / 40%);
+  content: '';
+  opacity: 0;
+  pointer-events: none;
+  animation: optPulse 600ms ease-out;
+}
+
+/* 暗色底上那道深绿几乎发不出光，换亮一档的绿；亮绿在深底上显得重，贴边那圈压淡一些 */
+:global([data-theme='dark']) .optPulse::after {
+  box-shadow: 0 0 0 3px rgb(102 187 106 / 22%), 0 0 16px 3px rgb(102 187 106 / 36%);
+}
+
+@keyframes optPulse {
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0;
+  }
+}
+
+/* 答错：选错的那一项水平轻抖，±3px 三个来回、300ms、一次。只动 transform，不挤动布局 */
+.optShake {
+  animation: optShake 300ms ease-in-out;
+}
+
+@keyframes optShake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+
+  14.29% {
+    transform: translateX(-3px);
+  }
+
+  28.57% {
+    transform: translateX(3px);
+  }
+
+  42.86% {
+    transform: translateX(-3px);
+  }
+
+  57.14% {
+    transform: translateX(3px);
+  }
+
+  71.43% {
+    transform: translateX(-3px);
+  }
+
+  85.71% {
+    transform: translateX(3px);
+  }
+}
+
 .choiceLabel {
   flex: 0 0 auto;
   font-weight: 700;
@@ -827,10 +897,15 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  /* 竖条照出、圆点照填，只是瞬时到位 */
+  /* 竖条照出、圆点照填，只是瞬时到位；批改的绿光与轻抖不放，红绿批改色照常 */
   .choiceLive::before,
   .optSelected .radio::after {
     transition: none;
+  }
+
+  .optPulse::after,
+  .optShake {
+    animation: none;
   }
 }
 

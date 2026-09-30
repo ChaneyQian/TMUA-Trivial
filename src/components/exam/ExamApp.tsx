@@ -461,6 +461,12 @@ export default function ExamApp() {
   const [idx, setIdx] = useState(0);
   const [answers, setAnswers] = useState<(string | null)[]>([]);
   const [graded, setGraded] = useState<boolean[]>([]);
+  /**
+   * 刚按 Enter 批改、还停在屏上的那一题（下标）。答对的绿光、答错的轻抖只认它（P8-A5）：
+   * 选项按钮按标号复用，动效类一摘一挂浏览器就从头再放——切走再切回来、从 Navigator 跳回来，
+   * 批改色照旧，动效不重播。切题（goto）与开新场（start）都在同一次事件里清掉
+   */
+  const [justGraded, setJustGraded] = useState<number | null>(null);
   const [flagged, setFlagged] = useState<boolean[]>([]);
   const [solShown, setSolShown] = useState<Set<number>>(new Set());
   const [navOpen, setNavOpen] = useState(false);
@@ -686,6 +692,7 @@ export default function ExamApp() {
       setAnswers(new Array(qs.length).fill(null));
       setGraded(new Array(qs.length).fill(false));
       setFlagged(new Array(qs.length).fill(false));
+      setJustGraded(null);
       setSolShown(new Set());
       // 开考即定死截止时刻；练习模式不显示倒计时，写了也没人读
       deadlineRef.current = Date.now() + minutes * 60 * 1000;
@@ -1012,6 +1019,7 @@ export default function ExamApp() {
   const gradeCurrent = () => {
     if (!answers[idx]) return;
     setGraded((g) => g.map((v, i) => (i === idx ? true : v)));
+    setJustGraded(idx);
     if (sameLabel(answers[idx], q.answer)) commandPet({ state: 'waving', after: 'review' });
     else commandPet({ state: 'failed', after: 'review' });
   };
@@ -1019,6 +1027,7 @@ export default function ExamApp() {
   const goto = (i: number) => {
     if (i < 0 || i >= questions.length) return;
     setIdx(i);
+    setJustGraded(null);
     setNavOpen(false);
     commandPet({ state: 'waiting', moveTo: 'grade' });
   };
@@ -1662,6 +1671,8 @@ export default function ExamApp() {
   if (!q) return null;
   const isGraded = mode === 'practice' && graded[idx];
   const isRight = isGraded && sameLabel(answers[idx], q.answer);
+  // 批改动效只在按下 Enter 的那一刻放一次（见 justGraded）；Mock 没有批改，isGraded 恒假
+  const gradedNow = isGraded && justGraded === idx;
 
   return (
     <div className={styles.exam}>
@@ -1719,8 +1730,17 @@ export default function ExamApp() {
             const selected = sameLabel(answers[idx], c.label);
             const cls = [styles.choiceRow];
             if (isGraded) {
-              if (sameLabel(c.label, q.answer)) cls.push(styles.optCorrect);
-              else if (selected) cls.push(styles.optWrong);
+              if (sameLabel(c.label, q.answer)) {
+                cls.push(styles.optCorrect);
+                // 答对：被判对的这一项绿光一次。答错时正确项照常标绿、但不闪——一次批改只放一个动作：
+                // 绿光读作「答对了」，答错也闪就把两个信号搅在一起；抖动已经把目光引到选项区，
+                // 静态的绿框足够指出正确答案
+                if (gradedNow && selected) cls.push(styles.optPulse);
+              } else if (selected) {
+                cls.push(styles.optWrong);
+                // 答错：选的那一项水平轻抖一次
+                if (gradedNow) cls.push(styles.optShake);
+              }
             } else {
               // 还点得动的选项才有悬停色条；批改之后只读，不再招手
               cls.push(styles.choiceLive);
