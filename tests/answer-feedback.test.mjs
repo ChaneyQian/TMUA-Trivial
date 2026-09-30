@@ -446,9 +446,10 @@ test('the "just graded" marker is set by the grading itself and cleared by every
   goto(9);
   assert.deepEqual(seen, []);
 
-  // 开新场：start() 重置每题状态时一起清
-  const start = namedFn(examSrc, 'start');
-  assert.ok(start, '找不到 start');
+  // 开新场：start() 重置每题状态时一起清。开考正文可能叫 startExam（外面另包一层防连点的 start），
+  // 两种命名都认，重置语句在正文里
+  const start = namedFn(examSrc, 'startExam') ?? namedFn(examSrc, 'start');
+  assert.ok(start, '找不到开考正文（startExam / start）');
   assert.ok(calls(start, setter).some(({ args }) => args === 'null'), 'start() 开新场没清「刚批改」标记');
 });
 
