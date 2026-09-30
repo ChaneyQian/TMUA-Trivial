@@ -93,7 +93,7 @@ const zh = {
     quickSummary: (db: string, mode: string, count: number) => `${db} · ${mode} · ${count} 题`,
     emptyBank: '该题库没有可用题目。',
     emptyBankLogicHint: (n: number) => `「逻辑推理题」切回「全部」可再抽到 ${n} 道。`,
-    keyboard: '键盘：A–L / 1–9 选项 · Enter 批改或下一题 · ←→ 切题 · F 旗标',
+    keyboard: '键盘：A–L / 1–9 选项 · Enter 批改或下一题 · ←→ 切题 · Shift+F 旗标',
   },
 
   notice: {
@@ -372,7 +372,7 @@ const en: Strings = {
     quickSummary: (db: string, mode: string, count: number) => `${db} · ${mode} · ${count} Qs`,
     emptyBank: 'No questions available in this bank.',
     emptyBankLogicHint: (n: number) => `Switching Logic reasoning back to "All" adds ${n}.`,
-    keyboard: 'Keyboard: A–L / 1–9 select · Enter mark or next · ←→ navigate · F flag',
+    keyboard: 'Keyboard: A–L / 1–9 select · Enter mark or next · ←→ navigate · Shift+F flag',
   },
 
   notice: {

@@ -1076,7 +1076,7 @@ export default function ExamApp() {
     } catch {}
   };
 
-  // ---- 键盘流(A–H/1–9 选项、Enter 批改/下一题、←→ 切题、F 旗标)----
+  // ---- 键盘流(A–L/1–9 选项、Enter 批改/下一题、←→ 切题、Shift+F 旗标)----
   const keyRef = useRef<(e: KeyboardEvent) => void>(() => {});
   const onKey = (e: KeyboardEvent) => {
     if (phase !== 'exam' || !q) return;
@@ -1111,7 +1111,16 @@ export default function ExamApp() {
       selectChoice(q.choices[next].label);
       return;
     }
-    if (k === 'f' || k === 'F') return toggleFlag();
+    // Ctrl+C / Cmd+F 这类组合键不是在选选项，也不是翻旗标（与 Diagnostic 的 runnerKeyAction 同一条）。
+    // 旗标挪到 Shift+F 之后尤其要挡：不挡的话 Ctrl+F 查找会顺手选上 F 项
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    // 旗标是 Shift+F；不按 Shift 的 f / F 和其它字母一样选选项（A–L 一律归选项）。
+    // 看 shiftKey 而不看 e.key 的大小写：CapsLock 开着、不按 Shift 时 e.key 也是 'F'，那是在选 F 项；
+    // CapsLock 开着再按 Shift 反而给出 'f'，照样是旗标。按住不放的自动重复不算，旗标不来回翻
+    if (e.shiftKey && (k === 'f' || k === 'F')) {
+      if (!e.repeat) toggleFlag();
+      return;
+    }
     if (/^[1-9]$/.test(k)) {
       const c = q.choices[Number(k) - 1];
       if (c) selectChoice(c.label);
@@ -1693,9 +1702,12 @@ export default function ExamApp() {
       </div>
 
       <div className={styles.cbtSubbar}>
+        {/* 快捷键提示只写在配置面板里，考试中能看到的只有这颗钮：悬停提示与读屏都报 Shift+F */}
         <button
           className={`${styles.subbarBtn} ${flagged[idx] ? styles.flagOn : ''}`}
           onClick={toggleFlag}
+          title="Shift+F"
+          aria-keyshortcuts="Shift+F"
         >
           🚩 Flag for Review
         </button>
