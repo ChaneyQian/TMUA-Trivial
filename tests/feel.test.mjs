@@ -5,7 +5,7 @@ import test from 'node:test';
 // 大厅的通用手感（Design §22 P8-A4）：键盘焦点环、按压态、开始按钮（扫光 / 下沉 / 抽题转圈防连点）、
 // 题库按钮题数的上滑替换。答题页与 Diagnostic 不受影响。
 import { cascade, declarations, parseRules, parseTransition, stripComments, subject, timeMs } from './helpers/css-rules.mjs';
-import { code, jsxChildren, jsxOpening } from './helpers/source.mjs';
+import { attrValue, calls, code, fnBody, fnParams, jsxChildren, jsxOpening, namedFn } from './helpers/source.mjs';
 
 const EXAM = 'src/components/exam/ExamApp.tsx';
 const EXAM_CSS = 'src/components/exam/Exam.module.css';
@@ -129,4 +129,109 @@ test('buttons in the setup, grill and progress panels press in to 0.97 and dim, 
   }
   const badge = parseRules(css('src/components/badge/IdBadge.module.css'));
   assert.ok(!badge.some((rule) => /:active\b/.test(rule.selector)), '工牌不该有按压态');
+});
+
+// ---------------------------------------------------------------------------
+// 开始按钮：抽题中转圈 + aria-busy + 置灰；start() 自己也有重入守卫（P8-A4 第 7 条）
+
+const { runExclusive } = await import('../src/lib/exclusive.ts');
+
+test('runExclusive lets one call through at a time and still runs its synchronous prefix right away', async () => {
+  const flag = { current: false };
+  let runs = 0;
+  let release;
+  const task = () => {
+    runs++;
+    return new Promise((resolve) => {
+      release = resolve;
+    });
+  };
+  const first = runExclusive(flag, task);
+  // task 是同步调进去的：开考那段 requestFullscreen 仍在用户手势的调用链里
+  assert.equal(runs, 1, 'task 得在调用当下就开始跑');
+  assert.equal(flag.current, true);
+  // 前一次还在路上：再来的一律不认，task 一行都不跑
+  assert.equal(await runExclusive(flag, task), undefined);
+  assert.equal(await runExclusive(flag, task), undefined);
+  assert.equal(runs, 1, '连点只开一场');
+  release('exam');
+  assert.equal(await first, 'exam');
+  assert.equal(flag.current, false, '结束之后放下旗子');
+  // 失败（抽题出错）也放下旗子，错误原样抛给调用方；之后照常能再开
+  await assert.rejects(runExclusive(flag, async () => {
+    throw new Error('empty pool');
+  }), /empty pool/);
+  assert.equal(flag.current, false);
+  await assert.rejects(runExclusive(flag, () => {
+    throw new Error('sync throw');
+  }), /sync throw/);
+  assert.equal(flag.current, false, '同步抛错也放下');
+  assert.equal(await runExclusive(flag, async () => 7), 7);
+});
+
+test('every way into an exam goes through the guarded start, and the fullscreen request stays in the gesture', () => {
+  const exam = code(fs.readFileSync(EXAM, 'utf8'));
+  const start = namedFn(exam, 'start');
+  assert.ok(start, '找不到 start');
+  const [param] = fnParams(start);
+  const wrapped = new RegExp(String.raw`^runExclusive\((\w+), \(\) => startExam\(${param}\)\)$`).exec(fnBody(start));
+  assert.ok(wrapped, 'start 得是「runExclusive(旗子, () => startExam(参数))」');
+  assert.match(exam, new RegExp(String.raw`const ${wrapped[1]} = useRef\(false\);`), '旗子是跨渲染不丢的 ref');
+  // 真正开考的函数只有这一个调用点：各入口都得过守卫
+  assert.equal(calls(exam, 'startExam').length, 1, 'startExam 只许由 start 调');
+  // requestFullscreen 在第一个 await 之前（同步调用链里才批准）
+  const body = fnBody(namedFn(exam, 'startExam'));
+  const fullscreen = body.indexOf('requestFullscreen');
+  assert.ok(fullscreen > 0 && fullscreen < body.indexOf('await '), 'requestFullscreen 得在第一个 await 之前');
+});
+
+test('while an exam is being picked, both start buttons and the quick start spin, say busy and stay disabled', () => {
+  const panel = code(fs.readFileSync('src/components/setup/SetupPanel.tsx', 'utf8'));
+  const grill = code(fs.readFileSync('src/components/grill/GrillPanel.tsx', 'utf8'));
+  const deck = code(fs.readFileSync('src/components/deck/CardDeck.tsx', 'utf8'));
+  const exam = code(fs.readFileSync(EXAM, 'utf8'));
+
+  /** 按钮：aria-busy 跟着「正在开考」的那个量走，置灰条件里也有它，文字前挂转圈 */
+  const check = (src, anchor, flag, where) => {
+    const button = jsxOpening(src, anchor);
+    assert.ok(button && button.name === 'button', `${where} 找不到按钮`);
+    assert.equal(attrValue(button.attrs.get('aria-busy')), `${flag} || undefined`, `${where} 的 aria-busy`);
+    const escaped = flag.replace(/[.*+?^${}()|[\]\\]/g, (ch) => `\\${ch}`);
+    assert.match(jsxChildren(src, button).trim(), new RegExp(String.raw`^\{${escaped} && <BusySpinner />\}`), `${where} 文字前挂转圈`);
+    return button;
+  };
+  const setupStart = check(panel, 'className={styles.startBtn}', 'busy', '配置面板的开始按钮');
+  assert.match(attrValue(setupStart.attrs.get('disabled')), /^busy \|\| /, '抽题中置灰');
+  const grillStart = check(grill, 'className={examStyles.startBtn}', 'starting', '复烤区的开始按钮');
+  assert.match(attrValue(grillStart.attrs.get('disabled')), /\bbusy\b/);
+  const quick = check(deck, 'className={styles.quickBtn}', 'quickStart.busy', '快速开始');
+  assert.equal(attrValue(quick.attrs.get('disabled')), 'quickStart.disabled');
+
+  // 在忙不是不可用：抽题中不跟着置灰淡到一半，光标换成「进行中」
+  for (const [file, cls] of [
+    [EXAM_CSS, 'startBtn'],
+    ['src/components/deck/Deck.module.css', 'quickBtn'],
+  ]) {
+    const busyLook = cascade(css(file), `.${cls}[aria-busy='true']:disabled`);
+    assert.ok(Number(busyLook.opacity) >= 0.75, `${file} .${cls} 抽题中的不透明度 ${busyLook.opacity}`);
+    assert.equal(busyLook.cursor, 'progress');
+  }
+
+  // 外层递进来的「正在开考」就是 phase 'loading'；快速开始的置灰条件里本来就有它
+  assert.equal(attrValue(jsxOpening(exam, '<SetupPanel').attrs.get('busy')), "phase === 'loading'");
+  assert.equal(attrValue(jsxOpening(exam, '<GrillPanel').attrs.get('starting')), "phase === 'loading'");
+  assert.match(exam, /disabled: phase === 'loading' \|\| !index \|\| totalPool === 0, busy: phase === 'loading',/);
+
+  // 转圈本身：只转 transform 的无限动画；减动效下停住；遮罩开着时暂停；光效关时照转（它是操作反馈）
+  const spinner = css('src/components/setup/BusySpinner.module.css');
+  const rules = parseRules(spinner);
+  const spin = cascade(spinner, '.spinner');
+  assert.match(spin.animation, /\binfinite\b/);
+  const name = spin.animation.split(/\s+/).find((token) => /^[a-z][\w-]*$/i.test(token) && !['linear', 'infinite'].includes(token));
+  const frames = parseRules(fs.readFileSync('src/components/setup/BusySpinner.module.css', 'utf8'));
+  assert.ok(/@keyframes/.test(spinner) && spinner.includes(`@keyframes ${name}`), '转圈的关键帧得在同一份样式表里');
+  assert.ok(frames.some((rule) => rule.at === `@keyframes ${name}` && /transform: rotate\(360deg\)/.test(rule.body)), '只转 transform');
+  assert.equal(cascade(spinner, '.spinner', { media: '(prefers-reduced-motion: reduce)' }).animation, 'none');
+  assert.ok(rules.some((rule) => /\[data-overlay\]/.test(rule.selector) && /animation-play-state: paused/.test(rule.body)));
+  assert.ok(!rules.some((rule) => /\[data-fx='off'\]/.test(rule.selector)), '光效关时转圈照转——不许有光效关的规则压它');
 });

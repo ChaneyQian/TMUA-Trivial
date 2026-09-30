@@ -18,6 +18,7 @@ import GrillPanel from '@/components/grill/GrillPanel';
 import NoticeBoard from '@/components/notice/NoticeBoard';
 import SetupPanel, { type Db, type Mode } from '@/components/setup/SetupPanel';
 import { holdOverlay } from '@/lib/overlay';
+import { runExclusive } from '@/lib/exclusive';
 import { grillBadgeCount, pickGrillQids } from '@/lib/grill';
 import { countedQids, historyFor, practiceOverview, practiceQids } from '@/lib/progress';
 import {
@@ -644,8 +645,10 @@ export default function ExamApp() {
    * 带 qids 时跳过抽题，直接考这几道——错题榜上列的是哪几行，重练的就是哪几道，
    * 不再由 pickQidsForMode 掺新题。池子仍显式排除 diag：调用方已经滤过一遍，
    * 这里是第二道闸，诊断题不该有任何路径进入普通考试。
+   *
+   * 各入口调的是下面包了重入守卫的 start，不直接调它。
    */
-  const start = async (override?: {
+  const startExam = async (override?: {
     db?: Db;
     pickMode?: PickMode;
     count?: number;
@@ -713,6 +716,16 @@ export default function ExamApp() {
       setPhase('setup');
     }
   };
+
+  /**
+   * 开考的唯一入口（配置面板、卡组快速开始、复烤区三块都走它）。
+   * 重入守卫（P8-A4，lib/exclusive）：从点下去到题目载入完成只放一场——按钮要等 phase 变成 'loading'
+   * 的那次渲染之后才置灰，连点、按住 Enter 的连发在那之前还能再敲一次。
+   * startExam 仍是同步调进去的：requestFullscreen 照旧留在用户手势的调用链里
+   */
+  const startingRef = useRef(false);
+  const start = (override?: Parameters<typeof startExam>[0]) =>
+    runExclusive(startingRef, () => startExam(override));
 
   const finish = useCallback(() => {
     setNavOpen(false);
@@ -1216,6 +1229,8 @@ export default function ExamApp() {
                   count,
                 ),
                 disabled: phase === 'loading' || !index || totalPool === 0,
+                // 点下去到题目载入完成：按钮挂转圈与 aria-busy（置灰已由上一行管）
+                busy: phase === 'loading',
                 // 同一条 start 路径。不能包 setTimeout：
                 // requestFullscreen 只在用户手势的同步调用链里才批准
                 onStart: () => void start(),
@@ -1302,6 +1317,7 @@ export default function ExamApp() {
               count={grillCountChoice}
               onCount={setGrillCountChoice}
               busy={phase === 'loading' || !index}
+              starting={phase === 'loading'}
               onStart={startGrill}
               onGoDiagnostic={goToDiagnostic}
               onRetry={retryMissed}

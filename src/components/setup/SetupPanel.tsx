@@ -12,6 +12,7 @@ import type { ZoneId } from '@/components/deck/zones';
 import { useLang } from '@/lib/LangContext';
 import type { LibraryMode, LogicCoverage, LogicFilter, PickMode } from '@/lib/records';
 import styles from '../exam/Exam.module.css';
+import BusySpinner from './BusySpinner';
 import SegmentedGroup from './SegmentedGroup';
 import panelStyles from './SetupPanel.module.css';
 
@@ -221,12 +222,15 @@ export default function SetupPanel({
         </>
       )}
 
-      {/* 主操作收尾。做题记录整块已经搬进进度面板，配置面板只管「怎么考」 */}
+      {/* 主操作收尾。做题记录整块已经搬进进度面板，配置面板只管「怎么考」。
+          抽题中（点下去到题目载入完成）：置灰防连点、aria-busy、文字前挂一个小转圈 */}
       <button
         className={styles.startBtn}
         onClick={() => onStart()}
         disabled={busy || !indexReady || totalPool === 0}
+        aria-busy={busy || undefined}
       >
+        {busy && <BusySpinner />}
         {busy
           ? t.setup.picking
           : !indexReady && !indexError

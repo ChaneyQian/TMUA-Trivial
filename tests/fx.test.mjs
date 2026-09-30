@@ -112,16 +112,29 @@ test('the first-paint script agrees with resolveFx case by case and never writes
 
 const OFF_ROOT = ":global(:root[data-fx='off'])";
 
+/**
+ * 操作反馈类的无限动画：光效开关不管（lib/fx 顶部「不管的」那一条——关了反而难用）。
+ * 名单写死、逐个点名，只收「在告诉用户正在发生什么」的：抽题中的小转圈（P8-A4）。
+ * 名单里的每一项都得真是一条无限动画（下面核），不能靠它给装饰性循环开后门
+ */
+const FEEDBACK_LOOPS = new Map([['components/setup/BusySpinner.module.css', ['spinner']]]);
+
 test('every endless decorative animation has an off switch that really wins, and none comes back under it', () => {
   const offenders = [];
   const covered = new Set();
+  const exempt = new Set();
   for (const file of cssFiles('src')) {
     const where = path.relative('src', file).replace(/\\/g, '/');
-    const result = endlessOffenders(fs.readFileSync(file, 'utf8'));
+    const result = endlessOffenders(fs.readFileSync(file, 'utf8'), { feedback: FEEDBACK_LOOPS.get(where) ?? [] });
     for (const miss of result.offenders) offenders.push(`${where}  ${miss}`);
     for (const subj of result.covered) covered.add(`${where} ${subj}`);
+    for (const subj of result.exempt) exempt.add(`${where} ${subj}`);
   }
   assert.deepEqual(offenders, [], `光效关时还停不下来的无限动画：\n  ${offenders.join('\n  ')}`);
+  // 操作反馈名单不许写空头：点名的每一项都真是一条无限动画（改名、删掉了名单就得跟着改）
+  for (const [where, subjects] of FEEDBACK_LOOPS) {
+    for (const subj of subjects) assert.ok(exempt.has(`${where} ${subj}`), `${where} ${subj} 不是无限动画，别列进操作反馈名单`);
+  }
 
   // 需求点名的几样都在册：公告药丸呼吸灯、充电条满格流光、公告标题流光、环境光斑漂移
   for (const expected of [
@@ -160,6 +173,13 @@ test('the endless-animation guard counts a pseudo-element as a subject of its ow
   `;
   assert.equal(endlessOffenders(narrower).offenders.length, 1);
   assert.deepEqual(endlessOffenders(`${narrower}\n${OFF_ROOT} .pillDot { animation: none; }`).offenders, []);
+
+  // 操作反馈名单只放过点了名的那一个主体：同一份样式表里别的无限循环照抓
+  const spin = '.spinner { animation: spin 1s linear infinite; }\n.glow { animation: pulse 2s infinite; }';
+  assert.equal(endlessOffenders(spin).offenders.length, 2);
+  const withFeedback = endlessOffenders(spin, { feedback: ['spinner'] });
+  assert.deepEqual(withFeedback.offenders, ['.glow { animation: pulse 2s infinite }']);
+  assert.deepEqual(withFeedback.exempt, ['spinner']);
 });
 
 /** ExamApp / useCardTilt 里「光效开着」的判断：认 fx === 'on' 与 fx !== 'off' 两种等价写法 */

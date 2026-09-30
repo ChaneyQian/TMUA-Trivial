@@ -1,0 +1,32 @@
+/* 按钮里的小转圈（BusySpinner）。一个缺了一角的圆环，颜色随按钮文字（currentColor），只转 transform。
+   它是「正在抽题」的操作反馈，不是装饰：光效关（data-fx="off"）时照转，不列进光效开关。
+   减动效下停住（一个静止的缺口圈，旁边的「抽题中…」已经把状态说清楚了）；
+   整屏遮罩开着时暂停（同各处的无限动画，见 lib/overlay）。 */
+
+.spinner {
+  display: inline-block;
+  flex: none;
+  box-sizing: border-box;
+  width: 0.95em;
+  height: 0.95em;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: busySpin 800ms linear infinite;
+}
+
+@keyframes busySpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation: none;
+  }
+}
+
+:global(:root[data-overlay]) .spinner {
+  animation-play-state: paused;
+}

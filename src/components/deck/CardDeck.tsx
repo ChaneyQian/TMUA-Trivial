@@ -9,6 +9,7 @@
 
 import { useEffect, useRef, type CSSProperties } from 'react';
 import { useCardTilt } from '@/components/fx/useCardTilt';
+import BusySpinner from '@/components/setup/BusySpinner';
 import { useLang } from '@/lib/LangContext';
 import examStyles from '../exam/Exam.module.css';
 import styles from './Deck.module.css';
@@ -64,6 +65,8 @@ interface Props {
     /** 会用哪套配置，一行说清 */
     summary: string;
     disabled: boolean;
+    /** 正在开考（点下去到题目载入完成）：挂转圈与 aria-busy。防连点靠 disabled 与 start() 的重入守卫 */
+    busy?: boolean;
     onStart: () => void;
   };
 }
@@ -339,6 +342,7 @@ export default function CardDeck({
                             type="button"
                             className={styles.quickBtn}
                             disabled={quickStart.disabled}
+                            aria-busy={quickStart.busy || undefined}
                             aria-label={t.deck.quickAria(quickStart.summary)}
                             onClick={(e) => {
                               // 命中层是兄弟节点、不是祖先，本来也收不到这一下；
@@ -351,6 +355,7 @@ export default function CardDeck({
                               quickStart.onStart();
                             }}
                           >
+                            {quickStart.busy && <BusySpinner />}
                             {quickStart.label}
                           </button>
                         </div>

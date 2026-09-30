@@ -36,6 +36,7 @@ import {
   weakTopics,
   type TopicsData,
 } from '@/lib/topics';
+import BusySpinner from '../setup/BusySpinner';
 import SegmentedGroup from '../setup/SegmentedGroup';
 import examStyles from '../exam/Exam.module.css';
 import styles from './Grill.module.css';
@@ -61,6 +62,8 @@ interface Props {
   count: number;
   onCount: (n: number) => void;
   busy: boolean;
+  /** 正在开考（点下去到题目载入完成，phase 'loading'）：开始按钮挂转圈与 aria-busy */
+  starting?: boolean;
   onStart: () => void;
   /** 空态里指路：直接去 9.0 的 Diagnostic 介绍页 */
   onGoDiagnostic: () => void;
@@ -96,6 +99,7 @@ export default function GrillPanel({
   count,
   onCount,
   busy,
+  starting = false,
   onStart,
   onGoDiagnostic,
   onRetry,
@@ -307,7 +311,9 @@ export default function GrillPanel({
                   // 直调，不包异步：requestFullscreen 只认用户手势的同步调用链
                   onClick={onStart}
                   disabled={busy || !index || available === 0}
+                  aria-busy={starting || undefined}
                 >
+                  {starting && <BusySpinner />}
                   {busy ? t.setup.picking : t.grill.start}
                 </button>
                 {available === 0 && <div className={examStyles.errMsg}>{t.grill.empty}</div>}

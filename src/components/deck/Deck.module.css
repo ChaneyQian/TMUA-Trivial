@@ -613,6 +613,11 @@
 .quickBtn {
   position: relative;
   z-index: 4;
+  /* 抽题中文字前挂一个小转圈（BusySpinner），两者居中并排 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
   padding: 0.48rem 0.6rem;
   border: 0;
   border-radius: 8px;
@@ -628,6 +633,12 @@
 .quickBtn:disabled {
   opacity: 0.5;
   cursor: default;
+}
+
+/* 抽题中（aria-busy）：在忙、不是不可用——不淡到一半，光标换成「进行中」 */
+.quickBtn[aria-busy='true']:disabled {
+  opacity: 0.85;
+  cursor: progress;
 }
 
 .quickBtn:focus-visible {

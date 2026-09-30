@@ -333,15 +333,18 @@ export function parseTransition(value) {
  * 「光效关」守卫：凡跑无限循环的主体（伪元素单独算），其每一条动画声明（含只改 name / duration 的变体）
  * 都得被一条 :root[data-fx='off'] 规则用 animation: none（或 animation-name: none）真正压住——
  * 特异性更高，或相同且写在后面；「光效关」规则自己也不许带回无限循环。
- * 返回 { offenders: [文字说明…], covered: [主体…] }
+ * feedback 里点名的主体是操作反馈（比如抽题中的小转圈），光效开关不管它们：跳过、记进 exempt，
+ * 既不算违规也不算管住了（调用方自己核这张名单）。
+ * 返回 { offenders: [文字说明…], covered: [主体…], exempt: [主体…] }
  */
-export function endlessOffenders(css) {
+export function endlessOffenders(css, { feedback = [] } = {}) {
   const OFF = /\[data-fx='off'\]/;
   const rules = parseRules(stripComments(css));
   const offRules = rules.filter((rule) => !rule.inReduced && OFF.test(rule.selector));
   const plainRules = rules.filter((rule) => !rule.inReduced && !OFF.test(rule.selector));
   const offenders = [];
   const covered = [];
+  const exempt = [];
 
   const endless = new Set();
   for (const rule of plainRules) {
@@ -362,6 +365,10 @@ export function endlessOffenders(css) {
       for (const selector of rule.selector.split(',')) {
         const subj = subject(selector);
         if (!endless.has(subj)) continue;
+        if (feedback.includes(subj)) {
+          if (!exempt.includes(subj)) exempt.push(subj);
+          continue;
+        }
         const won = offRules.some(
           (off) =>
             declarations(off.body).some(([p, v]) => (p === 'animation' || p === 'animation-name') && v === 'none') &&
@@ -380,5 +387,5 @@ export function endlessOffenders(css) {
       if (prop.startsWith('animation') && /\binfinite\b/.test(value)) offenders.push(`${off.selector} 又带回了无限循环`);
     }
   }
-  return { offenders, covered };
+  return { offenders, covered, exempt };
 }
