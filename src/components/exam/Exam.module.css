@@ -748,6 +748,20 @@
   top: 1px;
 }
 
+/* 内点（P8-A5）：原先画在 .radio 背景上的那颗径向渐变点，挪到铺满内圈的伪元素上，
+   好让选中时只缩放内点（0→1）、不动外圈。伪元素的盒子就是原来背景的定位区（内圈 10px），
+   静止时与原来一样大、一样居中。缩进必须是整像素：试过缩进 1.5px 画一颗实心点，
+   DPR 1 / 1.25 / 1.5 / 2 下都被像素对齐偏出半像素，点歪在圈里。
+   绝对定位，出没都不影响 .radio 的尺寸与基线 */
+.radio::after {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: radial-gradient(var(--accent) 45%, transparent 50%);
+  content: '';
+  transform: scale(0);
+}
+
 .optSelected {
   background: var(--accent-light);
   border-color: var(--accent);
@@ -755,7 +769,13 @@
 
 .optSelected .radio {
   border-color: var(--accent);
-  background: radial-gradient(var(--accent) 45%, transparent 50%);
+}
+
+/* 选中：内点填充一次。过渡只写在「选中」这一侧——取消选中（改选别的、批改后这颗点退场）瞬时收掉，
+   不跟新选中的那颗抢眼 */
+.optSelected .radio::after {
+  transform: scale(1);
+  transition: transform 160ms cubic-bezier(0.2, 0.7, 0.2, 1);
 }
 
 .optCorrect {
@@ -774,7 +794,12 @@
 
 .optWrong .radio {
   border-color: #c62828;
+}
+
+/* 选错的那一项留着红点（成绩页逐题卡同一条）。选中那颗点本来就满着，这里只换颜色，不再放一遍 */
+.optWrong .radio::after {
   background: radial-gradient(#c62828 45%, transparent 50%);
+  transform: scale(1);
 }
 
 .choiceLabel {
@@ -802,8 +827,9 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  /* 竖条照出，只是瞬时到位、不再伸出来 */
-  .choiceLive::before {
+  /* 竖条照出、圆点照填，只是瞬时到位 */
+  .choiceLive::before,
+  .optSelected .radio::after {
     transition: none;
   }
 }

@@ -138,16 +138,21 @@ function answeringScenarios() {
 const rulesFor = (subj) => rules.filter((rule) => rule.selector.split(',').some((one) => subject(one) === subj));
 const decl = (rule) => Object.fromEntries(declarations(rule.body));
 
-/** transform 里的纵向缩放：scaleY(k) / scale(x, y) / scale(k) / none */
-function scaleYOf(value) {
-  const v = String(value).trim();
-  if (v === 'none') return 1;
-  const y = v.match(/scaleY\(\s*([\d.]+)\s*\)/);
-  if (y) return Number(y[1]);
-  const s = v.match(/scale\(\s*([\d.]+)\s*(?:,\s*([\d.]+)\s*)?\)/);
-  if (s) return Number(s[2] ?? s[1]);
-  return Number.NaN;
+/** transform 里的缩放 [x, y]：scale(k) / scale(x, y) / scaleX(k) / scaleY(k) / none；认不出是 NaN */
+function scaleOf(value) {
+  const v = String(value ?? '').trim();
+  if (v === 'none') return [1, 1];
+  const s = v.match(/^scale\(\s*([\d.]+)\s*(?:,\s*([\d.]+)\s*)?\)$/);
+  if (s) return [Number(s[1]), Number(s[2] ?? s[1])];
+  const x = v.match(/^scaleX\(\s*([\d.]+)\s*\)$/);
+  if (x) return [Number(x[1]), 1];
+  const y = v.match(/^scaleY\(\s*([\d.]+)\s*\)$/);
+  if (y) return [1, Number(y[1])];
+  return [Number.NaN, Number.NaN];
 }
+
+/** transform 里的纵向缩放 */
+const scaleYOf = (value) => scaleOf(value)[1];
 
 // ---------------------------------------------------------------------------
 // 1. 悬停色条
@@ -243,5 +248,58 @@ test('only options that can still be picked get the hover bar — never once gra
   // 成绩页的逐题卡不是按钮
   for (const answer of [null, 'a', 'b']) {
     for (const cls of resultOptions(answer)) assert.ok(!cls.includes('choiceLive'), `成绩页：${cls.join(' ')}`);
+  }
+});
+
+// ---------------------------------------------------------------------------
+// 2. 选中圆点
+
+test('picking an option fills the radio dot with one scale(0→1); un-picking clears it at once', () => {
+  const dot = rulesFor('radio::after').filter((rule) => !rule.inReduced);
+  const base = dot.filter((rule) => rule.selector.split(',').some((one) => one.trim() === '.radio::after'));
+  assert.equal(base.length, 1, '内点的本体规则只该有一条');
+  const d = decl(base[0]);
+  // 一颗绝对定位的真圆：出没都不影响 .radio 的尺寸与基线
+  assert.equal(d.position, 'absolute');
+  assert.equal(d['border-radius'], '50%');
+  assert.ok('content' in d);
+  assert.deepEqual(scaleOf(d.transform), [0, 0], `内点平时应该缩成 0：transform ${d.transform}`);
+  // 过渡不写在本体上：取消选中（改选别的、批改后退场）就瞬时收掉，不跟新选中的那颗抢眼
+  assert.ok(!('transition' in d), '内点本体带了过渡，取消选中也会慢慢缩');
+  // 缩进得是整像素：半像素（试过 1.5px 画实心点）实测在 DPR 1 / 1.25 / 1.5 / 2 下都被像素对齐
+  // 偏出半像素，点歪在圈里
+  const inset = Number(String(d.inset).replace(/px$/, ''));
+  assert.ok(Number.isInteger(inset) && inset >= 0, `内点缩进 ${d.inset} 不是整像素，会画歪`);
+  // 点画在伪元素自己身上，颜色跟主题色走
+  assert.match(d.background ?? '', /var\(--accent\)/);
+  const radio = rules.filter((rule) => rule.selector.trim() === '.radio' && !rule.at).map(decl);
+  assert.ok(radio.some((one) => one.position === 'relative'), '.radio 得是内点的定位参照');
+
+  // 选中：放大到 1，只补间 transform，约 160ms
+  const picked = dot.filter((rule) => rule.selector.includes('.optSelected'));
+  assert.equal(picked.length, 1, '选中态的内点规则只该有一条');
+  const p = decl(picked[0]);
+  assert.deepEqual(scaleOf(p.transform), [1, 1]);
+  const items = parseTransition(p.transition);
+  assert.ok(items.length > 0, '选中要有一次填充');
+  for (const item of items) {
+    assert.equal(item.property, 'transform', `内点过渡了 ${item.property}`);
+    const ms = timeMs(item.duration);
+    assert.ok(ms >= 120 && ms <= 220, `内点填充用了 ${ms}ms`);
+  }
+
+  // 满着的只有两种：选中、选错（批改后 / 成绩页的红点，颜色换了、不再放一遍）；正确项照旧只描外圈
+  const filled = dot.filter((rule) => scaleOf(decl(rule).transform).every((k) => k === 1));
+  const states = filled.flatMap((rule) => rule.selector.split(',').map((one) => one.trim()));
+  assert.deepEqual(states.sort(), ['.optSelected .radio::after', '.optWrong .radio::after']);
+  const wrong = decl(filled.find((rule) => rule.selector.includes('.optWrong')));
+  assert.match(wrong.background ?? '', /#c62828/);
+  assert.ok(!('transition' in wrong), '批改时红点只换颜色，不再放一遍');
+
+  // 内点只有一颗：.radio 自己不再画背景（原先的径向渐变会盖在缩放的那颗上，看不出填充）
+  for (const rule of rules.filter((one) => one.selector.split(',').some((s) => subject(s) === 'radio'))) {
+    for (const [prop, value] of declarations(rule.body)) {
+      assert.ok(!/^background(-image)?$/.test(prop), `${rule.selector.trim()} { ${prop}: ${value} } 又在 .radio 上画了一颗点`);
+    }
   }
 });
