@@ -9,6 +9,17 @@
   flex-direction: column;
 }
 
+/* 键盘焦点环（P8-A4）：大厅（选区 / 配置 / 进度三个视图）与成绩页一律 2px 强调色实线、离边 2px。
+   只认 :focus-visible——鼠标点按钮不出现，键盘 Tab / 方向键过来才有。
+   整条都包在 :where() 里，特异性为 0：各处已有的自定义焦点样式（工牌的白环、卡组 viewport 的外扩环、
+   命中层的内缩环、面板容器的 outline: none……）照旧压过它，这里只给没自己写过的那些兜底。
+   只挂在 .wrap（大厅与成绩页的根）底下：答题页与 Diagnostic 的根是 .exam，保持浏览器默认的焦点环——
+   蓝底 CBT 条上强调色环看不清，而且那两页刻意保持原样 */
+:where(.wrap) :where(:focus-visible) {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
 /* ============ 设置页 / 成绩页外壳 ============ */
 
 .setupCard {
