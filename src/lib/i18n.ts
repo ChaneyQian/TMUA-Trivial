@@ -120,6 +120,7 @@ const zh = {
   // 大厅片头（components/intro）：对话框的读屏名、右上角的跳过、卡组底下提示行末尾的重播入口
   intro: {
     aria: '片头教程',
+    desc: '15 秒的无声功能介绍：四张功能区卡片、模拟机考答题、7.5+ Diagnostic 通过后解锁 9.0 Trivial。按 Esc 或「跳过」可随时离开。',
     skip: '跳过',
     watch: '看片头',
   },
@@ -410,6 +411,7 @@ const en: Strings = {
 
   intro: {
     aria: 'Intro tutorial',
+    desc: 'A silent 15-second tour: the four zone cards, answering in the mock exam, and passing the 7.5+ Diagnostic to unlock 9.0 Trivial. Press Esc or Skip to leave at any time.',
     skip: 'Skip',
     watch: 'Watch intro',
   },

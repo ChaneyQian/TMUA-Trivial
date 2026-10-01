@@ -162,7 +162,12 @@ function IntroDialog({ auto }: { auto: boolean }) {
       role="dialog"
       aria-modal="true"
       aria-label={t.intro.aria}
+      aria-describedby="intro-desc"
     >
+      {/* 片头是纯画面没有旁白，读屏用户只能靠这一句知道它在讲什么、怎么离开 */}
+      <p id="intro-desc" className={styles.srOnly}>
+        {t.intro.desc}
+      </p>
       <div className={styles.frame}>
         <video
           ref={videoRef}

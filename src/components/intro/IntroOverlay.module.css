@@ -116,3 +116,16 @@
     transform: none;
   }
 }
+
+/* 只给读屏的说明：视觉上不占位、不显示，但仍在无障碍树里 */
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
