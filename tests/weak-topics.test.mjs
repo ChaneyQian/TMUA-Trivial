@@ -327,13 +327,19 @@ test('the alias table folds every historic spelling into the 12-word vocabulary'
   // 词表外的取值一个都不该有。真出现了是打标侧的信号，构建日志会报（下一条测试证明它会报）
   assert.doesNotMatch(log, /词表外/, `构建日志报出了词表外的取值：\n${log}`);
 
-  // 反面：规范名本身当然照常收录，别名归并不是把原名也一起吃掉
-  const algebra = new Set(topics.byTopic.Algebra || []);
-  const plain = [...source].filter(
-    ([qid, block]) => indexed.has(qid) && hasExactItem(block, 'Algebra'),
-  );
-  assert.ok(plain.length > 0);
-  for (const [qid] of plain) assert.ok(algebra.has(qid), `${qid} 直接标了 Algebra 却没收录`);
+  // 反面：规范名本身当然照常收录，别名归并不是把原名也一起吃掉。
+  // 不钉某一个词：题库 2026-10 把 Algebra 全部改写成了 Algebra (Basic)，直接标规范名的题
+  // 落在哪几个词上随打标变化；只要求至少有一个规范名还被直接使用，且用到的都照常收录
+  let direct = 0;
+  for (const name of VOCAB) {
+    const collected = new Set(topics.byTopic[name] || []);
+    for (const [qid, block] of source) {
+      if (!indexed.has(qid) || !hasExactItem(block, name)) continue;
+      direct++;
+      assert.ok(collected.has(qid), `${qid} 直接标了 ${name} 却没收录`);
+    }
+  }
+  assert.ok(direct > 0, '没有一道题直接用规范名打标，这条反面检查就是空跑');
 });
 
 test('an out-of-vocabulary topic is dropped and reported, never swallowed', (t) => {

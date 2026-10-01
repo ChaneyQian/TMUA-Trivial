@@ -39,11 +39,11 @@ test('static bank separates refreshed TMUA Mock and keeps expanded pools behind 
   // 360 道真题 + 2024/2025 回忆题 75 道（回忆题落 hidden）
   assert.equal(counts.TMUA?.length, 441);
   // Mock 已从 TMUA/Mock 提升为源里的独立顶层库，并扩充了 BeyondHorizon / Zetta 几套
-  assert.equal(counts.TMUA_MOCK?.length, 1281);
+  assert.equal(counts.TMUA_MOCK?.length, 1321);
   assert.equal(counts.ECAA?.length, 123);
   // MAT 2024（24 题）/ 2025（20 题）回忆题入池后 309 → 353，两卷都归扩展池
   assert.equal(counts.MAT?.length, 357);
-  assert.equal(counts.SMC?.length, 674);
+  assert.equal(counts.SMC?.length, 699);
   assert.equal(counts.AMC?.length || 0, 0, 'AMC files without answers must not enter the gradeable index');
 
   const qids = new Set(index.map((entry) => entry.qid));
@@ -60,8 +60,8 @@ test('static bank separates refreshed TMUA Mock and keeps expanded pools behind 
   assert.equal(index.find((entry) => entry.qid === 20132101211101)?.db, 'TMUA_MOCK');
 
   const hidden = index.filter((entry) => entry.hidden);
-  assert.equal(hidden.length, 1505);
-  assert.equal(hidden.filter((entry) => entry.db === 'TMUA_MOCK').length, 1281);
+  assert.equal(hidden.length, 1545);
+  assert.equal(hidden.filter((entry) => entry.db === 'TMUA_MOCK').length, 1321);
   // 1996–2006 的 99 道 + 2024/2025 回忆题的 44 道
   assert.equal(hidden.filter((entry) => entry.db === 'MAT').length, 143);
   // TMUA 自 24/25 回忆题起也有 hidden 卷了；仍无 hidden 的只剩 SMC / ECAA
@@ -76,9 +76,9 @@ test('static bank separates refreshed TMUA Mock and keeps expanded pools behind 
 
 // 题库 2026-10-01 起 section 只表示题型：除 STEP 外只取 MCQ / 3-Digit Answer / Short Answer /
 // Long Question（规范见 vault 的 题库/docs/题型规范.md），旧值 Multiple Choice、Advanced Mathematics
-// 等一律并为 MCQ。data\ 要等下一次 sync-bank 才换成新值，过渡期两种都认；同步之后收紧成只认 MCQ。
-// 这个字段只是题库自己的分类，build-data 不拿它过滤（它读的是正文的 ## 题目 / ## 答案），产物不受影响
-const MCQ_SECTION = /^section: (MCQ|Multiple Choice|Advanced Mathematics)$/m;
+// 等一律并为 MCQ。这个字段只是题库自己的分类，build-data 不拿它过滤（它读的是正文的 ## 题目 / ## 答案），
+// 产物不受影响；这里钉住的是「同步过来的确实是新规范」
+const MCQ_SECTION = /^section: MCQ$/m;
 
 test('AMC source is synchronized even while its unanswered questions remain ungradeable', () => {
   const files = walkMarkdown(path.join(dataDir, 'AMC')).filter((file) => path.basename(file) !== 'Readme.md');
