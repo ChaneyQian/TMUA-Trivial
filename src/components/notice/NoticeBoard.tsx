@@ -26,7 +26,8 @@ export default function NoticeBoard() {
       try {
         if (localStorage.getItem(NOTICE_KEY) !== NOTICE_ID) setOpen(true);
       } catch {
-        /* 无痕模式拿不到 localStorage：每次都弹，宁多勿漏 */
+        // 无痕模式拿不到 localStorage：每次都弹，宁多勿漏
+        setOpen(true);
       }
     });
   }, []);
