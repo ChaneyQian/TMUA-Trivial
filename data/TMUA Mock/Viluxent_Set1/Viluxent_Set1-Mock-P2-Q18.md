@@ -5,7 +5,7 @@ id: Viluxent_Set1-Mock-P2-Q18
 paper: TMUA Mock
 year:
 number: Q18
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Calculus, Geometry]
 subtopics: [Optimization, Solid Geometry]

@@ -5,11 +5,11 @@ id: TMUAmockz-Mock-P2-Q6
 paper: TMUA Mock
 year:
 number: Q6
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Logic and Proof, Number Theory]
 subtopics: [Logic, Proof, Divisibility]
-tags: [Truth-Value-List, Iff, Counterexample, Deduction]
+tags: [Truth-Value-List, Necessary-vs-Sufficient, Counterexample, Deduction]
 status: 待复核
 ---
 

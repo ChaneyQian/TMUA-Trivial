@@ -5,7 +5,7 @@ id: JacquelineTyler_SetA-Mock-P1-Q15
 paper: TMUA Mock
 year:
 number: Q15
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Sequences and Series]
 subtopics: [AP GP]

@@ -5,7 +5,7 @@ id: JZMaths_SetB-Mock-P1-Q2
 paper: TMUA Mock
 year:
 number: Q2
-section: Multiple Choice
+section: MCQ
 difficulty: 5.5
 topics: [Calculus, Logic and Proof]
 subtopics: [Integration, Graphical Arguments]

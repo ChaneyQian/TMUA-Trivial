@@ -5,11 +5,11 @@ id: Sed-Mock-P2-Q3
 paper: TMUA Mock
 year:
 number: Q3
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Logic and Proof, Calculus, Trigonometry]
 subtopics: [Logic, Integration, Trigonometric Equations]
-tags: [Necessary-Condition, Counterexample, Periodicity]
+tags: [Iff, Counterexample, Periodicity]
 status: 待复核
 ---
 

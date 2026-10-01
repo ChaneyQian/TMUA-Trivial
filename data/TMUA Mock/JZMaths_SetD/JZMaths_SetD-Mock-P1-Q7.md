@@ -5,7 +5,7 @@ id: JZMaths_SetD-Mock-P1-Q7
 paper: TMUA Mock
 year:
 number: Q7
-section: Multiple Choice
+section: MCQ
 difficulty: 6
 topics: [Sequences and Series, Algebra (Basic)]
 subtopics: [Sequences and Series, Surds and indices]

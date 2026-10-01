@@ -5,12 +5,11 @@ id: Spec-P1-Q14
 paper: TMUA P1
 year:
 number: Q14
-section: Applications
+section: MCQ
 difficulty: 0
-topics: []
-subtopics: []
-tags:
-  - Specimen
+topics: [Function]
+subtopics: [Exponentials and Logarithms]
+tags: [Specimen, Log-Laws, Log-Log-Plot, Straight-Line-Form]
 status: 已入库
 ---
 

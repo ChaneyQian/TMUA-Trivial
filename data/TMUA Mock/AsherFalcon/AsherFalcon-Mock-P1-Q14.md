@@ -5,11 +5,11 @@ id: AsherFalcon-Mock-P1-Q14
 paper: TMUA Mock
 year:
 number: Q14
-section: Multiple Choice
+section: MCQ
 difficulty: 0
-topics: [Function, Logic and Proof]
-subtopics: [Iterated Functions, Logic]
-tags: [Quantifiers, Counterexample, Composite-Function, Range]
+topics: [Function]
+subtopics: [Iterated Functions]
+tags: [Composite-Function, Range]
 status: 待复核
 ---
 

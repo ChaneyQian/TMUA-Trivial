@@ -5,12 +5,12 @@ id: Spec-Q40
 paper: ECAA Spec Section 1 Part B
 year: 2015
 number: Q40
-section: Advanced Mathematics
+section: MCQ
 solution_source: 官方
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Geometry]
+subtopics: [Euclid Geometry]
+tags: [Rounding-Bounds, Pythagoras]
 status: 已入库
 ---
 ## 题目

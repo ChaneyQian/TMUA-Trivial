@@ -5,7 +5,7 @@ id: JZMaths_SetC-Mock-P1-Q18
 paper: TMUA Mock
 year:
 number: Q18
-section: Multiple Choice
+section: MCQ
 difficulty: 7.5
 topics: [Sequences and Series, Probability]
 subtopics: [Binomial Theorem, AP GP, Elementary Probability]

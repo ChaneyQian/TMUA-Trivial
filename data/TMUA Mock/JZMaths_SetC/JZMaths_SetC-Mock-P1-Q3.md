@@ -5,7 +5,7 @@ id: JZMaths_SetC-Mock-P1-Q3
 paper: TMUA Mock
 year:
 number: Q3
-section: Multiple Choice
+section: MCQ
 difficulty: 5.5
 topics: [Miscellaneous Pure, Function]
 subtopics: [Inequalities, Absolute Value Functions]

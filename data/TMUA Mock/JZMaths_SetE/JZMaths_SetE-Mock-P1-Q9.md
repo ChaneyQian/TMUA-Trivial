@@ -5,7 +5,7 @@ id: JZMaths_SetE-Mock-P1-Q9
 paper: TMUA Mock
 year:
 number: Q9
-section: Multiple Choice
+section: MCQ
 difficulty: 6.5
 topics: [Sequences and Series]
 subtopics: [Sequences and Series, AP GP]

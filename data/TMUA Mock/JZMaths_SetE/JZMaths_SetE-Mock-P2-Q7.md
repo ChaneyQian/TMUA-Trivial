@@ -5,7 +5,7 @@ id: JZMaths_SetE-Mock-P2-Q7
 paper: TMUA Mock
 year:
 number: Q7
-section: Multiple Choice
+section: MCQ
 difficulty: 6.5
 topics: [Sequences and Series, Function]
 subtopics: [AP GP, Exponentials and Logarithms]

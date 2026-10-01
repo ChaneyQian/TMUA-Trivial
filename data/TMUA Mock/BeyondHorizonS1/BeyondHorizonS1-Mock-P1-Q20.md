@@ -5,7 +5,7 @@ id: BeyondHorizonS1-Mock-P1-Q20
 paper: TMUA Mock
 year:
 number: Q20
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Geometry]
 subtopics: [Solid Geometry]
@@ -39,9 +39,10 @@ $$\mathbf{F} \quad \frac{2417}{20}\pi$$
   并非题面推出的结论。
 - **键对拍（2026-09-11，键源 tmua.fyi）**：键给 **A**（$\frac{1867}{40}\pi$）。`ANSWER` 已改记 A（出题人意图项）。
   仍无法反推出题人用的摆法：A 对应 $V_{A\cap B}=\frac{329}{40}\pi$，试过「B 倒扣、顶点落在 A 底面中心」「B 正立、A 整体落在 B 内（得 $\frac{1475}{40}\pi$，不在选项）」都对不上。题面「内锥比外锥大却 placed inside」的矛盾没有因键而消失，标签保留。
+2026-09-25 代审：答案由 A 改为 C（本卷答案为我方自解，可更正）。题面自相矛盾（锥 B 比锥台 A 又宽又高，无法「放进」A）；按唯一能落到选项上的摆法——B 尖端朝下插进半径 1.5 的顶口、与顶面齐平——重叠体积 1.35π，所求 2417π/40，即 C，与解析一致。A 对应的重叠量找不到任何摆法。
 
 ## 答案
-A
+C
 
 ## 解析
 The quantity asked for is the volume of the symmetric difference, namely $V_A + V_B - 2V_{A \cap B}$. For cone $A$, the radius shrinks linearly from $3$ at the base to $0$ at height $5$, so it equals $1.5$ at height $2.5$; the truncated solid is therefore a frustum of height $2.5$ with radii $3$ and $1.5$, and

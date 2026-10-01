@@ -5,12 +5,11 @@ id: Spec-P1-Q6
 paper: TMUA P1
 year:
 number: Q6
-section: Applications
+section: MCQ
 difficulty: 0
-topics: []
-subtopics: []
-tags:
-  - Specimen
+topics: [Polynomial]
+subtopics: [Factor and Remainder Theorem]
+tags: [Specimen, Factor-Theorem, Sum-of-Roots, Cubic]
 status: 已入库
 ---
 

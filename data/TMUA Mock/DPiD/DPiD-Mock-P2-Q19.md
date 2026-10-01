@@ -5,10 +5,10 @@ id: DPiD-Mock-P2-Q19
 paper: TMUA Mock
 year:
 number: Q19
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Function, Sequences and Series]
-subtopics: [Floor, Ceiling and Fractional Part Functions, Sequences and Series]
+subtopics: ["Floor, Ceiling and Fractional Part Functions", Sequences and Series]
 tags: [Geometric-Decay, Surd-Approximation, Terminating-Sum]
 status: 待复核
 ---

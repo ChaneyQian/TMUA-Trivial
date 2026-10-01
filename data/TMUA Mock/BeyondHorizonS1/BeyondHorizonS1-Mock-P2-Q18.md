@@ -5,7 +5,7 @@ id: BeyondHorizonS1-Mock-P2-Q18
 paper: TMUA Mock
 year:
 number: Q18
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Logic and Proof, Geometry]
 subtopics: [Logic, Euclid Geometry]
@@ -50,6 +50,8 @@ $$\mathbf{H} \quad \text{1, 2, and 3}$$
   四种读法命中 A/B/C/E 四个真实选项。有了键之后 B 是**记录答案**，但学生按 (1) 的字面
   「for all polygons」在 $n=3$ 处找到反例而答 A，从逻辑上说不出错在哪。
 - 是否凭键放行进组卷池，由统筹者裁定。
+2026-09-25 代审：答案维持 B。(3) 在任何读法下都假（六边形的对称轴数不可能恰为 4）。按「对整类多边形」读充分性（考试惯例），(1) 真、(2) 假，得 B；按「对某一个多边形」读，(1) 假、(2) 真，得 C（解析末句即此读法）。读法歧义真实存在。
+
 ## 答案
 B
 

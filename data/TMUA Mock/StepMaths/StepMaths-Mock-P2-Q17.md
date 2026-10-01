@@ -5,7 +5,7 @@ id: StepMaths-Mock-P2-Q17
 paper: TMUA Mock
 year:
 number: Q17
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Function, Polynomial]
 subtopics: [Absolute Value Functions, Solution of Equations]

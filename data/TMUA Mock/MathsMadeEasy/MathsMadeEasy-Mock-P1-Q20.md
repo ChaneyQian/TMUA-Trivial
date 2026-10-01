@@ -5,11 +5,11 @@ id: MathsMadeEasy-Mock-P1-Q20
 paper: TMUA Mock
 year:
 number: Q20
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Probability]
 subtopics: [Geometric Probability, Conditional Probability]
-tags: [Random-Chord, Central-Angle, Conditional-Probability]
+tags: [原卷缺陷, Random-Chord, Central-Angle, Conditional-Probability]
 status: 待复核
 ---
 
@@ -29,6 +29,7 @@ $$ \mathbf{E} \quad \frac16 $$
 ### AI备注
 来源：tmua.io 社区卷 `community__maths-made-easy__p1`，作者 **Maths Made Easy**（站点标题：Maths Made Easy TMUA Paper 1）。
 第三方录入的第三方模拟卷，**非官方真题，未经原卷核对**；站点不提供解析，`## 解析` 待补。
+2026-09-25 代审：原卷答案 B=1/12 有误，且无正确选项。「随机弦」本身有 Bertrand 歧义：端点均匀取在圆周上（相交题的常用模型）得 7/27≈0.259，取中点均匀约 0.123，取半径上一点均匀约 0.391，都不在选项中；题干定义了 P 却没用到。答案栏保留原卷 B。
 
 ## 答案
 B

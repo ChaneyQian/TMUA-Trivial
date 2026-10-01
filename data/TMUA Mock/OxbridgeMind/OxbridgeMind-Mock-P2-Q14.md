@@ -5,7 +5,7 @@ id: OxbridgeMind-Mock-P2-Q14
 paper: TMUA Mock
 year:
 number: Q14
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Geometry, Miscellaneous Pure]
 subtopics: [Solid Geometry, Misc Pure]

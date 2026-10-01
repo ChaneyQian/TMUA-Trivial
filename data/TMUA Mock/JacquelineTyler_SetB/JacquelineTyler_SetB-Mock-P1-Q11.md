@@ -5,7 +5,7 @@ id: JacquelineTyler_SetB-Mock-P1-Q11
 paper: TMUA Mock
 year:
 number: Q11
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Algebra (Basic)]
 subtopics: [Surds and indices]

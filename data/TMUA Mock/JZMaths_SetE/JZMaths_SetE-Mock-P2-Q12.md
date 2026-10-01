@@ -5,11 +5,11 @@ id: JZMaths_SetE-Mock-P2-Q12
 paper: TMUA Mock
 year:
 number: Q12
-section: Multiple Choice
+section: MCQ
 difficulty: 7
 topics: [Logic and Proof]
 subtopics: [Logic]
-tags: [ExaExactlytly-k-Truk-Tre, CContrapostntrapositvve, DeduDeducttioon]
+tags: [Exactly-k-True, Contrapositive, Deduction]
 status: 已入库
 ---
 

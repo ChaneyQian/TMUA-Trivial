@@ -5,12 +5,11 @@ id: Spec-P1-Q1
 paper: TMUA P1
 year:
 number: Q1
-section: Applications
+section: MCQ
 difficulty: 0
-topics: []
-subtopics: []
-tags:
-  - Specimen
+topics: [Polynomial, Algebra (Basic)]
+subtopics: [Solution of Equations, Simultaneous Equations]
+tags: [Specimen, Substitution, Quadratic-Formula, Factorising, Linear-Quadratic-System]
 status: 已入库
 ---
 

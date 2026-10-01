@@ -5,7 +5,7 @@ id: JZMaths_SetD-Mock-P2-Q20
 paper: TMUA Mock
 year:
 number: Q20
-section: Multiple Choice
+section: MCQ
 difficulty: 8.5
 topics: [Calculus, Polynomial, Logic and Proof]
 subtopics: [Differentiation Application, Polynomials, Graphical Arguments]

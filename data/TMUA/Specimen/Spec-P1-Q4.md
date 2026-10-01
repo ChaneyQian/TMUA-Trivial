@@ -5,12 +5,11 @@ id: Spec-P1-Q4
 paper: TMUA P1
 year:
 number: Q4
-section: Applications
+section: MCQ
 difficulty: 0
-topics: []
-subtopics: []
-tags:
-  - Specimen
+topics: [Miscellaneous Pure]
+subtopics: [Inequalities]
+tags: [Specimen, Sign-Diagram, Factorising, Cubic-Inequality]
 status: 已入库
 ---
 

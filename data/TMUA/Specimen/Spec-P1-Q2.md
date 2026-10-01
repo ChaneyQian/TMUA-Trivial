@@ -5,12 +5,11 @@ id: Spec-P1-Q2
 paper: TMUA P1
 year:
 number: Q2
-section: Applications
+section: MCQ
 difficulty: 0
-topics: []
-subtopics: []
-tags:
-  - Specimen
+topics: [Trigonometry]
+subtopics: [Trigonometric Equations, Trigonometric Identities]
+tags: [Specimen, Pythagorean-Identity, Quadratic-in-Cos, Solution-Counting]
 status: 已入库
 ---
 

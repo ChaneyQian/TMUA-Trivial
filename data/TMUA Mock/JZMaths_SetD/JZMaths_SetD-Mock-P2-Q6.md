@@ -5,11 +5,11 @@ id: JZMaths_SetD-Mock-P2-Q6
 paper: TMUA Mock
 year:
 number: Q6
-section: Multiple Choice
+section: MCQ
 difficulty: 6.5
 topics: [Logic and Proof, Function, Algebra (Basic)]
 subtopics: [Logic, Algebraic Functions, Surds and indices]
-tags: [Sufficient-Condition, Sufficient-Condition, General-Algebra, Inequalities]
+tags: [Sufficient-Condition, General-Algebra, Inequalities]
 status: 已入库
 ---
 

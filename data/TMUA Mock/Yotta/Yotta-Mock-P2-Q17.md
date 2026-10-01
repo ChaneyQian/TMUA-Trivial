@@ -5,7 +5,7 @@ id: Yotta-Mock-P2-Q17
 paper: TMUA Mock
 year:
 number: Q17
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Logic and Proof, Calculus]
 subtopics: [Logic, Differentiation]

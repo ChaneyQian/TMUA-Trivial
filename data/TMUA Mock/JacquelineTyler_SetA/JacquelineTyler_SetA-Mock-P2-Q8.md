@@ -5,7 +5,7 @@ id: JacquelineTyler_SetA-Mock-P2-Q8
 paper: TMUA Mock
 year:
 number: Q8
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Function, Miscellaneous Pure]
 subtopics: [Exponentials and Logarithms, Graph Sketching]

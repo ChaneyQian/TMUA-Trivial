@@ -5,11 +5,11 @@ id: JZMaths_SetB-Mock-P2-Q2
 paper: TMUA Mock
 year:
 number: Q2
-section: Multiple Choice
+section: MCQ
 difficulty: 5.5
 topics: [Logic and Proof, Algebra (Basic)]
 subtopics: [Proof, Algebra Manipulation]
-tags: [Deduction, Error-Spotting, Extraneous-Root, Error-Spotting, Extraneous-Root, General-Algebra, Surd-Manipulation, Surd-Manipulation]
+tags: [Deduction, Error-Spotting, Extraneous-Root, General-Algebra, Surd-Manipulation]
 status: 已入库
 ---
 

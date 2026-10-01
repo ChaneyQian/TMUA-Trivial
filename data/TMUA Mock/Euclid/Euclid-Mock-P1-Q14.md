@@ -5,7 +5,7 @@ id: Euclid-Mock-P1-Q14
 paper: TMUA Mock
 year:
 number: Q14
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Function, Polynomial]
 subtopics: [Absolute Value Functions, Solution of Equations]

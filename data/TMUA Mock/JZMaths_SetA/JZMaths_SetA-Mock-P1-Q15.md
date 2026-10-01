@@ -5,7 +5,7 @@ id: JZMaths_SetA-Mock-P1-Q15
 paper: TMUA Mock
 year:
 number: Q15
-section: Multiple Choice
+section: MCQ
 difficulty: 7.5
 topics: [Trigonometry, Function]
 subtopics: [Trigonometric Equations, Algebraic Functions]

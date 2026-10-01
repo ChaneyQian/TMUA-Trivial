@@ -5,7 +5,7 @@ id: Euclid-Mock-P2-Q14
 paper: TMUA Mock
 year:
 number: Q14
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Logic and Proof, Calculus, Polynomial]
 subtopics: [Logic, Proof, Differentiation Application, Vieta's Formulas]

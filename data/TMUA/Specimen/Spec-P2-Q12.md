@@ -5,12 +5,11 @@ id: Spec-P2-Q12
 paper: TMUA P2
 year:
 number: Q12
-section: Reasoning
+section: MCQ
 difficulty: 0
-topics: []
-subtopics: []
-tags:
-  - Specimen
+topics: [Polynomial, Logic and Proof]
+subtopics: [Logic, Proof, Factor and Remainder Theorem]
+tags: [Specimen, Truth-Value-List, Deduction, Remainder-Theorem]
 status: 已入库
 ---
 

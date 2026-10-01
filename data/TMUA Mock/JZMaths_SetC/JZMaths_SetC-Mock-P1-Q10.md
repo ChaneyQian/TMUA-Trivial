@@ -5,7 +5,7 @@ id: JZMaths_SetC-Mock-P1-Q10
 paper: TMUA Mock
 year:
 number: Q10
-section: Multiple Choice
+section: MCQ
 difficulty: 6.5
 topics: [Function, Geometry]
 subtopics: [Functions, Coordinate Geometry]

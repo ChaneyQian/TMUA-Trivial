@@ -5,7 +5,7 @@ id: JZMaths_SetB-Mock-P1-Q13
 paper: TMUA Mock
 year:
 number: Q13
-section: Multiple Choice
+section: MCQ
 difficulty: 7.5
 topics: [Geometry, Algebra (Basic)]
 subtopics: [Euclid Geometry, Simultaneous Equations]

@@ -5,12 +5,11 @@ id: Spec-P2-Q8
 paper: TMUA P2
 year:
 number: Q8
-section: Reasoning
+section: MCQ
 difficulty: 0
 topics: [Logic and Proof, Number Theory]
 subtopics: [Logic, Divisibility]
-tags: [Quantifiers, Counterexample, Consecutive-Integers]
-  - Specimen
+tags: [Quantifiers, Counterexample, Consecutive-Integers, Specimen]
 status: 已入库
 ---
 

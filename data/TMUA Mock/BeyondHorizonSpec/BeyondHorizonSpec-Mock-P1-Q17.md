@@ -5,10 +5,10 @@ id: BeyondHorizonSpec-Mock-P1-Q17
 paper: TMUA Mock
 year:
 number: Q17
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Function, Calculus]
-subtopics: [Floor, Ceiling and Fractional Part Functions, Integration]
+subtopics: ["Floor, Ceiling and Fractional Part Functions", Integration]
 tags: [Step-Function, Definite-Integral, Measure-Zero-Exceptions]
 status: 已入库
 ---

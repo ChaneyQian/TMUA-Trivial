@@ -5,12 +5,12 @@ id: Spec-Q33
 paper: ECAA Spec Section 1 Part B
 year: 2015
 number: Q33
-section: Advanced Mathematics
+section: MCQ
 solution_source: 官方
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Trigonometry]
+subtopics: [Trigonometric Equations, Trigonometric Identities]
+tags: [Quadratic-in-Cos, Tan-to-Sin-Over-Cos]
 status: 已入库
 ---
 ## 题目

@@ -5,12 +5,11 @@ id: Spec-P2-Q4
 paper: TMUA P2
 year:
 number: Q4
-section: Reasoning
+section: MCQ
 difficulty: 0
 topics: [Logic and Proof]
 subtopics: [Proof]
-tags: [Counterexample, If-Then]
-  - Specimen
+tags: [Counterexample, If-Then, Specimen]
 status: 已入库
 ---
 

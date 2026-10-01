@@ -5,11 +5,11 @@ id: JZMaths_SetC-Mock-P2-Q14
 paper: TMUA Mock
 year:
 number: Q14
-section: Multiple Choice
+section: MCQ
 difficulty: 7.5
 topics: [Logic and Proof, Calculus, Function]
 subtopics: [Logic, Differentiation Application, Algebraic Functions]
-tags: [NeNecessaryssary-ConCondiition]
+tags: [Necessary-Condition]
 status: 已入库
 ---
 

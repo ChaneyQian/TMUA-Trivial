@@ -5,7 +5,7 @@ id: JZMaths_SetD-Mock-P2-Q1
 paper: TMUA Mock
 year:
 number: Q1
-section: Multiple Choice
+section: MCQ
 difficulty: 5.5
 topics: [Polynomial, Algebra (Basic)]
 subtopics: [Solution of Equations, Algebra Manipulation]

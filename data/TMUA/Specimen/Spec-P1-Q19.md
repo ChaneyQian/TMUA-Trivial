@@ -5,12 +5,11 @@ id: Spec-P1-Q19
 paper: TMUA P1
 year:
 number: Q19
-section: Applications
+section: MCQ
 difficulty: 0
-topics: []
-subtopics: []
-tags:
-  - Specimen
+topics: [Sequences and Series]
+subtopics: [AP GP]
+tags: [Specimen, Geometric-Series, Sum-to-Infinity, Arithmetic-Series, Rationalising-Denominator]
 status: 已入库
 ---
 

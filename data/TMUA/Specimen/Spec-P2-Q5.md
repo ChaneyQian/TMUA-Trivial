@@ -5,12 +5,11 @@ id: Spec-P2-Q5
 paper: TMUA P2
 year:
 number: Q5
-section: Reasoning
+section: MCQ
 difficulty: 0
-topics: []
-subtopics: []
-tags:
-  - Specimen
+topics: [Function]
+subtopics: [Exponentials and Logarithms]
+tags: [Specimen, Log-Laws, Change-of-Base, Approximation]
 status: 已入库
 ---
 

@@ -5,7 +5,7 @@ id: Euclid_R2drew2-Mock-P1-Q17
 paper: TMUA Mock
 year:
 number: Q17
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Polynomial, Sequences and Series]
 subtopics: [Vieta's Formulas, AP GP]

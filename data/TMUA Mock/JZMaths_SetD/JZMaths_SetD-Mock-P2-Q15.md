@@ -5,7 +5,7 @@ id: JZMaths_SetD-Mock-P2-Q15
 paper: TMUA Mock
 year:
 number: Q15
-section: Multiple Choice
+section: MCQ
 difficulty: 7.5
 topics: [Number Theory, Sequences and Series]
 subtopics: [Modular Arithmetic and Congruences, Fibonacci Numbers]

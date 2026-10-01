@@ -5,10 +5,10 @@ id: Euclid-Mock-P1-Q9
 paper: TMUA Mock
 year:
 number: Q9
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Function, Sequences and Series]
-subtopics: [Floor, Ceiling and Fractional Part Functions, Sequences and Series]
+subtopics: ["Floor, Ceiling and Fractional Part Functions", Sequences and Series]
 tags: [Block-Counting, Sum-of-Squares, Perfect-Square]
 status: 待复核
 ---

@@ -5,11 +5,11 @@ id: JZMaths_SetB-Mock-P2-Q1
 paper: TMUA Mock
 year:
 number: Q1
-section: Multiple Choice
+section: MCQ
 difficulty: 5.5
 topics: [Logic and Proof, Number Theory]
 subtopics: [Proof, Number Theory]
-tags: [Counterexample, If-Then, If-Then]
+tags: [Counterexample, If-Then]
 status: 已入库
 ---
 

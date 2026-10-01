@@ -5,10 +5,10 @@ id: JacquelineTyler_SetC-Mock-P2-Q8
 paper: TMUA Mock
 year:
 number: Q8
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Function, Calculus]
-subtopics: [Floor, Ceiling and Fractional Part Functions, Integration]
+subtopics: ["Floor, Ceiling and Fractional Part Functions", Integration]
 tags: [Piecewise-Integration, Step-Function, Interval-Additivity]
 status: 待复核
 ---

@@ -5,12 +5,11 @@ id: Spec-P1-Q8
 paper: TMUA P1
 year:
 number: Q8
-section: Applications
+section: MCQ
 difficulty: 0
-topics: []
-subtopics: []
-tags:
-  - Specimen
+topics: [Function]
+subtopics: [Exponentials and Logarithms]
+tags: [Specimen, Log-Laws, Index-Laws]
 status: 已入库
 ---
 

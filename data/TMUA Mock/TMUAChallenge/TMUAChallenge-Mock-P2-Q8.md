@@ -5,7 +5,7 @@ id: TMUAChallenge-Mock-P2-Q8
 paper: TMUA Mock
 year:
 number: Q8
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Logic and Proof, Function]
 subtopics: [Logic, Functions]

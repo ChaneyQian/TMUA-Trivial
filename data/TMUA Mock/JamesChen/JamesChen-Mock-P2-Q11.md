@@ -5,11 +5,11 @@ id: JamesChen-Mock-P2-Q11
 paper: TMUA Mock
 year:
 number: Q11
-section: Multiple Choice
+section: MCQ
 difficulty: 0
-topics: [Miscellaneous Pure, Sequences and Series, Logic and Proof]
-subtopics: [Combinatorics, Binomial Coefficients, Logic]
-tags: [Truth-Value-Puzzle, Sum-of-Binomial-Coefficients, Subsets]
+topics: [Miscellaneous Pure, Sequences and Series]
+subtopics: [Combinatorics, Binomial Coefficients]
+tags: [原卷缺陷, Sum-of-Binomial-Coefficients, Subsets]
 status: 待复核
 ---
 
@@ -32,6 +32,7 @@ $$ \mathbf{H} \quad 2+\displaystyle\sum_{r=1}^{n}\binom nr $$
 ### AI备注
 来源：tmua.io 社区卷 `community__james-chen__p2`，作者 **James Chen**（站点标题：James Chen TMUA Paper 2）。
 第三方录入的第三方模拟卷，**非官方真题，未经原卷核对**；站点不提供解析，`## 解析` 待补。
+2026-09-25 代审：选项重值。A=Σ_{r=0}^{n}C(n,r)=2ⁿ 与 F=1+Σ_{r=1}^{n}C(n,r)=2ⁿ 相等，C 与 H 也都等于 2ⁿ+1，答案不唯一。答案栏保留原卷 A。
 
 ## 答案
 A

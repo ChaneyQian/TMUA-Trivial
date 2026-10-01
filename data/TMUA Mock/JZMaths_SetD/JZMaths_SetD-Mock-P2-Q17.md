@@ -5,11 +5,11 @@ id: JZMaths_SetD-Mock-P2-Q17
 paper: TMUA Mock
 year:
 number: Q17
-section: Multiple Choice
+section: MCQ
 difficulty: 8
 topics: [Logic and Proof, Function, Trigonometry]
 subtopics: [Logic, Functions, Trigonometry]
-tags: [SuffSufficient-CndtConition]
+tags: [Sufficient-Condition]
 status: 已入库
 ---
 

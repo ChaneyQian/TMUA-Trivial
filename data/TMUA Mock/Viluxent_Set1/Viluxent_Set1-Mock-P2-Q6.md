@@ -5,7 +5,7 @@ id: Viluxent_Set1-Mock-P2-Q6
 paper: TMUA Mock
 year:
 number: Q6
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Polynomial, Miscellaneous Pure]
 subtopics: [Vieta's Formulas, Mathematics Investigation]

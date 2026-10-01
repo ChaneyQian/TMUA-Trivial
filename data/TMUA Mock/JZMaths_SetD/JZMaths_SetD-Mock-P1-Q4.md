@@ -5,7 +5,7 @@ id: JZMaths_SetD-Mock-P1-Q4
 paper: TMUA Mock
 year:
 number: Q4
-section: Multiple Choice
+section: MCQ
 difficulty: 6
 topics: [Calculus, Function, Algebra (Basic)]
 subtopics: [Differentiation Application, Algebraic Functions, Algebra Manipulation]

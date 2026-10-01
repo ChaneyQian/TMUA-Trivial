@@ -5,7 +5,7 @@ id: JZMaths_SetC-Mock-P2-Q9
 paper: TMUA Mock
 year:
 number: Q9
-section: Multiple Choice
+section: MCQ
 difficulty: 6.5
 topics: [Polynomial, Number Theory, Algebra (Basic)]
 subtopics: [Polynomials, Diophantine Equations, Algebra Manipulation]

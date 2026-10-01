@@ -5,12 +5,11 @@ id: Spec-P2-Q16
 paper: TMUA P2
 year:
 number: Q16
-section: Reasoning
+section: MCQ
 difficulty: 0
-topics: []
-subtopics: []
-tags:
-  - Specimen
+topics: [Sequences and Series]
+subtopics: [Recurrence Relations]
+tags: [Specimen, Periodic-Sequence, Pairing, Alternating-Signs]
 status: 已入库
 ---
 

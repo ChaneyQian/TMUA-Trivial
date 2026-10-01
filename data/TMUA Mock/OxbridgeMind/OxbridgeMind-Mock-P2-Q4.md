@@ -5,7 +5,7 @@ id: OxbridgeMind-Mock-P2-Q4
 paper: TMUA Mock
 year:
 number: Q4
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Function, Algebra (Basic)]
 subtopics: [Exponentials and Logarithms, Simultaneous Equations]

@@ -5,7 +5,7 @@ id: JZMaths_SetA-Mock-P2-Q14
 paper: TMUA Mock
 year:
 number: Q14
-section: Multiple Choice
+section: MCQ
 difficulty: 7
 topics: [Calculus, Function]
 subtopics: [Differentiation Application, Algebraic Functions]

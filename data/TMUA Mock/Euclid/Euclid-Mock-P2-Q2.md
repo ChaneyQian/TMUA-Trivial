@@ -5,7 +5,7 @@ id: Euclid-Mock-P2-Q2
 paper: TMUA Mock
 year:
 number: Q2
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Logic and Proof, Sequences and Series]
 subtopics: [Proof, Induction, Recurrence Relations]

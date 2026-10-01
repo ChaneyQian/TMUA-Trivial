@@ -5,7 +5,7 @@ id: JZMaths_SetA-Mock-P2-Q11
 paper: TMUA Mock
 year:
 number: Q11
-section: Multiple Choice
+section: MCQ
 difficulty: 7
 topics: [Logic and Proof, Calculus]
 subtopics: [Logic, Graphical Arguments, Integration, Integral Identity]

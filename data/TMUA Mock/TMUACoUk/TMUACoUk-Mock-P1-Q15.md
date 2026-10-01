@@ -5,10 +5,10 @@ id: TMUACoUk-Mock-P1-Q15
 paper: TMUA Mock
 year:
 number: Q15
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Function, Calculus]
-subtopics: [Floor, Ceiling and Fractional Part Functions, Integration, Integral Identity]
+subtopics: ["Floor, Ceiling and Fractional Part Functions", Integration, Integral Identity]
 tags: [Floor-Reflection-Identity, Odd-Function, Definite-Integral]
 status: 待复核
 ---

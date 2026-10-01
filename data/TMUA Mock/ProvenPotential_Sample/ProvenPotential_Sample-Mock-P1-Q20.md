@@ -5,7 +5,7 @@ id: ProvenPotential_Sample-Mock-P1-Q20
 paper: TMUA Mock
 year:
 number: Q20
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Function, Polynomial]
 subtopics: [Exponentials and Logarithms, Solution of Equations]
@@ -31,6 +31,7 @@ $$ \mathbf{G} \quad \text{Infinite} $$
 ### AI备注
 来源：tmua.io 社区卷 `community__proven-potential__sample__p1`，作者 **Proven Potential**（站点标题：Proven Potential TMUA Sample Paper 1）。
 第三方录入的第三方模拟卷，**非官方真题，未经原卷核对**；站点不提供解析，`## 解析` 待补。
+2026-09-25 代审：答案依约定而定。只取 x>0 得 2 个解（C）；允许负底数取整数次幂则 x=−2 也成立，得 3 个解（D，原卷答案）。
 
 ## 答案
 D

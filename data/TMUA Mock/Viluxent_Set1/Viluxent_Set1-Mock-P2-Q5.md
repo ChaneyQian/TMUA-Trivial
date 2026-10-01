@@ -5,10 +5,10 @@ id: Viluxent_Set1-Mock-P2-Q5
 paper: TMUA Mock
 year:
 number: Q5
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Function, Sequences and Series]
-subtopics: [Floor, Ceiling and Fractional Part Functions, Sequences and Series]
+subtopics: ["Floor, Ceiling and Fractional Part Functions", Sequences and Series]
 tags: [Halving-Identity, Binary-Representation, Surds]
 status: 待复核
 ---

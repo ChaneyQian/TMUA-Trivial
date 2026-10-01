@@ -5,7 +5,7 @@ id: Zack-Mock-Q12
 paper: TMUA Mock
 year:
 number: Q12
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Function, Polynomial]
 subtopics: [Exponentials and Logarithms, Vieta's Formulas]

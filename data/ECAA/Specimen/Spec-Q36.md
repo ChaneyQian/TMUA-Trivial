@@ -5,12 +5,12 @@ id: Spec-Q36
 paper: ECAA Spec Section 1 Part B
 year: 2015
 number: Q36
-section: Advanced Mathematics
+section: MCQ
 solution_source: 官方
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Polynomial]
+subtopics: [Solution of Equations]
+tags: [Discriminant, Quadratic-Inequality]
 status: 已入库
 ---
 ## 题目

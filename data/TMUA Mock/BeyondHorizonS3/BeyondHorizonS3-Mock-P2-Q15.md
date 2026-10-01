@@ -5,10 +5,10 @@ id: BeyondHorizonS3-Mock-P2-Q15
 paper: TMUA Mock
 year:
 number: Q15
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Function, Calculus]
-subtopics: [Floor, Ceiling and Fractional Part Functions, Integration]
+subtopics: ["Floor, Ceiling and Fractional Part Functions", Integration]
 tags: [Step-Function, Piecewise-Integration, Index-Bounds]
 status: 已入库
 ---

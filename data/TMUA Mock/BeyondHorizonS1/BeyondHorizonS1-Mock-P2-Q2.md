@@ -5,7 +5,7 @@ id: BeyondHorizonS1-Mock-P2-Q2
 paper: TMUA Mock
 year:
 number: Q2
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Algebra (Basic)]
 subtopics: [Algebra Manipulation]

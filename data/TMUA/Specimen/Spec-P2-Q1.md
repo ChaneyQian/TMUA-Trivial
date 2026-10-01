@@ -5,12 +5,11 @@ id: Spec-P2-Q1
 paper: TMUA P2
 year:
 number: Q1
-section: Reasoning
+section: MCQ
 difficulty: 0
-topics: []
-subtopics: []
-tags:
-  - Specimen
+topics: [Geometry]
+subtopics: [Coordinate Geometry]
+tags: [Specimen, Equations-of-Circles, Completing-the-Square]
 status: 已入库
 ---
 

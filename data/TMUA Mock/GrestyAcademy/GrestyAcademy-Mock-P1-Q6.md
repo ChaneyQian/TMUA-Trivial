@@ -5,7 +5,7 @@ id: GrestyAcademy-Mock-P1-Q6
 paper: TMUA Mock
 year:
 number: Q6
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Polynomial, Algebra (Basic)]
 subtopics: [Solution of Equations, Surds and indices]

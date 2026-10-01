@@ -5,12 +5,12 @@ id: Spec-Q22
 paper: ECAA Spec Section 1 Part B
 year: 2015
 number: Q22
-section: Advanced Mathematics
+section: MCQ
 solution_source: 官方
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Algebra (Basic)]
+subtopics: [Algebra Manipulation]
+tags: [Factorising, Cancelling-Common-Factor]
 status: 已入库
 ---
 ## 题目

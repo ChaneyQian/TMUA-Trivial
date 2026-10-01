@@ -5,7 +5,7 @@ id: SMT-Ch5-Q11
 paper: SMT Skills Ch5
 year:
 number: Q11
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: []
 subtopics: []

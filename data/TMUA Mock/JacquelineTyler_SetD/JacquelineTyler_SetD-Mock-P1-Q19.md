@@ -5,7 +5,7 @@ id: JacquelineTyler_SetD-Mock-P1-Q19
 paper: TMUA Mock
 year:
 number: Q19
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Trigonometry, Geometry]
 subtopics: [Trigonometry, Coordinate Geometry]

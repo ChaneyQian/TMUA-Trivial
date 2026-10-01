@@ -5,7 +5,7 @@ id: JZMaths_SetD-Mock-P1-Q9
 paper: TMUA Mock
 year:
 number: Q9
-section: Multiple Choice
+section: MCQ
 difficulty: 6.5
 topics: [Algebra (Basic), Function, Trigonometry]
 subtopics: [Algebra Manipulation, Exponentials and Logarithms, Trigonometry]

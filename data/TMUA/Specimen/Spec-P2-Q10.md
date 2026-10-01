@@ -5,12 +5,11 @@ id: Spec-P2-Q10
 paper: TMUA P2
 year:
 number: Q10
-section: Reasoning
+section: MCQ
 difficulty: 0
-topics: []
-subtopics: []
-tags:
-  - Specimen
+topics: [Miscellaneous Pure, Function]
+subtopics: [Graph Sketching, Exponentials and Logarithms]
+tags: [Specimen, Log-to-Index-Form, Variable-Base, Test-Points, Asymptotic-Behaviour]
 status: 已入库
 ---
 

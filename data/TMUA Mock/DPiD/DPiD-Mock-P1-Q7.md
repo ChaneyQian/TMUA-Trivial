@@ -5,7 +5,7 @@ id: DPiD-Mock-P1-Q7
 paper: TMUA Mock
 year:
 number: Q7
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Trigonometry, Polynomial]
 subtopics: [Trigonometric Equations, Factor and Remainder Theorem]

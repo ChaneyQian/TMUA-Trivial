@@ -5,7 +5,7 @@ id: JZMaths_SetD-Mock-P2-Q2
 paper: TMUA Mock
 year:
 number: Q2
-section: Multiple Choice
+section: MCQ
 difficulty: 5.5
 topics: [Function]
 subtopics: [Exponentials and Logarithms]

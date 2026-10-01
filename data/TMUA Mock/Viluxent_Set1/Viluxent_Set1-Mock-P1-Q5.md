@@ -5,7 +5,7 @@ id: Viluxent_Set1-Mock-P1-Q5
 paper: TMUA Mock
 year:
 number: Q5
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Function, Polynomial]
 subtopics: [Absolute Value Functions, Solution of Equations]

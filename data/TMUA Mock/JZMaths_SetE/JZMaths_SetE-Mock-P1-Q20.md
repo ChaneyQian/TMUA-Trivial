@@ -5,7 +5,7 @@ id: JZMaths_SetE-Mock-P1-Q20
 paper: TMUA Mock
 year:
 number: Q20
-section: Multiple Choice
+section: MCQ
 difficulty: 9
 topics: [Calculus, Logic and Proof, Function]
 subtopics: [Integral of Inverse function, Graphical Arguments, Integration, Exponentials and Logarithms]

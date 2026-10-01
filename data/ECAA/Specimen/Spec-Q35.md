@@ -5,12 +5,12 @@ id: Spec-Q35
 paper: ECAA Spec Section 1 Part B
 year: 2015
 number: Q35
-section: Advanced Mathematics
+section: MCQ
 solution_source: 官方
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Polynomial]
+subtopics: [Solution of Equations]
+tags: [Discriminant, Perfect-Square]
 status: 已入库
 ---
 ## 题目

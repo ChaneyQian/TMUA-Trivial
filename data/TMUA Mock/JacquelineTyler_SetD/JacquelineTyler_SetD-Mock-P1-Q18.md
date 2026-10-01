@@ -5,7 +5,7 @@ id: JacquelineTyler_SetD-Mock-P1-Q18
 paper: TMUA Mock
 year:
 number: Q18
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Function]
 subtopics: [Functions]

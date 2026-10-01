@@ -5,11 +5,11 @@ id: JZMaths_SetD-Mock-P2-Q7
 paper: TMUA Mock
 year:
 number: Q7
-section: Multiple Choice
+section: MCQ
 difficulty: 6.5
 topics: [Logic and Proof, Polynomial]
 subtopics: [Logic, Solution of Equations]
-tags: [NNecessacssary-Coy-Conddition, Dffifferentiarentiation]
+tags: [Necessary-Condition, Differentiation]
 status: 已入库
 ---
 

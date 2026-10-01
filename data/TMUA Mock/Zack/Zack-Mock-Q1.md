@@ -5,7 +5,7 @@ id: Zack-Mock-Q1
 paper: TMUA Mock
 year:
 number: Q1
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Geometry, Sequences and Series]
 subtopics: [Coordinate Geometry, Sequences and Series]

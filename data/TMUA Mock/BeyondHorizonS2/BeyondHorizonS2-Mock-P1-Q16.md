@@ -5,10 +5,10 @@ id: BeyondHorizonS2-Mock-P1-Q16
 paper: TMUA Mock
 year:
 number: Q16
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Function, Calculus]
-subtopics: [Floor, Ceiling and Fractional Part Functions, Integration]
+subtopics: ["Floor, Ceiling and Fractional Part Functions", Integration]
 tags: [Fractional-Part, Periodicity, Definite-Integral]
 status: 已入库
 ---

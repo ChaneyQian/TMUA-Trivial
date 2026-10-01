@@ -5,12 +5,12 @@ id: Spec-Q26
 paper: ECAA Spec Section 1 Part B
 year: 2015
 number: Q26
-section: Advanced Mathematics
+section: MCQ
 solution_source: 官方
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Geometry]
+subtopics: [Coordinate Geometry]
+tags: [Circle-Equation, Inscribed-Circles]
 status: 已入库
 ---
 ## 题目

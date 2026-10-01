@@ -5,7 +5,7 @@ id: Yotta-Mock-P1-Q16
 paper: TMUA Mock
 year:
 number: Q16
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Geometry]
 subtopics: [Coordinate Geometry]

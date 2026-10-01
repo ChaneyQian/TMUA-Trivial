@@ -5,7 +5,7 @@ id: JZMaths_SetC-Mock-P1-Q2
 paper: TMUA Mock
 year:
 number: Q2
-section: Multiple Choice
+section: MCQ
 difficulty: 5.5
 topics: [Function, Logic and Proof]
 subtopics: [Exponentials and Logarithms, Absolute Value Functions, Graphical Arguments]

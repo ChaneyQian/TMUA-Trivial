@@ -5,11 +5,11 @@ id: GrestyAcademy-Mock-P2-Q13
 paper: TMUA Mock
 year:
 number: Q13
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Function, Logic and Proof]
-subtopics: [Functions, Logic]
-tags: [Truth-Value-List, Graph-Transformations, Periodicity, Commuting-Transformations]
+subtopics: [Functions, Logic, Proof]
+tags: [Truth-Value-List, Graph-Transformations, Periodicity, Commuting-Transformations, Deduction]
 status: 待复核
 ---
 

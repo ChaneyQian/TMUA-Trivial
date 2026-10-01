@@ -5,7 +5,7 @@ id: TMUAmockz-Mock-P2-Q10
 paper: TMUA Mock
 year:
 number: Q10
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Logic and Proof, Calculus]
 subtopics: [Logic, Proof, Differentiation Application, Integration]

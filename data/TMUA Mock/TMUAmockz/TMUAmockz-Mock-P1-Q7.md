@@ -5,7 +5,7 @@ id: TMUAmockz-Mock-P1-Q7
 paper: TMUA Mock
 year:
 number: Q7
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Sequences and Series]
 subtopics: [AP GP]

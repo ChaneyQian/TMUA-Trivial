@@ -5,7 +5,7 @@ id: BeyondHorizonS3-Mock-P2-Q5
 paper: TMUA Mock
 year:
 number: Q5
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Logic and Proof]
 subtopics: [Logic]
@@ -38,6 +38,7 @@ $$\mathbf{E} \quad \text{None of us are liars}$$
   `ANSWER` 记 D（唯一"仅凭自身陈述就锁死"的人，最可能是出题人本意），但 A 同样成立。
 - **键对拍（2026-09-11，键源 tmua.fyi）**：键给 **A**，库原记 D。真值指派唯一（A 真、B 假、C 假、D 真、E 假），**A 与 D 都被迫说真话**，
   出题人取 A。`ANSWER` 改记 A（意图项），「单选却有两个必真者」的缺陷仍在。
+2026-09-25 代审：答案不唯一。穷举 32 种真假组合只有一种自洽：A 真、B 假、C 假、D 真、E 假，A 与 D 都必为说真话者；答案 A 不错，但单选题有两个正确选项（解析末句取 D）。
 
 ## 答案
 A

@@ -5,7 +5,7 @@ id: BeyondHorizonS3-Mock-P2-Q19
 paper: TMUA Mock
 year:
 number: Q19
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Logic and Proof, Function]
 subtopics: [Logic, Exponentials and Logarithms]
@@ -38,9 +38,10 @@ $$\mathbf{F} \quad \text{is not implied by any of the above conditions}$$
   两轮独立解题分别给出 E 与 F。`ANSWER` 记 E（严格逻辑下可辩护的那个），但不构成定论。
 - **键对拍（2026-09-11，键源 tmua.fyi）**：键给 **C**（$a\ge1,\ b\ge1,\ d\ge c \Rightarrow a^c\le b^d$）。**键错**：$a=3,b=1,c=1,d=2$ 满足前件而 $3\le1$ 假。
   `ANSWER` 改记 C（意图项）。E 空真 / F 的分歧仍在，且现在多了一层「键本身不成立」，标签保留。
+2026-09-25 代审：答案由 C 改为 E（本卷答案为我方自解，可更正）。C 被 a=3、b=1、c=1、d=2 推翻；E 的前件要求 a≤0，与题干 a>0 冲突，按空真为真，故 F（都推不出）为假，严格取 E。出题人本意多半是 F（a≤0 疑为印误），题坏，保留控制标。
 
 ## 答案
-C
+E
 
 ## 解析
 Each option asserts an implication of the form "condition $\implies a^c \leq b^d$", so to reject an option it is enough to find numbers meeting the condition for which the conclusion fails.

@@ -5,12 +5,11 @@ id: Spec-P2-Q15
 paper: TMUA P2
 year:
 number: Q15
-section: Reasoning
+section: MCQ
 difficulty: 0
 topics: [Logic and Proof]
 subtopics: [Logic, Proof]
-tags: [Truth-Value-List, Counterexample, Inequality-Manipulation, Sign-of-Multiplier]
-  - Specimen
+tags: [Truth-Value-List, Counterexample, Inequality-Manipulation, Sign-of-Multiplier, Specimen]
 status: 已入库
 ---
 

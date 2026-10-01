@@ -5,10 +5,10 @@ id: Sed-Mock-P2-Q7
 paper: TMUA Mock
 year:
 number: Q7
-section: Multiple Choice
+section: MCQ
 difficulty: 0
-topics: [Logic and Proof, Geometry, Sequences and Series]
-subtopics: [Logic, Euclid Geometry, AP GP]
+topics: [Logic and Proof, Geometry]
+subtopics: [Logic, Euclid Geometry]
 tags: [Truth-Value-List, Pythagoras, Arithmetic-Sequence, Divisibility]
 status: 待复核
 ---

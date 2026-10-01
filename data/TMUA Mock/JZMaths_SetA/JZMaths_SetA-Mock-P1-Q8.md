@@ -5,7 +5,7 @@ id: JZMaths_SetA-Mock-P1-Q8
 paper: TMUA Mock
 year:
 number: Q8
-section: Multiple Choice
+section: MCQ
 difficulty: 7
 topics: [Algebra (Basic)]
 subtopics: [Surds and indices]

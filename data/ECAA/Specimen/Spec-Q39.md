@@ -5,12 +5,12 @@ id: Spec-Q39
 paper: ECAA Spec Section 1 Part B
 year: 2015
 number: Q39
-section: Advanced Mathematics
+section: MCQ
 solution_source: 官方
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Function]
+subtopics: [Functions]
+tags: [Translation, Reflection-in-y=-1, Composite-Transformation]
 status: 已入库
 ---
 ## 题目

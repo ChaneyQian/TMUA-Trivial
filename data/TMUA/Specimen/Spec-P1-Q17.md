@@ -5,12 +5,11 @@ id: Spec-P1-Q17
 paper: TMUA P1
 year:
 number: Q17
-section: Applications
+section: MCQ
 difficulty: 0
-topics: []
-subtopics: []
-tags:
-  - Specimen
+topics: [Polynomial]
+subtopics: [Solution of Equations]
+tags: [Specimen, Discriminant, Perfect-Square, Repeated-Root]
 status: 已入库
 ---
 

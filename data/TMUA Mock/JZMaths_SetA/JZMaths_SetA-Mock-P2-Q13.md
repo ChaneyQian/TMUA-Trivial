@@ -5,7 +5,7 @@ id: JZMaths_SetA-Mock-P2-Q13
 paper: TMUA Mock
 year:
 number: Q13
-section: Multiple Choice
+section: MCQ
 difficulty: 7
 topics: [Trigonometry, Algebra (Basic), Function]
 subtopics: [Trigonometric Identities, Algebra Manipulation, Algebraic Functions]

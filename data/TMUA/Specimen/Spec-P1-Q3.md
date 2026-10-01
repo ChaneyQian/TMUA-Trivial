@@ -5,12 +5,11 @@ id: Spec-P1-Q3
 paper: TMUA P1
 year:
 number: Q3
-section: Applications
+section: MCQ
 difficulty: 0
-topics: []
-subtopics: []
-tags:
-  - Specimen
+topics: [Geometry]
+subtopics: [Coordinate Geometry]
+tags: [Specimen, Midpoint, Perpendicular-Gradients, x-Intercepts]
 status: 已入库
 ---
 

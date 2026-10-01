@@ -5,12 +5,11 @@ id: Spec-P1-Q20
 paper: TMUA P1
 year:
 number: Q20
-section: Applications
+section: MCQ
 difficulty: 0
-topics: []
-subtopics: []
-tags:
-  - Specimen
+topics: [Sequences and Series]
+subtopics: [Binomial Theorem]
+tags: [Specimen, Coefficient-Extraction, Trinomial-Expansion, Truncated-Expansion]
 status: 已入库
 ---
 

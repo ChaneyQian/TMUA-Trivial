@@ -5,7 +5,7 @@ id: SMT-Ch5-Q26
 paper: SMT Skills Ch5
 year:
 number: Q26
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: []
 subtopics: []

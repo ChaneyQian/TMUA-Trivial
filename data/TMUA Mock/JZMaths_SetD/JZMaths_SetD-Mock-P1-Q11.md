@@ -5,7 +5,7 @@ id: JZMaths_SetD-Mock-P1-Q11
 paper: TMUA Mock
 year:
 number: Q11
-section: Multiple Choice
+section: MCQ
 difficulty: 7
 topics: [Calculus, Function, Polynomial]
 subtopics: [Differentiation Application, Functions, Algebraic Functions, Solution of Equations]

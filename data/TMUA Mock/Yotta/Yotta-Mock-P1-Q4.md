@@ -5,7 +5,7 @@ id: Yotta-Mock-P1-Q4
 paper: TMUA Mock
 year:
 number: Q4
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Algebra (Basic), Number Theory]
 subtopics: [Algebra Manipulation, Number Theory]

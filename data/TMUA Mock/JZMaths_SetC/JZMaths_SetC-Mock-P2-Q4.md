@@ -5,11 +5,11 @@ id: JZMaths_SetC-Mock-P2-Q4
 paper: TMUA Mock
 year:
 number: Q4
-section: Multiple Choice
+section: MCQ
 difficulty: 6
 topics: [Logic and Proof, Calculus]
 subtopics: [Logic, Differentiation Application, Integration]
-tags: [NeNecessaryssary-ConCondiition, Counterexample, Counterexample, Differentiation]
+tags: [Necessary-Condition, Counterexample, Differentiation]
 status: 已入库
 ---
 

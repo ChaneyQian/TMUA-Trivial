@@ -5,7 +5,7 @@ id: JZMaths_SetA-Mock-P1-Q9
 paper: TMUA Mock
 year:
 number: Q9
-section: Multiple Choice
+section: MCQ
 difficulty: 7.5
 topics: [Geometry]
 subtopics: [Coordinate Geometry, Euclid Geometry]

@@ -5,11 +5,11 @@ id: YATutoring-Mock-P1-Q8
 paper: TMUA Mock
 year:
 number: Q8
-section: Multiple Choice
+section: MCQ
 difficulty: 0
-topics: [Logic and Proof, Polynomial]
-subtopics: [Logic, Proof, Solution of Equations]
-tags: [Truth-Value-List, Counterexample, Discriminant, Repeated-Root]
+topics: [Polynomial]
+subtopics: [Solution of Equations]
+tags: [Discriminant, Repeated-Root]
 status: 待复核
 ---
 

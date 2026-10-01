@@ -5,11 +5,11 @@ id: JZMaths_SetC-Mock-P2-Q13
 paper: TMUA Mock
 year:
 number: Q13
-section: Multiple Choice
+section: MCQ
 difficulty: 7
 topics: [Logic and Proof, Algebra (Basic)]
 subtopics: [Logic, Surds and indices]
-tags: [IIff]
+tags: [Iff]
 status: 已入库
 ---
 

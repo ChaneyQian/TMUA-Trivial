@@ -5,12 +5,11 @@ id: Spec-P1-Q18
 paper: TMUA P1
 year:
 number: Q18
-section: Applications
+section: MCQ
 difficulty: 0
-topics: []
-subtopics: []
-tags:
-  - Specimen
+topics: [Trigonometry]
+subtopics: [Trigonometric Equations]
+tags: [Specimen, Trigonometric-Functions, Trigonometric-Inequality, Interval-Intersection]
 status: 已入库
 ---
 

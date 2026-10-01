@@ -5,7 +5,7 @@ id: JZMaths_SetD-Mock-P2-Q13
 paper: TMUA Mock
 year:
 number: Q13
-section: Multiple Choice
+section: MCQ
 difficulty: 7
 topics: [Miscellaneous Pure]
 subtopics: [Combinatorics, Inclusion-Exclusion Principle]

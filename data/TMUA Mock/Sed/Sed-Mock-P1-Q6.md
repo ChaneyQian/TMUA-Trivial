@@ -5,7 +5,7 @@ id: Sed-Mock-P1-Q6
 paper: TMUA Mock
 year:
 number: Q6
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Sequences and Series, Polynomial]
 subtopics: [Binomial Theorem, Vieta's Formulas]

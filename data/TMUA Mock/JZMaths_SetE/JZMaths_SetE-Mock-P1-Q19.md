@@ -5,7 +5,7 @@ id: JZMaths_SetE-Mock-P1-Q19
 paper: TMUA Mock
 year:
 number: Q19
-section: Multiple Choice
+section: MCQ
 difficulty: 7.5
 topics: [Polynomial, Number Theory]
 subtopics: [Vieta's Formulas, Diophantine Equations]

@@ -5,7 +5,7 @@ id: JZMaths_SetB-Mock-P2-Q16
 paper: TMUA Mock
 year:
 number: Q16
-section: Multiple Choice
+section: MCQ
 difficulty: 7.5
 topics: [Calculus, Function]
 subtopics: [Integration, Integral Identity, Exponentials and Logarithms]

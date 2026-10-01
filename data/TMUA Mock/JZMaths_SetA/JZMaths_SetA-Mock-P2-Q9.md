@@ -5,7 +5,7 @@ id: JZMaths_SetA-Mock-P2-Q9
 paper: TMUA Mock
 year:
 number: Q9
-section: Multiple Choice
+section: MCQ
 difficulty: 7
 topics: [Miscellaneous Pure, Function]
 subtopics: [Inequalities, Absolute Value Functions]

@@ -5,11 +5,11 @@ id: TMUAmockz-Mock-P2-Q17
 paper: TMUA Mock
 year:
 number: Q17
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Logic and Proof, Probability, Function]
 subtopics: [Logic, Elementary Probability, Algebraic Functions]
-tags: [Truth-Value-List, Vertex, Intersection-Count, Counterexample]
+tags: [Iff, Truth-Value-List, Vertex, Intersection-Count, Counterexample]
 status: 待复核
 ---
 

@@ -5,7 +5,7 @@ id: JZMaths_SetE-Mock-P1-Q11
 paper: TMUA Mock
 year:
 number: Q11
-section: Multiple Choice
+section: MCQ
 difficulty: 6.5
 topics: [Sequences and Series, Geometry]
 subtopics: [AP GP, Sequences and Series, Euclid Geometry]

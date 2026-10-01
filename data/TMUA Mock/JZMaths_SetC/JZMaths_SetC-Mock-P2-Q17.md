@@ -5,7 +5,7 @@ id: JZMaths_SetC-Mock-P2-Q17
 paper: TMUA Mock
 year:
 number: Q17
-section: Multiple Choice
+section: MCQ
 difficulty: 7.5
 topics: [Number Theory, Algebra (Basic)]
 subtopics: [Diophantine Equations, Algebra Manipulation]

@@ -5,7 +5,7 @@ id: TMUAmockz-Mock-P2-Q14
 paper: TMUA Mock
 year:
 number: Q14
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Calculus, Polynomial]
 subtopics: [Differentiation Application, Solution of Equations]

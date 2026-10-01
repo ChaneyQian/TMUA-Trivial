@@ -5,7 +5,7 @@ id: BeyondHorizonS1-Mock-P2-Q15
 paper: TMUA Mock
 year:
 number: Q15
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Statistical Theory, Algebra (Basic)]
 subtopics: [Descriptive Statistics, Simultaneous Equations]

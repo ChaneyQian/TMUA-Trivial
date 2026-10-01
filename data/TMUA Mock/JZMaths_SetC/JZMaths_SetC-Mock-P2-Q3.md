@@ -5,7 +5,7 @@ id: JZMaths_SetC-Mock-P2-Q3
 paper: TMUA Mock
 year:
 number: Q3
-section: Multiple Choice
+section: MCQ
 difficulty: 6
 topics: [Trigonometry, Algebra (Basic)]
 subtopics: [Trigonometric Identities, Algebra Manipulation]

@@ -5,7 +5,7 @@ id: BeyondHorizonS2-Mock-P2-Q16
 paper: TMUA Mock
 year:
 number: Q16
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Logic and Proof, Function, Polynomial]
 subtopics: [Logic, Algebraic Numbers, Polynomials]
@@ -39,9 +39,10 @@ $$\mathbf{D} \quad \text{For every odd } n \text{, there exists some } a_0, a_1,
 - **键对拍（2026-09-11，键源 tmua.fyi）**：键给 **D**（「对每个奇数 $n$ 都存在整系数 $f$ 使 $f(\sqrt2+\sqrt5)=0$」）。**键错得比想象更离谱。**
   $n=1$：整系数一次式不可能以无理数为根；$n=3$：$\sqrt2+\sqrt5$ 的最小多项式 $x^4-14x^2+9$ 是 4 次，不整除任何三次式。
   除非允许零多项式——那样 A、C、D 全部平凡为真。无论哪种读法键都不自洽。`ANSWER` 改记 D（意图项），A、B 同真的缺陷仍在。
+2026-09-25 代审：答案由 D 改为 B（本卷答案为我方自解，可更正，与解析末句一致）。√2+√5 的极小多项式 x⁴−14x²+9 为 4 次，任何奇数次非零整系数多项式都不以它为根，D 在各种读法下都假；B 由共轭根成立。另：按一般多项式读法 A 也真（x⁵−10x³+x），题坏，故保留两个控制标。
 
 ## 答案
-D
+B
 
 ## 解析
 Let $\theta = \sqrt{2} + \sqrt{3}$. Then $\theta^2 = 5 + 2\sqrt{6}$, so $(\theta^2 - 5)^2 = 24$ and $\theta$ is a root of the integer polynomial

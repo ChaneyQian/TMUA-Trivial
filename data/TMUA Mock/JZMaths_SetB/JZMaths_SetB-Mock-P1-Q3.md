@@ -5,7 +5,7 @@ id: JZMaths_SetB-Mock-P1-Q3
 paper: TMUA Mock
 year:
 number: Q3
-section: Multiple Choice
+section: MCQ
 difficulty: 5.5
 topics: [Function, Sequences and Series]
 subtopics: [Exponentials and Logarithms, Sequences and Series]

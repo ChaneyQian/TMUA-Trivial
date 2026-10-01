@@ -5,12 +5,12 @@ id: Spec-Q31
 paper: ECAA Spec Section 1 Part B
 year: 2015
 number: Q31
-section: Advanced Mathematics
+section: MCQ
 solution_source: 官方
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Polynomial, Calculus]
+subtopics: [Solution of Equations, Differentiation Application]
+tags: [Turning-Points, Quartic-Shape, Root-Counting]
 status: 已入库
 ---
 ## 题目

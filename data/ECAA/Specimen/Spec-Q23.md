@@ -5,12 +5,12 @@ id: Spec-Q23
 paper: ECAA Spec Section 1 Part B
 year: 2015
 number: Q23
-section: Advanced Mathematics
+section: MCQ
 solution_source: 官方
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Function]
+subtopics: [Exponentials and Logarithms]
+tags: [Value-Comparison, Special-Angles, Size-Comparison]
 status: 已入库
 ---
 ## 题目

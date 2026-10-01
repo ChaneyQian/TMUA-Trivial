@@ -5,11 +5,11 @@ id: ThrivingScholars-Mock-P1-Q13
 paper: TMUA Mock
 year:
 number: Q13
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Calculus, Logic and Proof]
 subtopics: [Integration, Graphical Arguments]
-tags: [Area-Under-Curve, Semicircle-Area, 待补答案]
+tags: [Area-Under-Curve, Semicircle-Area]
 status: 已入库
 ---
 
@@ -43,9 +43,9 @@ $$
 ### 我的备注
 
 ### AI备注
-
+2026-09-25 代审：原卷无答案键；本题答案由两路 AI 独立自解、结果一致后补录（源 MD 已加 ANSWER 行）。
 
 ## 答案
-
+A
 
 ## 解析

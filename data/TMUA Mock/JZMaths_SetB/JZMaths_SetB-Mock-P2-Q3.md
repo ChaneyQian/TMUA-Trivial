@@ -5,11 +5,11 @@ id: JZMaths_SetB-Mock-P2-Q3
 paper: TMUA Mock
 year:
 number: Q3
-section: Multiple Choice
+section: MCQ
 difficulty: 6
 topics: [Logic and Proof]
 subtopics: [Logic]
-tags: [Truth-ValueTruth-Puzzle, Value-Puzzle, Deduction]
+tags: [Truth-Value-Puzzle, Deduction]
 status: 已入库
 ---
 

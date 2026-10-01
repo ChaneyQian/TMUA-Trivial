@@ -5,7 +5,7 @@ id: JZMaths_SetD-Mock-P1-Q20
 paper: TMUA Mock
 year:
 number: Q20
-section: Multiple Choice
+section: MCQ
 difficulty: 8.5
 topics: [Sequences and Series, Algebra (Basic)]
 subtopics: [AP GP, Algebra Manipulation]

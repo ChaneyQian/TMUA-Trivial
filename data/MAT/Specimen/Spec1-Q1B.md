@@ -5,7 +5,7 @@ id: Spec1-Q1B
 paper: MAT Specimen 1
 year: 2009
 number: Q1B
-section: Multiple Choice
+section: MCQ
 solution_source: 官方
 difficulty: 0
 topics: []

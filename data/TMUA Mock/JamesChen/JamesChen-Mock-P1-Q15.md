@@ -5,7 +5,7 @@ id: JamesChen-Mock-P1-Q15
 paper: TMUA Mock
 year:
 number: Q15
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Trigonometry, Miscellaneous Pure]
 subtopics: [Trigonometry, Graph Sketching]
@@ -30,6 +30,7 @@ $$ \mathbf{D} \quad \text{D} $$
 ### AI备注
 来源：tmua.io 社区卷 `community__james-chen__p1`，作者 **James Chen**（站点标题：James Chen TMUA Paper 1）。
 第三方录入的第三方模拟卷，**非官方真题，未经原卷核对**；站点不提供解析，`## 解析` 待补。
+2026-09-25 代审：配图被裁，C、D 两幅缺了 x 轴和字母标签；按像素比对左下为 (3−4sin x)²，答案 C 仍对，但考生只能靠排除得到。
 
 ## 答案
 C

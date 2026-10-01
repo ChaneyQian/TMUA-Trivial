@@ -5,7 +5,7 @@ id: ProvenPotential_Sample-Mock-P1-Q7
 paper: TMUA Mock
 year:
 number: Q7
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Calculus, Polynomial]
 subtopics: [Integration, Solution of Equations]

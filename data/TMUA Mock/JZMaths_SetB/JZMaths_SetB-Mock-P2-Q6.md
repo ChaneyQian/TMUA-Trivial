@@ -5,7 +5,7 @@ id: JZMaths_SetB-Mock-P2-Q6
 paper: TMUA Mock
 year:
 number: Q6
-section: Multiple Choice
+section: MCQ
 difficulty: 6
 topics: [Polynomial, Function, Logic and Proof]
 subtopics: [Solution of Equations, Absolute Value Functions, Graphical Arguments]

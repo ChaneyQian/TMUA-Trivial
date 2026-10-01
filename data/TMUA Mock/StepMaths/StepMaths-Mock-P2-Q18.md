@@ -5,7 +5,7 @@ id: StepMaths-Mock-P2-Q18
 paper: TMUA Mock
 year:
 number: Q18
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Logic and Proof, Number Theory]
 subtopics: [Proof, Number Theory]

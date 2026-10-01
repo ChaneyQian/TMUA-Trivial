@@ -5,10 +5,10 @@ id: JacquelineTyler_SetC-Mock-P2-Q16
 paper: TMUA Mock
 year:
 number: Q16
-section: Multiple Choice
+section: MCQ
 difficulty: 0
-topics: [Sequences and Series, Algebra (Basic)]
-subtopics: [Binomial Coefficients, Algebra Manipulation]
+topics: [Algebra (Basic)]
+subtopics: [Algebra Manipulation]
 tags: [Coefficient-Extraction, Sum-of-Coefficients, Substitution]
 status: 待复核
 ---

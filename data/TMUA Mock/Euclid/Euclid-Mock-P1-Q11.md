@@ -5,11 +5,11 @@ id: Euclid-Mock-P1-Q11
 paper: TMUA Mock
 year:
 number: Q11
-section: Multiple Choice
+section: MCQ
 difficulty: 0
-topics: [Miscellaneous Pure, Logic and Proof, Calculus]
-subtopics: [Numerical Methods, Logic, Differentiation Application]
-tags: [Truth-Value-List, Trapezium-Rule, Convexity, Second-Derivative]
+topics: [Miscellaneous Pure, Calculus]
+subtopics: [Numerical Methods, Differentiation Application]
+tags: [Trapezium-Rule, Convexity, Second-Derivative]
 status: 待复核
 ---
 

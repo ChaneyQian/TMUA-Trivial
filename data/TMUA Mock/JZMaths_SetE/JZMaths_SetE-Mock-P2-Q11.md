@@ -5,11 +5,11 @@ id: JZMaths_SetE-Mock-P2-Q11
 paper: TMUA Mock
 year:
 number: Q11
-section: Multiple Choice
+section: MCQ
 difficulty: 7
 topics: [Logic and Proof]
 subtopics: [Logic]
-tags: [Negation, Quantifiers, Quantifiers]
+tags: [Negation, Quantifiers]
 status: 已入库
 ---
 

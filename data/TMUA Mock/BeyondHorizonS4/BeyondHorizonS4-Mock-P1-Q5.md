@@ -5,7 +5,7 @@ id: BeyondHorizonS4-Mock-P1-Q5
 paper: TMUA Mock
 year:
 number: Q5
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Algebra (Basic), Geometry]
 subtopics: [Simultaneous Equations, Conic Sections]

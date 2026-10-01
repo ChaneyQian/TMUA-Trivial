@@ -5,7 +5,7 @@ id: JacquelineTyler_SetA-Mock-P1-Q14
 paper: TMUA Mock
 year:
 number: Q14
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Trigonometry]
 subtopics: [Trigonometric Equations]

@@ -5,7 +5,7 @@ id: ZachCody-Mock-P2-Q11
 paper: TMUA Mock
 year:
 number: Q11
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Function, Calculus]
 subtopics: [Absolute Value Functions, Differentiation]

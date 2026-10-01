@@ -5,7 +5,7 @@ id: JZMaths_SetD-Mock-P1-Q19
 paper: TMUA Mock
 year:
 number: Q19
-section: Multiple Choice
+section: MCQ
 difficulty: 8
 topics: [Function, Logic and Proof, Calculus]
 subtopics: [Iterated Functions, Graphical Arguments, Absolute Value Functions, Integration]

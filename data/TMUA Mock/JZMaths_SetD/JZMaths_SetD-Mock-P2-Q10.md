@@ -5,11 +5,11 @@ id: JZMaths_SetD-Mock-P2-Q10
 paper: TMUA Mock
 year:
 number: Q10
-section: Multiple Choice
+section: MCQ
 difficulty: 7
 topics: [Logic and Proof, Function]
-subtopics: [Logic, Proof, Proof, Exponentials and Logarithms]
-tags: [CCould-Be-True, Exuld-Be-True, Existenstencee-ConstrConstruction, Exponentials-and-Logarithms]
+subtopics: [Logic, Proof, Exponentials and Logarithms]
+tags: [Could-Be-True, Existence-Construction, Exponentials-and-Logarithms]
 status: 已入库
 ---
 
@@ -42,7 +42,6 @@ $$ \mathbf{H} \quad \text{All four statements.} $$
 ### AI备注
 
 
-ℹ️ 2026-09-14 Fable 复核：按 §2.4ter 并挂线调整 Proof。
 ℹ️ 2026-09-14 Fable 复核：按 §2.4ter 并挂线调整 Proof。
 ## 答案
 C

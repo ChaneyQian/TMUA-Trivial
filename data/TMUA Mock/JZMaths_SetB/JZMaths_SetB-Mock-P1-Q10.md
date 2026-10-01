@@ -5,7 +5,7 @@ id: JZMaths_SetB-Mock-P1-Q10
 paper: TMUA Mock
 year:
 number: Q10
-section: Multiple Choice
+section: MCQ
 difficulty: 7
 topics: [Calculus, Miscellaneous Pure]
 subtopics: [Integration, Integral Identity, Estimation and Bounds]

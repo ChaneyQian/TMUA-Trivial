@@ -5,7 +5,7 @@ id: JamesChen-Mock-P1-Q19
 paper: TMUA Mock
 year:
 number: Q19
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Polynomial]
 subtopics: [Factor and Remainder Theorem]

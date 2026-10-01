@@ -5,7 +5,7 @@ id: TMUACoUk-Mock-P1-Q9
 paper: TMUA Mock
 year:
 number: Q9
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Calculus, Polynomial]
 subtopics: [Differentiation Application, Vieta's Formulas]

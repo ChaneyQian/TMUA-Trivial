@@ -5,12 +5,12 @@ id: Spec-Q30
 paper: ECAA Spec Section 1 Part B
 year: 2015
 number: Q30
-section: Advanced Mathematics
+section: MCQ
 solution_source: 官方
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Geometry, Trigonometry]
+subtopics: [Solid Geometry, Trigonometry]
+tags: [Pyramid, Angle-with-Base, Pythagoras]
 status: 已入库
 ---
 ## 题目

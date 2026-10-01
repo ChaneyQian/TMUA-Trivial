@@ -5,7 +5,7 @@ id: JZMaths_SetA-Mock-P1-Q3
 paper: TMUA Mock
 year:
 number: Q3
-section: Multiple Choice
+section: MCQ
 difficulty: 6
 topics: [Function]
 subtopics: [Absolute Value Functions]

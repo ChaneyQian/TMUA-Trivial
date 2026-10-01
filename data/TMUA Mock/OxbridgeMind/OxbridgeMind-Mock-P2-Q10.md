@@ -5,7 +5,7 @@ id: OxbridgeMind-Mock-P2-Q10
 paper: TMUA Mock
 year:
 number: Q10
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Trigonometry]
 subtopics: [Trigonometric Equations, Trigonometric Identities]

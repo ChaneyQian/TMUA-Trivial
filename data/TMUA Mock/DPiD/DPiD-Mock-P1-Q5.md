@@ -5,7 +5,7 @@ id: DPiD-Mock-P1-Q5
 paper: TMUA Mock
 year:
 number: Q5
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Polynomial, Miscellaneous Pure]
 subtopics: [Solution of Equations, Inequalities]

@@ -5,12 +5,12 @@ id: Spec-Q34
 paper: ECAA Spec Section 1 Part B
 year: 2015
 number: Q34
-section: Advanced Mathematics
+section: MCQ
 solution_source: 官方
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Miscellaneous Pure, Geometry]
+subtopics: [Combinatorics, Euclid Geometry]
+tags: [Triangle-Inequality, Enumeration, Integer-Sides]
 status: 已入库
 ---
 ## 题目

@@ -5,11 +5,11 @@ id: JZMaths_SetC-Mock-P2-Q6
 paper: TMUA Mock
 year:
 number: Q6
-section: Multiple Choice
+section: MCQ
 difficulty: 6.5
 topics: [Logic and Proof, Calculus, Function]
 subtopics: [Proof, Differentiation Application, Algebraic Functions]
-tags: [Deduction, Error-Spotting, Division-by-Zero, Error-Spotting, Division-by-Zero, Inequalities]
+tags: [Deduction, Error-Spotting, Division-by-Zero, Inequalities]
 status: 已入库
 ---
 

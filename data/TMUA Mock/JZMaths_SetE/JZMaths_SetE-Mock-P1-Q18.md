@@ -5,7 +5,7 @@ id: JZMaths_SetE-Mock-P1-Q18
 paper: TMUA Mock
 year:
 number: Q18
-section: Multiple Choice
+section: MCQ
 difficulty: 7.5
 topics: [Miscellaneous Pure, Trigonometry]
 subtopics: [Inequalities, Trigonometric Equations, Graph Sketching]

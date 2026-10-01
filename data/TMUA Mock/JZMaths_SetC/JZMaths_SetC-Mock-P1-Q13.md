@@ -5,7 +5,7 @@ id: JZMaths_SetC-Mock-P1-Q13
 paper: TMUA Mock
 year:
 number: Q13
-section: Multiple Choice
+section: MCQ
 difficulty: 7
 topics: [Number Theory]
 subtopics: [Modular Arithmetic and Congruences]

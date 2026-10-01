@@ -5,12 +5,11 @@ id: Spec-P2-Q11
 paper: TMUA P2
 year:
 number: Q11
-section: Reasoning
+section: MCQ
 difficulty: 0
-topics: []
-subtopics: []
-tags:
-  - Specimen
+topics: [Function, Miscellaneous Pure]
+subtopics: [Exponentials and Logarithms, Estimation and Bounds]
+tags: [Specimen, Value-Comparison, Bounding, Exact-Values]
 status: 已入库
 ---
 

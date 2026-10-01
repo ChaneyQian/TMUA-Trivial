@@ -5,7 +5,7 @@ id: JZMaths_SetB-Mock-P1-Q11
 paper: TMUA Mock
 year:
 number: Q11
-section: Multiple Choice
+section: MCQ
 difficulty: 7
 topics: [Trigonometry, Sequences and Series]
 subtopics: [Trigonometry, Sequences and Series]

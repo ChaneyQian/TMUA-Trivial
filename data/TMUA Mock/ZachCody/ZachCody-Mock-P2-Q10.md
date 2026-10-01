@@ -5,7 +5,7 @@ id: ZachCody-Mock-P2-Q10
 paper: TMUA Mock
 year:
 number: Q10
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Function, Sequences and Series]
 subtopics: [Exponentials and Logarithms, AP GP]

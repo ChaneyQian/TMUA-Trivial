@@ -5,7 +5,7 @@ id: JZMaths_SetD-Mock-P2-Q5
 paper: TMUA Mock
 year:
 number: Q5
-section: Multiple Choice
+section: MCQ
 difficulty: 6
 topics: [Geometry]
 subtopics: [Euclid Geometry]

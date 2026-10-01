@@ -5,11 +5,11 @@ id: ThrivingScholars-Mock-P1-Q11
 paper: TMUA Mock
 year:
 number: Q11
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Function, Sequences and Series]
 subtopics: [Exponentials and Logarithms, Recurrence Relations]
-tags: [Change-of-Base, Log-Laws, Telescoping, 待补答案]
+tags: [Change-of-Base, Log-Laws, Telescoping]
 status: 已入库
 ---
 
@@ -41,9 +41,9 @@ $$
 ### 我的备注
 
 ### AI备注
-
+2026-09-25 代审：原卷无答案键；本题答案由两路 AI 独立自解、结果一致后补录（源 MD 已加 ANSWER 行）。
 
 ## 答案
-
+D
 
 ## 解析

@@ -5,11 +5,11 @@ id: JZMaths_SetE-Mock-P2-Q6
 paper: TMUA Mock
 year:
 number: Q6
-section: Multiple Choice
+section: MCQ
 difficulty: 6
 topics: [Logic and Proof, Geometry, Function, Algebra (Basic)]
 subtopics: [Logic, Coordinate Geometry, Algebraic Functions, Algebra Manipulation]
-tags: [Truth-Value-List, Truth-Value-List, Transformation-of-Graphs]
+tags: [Truth-Value-List, Transformation-of-Graphs]
 status: 已入库
 ---
 

@@ -5,11 +5,11 @@ id: JZMaths_SetB-Mock-P2-Q11
 paper: TMUA Mock
 year:
 number: Q11
-section: Multiple Choice
+section: MCQ
 difficulty: 7
 topics: [Logic and Proof, Number Theory]
 subtopics: [Logic, Divisibility]
-tags: [NeNecessaryessary-Condition, CoCondnterextion, Counterexampmpl]
+tags: [Necessary-Condition, Counterexample]
 status: 已入库
 ---
 

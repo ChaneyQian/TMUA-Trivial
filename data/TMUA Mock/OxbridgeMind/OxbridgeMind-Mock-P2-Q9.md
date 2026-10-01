@@ -5,7 +5,7 @@ id: OxbridgeMind-Mock-P2-Q9
 paper: TMUA Mock
 year:
 number: Q9
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Geometry]
 subtopics: [Coordinate Geometry]
@@ -29,6 +29,7 @@ $$ \mathbf{E} \quad (x+2)^2+(y-3)^2=25 $$
 ### AI备注
 来源：tmua.io 社区卷 `community__oxbridgemind__p2`，作者 **OxbridgeMind**（站点标题：OxbridgeMind TMUA Paper 2）。
 第三方录入的第三方模拟卷，**非官方真题，未经原卷核对**；站点不提供解析，`## 解析` 待补。
+2026-09-25 代审：无正确选项，且题干没写设问。直径端点 (2,2)、(6,4) 给圆心 (4,3)、r²=5；平移、反射后圆心 (2,−3)，再以 1/2 放缩得 (x−2)²+(y+3)²=5/4。原卷答案 B 的圆心对但 r²=5，漏了放缩。答案栏保留原卷 B。
 
 ## 答案
 B

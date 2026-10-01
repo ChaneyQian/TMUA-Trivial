@@ -5,7 +5,7 @@ id: SMT-Ch4-Q14
 paper: SMT Skills Ch4
 year:
 number: Q14
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: []
 subtopics: []

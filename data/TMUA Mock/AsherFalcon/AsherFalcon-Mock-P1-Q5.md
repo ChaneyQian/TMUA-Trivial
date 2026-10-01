@@ -5,7 +5,7 @@ id: AsherFalcon-Mock-P1-Q5
 paper: TMUA Mock
 year:
 number: Q5
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Sequences and Series, Algebra (Basic)]
 subtopics: [Binomial Theorem, Surds and indices]

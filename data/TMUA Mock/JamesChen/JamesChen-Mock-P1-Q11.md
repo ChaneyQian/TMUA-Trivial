@@ -5,11 +5,11 @@ id: JamesChen-Mock-P1-Q11
 paper: TMUA Mock
 year:
 number: Q11
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Function]
 subtopics: [Exponentials and Logarithms, Inverse Functions]
-tags: [Log-Laws, Geometric-Mean, Arithmetic-Mean]
+tags: [原卷缺陷, Log-Laws, Geometric-Mean, Arithmetic-Mean]
 status: 待复核
 ---
 
@@ -30,6 +30,7 @@ $$ \mathbf{F} \quad f(x)=e^x $$
 ### AI备注
 来源：tmua.io 社区卷 `community__james-chen__p1`，作者 **James Chen**（站点标题：James Chen TMUA Paper 1）。
 第三方录入的第三方模拟卷，**非官方真题，未经原卷核对**；站点不提供解析，`## 解析` 待补。
+2026-09-25 代审：答案不唯一。满足条件的 f 是 α·ln x+β 型，C（log₂₀₂₅ x）与 E（ln x²=2ln x，正实数上）都成立。答案栏保留原卷 C。
 
 ## 答案
 C

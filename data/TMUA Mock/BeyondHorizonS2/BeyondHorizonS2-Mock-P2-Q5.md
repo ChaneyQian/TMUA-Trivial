@@ -5,11 +5,11 @@ id: BeyondHorizonS2-Mock-P2-Q5
 paper: TMUA Mock
 year:
 number: Q5
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Number Theory, Logic and Proof]
-subtopics: [Divisibility, Proof]
-tags: [Counterexample, Consecutive-Integers, Factorial-Divisibility]
+subtopics: [Logic, Proof, Divisibility]
+tags: [Truth-Value-List, Counterexample, Consecutive-Integers, Factorial-Divisibility, Deduction]
 status: 已入库
 ---
 

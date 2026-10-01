@@ -5,11 +5,11 @@ id: DanielJSmith_SetA-Mock-P1-Q4
 paper: TMUA Mock
 year:
 number: Q4
-section: Multiple Choice
+section: MCQ
 difficulty: 0
-topics: [Trigonometry, Function, Logic and Proof]
-subtopics: [Trigonometry, Iterated Functions, Logic]
-tags: [Truth-Value-List, Composite-Function, Range, Monotonicity]
+topics: [Trigonometry, Function]
+subtopics: [Trigonometry, Iterated Functions]
+tags: [Composite-Function, Range, Monotonicity]
 status: 待复核
 ---
 

@@ -5,11 +5,11 @@ id: JamesChen-Mock-P1-Q16
 paper: TMUA Mock
 year:
 number: Q16
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Logic and Proof]
 subtopics: [Logic]
-tags: [Truth-Value-Puzzle, Exactly-k-True, Truth-Value-List, Truth-Tellers-and-Liars]
+tags: [原卷缺陷, Truth-Value-Puzzle, Exactly-k-True, Truth-Value-List, Truth-Tellers-and-Liars]
 status: 待复核
 ---
 
@@ -28,6 +28,7 @@ $$ \mathbf{D} \quad \text{It may be possible that Backstreet Boy B wants it that
 ### AI备注
 来源：tmua.io 社区卷 `community__james-chen__p1`，作者 **James Chen**（站点标题：James Chen TMUA Paper 1）。
 第三方录入的第三方模拟卷，**非官方真题，未经原卷核对**；站点不提供解析，`## 解析` 待补。
+2026-09-25 代审：原卷答案 B 有误，应为 D。说真话的人各自断言的人数互斥，至多一人想要；只可能是无人想要或只有 A 想要。故 A、C 为真，D（B 可能想要）必假；B 仅在「唯一可能是 A 想要」的读法下为假，而此时 D 同样为假。答案栏保留原卷 B。
 
 ## 答案
 B

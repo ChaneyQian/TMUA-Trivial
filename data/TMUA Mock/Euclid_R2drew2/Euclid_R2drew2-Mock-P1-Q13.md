@@ -5,7 +5,7 @@ id: Euclid_R2drew2-Mock-P1-Q13
 paper: TMUA Mock
 year:
 number: Q13
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Function, Polynomial]
 subtopics: [Algebraic Functions, Solution of Equations]

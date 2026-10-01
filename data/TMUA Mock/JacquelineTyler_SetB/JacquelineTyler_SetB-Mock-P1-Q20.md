@@ -5,7 +5,7 @@ id: JacquelineTyler_SetB-Mock-P1-Q20
 paper: TMUA Mock
 year:
 number: Q20
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Calculus]
 subtopics: [Integration, Integral Identity]

@@ -5,11 +5,11 @@ id: JZMaths_SetC-Mock-P2-Q20
 paper: TMUA Mock
 year:
 number: Q20
-section: Multiple Choice
+section: MCQ
 difficulty: 8.5
 topics: [Logic and Proof, Geometry]
 subtopics: [Logic, Euclid Geometry]
-tags: [Sufficient-Condition, Counterexamplet-Condition, Counterexample]
+tags: [Sufficient-Condition, Counterexample]
 status: 已入库
 ---
 
@@ -46,8 +46,7 @@ $$ \mathbf{L} \quad \text{None of them.} $$
 ### AI备注
 
 
-
-ℹ️ 2026-09-14 Fable 复核：按 §2.4ter 并挂线调整 Proof。ℹ️ 2026-09-14 Fable 复核：按 §2.4ter 并挂线调整 Proof。
+ℹ️ 2026-09-14 Fable 复核：按 §2.4ter 并挂线调整 Proof。
 ## 答案
 B
 

@@ -5,7 +5,7 @@ id: Zack-Mock-Q6
 paper: TMUA Mock
 year:
 number: Q6
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Algebra (Basic)]
 subtopics: [Algebra Manipulation]

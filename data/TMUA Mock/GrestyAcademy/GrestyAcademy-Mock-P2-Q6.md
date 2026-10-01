@@ -5,7 +5,7 @@ id: GrestyAcademy-Mock-P2-Q6
 paper: TMUA Mock
 year:
 number: Q6
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Function, Logic and Proof]
 subtopics: [Functions, Logic]

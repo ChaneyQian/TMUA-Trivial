@@ -5,7 +5,7 @@ id: Viluxent_Set1-Mock-P2-Q19
 paper: TMUA Mock
 year:
 number: Q19
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Logic and Proof, Geometry]
 subtopics: [Logic, Proof, Coordinate Geometry]

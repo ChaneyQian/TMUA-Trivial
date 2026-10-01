@@ -5,7 +5,7 @@ id: JZMaths_SetB-Mock-P2-Q7
 paper: TMUA Mock
 year:
 number: Q7
-section: Multiple Choice
+section: MCQ
 difficulty: 6.5
 topics: [Geometry]
 subtopics: [Coordinate Geometry]

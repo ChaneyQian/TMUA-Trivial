@@ -5,7 +5,7 @@ id: JZMaths_SetC-Mock-P2-Q19
 paper: TMUA Mock
 year:
 number: Q19
-section: Multiple Choice
+section: MCQ
 difficulty: 8
 topics: [Sequences and Series, Miscellaneous Pure]
 subtopics: [Sequences and Series, Estimation and Bounds]

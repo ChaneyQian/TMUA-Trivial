@@ -5,7 +5,7 @@ id: JZMaths_SetD-Mock-P1-Q3
 paper: TMUA Mock
 year:
 number: Q3
-section: Multiple Choice
+section: MCQ
 difficulty: 6
 topics: [Function, Algebra (Basic)]
 subtopics: [Absolute Value Functions, Functions, Algebra Manipulation]

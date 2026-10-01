@@ -5,7 +5,7 @@ id: JZMaths_SetB-Mock-P1-Q6
 paper: TMUA Mock
 year:
 number: Q6
-section: Multiple Choice
+section: MCQ
 difficulty: 6.5
 topics: [Miscellaneous Pure, Logic and Proof, Function]
 subtopics: [Inequalities, Graphical Arguments, Algebraic Functions]

@@ -5,12 +5,12 @@ id: Spec-Q29
 paper: ECAA Spec Section 1 Part B
 year: 2015
 number: Q29
-section: Advanced Mathematics
+section: MCQ
 solution_source: 官方
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Sequences and Series]
+subtopics: [Recurrence Relations]
+tags: [Periodic-Sequence, Alternating-Increment]
 status: 已入库
 ---
 ## 题目

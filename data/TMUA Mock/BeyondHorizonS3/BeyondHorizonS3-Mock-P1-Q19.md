@@ -5,7 +5,7 @@ id: BeyondHorizonS3-Mock-P1-Q19
 paper: TMUA Mock
 year:
 number: Q19
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Sequences and Series]
 subtopics: [Binomial Coefficients, Binomial Theorem]

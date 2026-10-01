@@ -5,7 +5,7 @@ id: JZMaths_SetA-Mock-P1-Q10
 paper: TMUA Mock
 year:
 number: Q10
-section: Multiple Choice
+section: MCQ
 difficulty: 7.5
 topics: [Calculus, Function, Algebra (Basic)]
 subtopics: [Differentiation Application, Algebraic Functions, Algebra Manipulation]

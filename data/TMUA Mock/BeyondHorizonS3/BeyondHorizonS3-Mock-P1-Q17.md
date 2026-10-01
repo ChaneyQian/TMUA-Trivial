@@ -5,7 +5,7 @@ id: BeyondHorizonS3-Mock-P1-Q17
 paper: TMUA Mock
 year:
 number: Q17
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Miscellaneous Pure]
 subtopics: [Combinatorics]

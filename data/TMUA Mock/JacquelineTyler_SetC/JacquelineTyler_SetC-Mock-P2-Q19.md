@@ -5,7 +5,7 @@ id: JacquelineTyler_SetC-Mock-P2-Q19
 paper: TMUA Mock
 year:
 number: Q19
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Logic and Proof, Calculus]
 subtopics: [Logic, Differentiation Application]

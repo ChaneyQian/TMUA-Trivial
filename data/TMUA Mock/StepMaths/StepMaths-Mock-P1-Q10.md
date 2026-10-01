@@ -5,11 +5,11 @@ id: StepMaths-Mock-P1-Q10
 paper: TMUA Mock
 year:
 number: Q10
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Logic and Proof, Trigonometry, Calculus]
 subtopics: [Logic, Trigonometric Equations, Differentiation Application]
-tags: [Iff, Tangency, Solution-Count]
+tags: [原卷缺陷, Iff, Tangency, Solution-Count]
 status: 待复核
 ---
 
@@ -29,6 +29,7 @@ $$ \mathbf{E} \quad \tan\!\left(\frac{\sqrt{1-k^2}}{k}\right)=\frac{\sqrt{1-k^2}
 ### AI备注
 来源：tmua.io 社区卷 `community__stepmaths__p1`，作者 **StepMaths**（站点标题：StepMaths Mock Paper 1）。
 第三方录入的第三方模拟卷，**非官方真题，未经原卷核对**；站点不提供解析，`## 解析` 待补。
+2026-09-25 代审：原卷答案 E 有误，应为 B。E 只是必要条件：tan t=t 的另一支 t≈4.49 只给 3 个解，t≈10.90 给 7 个解；恰 5 个解还须 2π<t<5π/2。答案栏保留原卷 E。
 
 ## 答案
 E

@@ -5,7 +5,7 @@ id: Euclid_R2drew2-Mock-P1-Q15
 paper: TMUA Mock
 year:
 number: Q15
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Trigonometry, Function]
 subtopics: [Trigonometric Equations, Absolute Value Functions]

@@ -5,7 +5,7 @@ id: ZachCody-Mock-P2-Q2
 paper: TMUA Mock
 year:
 number: Q2
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Sequences and Series, Geometry]
 subtopics: [AP GP, Euclid Geometry]

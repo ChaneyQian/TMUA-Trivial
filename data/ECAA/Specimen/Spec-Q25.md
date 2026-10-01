@@ -5,12 +5,12 @@ id: Spec-Q25
 paper: ECAA Spec Section 1 Part B
 year: 2015
 number: Q25
-section: Advanced Mathematics
+section: MCQ
 solution_source: 官方
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Function, Algebra (Basic)]
+subtopics: [Exponentials and Logarithms, Algebra Manipulation]
+tags: [Quadratic-in-2^x, Sum-of-Roots]
 status: 已入库
 ---
 ## 题目

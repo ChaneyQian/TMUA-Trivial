@@ -5,7 +5,7 @@ id: JZMaths_SetC-Mock-P1-Q14
 paper: TMUA Mock
 year:
 number: Q14
-section: Multiple Choice
+section: MCQ
 difficulty: 7
 topics: [Calculus, Polynomial, Logic and Proof]
 subtopics: [Differentiation Application, Solution of Equations, Graphical Arguments, Differentiation]

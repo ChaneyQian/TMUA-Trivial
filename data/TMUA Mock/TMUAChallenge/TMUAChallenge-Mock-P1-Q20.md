@@ -5,7 +5,7 @@ id: TMUAChallenge-Mock-P1-Q20
 paper: TMUA Mock
 year:
 number: Q20
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Miscellaneous Pure, Algebra (Basic)]
 subtopics: [Inequalities, Algebra Manipulation]

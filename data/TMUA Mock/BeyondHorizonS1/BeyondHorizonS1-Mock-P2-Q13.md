@@ -5,10 +5,10 @@ id: BeyondHorizonS1-Mock-P2-Q13
 paper: TMUA Mock
 year:
 number: Q13
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Function]
-subtopics: [Floor, Ceiling and Fractional Part Functions, Iterated Functions]
+subtopics: ["Floor, Ceiling and Fractional Part Functions", Iterated Functions]
 tags: [Perfect-Square, Iteration, Step-Count]
 status: 已入库
 ---

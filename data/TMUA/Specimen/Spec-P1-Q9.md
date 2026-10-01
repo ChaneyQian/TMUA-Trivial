@@ -5,12 +5,11 @@ id: Spec-P1-Q9
 paper: TMUA P1
 year:
 number: Q9
-section: Applications
+section: MCQ
 difficulty: 0
-topics: []
-subtopics: []
-tags:
-  - Specimen
+topics: [Polynomial]
+subtopics: [Solution of Equations]
+tags: [Specimen, Difference-of-Roots, Discriminant, Quadratic-Formula]
 status: 已入库
 ---
 

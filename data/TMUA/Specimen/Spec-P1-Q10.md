@@ -5,12 +5,11 @@ id: Spec-P1-Q10
 paper: TMUA P1
 year:
 number: Q10
-section: Applications
+section: MCQ
 difficulty: 0
-topics: []
-subtopics: []
-tags:
-  - Specimen
+topics: [Function]
+subtopics: [Functions]
+tags: [Specimen, Graph-Transformations, Reflection-in-a-Line, Translation]
 status: 已入库
 ---
 

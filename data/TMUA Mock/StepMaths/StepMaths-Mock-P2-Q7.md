@@ -5,7 +5,7 @@ id: StepMaths-Mock-P2-Q7
 paper: TMUA Mock
 year:
 number: Q7
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Logic and Proof, Miscellaneous Pure]
 subtopics: [Proof, Inequalities]

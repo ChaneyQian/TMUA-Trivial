@@ -5,7 +5,7 @@ id: SMT-Ch5-Q28
 paper: SMT Skills Ch5
 year:
 number: Q28
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: []
 subtopics: []

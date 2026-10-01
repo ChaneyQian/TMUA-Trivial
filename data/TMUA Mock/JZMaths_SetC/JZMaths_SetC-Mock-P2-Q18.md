@@ -5,7 +5,7 @@ id: JZMaths_SetC-Mock-P2-Q18
 paper: TMUA Mock
 year:
 number: Q18
-section: Multiple Choice
+section: MCQ
 difficulty: 8
 topics: [Miscellaneous Pure, Logic and Proof, Geometry]
 subtopics: [Inequalities, Graphical Arguments, Coordinate Geometry]

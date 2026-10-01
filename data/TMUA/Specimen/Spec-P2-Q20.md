@@ -5,12 +5,11 @@ id: Spec-P2-Q20
 paper: TMUA P2
 year:
 number: Q20
-section: Reasoning
+section: MCQ
 difficulty: 0
 topics: [Logic and Proof]
 subtopics: [Logic]
-tags: [Truth-Value-Puzzle, Proof-by-Cases, Truth-Tellers-and-Liars, Self-Reference, Parity]
-  - Specimen
+tags: [Truth-Value-Puzzle, Proof-by-Cases, Truth-Tellers-and-Liars, Self-Reference, Parity, Specimen]
 status: 已入库
 ---
 

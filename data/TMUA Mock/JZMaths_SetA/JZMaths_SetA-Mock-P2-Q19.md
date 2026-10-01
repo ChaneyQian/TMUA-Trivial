@@ -5,7 +5,7 @@ id: JZMaths_SetA-Mock-P2-Q19
 paper: TMUA Mock
 year:
 number: Q19
-section: Multiple Choice
+section: MCQ
 difficulty: 8.5
 topics: [Sequences and Series, Function]
 subtopics: [Sequences and Series, "Floor, Ceiling and Fractional Part Functions"]

@@ -5,7 +5,7 @@ id: JZMaths_SetA-Mock-P1-Q6
 paper: TMUA Mock
 year:
 number: Q6
-section: Multiple Choice
+section: MCQ
 difficulty: 6.5
 topics: [Trigonometry, Function, Algebra (Basic)]
 subtopics: [Trigonometric Identities, Functions, Algebra Manipulation]

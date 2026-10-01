@@ -5,7 +5,7 @@ id: DPiD-Mock-P1-Q1
 paper: TMUA Mock
 year:
 number: Q1
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Function, Polynomial]
 subtopics: [Absolute Value Functions, Solution of Equations]

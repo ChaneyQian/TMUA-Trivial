@@ -5,7 +5,7 @@ id: MathsMadeEasy-Mock-P1-Q8
 paper: TMUA Mock
 year:
 number: Q8
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Polynomial, Miscellaneous Pure]
 subtopics: [Symmetric and Cyclic Polynomials, Inequalities]
@@ -29,6 +29,7 @@ $$ \mathbf{E} \quad 1 $$
 ### AI备注
 来源：tmua.io 社区卷 `community__maths-made-easy__p1`，作者 **Maths Made Easy**（站点标题：Maths Made Easy TMUA Paper 1）。
 第三方录入的第三方模拟卷，**非官方真题，未经原卷核对**；站点不提供解析，`## 解析` 待补。
+2026-09-25 代审：该式恒小于 1，取 a=T、b≈1/T、c→0 可无限逼近 1 但取不到，严格说没有「最大值」；答案 E=1 是上确界，题干宜作 least upper bound。
 
 ## 答案
 E

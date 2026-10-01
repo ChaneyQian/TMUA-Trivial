@@ -5,7 +5,7 @@ id: Spec-P2-Q18
 paper: TMUA P2
 year:
 number: Q18
-section: Reasoning
+section: MCQ
 difficulty: 0
 topics: [Statistical Theory]
 subtopics: [Descriptive Statistics]

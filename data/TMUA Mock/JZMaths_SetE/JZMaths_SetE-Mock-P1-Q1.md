@@ -5,7 +5,7 @@ id: JZMaths_SetE-Mock-P1-Q1
 paper: TMUA Mock
 year:
 number: Q1
-section: Multiple Choice
+section: MCQ
 difficulty: 5.5
 topics: [Miscellaneous Pure, Polynomial]
 subtopics: [Inequalities, Solution of Equations]

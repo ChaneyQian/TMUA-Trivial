@@ -5,11 +5,11 @@ id: BeyondHorizonS3-Mock-P2-Q4
 paper: TMUA Mock
 year:
 number: Q4
-section: Multiple Choice
+section: MCQ
 difficulty: 0
-topics: [Logic and Proof, Function, Polynomial]
-subtopics: [Logic, Exponentials and Logarithms, Solution of Equations]
-tags: [Truth-Value-List, Log-to-Index-Form, Factor-Theorem, Uniqueness]
+topics: [Function, Polynomial]
+subtopics: [Exponentials and Logarithms, Solution of Equations]
+tags: [Log-to-Index-Form, Factor-Theorem, Uniqueness]
 status: 已入库
 ---
 

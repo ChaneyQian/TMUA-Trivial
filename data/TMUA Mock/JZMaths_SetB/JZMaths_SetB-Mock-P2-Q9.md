@@ -5,11 +5,11 @@ id: JZMaths_SetB-Mock-P2-Q9
 paper: TMUA Mock
 year:
 number: Q9
-section: Multiple Choice
+section: MCQ
 difficulty: 7
 topics: [Logic and Proof, Algebra (Basic), Function]
 subtopics: [Logic, Systems Of Linear Equations, Exponentials and Logarithms]
-tags: [Iff, Iff, Exponentials-and-Logarithms, Linear-Equations]
+tags: [Iff, Exponentials-and-Logarithms, Linear-Equations]
 status: 已入库
 ---
 

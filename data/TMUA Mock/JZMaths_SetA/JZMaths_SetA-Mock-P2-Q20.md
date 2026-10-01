@@ -5,7 +5,7 @@ id: JZMaths_SetA-Mock-P2-Q20
 paper: TMUA Mock
 year:
 number: Q20
-section: Multiple Choice
+section: MCQ
 difficulty: 8.5
 topics: [Trigonometry, Logic and Proof]
 subtopics: [Trigonometric Equations, Graphical Arguments]

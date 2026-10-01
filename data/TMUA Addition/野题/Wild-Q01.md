@@ -5,7 +5,7 @@ id: Wild-Q01
 paper: TMUA Wild
 year:
 number: Q1
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: []
 subtopics: []

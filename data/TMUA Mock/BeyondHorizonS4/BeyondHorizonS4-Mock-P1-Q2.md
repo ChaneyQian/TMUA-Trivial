@@ -5,7 +5,7 @@ id: BeyondHorizonS4-Mock-P1-Q2
 paper: TMUA Mock
 year:
 number: Q2
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Geometry]
 subtopics: [Solid Geometry]

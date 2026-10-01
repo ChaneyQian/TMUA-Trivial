@@ -5,7 +5,7 @@ id: Zack-Mock-Q3
 paper: TMUA Mock
 year:
 number: Q3
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Trigonometry]
 subtopics: [Trigonometric Identities]

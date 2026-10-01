@@ -5,7 +5,7 @@ id: TMUACoUk-Mock-P1-Q3
 paper: TMUA Mock
 year:
 number: Q3
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Polynomial]
 subtopics: [Solution of Equations]

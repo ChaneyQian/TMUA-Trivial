@@ -5,7 +5,7 @@ id: Sed-Mock-P2-Q4
 paper: TMUA Mock
 year:
 number: Q4
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Logic and Proof, Function]
 subtopics: [Logic, Proof, Algebraic Functions]

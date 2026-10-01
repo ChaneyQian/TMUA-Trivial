@@ -5,12 +5,11 @@ id: Spec-P2-Q7
 paper: TMUA P2
 year:
 number: Q7
-section: Reasoning
+section: MCQ
 difficulty: 0
-topics: []
-subtopics: []
-tags:
-  - Specimen
+topics: [Miscellaneous Pure, Function]
+subtopics: [Graph Sketching, Algebraic Functions]
+tags: [Specimen, Sum-of-Cubes, Implicit-Curve, Test-Points, End-Behaviour]
 status: 已入库
 ---
 

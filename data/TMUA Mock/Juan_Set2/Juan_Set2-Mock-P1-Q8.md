@@ -5,7 +5,7 @@ id: Juan_Set2-Mock-P1-Q8
 paper: TMUA Mock
 year:
 number: Q8
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Polynomial]
 subtopics: [Solution of Equations]

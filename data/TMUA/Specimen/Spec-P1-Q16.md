@@ -5,12 +5,11 @@ id: Spec-P1-Q16
 paper: TMUA P1
 year:
 number: Q16
-section: Applications
+section: MCQ
 difficulty: 0
-topics: []
-subtopics: []
-tags:
-  - Specimen
+topics: [Algebra (Basic)]
+subtopics: [Surds and indices]
+tags: [Specimen, Index-Laws, Prime-Factorisation, Integer-Condition]
 status: 已入库
 ---
 

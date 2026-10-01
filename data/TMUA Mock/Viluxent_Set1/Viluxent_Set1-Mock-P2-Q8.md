@@ -5,7 +5,7 @@ id: Viluxent_Set1-Mock-P2-Q8
 paper: TMUA Mock
 year:
 number: Q8
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Sequences and Series, Algebra (Basic)]
 subtopics: [Sequences and Series, Surds and indices]

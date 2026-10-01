@@ -5,7 +5,7 @@ id: JZMaths_SetE-Mock-P1-Q7
 paper: TMUA Mock
 year:
 number: Q7
-section: Multiple Choice
+section: MCQ
 difficulty: 6
 topics: [Calculus, Function]
 subtopics: [Differentiation Application, Inverse Functions, Algebraic Functions]

@@ -5,12 +5,11 @@ id: Spec-P2-Q6
 paper: TMUA P2
 year:
 number: Q6
-section: Reasoning
+section: MCQ
 difficulty: 0
-topics: []
-subtopics: []
-tags:
-  - Specimen
+topics: [Miscellaneous Pure]
+subtopics: [Estimation and Bounds]
+tags: [Specimen, Upper-and-Lower-Bounds, Significant-Figures, Rounding]
 status: 已入库
 ---
 

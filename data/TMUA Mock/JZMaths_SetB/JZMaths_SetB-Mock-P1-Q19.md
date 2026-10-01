@@ -5,7 +5,7 @@ id: JZMaths_SetB-Mock-P1-Q19
 paper: TMUA Mock
 year:
 number: Q19
-section: Multiple Choice
+section: MCQ
 difficulty: 8
 topics: [Polynomial, Function, Logic and Proof]
 subtopics: [Solution of Equations, Absolute Value Functions, Graphical Arguments]

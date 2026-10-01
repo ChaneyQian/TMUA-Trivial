@@ -5,7 +5,7 @@ id: JZMaths_SetC-Mock-P1-Q19
 paper: TMUA Mock
 year:
 number: Q19
-section: Multiple Choice
+section: MCQ
 difficulty: 7.5
 topics: [Trigonometry, Geometry]
 subtopics: [Sine and Cosine Rule, Euclid Geometry]

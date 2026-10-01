@@ -5,7 +5,7 @@ id: JZMaths_SetC-Mock-P1-Q6
 paper: TMUA Mock
 year:
 number: Q6
-section: Multiple Choice
+section: MCQ
 difficulty: 6.5
 topics: [Probability, Sequences and Series]
 subtopics: [Elementary Probability, AP GP]

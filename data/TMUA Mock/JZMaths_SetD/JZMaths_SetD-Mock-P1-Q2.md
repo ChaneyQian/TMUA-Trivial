@@ -5,7 +5,7 @@ id: JZMaths_SetD-Mock-P1-Q2
 paper: TMUA Mock
 year:
 number: Q2
-section: Multiple Choice
+section: MCQ
 difficulty: 6
 topics: [Trigonometry, Function]
 subtopics: [Trigonometric Equations, Absolute Value Functions]

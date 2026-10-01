@@ -5,7 +5,7 @@ id: JZMaths_SetD-Mock-P1-Q17
 paper: TMUA Mock
 year:
 number: Q17
-section: Multiple Choice
+section: MCQ
 difficulty: 8
 topics: [Sequences and Series, Polynomial]
 subtopics: [Recurrence Relations, Symmetric and Cyclic Polynomials]

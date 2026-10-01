@@ -5,12 +5,11 @@ id: Spec-P2-Q13
 paper: TMUA P2
 year:
 number: Q13
-section: Reasoning
+section: MCQ
 difficulty: 0
-topics: []
-subtopics: []
-tags:
-  - Specimen
+topics: [Miscellaneous Pure]
+subtopics: [Combinatorics]
+tags: [Specimen, Partial-Order, Counting-Orderings, Symmetry-Argument]
 status: 已入库
 ---
 

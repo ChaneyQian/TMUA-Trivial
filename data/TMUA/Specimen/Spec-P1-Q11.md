@@ -5,12 +5,11 @@ id: Spec-P1-Q11
 paper: TMUA P1
 year:
 number: Q11
-section: Applications
+section: MCQ
 difficulty: 0
-topics: []
-subtopics: []
-tags:
-  - Specimen
+topics: [Function, Polynomial]
+subtopics: [Exponentials and Logarithms, Solution of Equations]
+tags: [Specimen, Quadratic-in-Disguise, Substitution, Change-of-Base]
 status: 已入库
 ---
 

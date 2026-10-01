@@ -5,7 +5,7 @@ id: JZMaths_SetA-Mock-P1-Q11
 paper: TMUA Mock
 year:
 number: Q11
-section: Multiple Choice
+section: MCQ
 difficulty: 7.5
 topics: [Sequences and Series, Algebra (Basic)]
 subtopics: [Binomial Theorem, Algebra Manipulation]

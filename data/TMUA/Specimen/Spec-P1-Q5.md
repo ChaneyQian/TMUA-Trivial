@@ -5,12 +5,11 @@ id: Spec-P1-Q5
 paper: TMUA P1
 year:
 number: Q5
-section: Applications
+section: MCQ
 difficulty: 0
-topics: []
-subtopics: []
-tags:
-  - Specimen
+topics: [Function]
+subtopics: [Exponentials and Logarithms]
+tags: [Specimen, Log-to-Index-Form, Changing-the-Subject, Inverse-Relation]
 status: 已入库
 ---
 

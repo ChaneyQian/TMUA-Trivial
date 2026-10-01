@@ -5,7 +5,7 @@ id: SMT-Ch3-Q13
 paper: SMT Skills Ch3
 year:
 number: Q13
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: []
 subtopics: []

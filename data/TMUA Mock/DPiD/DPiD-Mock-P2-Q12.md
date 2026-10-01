@@ -5,7 +5,7 @@ id: DPiD-Mock-P2-Q12
 paper: TMUA Mock
 year:
 number: Q12
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Miscellaneous Pure, Calculus, Geometry]
 subtopics: [Numerical Methods, Integration, Coordinate Geometry]

@@ -5,7 +5,7 @@ id: BeyondHorizonS3-Mock-P1-Q6
 paper: TMUA Mock
 year:
 number: Q6
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Function, Polynomial]
 subtopics: [Exponentials and Logarithms, Solution of Equations]

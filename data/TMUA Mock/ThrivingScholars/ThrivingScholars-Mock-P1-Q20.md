@@ -5,11 +5,11 @@ id: ThrivingScholars-Mock-P1-Q20
 paper: TMUA Mock
 year:
 number: Q20
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Geometry, Sequences and Series]
 subtopics: [Euclid Geometry, AP GP]
-tags: [Arithmetic-Series, Circle-Area, 待补答案]
+tags: [Arithmetic-Series, Circle-Area]
 status: 已入库
 ---
 
@@ -43,9 +43,9 @@ $$
 ### 我的备注
 
 ### AI备注
-
+2026-09-25 代审：原卷无答案键；本题答案由两路 AI 独立自解、结果一致后补录（源 MD 已加 ANSWER 行）。
 
 ## 答案
-
+E
 
 ## 解析

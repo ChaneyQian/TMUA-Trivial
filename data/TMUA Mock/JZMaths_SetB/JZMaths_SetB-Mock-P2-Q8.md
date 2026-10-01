@@ -5,11 +5,11 @@ id: JZMaths_SetB-Mock-P2-Q8
 paper: TMUA Mock
 year:
 number: Q8
-section: Multiple Choice
+section: MCQ
 difficulty: 7
 topics: [Logic and Proof, Trigonometry]
 subtopics: [Proof, Trigonometry]
-tags: [Counterexample, Error-SpCounterexample, Error-Spottintting, Inequal, Inequalityty-ManipManipulalation, General-Trigonometry]
+tags: [Counterexample, Error-Spotting, Inequality-Manipulation, General-Trigonometry]
 status: 已入库
 ---
 

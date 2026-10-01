@@ -5,11 +5,11 @@ id: JZMaths_SetD-Mock-P2-Q8
 paper: TMUA Mock
 year:
 number: Q8
-section: Multiple Choice
+section: MCQ
 difficulty: 7
 topics: [Logic and Proof]
 subtopics: [Logic]
-tags: [SuffSufficientiConnt-Condiition, DedDeducttioon]
+tags: [Sufficient-Condition, Deduction]
 status: 已入库
 ---
 

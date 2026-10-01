@@ -5,7 +5,7 @@ id: JZMaths_SetA-Mock-P2-Q12
 paper: TMUA Mock
 year:
 number: Q12
-section: Multiple Choice
+section: MCQ
 difficulty: 7
 topics: [Logic and Proof, Function]
 subtopics: [Logic, Proof, Exponentials and Logarithms, Functions]

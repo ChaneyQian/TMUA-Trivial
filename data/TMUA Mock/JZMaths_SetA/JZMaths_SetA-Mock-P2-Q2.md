@@ -5,7 +5,7 @@ id: JZMaths_SetA-Mock-P2-Q2
 paper: TMUA Mock
 year:
 number: Q2
-section: Multiple Choice
+section: MCQ
 difficulty: 5.5
 topics: [Calculus, Algebra (Basic)]
 subtopics: [Differentiation, Algebra Manipulation]

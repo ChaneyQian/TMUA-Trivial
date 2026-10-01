@@ -5,7 +5,7 @@ id: Juan_Set1-Mock-P1-Q21
 paper: TMUA Mock
 year:
 number: Q21
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Trigonometry]
 subtopics: [Sine and Cosine Rule]

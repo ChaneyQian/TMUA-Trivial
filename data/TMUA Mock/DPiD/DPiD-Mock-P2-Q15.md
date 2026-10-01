@@ -5,7 +5,7 @@ id: DPiD-Mock-P2-Q15
 paper: TMUA Mock
 year:
 number: Q15
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Function]
 subtopics: [Exponentials and Logarithms]

@@ -5,7 +5,7 @@ id: JZMaths_SetE-Mock-P1-Q12
 paper: TMUA Mock
 year:
 number: Q12
-section: Multiple Choice
+section: MCQ
 difficulty: 6.5
 topics: [Calculus, Function, Logic and Proof]
 subtopics: [Integration, Absolute Value Functions, Graphical Arguments]

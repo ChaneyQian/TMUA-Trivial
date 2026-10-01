@@ -5,11 +5,11 @@ id: BeyondHorizonS3-Mock-P2-Q6
 paper: TMUA Mock
 year:
 number: Q6
-section: Multiple Choice
+section: MCQ
 difficulty: 0
-topics: [Logic and Proof, Function, Calculus]
-subtopics: [Logic, Exponentials and Logarithms, Differentiation Application]
-tags: [Iff, Monotonicity, Parameter-Range]
+topics: [Function, Calculus]
+subtopics: [Exponentials and Logarithms, Differentiation Application]
+tags: [Monotonicity, Parameter-Range]
 status: 已入库
 ---
 

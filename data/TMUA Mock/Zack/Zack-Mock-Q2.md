@@ -5,10 +5,10 @@ id: Zack-Mock-Q2
 paper: TMUA Mock
 year:
 number: Q2
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Function, Calculus]
-subtopics: [Floor, Ceiling and Fractional Part Functions, Integration]
+subtopics: ["Floor, Ceiling and Fractional Part Functions", Integration]
 tags: [Periodicity, Definite-Integral, Substitution]
 status: 已入库
 ---

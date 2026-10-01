@@ -5,7 +5,7 @@ id: DanielJSmith_SetA-Mock-P2-Q9
 paper: TMUA Mock
 year:
 number: Q9
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Miscellaneous Pure, Polynomial]
 subtopics: [Inequalities, Solution of Equations]

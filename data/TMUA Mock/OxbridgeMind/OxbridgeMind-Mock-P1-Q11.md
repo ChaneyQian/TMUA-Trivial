@@ -5,7 +5,7 @@ id: OxbridgeMind-Mock-P1-Q11
 paper: TMUA Mock
 year:
 number: Q11
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Function, Miscellaneous Pure]
 subtopics: [Absolute Value Functions, Graph Sketching]
@@ -29,6 +29,7 @@ $\mathbf{E}$ ![[Image/OxbridgeMind-Mock-P1-Q11-optE.png]]
 ### AI备注
 来源：tmua.io 社区卷 `community__oxbridgemind__p1`，作者 **OxbridgeMind**（站点标题：OxbridgeMind TMUA Paper 1）。
 第三方录入的第三方模拟卷，**非官方真题，未经原卷核对**；站点不提供解析，`## 解析` 待补。
+2026-09-25 代审：选项 A 与 D 是同一张菱形图（两份裁图），实际只有四个不同选项；两者都错，答案 C 不受影响。
 
 ## 答案
 C

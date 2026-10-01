@@ -5,7 +5,7 @@ id: BeyondHorizonS4-Mock-P1-Q11
 paper: TMUA Mock
 year:
 number: Q11
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Calculus]
 subtopics: [Differentiation Application]
@@ -40,9 +40,10 @@ $$\mathbf{G} \quad -3 \leq x \leq -2$$
   按「以原卷为准」题面未改，`ANSWER` 记 B（只取主分支），**不是正确答案**。
 - **键对拍（2026-09-11，键源 tmua.fyi）**：键给 **A**（$x\ge-2$）。**键错**：$x=0$ 时 $f'(0)=10>0$、$g'(0)=8>0$，两函数同增，$0$ 不可能在解集里。
   按题面系数解集为 $x\le-2$ 或 $-\frac43\le x\le-\frac54$，按「系数应为 24」的猜测解集为 E；键 A 两者都不是。`ANSWER` 改记 A（意图项），标签保留。
+2026-09-25 代审：答案由 A 改为 E（本卷答案为我方自解，可更正）。照题面系数，单调性相反的区间是 x<−2 与 −4/3<x<−5/4，不在任何选项里，且 A 可被 x=0 证伪；若系数为 f=4x²+24x+5、g=x³+9x²+24x−10，则恰为 E（x≤−4 或 −3≤x≤−2），判定为系数印误。题坏，保留控制标。
 
 ## 答案
-A
+E
 
 ## 解析
 Here $f'(x) = 8x + 10$, so $f$ is decreasing for $x < -\frac{5}{4}$ and increasing for $x > -\frac{5}{4}$. Also $g'(x) = 3x^2 + 10x + 8 = (3x + 4)(x + 2)$, so $g$ is increasing for $x < -2$ and for $x > -\frac{4}{3}$, and decreasing on $-2 < x < -\frac{4}{3}$. Because $-\frac{4}{3} < -\frac{5}{4}$, the case "$f$ increasing and $g$ decreasing" has empty solution set, and the case "$f$ decreasing and $g$ increasing" gives

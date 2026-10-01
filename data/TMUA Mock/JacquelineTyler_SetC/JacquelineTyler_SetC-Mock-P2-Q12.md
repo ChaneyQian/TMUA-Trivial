@@ -5,7 +5,7 @@ id: JacquelineTyler_SetC-Mock-P2-Q12
 paper: TMUA Mock
 year:
 number: Q12
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Sequences and Series, Number Theory]
 subtopics: [Recurrence Relations, Divisibility]

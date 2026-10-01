@@ -5,11 +5,11 @@ id: JZMaths_SetE-Mock-P2-Q1
 paper: TMUA Mock
 year:
 number: Q1
-section: Multiple Choice
+section: MCQ
 difficulty: 5.5
 topics: [Logic and Proof, Calculus, Function]
 subtopics: [Logic, Differentiation Application, Algebraic Functions]
-tags: [Iff, Iff, Differentia]
+tags: [Iff, Differentiation]
 status: 已入库
 ---
 

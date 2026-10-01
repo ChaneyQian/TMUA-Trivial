@@ -5,7 +5,7 @@ id: JZMaths_SetC-Mock-P2-Q8
 paper: TMUA Mock
 year:
 number: Q8
-section: Multiple Choice
+section: MCQ
 difficulty: 6.5
 topics: [Polynomial]
 subtopics: [Factor and Remainder Theorem, Polynomials]

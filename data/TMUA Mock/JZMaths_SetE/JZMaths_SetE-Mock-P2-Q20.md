@@ -5,11 +5,11 @@ id: JZMaths_SetE-Mock-P2-Q20
 paper: TMUA Mock
 year:
 number: Q20
-section: Multiple Choice
+section: MCQ
 difficulty: 9
 topics: [Logic and Proof, Geometry]
 subtopics: [Logic, Euclid Geometry]
-tags: [Truth-Value-Truth-Value-List, Nest, Necessary-vs-Sssary-vs-Suffifficienient, C, Couunterexampleterexample]
+tags: [Truth-Value-List, Necessary-vs-Sufficient, Counterexample]
 status: 已入库
 ---
 

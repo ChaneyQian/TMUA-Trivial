@@ -5,7 +5,7 @@ id: JZMaths_SetB-Mock-P1-Q17
 paper: TMUA Mock
 year:
 number: Q17
-section: Multiple Choice
+section: MCQ
 difficulty: 8
 topics: [Calculus]
 subtopics: [Integration, Integral Identity]

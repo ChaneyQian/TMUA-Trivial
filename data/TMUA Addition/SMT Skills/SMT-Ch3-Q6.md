@@ -5,7 +5,7 @@ id: SMT-Ch3-Q6
 paper: SMT Skills Ch3
 year:
 number: Q6
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: []
 subtopics: []

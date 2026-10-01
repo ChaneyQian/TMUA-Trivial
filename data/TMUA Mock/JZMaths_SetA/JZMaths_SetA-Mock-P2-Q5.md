@@ -5,11 +5,11 @@ id: JZMaths_SetA-Mock-P2-Q5
 paper: TMUA Mock
 year:
 number: Q5
-section: Multiple Choice
+section: MCQ
 difficulty: 6
 topics: [Logic and Proof, Number Theory]
 subtopics: [Proof, Modular Arithmetic and Congruences]
-tags: [ProProf-byof-Contraby-Contradiiction, Error-Spotting, Boundary-Case, Error-Spotting, Boundary-Case]
+tags: [Proof-by-Contradiction, Error-Spotting, Boundary-Case]
 status: 已入库
 ---
 

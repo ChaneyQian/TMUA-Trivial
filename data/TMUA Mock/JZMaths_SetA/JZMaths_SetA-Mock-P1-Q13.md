@@ -5,7 +5,7 @@ id: JZMaths_SetA-Mock-P1-Q13
 paper: TMUA Mock
 year:
 number: Q13
-section: Multiple Choice
+section: MCQ
 difficulty: 7.5
 topics: [Polynomial, Logic and Proof, Algebra (Basic)]
 subtopics: [Solution of Equations, Graphical Arguments, Algebra Manipulation]

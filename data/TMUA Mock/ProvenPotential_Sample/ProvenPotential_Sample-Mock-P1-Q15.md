@@ -5,7 +5,7 @@ id: ProvenPotential_Sample-Mock-P1-Q15
 paper: TMUA Mock
 year:
 number: Q15
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Geometry]
 subtopics: [Euclid Geometry]
@@ -32,6 +32,7 @@ $$ \mathbf{F} \quad \text{No solution} $$
 ### AI备注
 来源：tmua.io 社区卷 `community__proven-potential__sample__p1`，作者 **Proven Potential**（站点标题：Proven Potential TMUA Sample Paper 1）。
 第三方录入的第三方模拟卷，**非官方真题，未经原卷核对**；站点不提供解析，`## 解析` 待补。
+2026-09-25 代审：配图存在（Image/ProvenPotential_Sample-Mock-P1-Q15-fig1.png），此前「配图缺失」的记录有误；独立验算答案 A 正确。
 
 ## 答案
 A

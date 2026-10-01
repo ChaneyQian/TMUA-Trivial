@@ -5,7 +5,7 @@ id: JZMaths_SetD-Mock-P1-Q10
 paper: TMUA Mock
 year:
 number: Q10
-section: Multiple Choice
+section: MCQ
 difficulty: 6.5
 topics: [Polynomial, Algebra (Basic)]
 subtopics: [Factor and Remainder Theorem, Polynomials, Algebra Manipulation]

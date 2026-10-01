@@ -5,11 +5,11 @@ id: JZMaths_SetE-Mock-P2-Q14
 paper: TMUA Mock
 year:
 number: Q14
-section: Multiple Choice
+section: MCQ
 difficulty: 7
 topics: [Logic and Proof, Geometry]
-subtopics: [Logic, Proof, Proof, Euclid Geometry, Vectors]
-tags: [TruthValuTr-Listh-Value-Lst, C, Couunterexampleterexample, Geometry]
+subtopics: [Logic, Proof, Euclid Geometry, Vectors]
+tags: [Truth-Value-List, Counterexample, Geometry]
 status: 已入库
 ---
 
@@ -42,7 +42,6 @@ $$ \mathbf{J} \quad \text{none of them} $$
 ### AI备注
 
 
-ℹ️ 2026-09-14 Fable 复核：按 §2.4ter 并挂线调整 Proof。
 ℹ️ 2026-09-14 Fable 复核：按 §2.4ter 并挂线调整 Proof。
 ## 答案
 A

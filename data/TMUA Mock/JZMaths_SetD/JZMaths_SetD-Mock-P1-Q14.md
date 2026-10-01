@@ -5,7 +5,7 @@ id: JZMaths_SetD-Mock-P1-Q14
 paper: TMUA Mock
 year:
 number: Q14
-section: Multiple Choice
+section: MCQ
 difficulty: 7
 topics: [Trigonometry, Sequences and Series]
 subtopics: [Trigonometric Equations, Trigonometry, AP GP]

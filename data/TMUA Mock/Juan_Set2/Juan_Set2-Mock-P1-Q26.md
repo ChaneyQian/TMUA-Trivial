@@ -5,7 +5,7 @@ id: Juan_Set2-Mock-P1-Q26
 paper: TMUA Mock
 year:
 number: Q26
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Geometry]
 subtopics: [Coordinate Geometry]

@@ -5,11 +5,11 @@ id: Yotta-Mock-P1-Q19
 paper: TMUA Mock
 year:
 number: Q19
-section: Multiple Choice
+section: MCQ
 difficulty: 0
-topics: [Function, Logic and Proof]
-subtopics: [Exponentials and Logarithms, Absolute Value Functions, Logic]
-tags: [Truth-Value-List, Domain-Restriction, Inverse-Function]
+topics: [Function]
+subtopics: [Exponentials and Logarithms, Absolute Value Functions]
+tags: [Domain-Restriction, Inverse-Function]
 status: 已入库
 ---
 

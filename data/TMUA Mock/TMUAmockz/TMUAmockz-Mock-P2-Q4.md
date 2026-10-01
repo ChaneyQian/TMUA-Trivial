@@ -5,10 +5,10 @@ id: TMUAmockz-Mock-P2-Q4
 paper: TMUA Mock
 year:
 number: Q4
-section: Multiple Choice
+section: MCQ
 difficulty: 0
-topics: [Statistical Theory, Sequences and Series]
-subtopics: [Descriptive Statistics, AP GP]
+topics: [Statistical Theory]
+subtopics: [Descriptive Statistics]
 tags: [Mean-Median-Mode, Case-Split, Arithmetic-Progression]
 status: 待复核
 ---

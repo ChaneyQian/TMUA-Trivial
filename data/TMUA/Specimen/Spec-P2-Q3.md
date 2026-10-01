@@ -5,12 +5,11 @@ id: Spec-P2-Q3
 paper: TMUA P2
 year:
 number: Q3
-section: Reasoning
+section: MCQ
 difficulty: 0
 topics: [Logic and Proof]
 subtopics: [Proof]
-tags: [Error-Spotting, Extraneous-Root]
-  - Specimen
+tags: [Error-Spotting, Extraneous-Root, Specimen]
 status: 已入库
 ---
 

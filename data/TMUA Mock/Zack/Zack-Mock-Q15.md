@@ -5,7 +5,7 @@ id: Zack-Mock-Q15
 paper: TMUA Mock
 year:
 number: Q15
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Calculus, Algebra (Basic)]
 subtopics: [Differentiation, Algebra Manipulation]

@@ -5,7 +5,7 @@ id: JZMaths_SetE-Mock-P1-Q6
 paper: TMUA Mock
 year:
 number: Q6
-section: Multiple Choice
+section: MCQ
 difficulty: 6
 topics: [Miscellaneous Pure, Function]
 subtopics: [Inequalities, Algebraic Functions]

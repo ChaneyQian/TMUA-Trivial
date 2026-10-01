@@ -5,7 +5,7 @@ id: JamesChen-Mock-P1-Q13
 paper: TMUA Mock
 year:
 number: Q13
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Logic and Proof, Function]
 subtopics: [Logic, Exponentials and Logarithms]

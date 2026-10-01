@@ -5,12 +5,12 @@ id: Spec-Q24
 paper: ECAA Spec Section 1 Part B
 year: 2015
 number: Q24
-section: Advanced Mathematics
+section: MCQ
 solution_source: 官方
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Polynomial, Algebra (Basic)]
+subtopics: [Factor and Remainder Theorem, Simultaneous Equations]
+tags: [Substitution, Perfect-Square]
 status: 已入库
 ---
 ## 题目

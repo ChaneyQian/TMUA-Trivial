@@ -5,7 +5,7 @@ id: JZMaths_SetD-Mock-P1-Q12
 paper: TMUA Mock
 year:
 number: Q12
-section: Multiple Choice
+section: MCQ
 difficulty: 7
 topics: [Geometry, Function, Algebra (Basic)]
 subtopics: [Coordinate Geometry, Functions, Algebra Manipulation]

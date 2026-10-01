@@ -5,7 +5,7 @@ id: JacquelineTyler_SetB-Mock-P2-Q4
 paper: TMUA Mock
 year:
 number: Q4
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Logic and Proof, Trigonometry]
 subtopics: [Proof, Trigonometric Equations]

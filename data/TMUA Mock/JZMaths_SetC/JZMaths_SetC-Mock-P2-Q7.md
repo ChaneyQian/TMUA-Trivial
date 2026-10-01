@@ -5,11 +5,11 @@ id: JZMaths_SetC-Mock-P2-Q7
 paper: TMUA Mock
 year:
 number: Q7
-section: Multiple Choice
+section: MCQ
 difficulty: 6.5
 topics: [Logic and Proof]
 subtopics: [Logic]
-tags: [Truth-Value-Puzzle, ExaTruth-Value-Puzzle, Exactlytly-k-True, k-True, Deduction]
+tags: [Truth-Value-Puzzle, Exactly-k-True, Deduction]
 status: 已入库
 ---
 

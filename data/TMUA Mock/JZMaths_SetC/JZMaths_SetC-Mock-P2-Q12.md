@@ -5,11 +5,11 @@ id: JZMaths_SetC-Mock-P2-Q12
 paper: TMUA Mock
 year:
 number: Q12
-section: Multiple Choice
+section: MCQ
 difficulty: 7
 topics: [Logic and Proof, Function]
 subtopics: [Proof, Functional Equations]
-tags: [Counterexample, If-Then, If-Then, Graphs-of-Functions]
+tags: [Counterexample, If-Then, Graphs-of-Functions]
 status: 已入库
 ---
 

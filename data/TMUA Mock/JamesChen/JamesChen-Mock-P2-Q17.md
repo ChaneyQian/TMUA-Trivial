@@ -5,7 +5,7 @@ id: JamesChen-Mock-P2-Q17
 paper: TMUA Mock
 year:
 number: Q17
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Miscellaneous Pure]
 subtopics: [Combinatorics]
@@ -36,6 +36,7 @@ $$ \mathbf{J} \quad 12 $$
 ### AI备注
 来源：tmua.io 社区卷 `community__james-chen__p2`，作者 **James Chen**（站点标题：James Chen TMUA Paper 2）。
 第三方录入的第三方模拟卷，**非官方真题，未经原卷核对**；站点不提供解析，`## 解析` 待补。
+2026-09-25 代审：配图是被裁的截图，第二行猜测被截去下半；颜色仍可辨认，答案 H 不受影响。
 
 ## 答案
 H

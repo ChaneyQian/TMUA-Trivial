@@ -5,11 +5,11 @@ id: JZMaths_SetC-Mock-P2-Q2
 paper: TMUA Mock
 year:
 number: Q2
-section: Multiple Choice
+section: MCQ
 difficulty: 5.5
 topics: [Logic and Proof, Miscellaneous Pure]
-subtopics: [Logic, Proof, Proof, Inequalities]
-tags: [Truth-Value-List, Counterexample, Inequality-Manipulation, Truth-Value-List, Counterexample, Inequality-Manipulation, Inequalities]
+subtopics: [Logic, Proof, Inequalities]
+tags: [Truth-Value-List, Counterexample, Inequality-Manipulation, Inequalities]
 status: 已入库
 ---
 
@@ -39,8 +39,7 @@ $$ \mathbf{J} \quad \text{1, 2, 3 and 4} $$
 ### AI备注
 
 
-
-ℹ️ 2026-09-14 Fable 复核：按 §2.4ter 并挂线调整 Proof。ℹ️ 2026-09-14 Fable 复核：按 §2.4ter 并挂线调整 Proof。
+ℹ️ 2026-09-14 Fable 复核：按 §2.4ter 并挂线调整 Proof。
 ## 答案
 F
 

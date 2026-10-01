@@ -5,7 +5,7 @@ id: BeyondHorizonS3-Mock-P1-Q12
 paper: TMUA Mock
 year:
 number: Q12
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Miscellaneous Pure, Function]
 subtopics: [Numerical Methods, Exponentials and Logarithms]

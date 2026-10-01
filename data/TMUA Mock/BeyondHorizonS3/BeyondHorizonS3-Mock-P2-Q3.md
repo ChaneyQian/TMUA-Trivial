@@ -5,7 +5,7 @@ id: BeyondHorizonS3-Mock-P2-Q3
 paper: TMUA Mock
 year:
 number: Q3
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Polynomial]
 subtopics: [Polynomials]

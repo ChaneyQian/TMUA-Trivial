@@ -5,12 +5,11 @@ id: Spec-P1-Q15
 paper: TMUA P1
 year:
 number: Q15
-section: Applications
+section: MCQ
 difficulty: 0
-topics: []
-subtopics: []
-tags:
-  - Specimen
+topics: [Calculus, Algebra (Basic)]
+subtopics: [Integration, Algebra Manipulation]
+tags: [Specimen, Definite-Integral, Completing-the-Square, Vertex-Form]
 status: 已入库
 ---
 

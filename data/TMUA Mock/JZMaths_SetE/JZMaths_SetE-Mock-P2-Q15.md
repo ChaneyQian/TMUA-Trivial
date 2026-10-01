@@ -5,7 +5,7 @@ id: JZMaths_SetE-Mock-P2-Q15
 paper: TMUA Mock
 year:
 number: Q15
-section: Multiple Choice
+section: MCQ
 difficulty: 7.5
 topics: [Function]
 subtopics: ["Floor, Ceiling and Fractional Part Functions", Iterated Functions]

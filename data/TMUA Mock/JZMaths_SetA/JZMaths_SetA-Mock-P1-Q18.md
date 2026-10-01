@@ -5,7 +5,7 @@ id: JZMaths_SetA-Mock-P1-Q18
 paper: TMUA Mock
 year:
 number: Q18
-section: Multiple Choice
+section: MCQ
 difficulty: 8
 topics: [Calculus, Algebra (Basic)]
 subtopics: [Integration, Integral Identity, Simultaneous Equations]

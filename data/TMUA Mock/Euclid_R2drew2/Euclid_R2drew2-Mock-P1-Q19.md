@@ -5,7 +5,7 @@ id: Euclid_R2drew2-Mock-P1-Q19
 paper: TMUA Mock
 year:
 number: Q19
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Geometry, Miscellaneous Pure]
 subtopics: [Euclid Geometry, Inequalities]

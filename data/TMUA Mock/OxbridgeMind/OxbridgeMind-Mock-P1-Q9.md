@@ -5,7 +5,7 @@ id: OxbridgeMind-Mock-P1-Q9
 paper: TMUA Mock
 year:
 number: Q9
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Geometry, Sequences and Series]
 subtopics: [Euclid Geometry, AP GP]
@@ -31,6 +31,7 @@ $$ \mathbf{E} \quad 2b $$
 ### AI备注
 来源：tmua.io 社区卷 `community__oxbridgemind__p1`，作者 **OxbridgeMind**（站点标题：OxbridgeMind TMUA Paper 1）。
 第三方录入的第三方模拟卷，**非官方真题，未经原卷核对**；站点不提供解析，`## 解析` 待补。
+2026-09-25 代审：配图只画了三角形和 b，没画正方形；两种自然读法都给公比 b/(b+1)、总面积 b²/(2b+1)，答案 D 不受影响。
 
 ## 答案
 D

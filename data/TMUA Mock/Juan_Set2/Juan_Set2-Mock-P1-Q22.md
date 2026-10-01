@@ -5,7 +5,7 @@ id: Juan_Set2-Mock-P1-Q22
 paper: TMUA Mock
 year:
 number: Q22
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Logic and Proof, Geometry]
 subtopics: [Logic, Proof, Euclid Geometry]

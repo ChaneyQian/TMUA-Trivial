@@ -5,7 +5,7 @@ id: Zack-Mock-Q4
 paper: TMUA Mock
 year:
 number: Q4
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Sequences and Series, Polynomial]
 subtopics: [AP GP, Solution of Equations]

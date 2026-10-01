@@ -5,7 +5,7 @@ id: JacquelineTyler_SetD-Mock-P2-Q13
 paper: TMUA Mock
 year:
 number: Q13
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Function, Calculus]
 subtopics: [Absolute Value Functions, Integration]

@@ -5,10 +5,10 @@ id: Yotta-Mock-P1-Q10
 paper: TMUA Mock
 year:
 number: Q10
-section: Multiple Choice
+section: MCQ
 difficulty: 0
-topics: [Probability, Sequences and Series]
-subtopics: [Elementary Probability, Recurrence Relations]
+topics: [Probability, Sequences and Series, Statistical Theory]
+subtopics: [Elementary Probability, Recurrence Relations, Expectation and Variance]
 tags: [Expected-Value, First-Step-Analysis, Geometric-Series]
 status: 已入库
 ---

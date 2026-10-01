@@ -5,7 +5,7 @@ id: JZMaths_SetC-Mock-P2-Q15
 paper: TMUA Mock
 year:
 number: Q15
-section: Multiple Choice
+section: MCQ
 difficulty: 7.5
 topics: [Algebra (Basic), Miscellaneous Pure]
 subtopics: [Surds and indices, Inequalities]

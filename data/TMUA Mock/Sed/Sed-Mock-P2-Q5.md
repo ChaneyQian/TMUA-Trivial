@@ -5,11 +5,11 @@ id: Sed-Mock-P2-Q5
 paper: TMUA Mock
 year:
 number: Q5
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Logic and Proof]
 subtopics: [Logic]
-tags: [Contrapositive, Converse, Negation, Iff]
+tags: [Truth-Value-List, Contrapositive, Converse, Negation, Necessary-vs-Sufficient]
 status: 待复核
 ---
 

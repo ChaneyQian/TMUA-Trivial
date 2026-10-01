@@ -5,11 +5,11 @@ id: JZMaths_SetD-Mock-P2-Q19
 paper: TMUA Mock
 year:
 number: Q19
-section: Multiple Choice
+section: MCQ
 difficulty: 8
 topics: [Logic and Proof]
 subtopics: [Logic]
-tags: [ExaExactlytly-k-k-TruTrue, IfIf-ThThen, DeduDedcttioon]
+tags: [Exactly-k-True, If-Then, Deduction]
 status: 已入库
 ---
 

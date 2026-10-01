@@ -5,11 +5,11 @@ id: YATutoring-Mock-P2-Q12
 paper: TMUA Mock
 year:
 number: Q12
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Polynomial, Function]
 subtopics: [Solution of Equations, Exponentials and Logarithms]
-tags: [Extraneous-Roots, Equivalent-Transformation, Substitution]
+tags: [Extraneous-Root, Equivalent-Transformation, Substitution]
 status: 待复核
 ---
 

@@ -5,7 +5,7 @@ id: BeyondHorizonS1-Mock-P2-Q1
 paper: TMUA Mock
 year:
 number: Q1
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Miscellaneous Pure]
 subtopics: [Inequalities]

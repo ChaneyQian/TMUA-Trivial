@@ -5,7 +5,7 @@ id: JZMaths_SetC-Mock-P1-Q16
 paper: TMUA Mock
 year:
 number: Q16
-section: Multiple Choice
+section: MCQ
 difficulty: 7.5
 topics: [Trigonometry, Geometry]
 subtopics: [Trigonometric Equations, Coordinate Geometry]

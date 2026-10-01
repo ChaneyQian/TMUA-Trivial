@@ -5,11 +5,11 @@ id: ThrivingScholars-Mock-P2-Q12
 paper: TMUA Mock
 year:
 number: Q12
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Function, Polynomial]
 subtopics: [Absolute Value Functions, Solution of Equations]
-tags: [Case-Split, Repeated-Root, Sum-of-Roots, 待补答案]
+tags: [Case-Split, Repeated-Root, Sum-of-Roots]
 status: 已入库
 ---
 
@@ -41,9 +41,9 @@ $$
 ### 我的备注
 
 ### AI备注
-
+2026-09-25 代审：原卷无答案键；本题答案由两路 AI 独立自解、结果一致后补录（源 MD 已加 ANSWER 行）。
 
 ## 答案
-
+C
 
 ## 解析

@@ -5,7 +5,7 @@ id: JZMaths_SetA-Mock-P2-Q6
 paper: TMUA Mock
 year:
 number: Q6
-section: Multiple Choice
+section: MCQ
 difficulty: 6.5
 topics: [Miscellaneous Pure]
 subtopics: [Inclusion-Exclusion Principle, Combinatorics]

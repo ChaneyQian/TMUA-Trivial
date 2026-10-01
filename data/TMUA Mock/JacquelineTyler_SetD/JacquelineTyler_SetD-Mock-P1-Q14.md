@@ -5,7 +5,7 @@ id: JacquelineTyler_SetD-Mock-P1-Q14
 paper: TMUA Mock
 year:
 number: Q14
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Sequences and Series, Number Theory]
 subtopics: [Binomial Theorem, Divisibility]

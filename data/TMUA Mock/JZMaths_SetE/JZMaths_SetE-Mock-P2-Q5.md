@@ -5,11 +5,11 @@ id: JZMaths_SetE-Mock-P2-Q5
 paper: TMUA Mock
 year:
 number: Q5
-section: Multiple Choice
+section: MCQ
 difficulty: 6
 topics: [Logic and Proof, Miscellaneous Pure, Function]
 subtopics: [Logic, Inequalities, Absolute Value Functions]
-tags: [ExaExactlytly-k-True, Negation, k-True, Negation, Deduction]
+tags: [Exactly-k-True, Negation, Deduction]
 status: 已入库
 ---
 

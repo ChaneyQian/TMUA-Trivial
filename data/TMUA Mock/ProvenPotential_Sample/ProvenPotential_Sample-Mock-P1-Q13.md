@@ -5,7 +5,7 @@ id: ProvenPotential_Sample-Mock-P1-Q13
 paper: TMUA Mock
 year:
 number: Q13
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Probability, Sequences and Series]
 subtopics: [Elementary Probability, Recurrence Relations]

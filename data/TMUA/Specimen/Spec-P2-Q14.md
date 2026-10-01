@@ -5,12 +5,11 @@ id: Spec-P2-Q14
 paper: TMUA P2
 year:
 number: Q14
-section: Reasoning
+section: MCQ
 difficulty: 0
-topics: []
-subtopics: []
-tags:
-  - Specimen
+topics: [Function, Logic and Proof]
+subtopics: [Logic, Proof, Algebraic Functions, Graphical Arguments]
+tags: [Specimen, Could-Be-True, Deduction, Existence-Construction, Quintic, Turning-Points, End-Behaviour, Stationary-Points]
 status: 已入库
 ---
 

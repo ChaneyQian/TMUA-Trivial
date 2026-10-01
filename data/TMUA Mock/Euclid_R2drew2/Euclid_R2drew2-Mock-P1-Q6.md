@@ -5,7 +5,7 @@ id: Euclid_R2drew2-Mock-P1-Q6
 paper: TMUA Mock
 year:
 number: Q6
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Geometry]
 subtopics: [Coordinate Geometry]

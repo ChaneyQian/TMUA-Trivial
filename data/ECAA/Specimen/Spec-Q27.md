@@ -5,14 +5,12 @@ id: Spec-Q27
 paper: ECAA Spec Section 1 Part B
 year: 2015
 number: Q27
-section: Advanced Mathematics
+section: MCQ
 solution_source: 官方
 difficulty: 0
-topics:
-  - Logic and Proof
-subtopics:
-  - Logic
-tags: []
+topics: [Logic and Proof, Miscellaneous Pure]
+subtopics: [Proof, Inequalities]
+tags: [Counterexample, Must-Be-True, Order-Preserving]
 status: 已入库
 ---
 ## 题目

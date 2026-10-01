@@ -5,7 +5,7 @@ id: JZMaths_SetB-Mock-P1-Q1
 paper: TMUA Mock
 year:
 number: Q1
-section: Multiple Choice
+section: MCQ
 difficulty: 5.5
 topics: [Function, Algebra (Basic)]
 subtopics: [Exponentials and Logarithms, Algebra Manipulation]

@@ -5,11 +5,11 @@ id: JZMaths_SetC-Mock-P2-Q16
 paper: TMUA Mock
 year:
 number: Q16
-section: Multiple Choice
+section: MCQ
 difficulty: 7.5
 topics: [Logic and Proof, Function]
 subtopics: [Logic, Functions]
-tags: [IffIff, Transformation-of-Graphs]
+tags: [Iff, Transformation-of-Graphs]
 status: 已入库
 ---
 

@@ -5,7 +5,7 @@ id: OxbridgeMind-Mock-P1-Q1
 paper: TMUA Mock
 year:
 number: Q1
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Algebra (Basic)]
 subtopics: [Surds and indices]

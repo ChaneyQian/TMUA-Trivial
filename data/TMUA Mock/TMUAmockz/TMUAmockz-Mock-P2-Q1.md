@@ -5,7 +5,7 @@ id: TMUAmockz-Mock-P2-Q1
 paper: TMUA Mock
 year:
 number: Q1
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Logic and Proof, Function, Calculus]
 subtopics: [Logic, Proof, Algebraic Functions, Differentiation Application]

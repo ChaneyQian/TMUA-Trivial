@@ -5,10 +5,10 @@ id: Viluxent_Set1-Mock-P1-Q11
 paper: TMUA Mock
 year:
 number: Q11
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Function, Calculus]
-subtopics: [Iterated Functions, Floor, Ceiling and Fractional Part Functions, Integration]
+subtopics: [Iterated Functions, "Floor, Ceiling and Fractional Part Functions", Integration]
 tags: [Doubling-Map, Piecewise-Linear, Area-Invariance]
 status: 待复核
 ---

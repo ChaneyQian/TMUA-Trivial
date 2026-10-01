@@ -5,11 +5,11 @@ id: DanielJSmith_SetA-Mock-P1-Q17
 paper: TMUA Mock
 year:
 number: Q17
-section: Multiple Choice
+section: MCQ
 difficulty: 0
-topics: [Sequences and Series, Number Theory, Logic and Proof]
-subtopics: [Recurrence Relations, Divisibility, Logic, Proof]
-tags: [Truth-Value-List, Counterexample, HCF, Arithmetic-Progression]
+topics: [Sequences and Series, Number Theory]
+subtopics: [Recurrence Relations, Divisibility]
+tags: [HCF, Arithmetic-Progression]
 status: 待复核
 ---
 

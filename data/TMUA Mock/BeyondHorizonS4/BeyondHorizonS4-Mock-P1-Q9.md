@@ -5,7 +5,7 @@ id: BeyondHorizonS4-Mock-P1-Q9
 paper: TMUA Mock
 year:
 number: Q9
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Function, Sequences and Series]
 subtopics: [Exponentials and Logarithms, AP GP]

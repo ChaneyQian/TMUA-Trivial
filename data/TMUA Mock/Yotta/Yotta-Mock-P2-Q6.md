@@ -5,11 +5,11 @@ id: Yotta-Mock-P2-Q6
 paper: TMUA Mock
 year:
 number: Q6
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Logic and Proof, Calculus]
 subtopics: [Logic, Differentiation Application]
-tags: [Necessary-Condition, Counterexample, Stationary-Points, Point-of-Inflection]
+tags: [Iff, Counterexample, Stationary-Points, Point-of-Inflection]
 status: 已入库
 ---
 

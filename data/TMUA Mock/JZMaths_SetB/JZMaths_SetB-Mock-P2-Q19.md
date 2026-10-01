@@ -5,7 +5,7 @@ id: JZMaths_SetB-Mock-P2-Q19
 paper: TMUA Mock
 year:
 number: Q19
-section: Multiple Choice
+section: MCQ
 difficulty: 8.5
 topics: [Geometry, Polynomial]
 subtopics: [Coordinate Geometry, Vieta's Formulas]

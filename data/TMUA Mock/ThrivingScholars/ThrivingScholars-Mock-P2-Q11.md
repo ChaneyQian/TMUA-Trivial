@@ -5,11 +5,11 @@ id: ThrivingScholars-Mock-P2-Q11
 paper: TMUA Mock
 year:
 number: Q11
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Statistical Theory, Sequences and Series]
 subtopics: [Descriptive Statistics, Sequences and Series]
-tags: [Median, Triangular-Numbers, 待补答案]
+tags: [Median, Triangular-Numbers]
 status: 已入库
 ---
 
@@ -43,9 +43,9 @@ $$
 ### 我的备注
 
 ### AI备注
-
+2026-09-25 代审：原卷无答案键；本题答案由两路 AI 独立自解、结果一致后补录（源 MD 已加 ANSWER 行）。
 
 ## 答案
-
+C
 
 ## 解析

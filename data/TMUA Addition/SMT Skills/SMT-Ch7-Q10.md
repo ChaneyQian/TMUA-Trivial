@@ -5,7 +5,7 @@ id: SMT-Ch7-Q10
 paper: SMT Skills Ch7
 year:
 number: Q10
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: []
 subtopics: []

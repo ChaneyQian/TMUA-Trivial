@@ -5,7 +5,7 @@ id: SMT-Ch5-Q24
 paper: SMT Skills Ch5
 year:
 number: Q24
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: []
 subtopics: []

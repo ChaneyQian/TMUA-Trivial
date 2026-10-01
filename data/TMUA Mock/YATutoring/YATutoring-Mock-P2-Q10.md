@@ -5,11 +5,11 @@ id: YATutoring-Mock-P2-Q10
 paper: TMUA Mock
 year:
 number: Q10
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Logic and Proof, Number Theory]
 subtopics: [Proof, Modular Arithmetic and Congruences]
-tags: [Error-Spotting, Proof-by-Cases, Primes, Mod-3-Casework, Boundary-Case]
+tags: [Proof-Critique, Proof-by-Cases, Primes, Mod-3-Casework, Boundary-Case]
 status: 待复核
 ---
 

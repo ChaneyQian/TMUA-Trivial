@@ -5,11 +5,11 @@ id: TMUAmockz-Mock-P2-Q2
 paper: TMUA Mock
 year:
 number: Q2
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Logic and Proof, Geometry]
 subtopics: [Logic, Coordinate Geometry]
-tags: [Sufficient-Condition, Counterexample, Chord-of-Parabola]
+tags: [Iff, Counterexample, Chord-of-Parabola]
 status: 待复核
 ---
 

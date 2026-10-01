@@ -5,12 +5,11 @@ id: Spec-P1-Q13
 paper: TMUA P1
 year:
 number: Q13
-section: Applications
+section: MCQ
 difficulty: 0
-topics: []
-subtopics: []
-tags:
-  - Specimen
+topics: [Polynomial, Calculus, Logic and Proof]
+subtopics: [Solution of Equations, Differentiation Application, Graphical Arguments]
+tags: [Specimen, Stationary-Points, Root-Counting, Quartic]
 status: 已入库
 ---
 

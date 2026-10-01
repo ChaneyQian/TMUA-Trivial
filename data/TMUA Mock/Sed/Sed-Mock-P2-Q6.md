@@ -5,11 +5,11 @@ id: Sed-Mock-P2-Q6
 paper: TMUA Mock
 year:
 number: Q6
-section: Multiple Choice
+section: MCQ
 difficulty: 0
-topics: [Trigonometry, Logic and Proof]
-subtopics: [Trigonometric Equations, Logic]
-tags: [Quantifiers, Solution-Count, Boundary-Case, Interval-Scaling]
+topics: [Trigonometry]
+subtopics: [Trigonometric Equations]
+tags: [Solution-Count, Boundary-Case, Interval-Scaling]
 status: 待复核
 ---
 

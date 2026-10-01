@@ -5,7 +5,7 @@ id: JacquelineTyler_SetC-Mock-P1-Q16
 paper: TMUA Mock
 year:
 number: Q16
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Function, Algebra (Basic)]
 subtopics: [Exponentials and Logarithms, Algebra Manipulation]

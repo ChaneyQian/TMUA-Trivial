@@ -5,7 +5,7 @@ id: TMUAChallenge-Mock-P2-Q1
 paper: TMUA Mock
 year:
 number: Q1
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Logic and Proof, Number Theory]
 subtopics: [Logic, Proof, Number Theory]

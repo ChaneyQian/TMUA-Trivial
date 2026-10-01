@@ -5,12 +5,11 @@ id: Spec-P1-Q7
 paper: TMUA P1
 year:
 number: Q7
-section: Applications
+section: MCQ
 difficulty: 0
-topics: []
-subtopics: []
-tags:
-  - Specimen
+topics: [Probability]
+subtopics: [Elementary Probability]
+tags: [Specimen, Complementary-Counting, Symmetry-Argument, Without-Replacement]
 status: 已入库
 ---
 

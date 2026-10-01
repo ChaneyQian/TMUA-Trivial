@@ -5,10 +5,10 @@ id: Viluxent_Set1-Mock-P2-Q15
 paper: TMUA Mock
 year:
 number: Q15
-section: Multiple Choice
+section: MCQ
 difficulty: 0
-topics: [Sequences and Series]
-subtopics: [Binomial Coefficients]
+topics: [Algebra (Basic)]
+subtopics: [Algebra Manipulation]
 tags: [Coefficient-Extraction, Sum-of-Coefficients, Parity-Split]
 status: 待复核
 ---

@@ -5,12 +5,11 @@ id: Spec-P1-Q12
 paper: TMUA P1
 year:
 number: Q12
-section: Applications
+section: MCQ
 difficulty: 0
-topics: []
-subtopics: []
-tags:
-  - Specimen
+topics: [Geometry, Miscellaneous Pure]
+subtopics: [Solid Geometry, Misc Pure]
+tags: [Specimen, Prism, Equilateral-Triangle, Surface-Area, Making-d-the-Subject]
 status: 已入库
 ---
 

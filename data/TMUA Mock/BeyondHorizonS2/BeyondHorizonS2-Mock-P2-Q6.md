@@ -5,7 +5,7 @@ id: BeyondHorizonS2-Mock-P2-Q6
 paper: TMUA Mock
 year:
 number: Q6
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Logic and Proof, Miscellaneous Pure]
 subtopics: [Logic, Proof, Combinatorics]

@@ -5,12 +5,11 @@ id: Spec-P2-Q2
 paper: TMUA P2
 year:
 number: Q2
-section: Reasoning
+section: MCQ
 difficulty: 0
-topics: []
-subtopics: []
-tags:
-  - Specimen
+topics: [Calculus]
+subtopics: [Differentiation]
+tags: [Specimen, Fractional-Indices, Index-Laws, Power-Rule]
 status: 已入库
 ---
 

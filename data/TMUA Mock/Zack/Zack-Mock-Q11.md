@@ -5,7 +5,7 @@ id: Zack-Mock-Q11
 paper: TMUA Mock
 year:
 number: Q11
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Probability]
 subtopics: [Conditional Probability]

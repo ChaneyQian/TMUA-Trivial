@@ -5,12 +5,11 @@ id: Spec-P2-Q19
 paper: TMUA P2
 year:
 number: Q19
-section: Reasoning
+section: MCQ
 difficulty: 0
-topics: []
-subtopics: []
-tags:
-  - Specimen
+topics: [Polynomial, Function]
+subtopics: [Solution of Equations, Functions]
+tags: [Specimen, Reflection-in-y-Axis, Sign-of-Roots, Substitution, Cubic]
 status: 已入库
 ---
 

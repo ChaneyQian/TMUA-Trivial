@@ -5,11 +5,11 @@ id: ThrivingScholars-Mock-P2-Q8
 paper: TMUA Mock
 year:
 number: Q8
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Logic and Proof, Algebra (Basic)]
 subtopics: [Logic, Simultaneous Equations]
-tags: [Truth-Value-Puzzle, Truth-Tellers-and-Liars, 待补答案]
+tags: [Truth-Value-Puzzle, Truth-Tellers-and-Liars]
 status: 已入库
 ---
 
@@ -45,9 +45,9 @@ $$
 ### 我的备注
 
 ### AI备注
-
+2026-09-25 代审：原卷无答案键；本题答案由两路 AI 独立自解、结果一致后补录（源 MD 已加 ANSWER 行）。
 
 ## 答案
-
+A
 
 ## 解析

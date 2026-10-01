@@ -5,12 +5,12 @@ id: Spec-Q28
 paper: ECAA Spec Section 1 Part B
 year: 2015
 number: Q28
-section: Advanced Mathematics
+section: MCQ
 solution_source: 官方
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Sequences and Series]
+subtopics: [AP GP]
+tags: [Sum-to-Infinity, Sign-of-Ratio]
 status: 已入库
 ---
 ## 题目

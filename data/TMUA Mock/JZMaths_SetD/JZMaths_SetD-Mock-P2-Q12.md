@@ -5,7 +5,7 @@ id: JZMaths_SetD-Mock-P2-Q12
 paper: TMUA Mock
 year:
 number: Q12
-section: Multiple Choice
+section: MCQ
 difficulty: 7
 topics: [Function, Miscellaneous Pure]
 subtopics: [Iterated Functions, Combinatorics]

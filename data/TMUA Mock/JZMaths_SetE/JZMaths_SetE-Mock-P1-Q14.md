@@ -5,7 +5,7 @@ id: JZMaths_SetE-Mock-P1-Q14
 paper: TMUA Mock
 year:
 number: Q14
-section: Multiple Choice
+section: MCQ
 difficulty: 7
 topics: [Function]
 subtopics: [Exponentials and Logarithms]

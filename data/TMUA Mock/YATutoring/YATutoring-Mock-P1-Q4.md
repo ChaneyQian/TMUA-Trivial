@@ -5,7 +5,7 @@ id: YATutoring-Mock-P1-Q4
 paper: TMUA Mock
 year:
 number: Q4
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Miscellaneous Pure, Calculus]
 subtopics: [Numerical Methods, Integration]

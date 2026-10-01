@@ -5,11 +5,11 @@ id: MathsMadeEasy-Mock-P1-Q10
 paper: TMUA Mock
 year:
 number: Q10
-section: Multiple Choice
+section: MCQ
 difficulty: 0
-topics: [Logic and Proof, Sequences and Series]
-subtopics: [Logic, Proof, Recurrence Relations]
-tags: [Truth-Value-List, Counterexample, Squaring-the-Recurrence, Bounding-a-Sequence]
+topics: [Sequences and Series, Miscellaneous Pure]
+subtopics: [Recurrence Relations, Inequalities]
+tags: [原卷缺陷, Squaring-the-Recurrence, Bounding-a-Sequence]
 status: 待复核
 ---
 
@@ -29,6 +29,7 @@ $$ \mathbf{E} \quad a_n > \sqrt{2n+1} \text{for all} n $$
 ### AI备注
 来源：tmua.io 社区卷 `community__maths-made-easy__p1`，作者 **Maths Made Easy**（站点标题：Maths Made Easy TMUA Paper 1）。
 第三方录入的第三方模拟卷，**非官方真题，未经原卷核对**；站点不提供解析，`## 解析` 待补。
+2026-09-25 代审：原卷答案 D 有误，且无正确选项。平方得 a_n²=2n−1+Σ_{k<n}1/a_k²，而 Σ1/a_k² 发散，n=13 时 a₁₃²≈27.015>27，D 从 n=13 起不成立；A 在 n≥2、B 在 n=1,2、E 在 n=1 起就不成立，C 只在 n=2 成立。最接近的是 B（只在 n=1,2 失效）。答案栏保留原卷 D。
 
 ## 答案
 D

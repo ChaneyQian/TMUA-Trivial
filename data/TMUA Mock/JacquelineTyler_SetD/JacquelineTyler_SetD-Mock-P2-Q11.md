@@ -5,11 +5,11 @@ id: JacquelineTyler_SetD-Mock-P2-Q11
 paper: TMUA Mock
 year:
 number: Q11
-section: Multiple Choice
+section: MCQ
 difficulty: 0
-topics: [Function]
-subtopics: [Functional Equations]
-tags: [Substitution, Chain-Substitution]
+topics: [Function, Logic and Proof]
+subtopics: [Logic, Proof, Functional Equations]
+tags: [Truth-Value-List, Deduction, Substitution, Chain-Substitution]
 status: 待复核
 ---
 

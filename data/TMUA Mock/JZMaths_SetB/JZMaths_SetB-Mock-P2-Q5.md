@@ -5,11 +5,11 @@ id: JZMaths_SetB-Mock-P2-Q5
 paper: TMUA Mock
 year:
 number: Q5
-section: Multiple Choice
+section: MCQ
 difficulty: 6
 topics: [Logic and Proof, Miscellaneous Pure, Polynomial, Algebra (Basic)]
 subtopics: [Logic, Inequalities, Polynomials, Algebra Manipulation]
-tags: [Iff, Iff, Inequalities]
+tags: [Iff, Inequalities]
 status: 已入库
 ---
 

@@ -5,7 +5,7 @@ id: JZMaths_SetE-Mock-P2-Q8
 paper: TMUA Mock
 year:
 number: Q8
-section: Multiple Choice
+section: MCQ
 difficulty: 6.5
 topics: [Trigonometry, Geometry]
 subtopics: [Sine and Cosine Rule, Euclid Geometry]

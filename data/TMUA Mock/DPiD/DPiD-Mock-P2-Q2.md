@@ -5,11 +5,11 @@ id: DPiD-Mock-P2-Q2
 paper: TMUA Mock
 year:
 number: Q2
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: [Miscellaneous Pure]
-subtopics: [Combinatorics]
-tags: [Hamiltonian-Cycle, Solid-Geometry, Casework]
+subtopics: [Combinatorics, Graph Theory]
+tags: [Hamiltonian-Cycle, Casework]
 status: 待复核
 ---
 

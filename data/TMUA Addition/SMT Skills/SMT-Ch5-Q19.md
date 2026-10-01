@@ -5,7 +5,7 @@ id: SMT-Ch5-Q19
 paper: SMT Skills Ch5
 year:
 number: Q19
-section: Multiple Choice
+section: MCQ
 difficulty: 0
 topics: []
 subtopics: []

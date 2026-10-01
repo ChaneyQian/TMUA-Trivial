@@ -5,12 +5,12 @@ id: Spec-Q32
 paper: ECAA Spec Section 1 Part B
 year: 2015
 number: Q32
-section: Advanced Mathematics
+section: MCQ
 solution_source: 官方
 difficulty: 0
-topics: []
-subtopics: []
-tags: []
+topics: [Geometry]
+subtopics: [Euclid Geometry]
+tags: [Tangent-Length, Kite, Sector-Area]
 status: 已入库
 ---
 ## 题目
