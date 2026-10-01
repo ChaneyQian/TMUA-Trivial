@@ -7,7 +7,7 @@
 //   - 静音、行内播放（iOS 不全屏接管）、自动播放；<source> 先 WebM（VP9，小一半）后 MP4（H.264，
 //     不认 VP9 的浏览器——比如部分 Safari——退到它）。两份素材都没有音轨（网页版静音是用户定的）
 //   - 加载中显示海报图（片尾落版那一帧）；两份都加载失败（404、格式不认）或解码出错时直接关、记「已看」，
-//     不把人卡在一张黑幕前面
+//     不把人卡在一张黑幕前面；请求挂着不回、8 秒还没开播的，看门狗同样直接关（STALL_MS）
 //   - 自动播放被浏览器拦了（iOS 低电量模式连静音自动播放都拦）：亮出原生控件让人自己点播，跳过照常在
 //   - 模态对话框：打开时焦点落到「跳过」、Tab 困在对话框里（复用工牌的轻量焦点陷阱）、关了焦点回到打开前的位置；
 //     在屏期间挂遮罩标记（lib/overlay）让身后的无限动画暂停、聚光熄灭，并锁住身后的滚动
@@ -32,6 +32,13 @@ export const INTRO_MEDIA = {
 /** 淡出时长，和样式表里 .leaving 的过渡一致；减动效下不等 */
 const FADE_MS = 360;
 
+/**
+ * 看门狗：这么久既没开播、也没报错（请求挂着不回、服务器半死不活）就直接关、记「已看」——
+ * 两份 <source> 都「失败」浏览器才会报错，挂着不回的请求它会一直等，人就只能对着一张海报。
+ * 自动播放被浏览器拦下（等人点播）不算卡住，不关
+ */
+const STALL_MS = 8000;
+
 /** 程序聚焦时不亮焦点环（同工牌：首登自动弹出时页面上还没有任何操作，浏览器会把它当键盘聚焦） */
 const QUIET_FOCUS: FocusOptions & { focusVisible?: boolean } = { focusVisible: false };
 
@@ -53,6 +60,10 @@ function IntroDialog({ auto }: { auto: boolean }) {
   const [leaving, setLeaving] = useState(false);
   /** 自动播放被拦了：亮出原生控件，让人自己点播 */
   const [needsTap, setNeedsTap] = useState(false);
+  /** 真的开播了（收到过 playing）：看门狗据此收手 */
+  const startedRef = useRef(false);
+  /** 自动播放被拦、在等人点播：看门狗同样不关 */
+  const blockedRef = useRef(false);
 
   /**
    * 关片头。fade：淡出之后再关（跳过、播完）；加载失败不淡，直接关。
@@ -130,9 +141,20 @@ function IntroDialog({ auto }: { auto: boolean }) {
     video.defaultMuted = true;
     const started = video.play();
     started?.catch((error: unknown) => {
-      if (error instanceof DOMException && error.name === 'NotAllowedError') setNeedsTap(true);
+      if (error instanceof DOMException && error.name === 'NotAllowedError') {
+        blockedRef.current = true;
+        setNeedsTap(true);
+      }
     });
   }, []);
+
+  // 看门狗（STALL_MS）：到点还没开播、也没在等人点播，就当加载失败处理——直接关、记「已看」
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      if (!startedRef.current && !blockedRef.current) finish(false);
+    }, STALL_MS);
+    return () => window.clearTimeout(timer);
+  }, [finish]);
 
   return (
     <div
@@ -152,6 +174,9 @@ function IntroDialog({ auto }: { auto: boolean }) {
           poster={INTRO_MEDIA.poster}
           controls={needsTap}
           disablePictureInPicture
+          onPlaying={() => {
+            startedRef.current = true;
+          }}
           onEnded={() => finish(true)}
           // 解码出错（文件坏了、格式其实不认）落在 <video> 自己身上；某一份 <source> 取不到或不认，error 落在那份
           // <source> 上——浏览器里它不冒泡，React 却会把它往上派到这里。WebM 那份失败是要退到 MP4 的，

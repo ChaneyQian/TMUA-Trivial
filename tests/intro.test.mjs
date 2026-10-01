@@ -406,6 +406,59 @@ test('unmounting mid-fade still closes the intro, so a click-through to quick st
   assert.deepEqual(s.log, []);
 });
 
+test('a watchdog closes a video that neither starts nor fails within 8 seconds, unless it is waiting for a tap', async () => {
+  // 审查 2026-10-01：请求挂着不回时浏览器既不报错也不开播，人就只能对着海报。按语义判：看门狗与开播 / 被拦两个记号真跑一遍
+  const src = code(fs.readFileSync(OVERLAY, 'utf8'));
+  assert.equal(Number(/const STALL_MS = (\d+);/.exec(src)?.[1]), 8000);
+  const dog = effects(src).find(({ body }) => body.includes('STALL_MS'));
+  assert.ok(dog, '找不到看门狗');
+  assert.deepEqual(dog.deps, ['finish']);
+  const runDog = runnable(dog.body, ['window', 'startedRef', 'blockedRef', 'finish', 'STALL_MS']);
+  for (const [started, blocked, closes] of [
+    [false, false, true],
+    [true, false, false],
+    [false, true, false],
+  ]) {
+    const timers = [];
+    const cleared = [];
+    const finishes = [];
+    const win = { setTimeout: (fn, ms) => (timers.push([fn, ms]), 5), clearTimeout: (id) => cleared.push(id) };
+    const startedRef = { current: false };
+    const blockedRef = { current: false };
+    const cleanup = runDog(win, startedRef, blockedRef, (fade) => finishes.push(fade), 8000);
+    assert.equal(timers[0][1], 8000);
+    startedRef.current = started;
+    blockedRef.current = blocked;
+    timers[0][0]();
+    assert.deepEqual(finishes, closes ? [false] : [], `开播 ${started}、被拦 ${blocked}：${closes ? '当加载失败直接关' : '不关'}`);
+    cleanup();
+    assert.deepEqual(cleared, [5], '卸载时撤掉看门狗');
+  }
+
+  // 开播记号：<video> 收到 playing 就立起来
+  const video = jsxOpening(src, '<video');
+  const startedRef = { current: false };
+  new Function('startedRef', `return (${attrValue(video.attrs.get('onPlaying'))});`)(startedRef)();
+  assert.equal(startedRef.current, true);
+
+  // 被拦记号：play() 以 NotAllowedError 拒绝时立起来（顺带亮出控件）；别的拒绝（比如加载被打断）不算
+  const play = effects(src).find(({ body }) => body.includes('.play()'));
+  const runPlay = runnable(play.body, ['videoRef', 'blockedRef', 'setNeedsTap', 'DOMException']);
+  for (const [error, blocked] of [
+    [new DOMException('blocked', 'NotAllowedError'), true],
+    [new DOMException('aborted', 'AbortError'), false],
+  ]) {
+    const blockedRef = { current: false };
+    const taps = [];
+    const rejected = Promise.reject(error);
+    runPlay({ current: { play: () => rejected } }, blockedRef, (v) => taps.push(v), DOMException);
+    await rejected.catch(() => {});
+    await new Promise((resolve) => setImmediate(resolve));
+    assert.equal(blockedRef.current, blocked, `${error.name}`);
+    assert.deepEqual(taps, blocked ? [true] : []);
+  }
+});
+
 test('it is a labelled modal dialog that takes focus, holds the overlay mark and locks the page behind', () => {
   const src = code(fs.readFileSync(OVERLAY, 'utf8'));
   const dialog = jsxOpening(src, 'role="dialog"');
