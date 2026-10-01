@@ -74,26 +74,29 @@ test('static bank separates refreshed TMUA Mock and keeps expanded pools behind 
   assert.equal(index.find((entry) => entry.qid === 20070300101)?.hidden, undefined);
 });
 
+// 题库 2026-10-01 起 section 只表示题型：除 STEP 外只取 MCQ / 3-Digit Answer / Short Answer /
+// Long Question（规范见 vault 的 题库/docs/题型规范.md），旧值 Multiple Choice、Advanced Mathematics
+// 等一律并为 MCQ。data\ 要等下一次 sync-bank 才换成新值，过渡期两种都认；同步之后收紧成只认 MCQ。
+// 这个字段只是题库自己的分类，build-data 不拿它过滤（它读的是正文的 ## 题目 / ## 答案），产物不受影响
+const MCQ_SECTION = /^section: (MCQ|Multiple Choice|Advanced Mathematics)$/m;
+
 test('AMC source is synchronized even while its unanswered questions remain ungradeable', () => {
   const files = walkMarkdown(path.join(dataDir, 'AMC')).filter((file) => path.basename(file) !== 'Readme.md');
   assert.equal(files.length, 18);
   for (const file of files) {
     const raw = fs.readFileSync(file, 'utf8');
     assert.match(raw, /^database: AMC$/m, path.relative(root, file));
-    assert.match(raw, /^section: Multiple Choice$/m, path.relative(root, file));
+    assert.match(raw, MCQ_SECTION, path.relative(root, file));
     assert.match(raw, /^## 答案\s*$/m, path.relative(root, file));
   }
 });
 
-// 题库侧把 ECAA 的 section 统一改成了 Advanced Mathematics。
-// 这个字段只是题库自己的分类，build-data 不拿它过滤（它读的是正文的
-// ## 题目 / ## 答案），所以改名不影响产物，这里跟着新约定断言即可。
-test('ECAA questions use the Advanced Mathematics section', () => {
+test('ECAA questions are filed under the MCQ section', () => {
   const files = walkMarkdown(path.join(dataDir, 'ECAA'));
   assert.equal(files.length, 123);
   for (const file of files) {
     const raw = fs.readFileSync(file, 'utf8');
-    assert.match(raw, /^section: Advanced Mathematics$/m, path.relative(root, file));
+    assert.match(raw, MCQ_SECTION, path.relative(root, file));
   }
 });
 
