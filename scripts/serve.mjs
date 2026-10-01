@@ -41,7 +41,13 @@ if (!fs.existsSync(path.join(DIR, 'index.html'))) {
 
 /** 把 URL 解析成 out\ 内的真实文件，越界一律拒绝 */
 function resolveFile(urlPath) {
-  let p = decodeURIComponent(urlPath.split('?')[0].split('#')[0]);
+  let p;
+  // 写坏的百分号编码（如 /%E0%A4%A）会让 decodeURIComponent 抛错；不接住的话整个本地服务进程退出
+  try {
+    p = decodeURIComponent(urlPath.split('?')[0].split('#')[0]);
+  } catch {
+    return null;
+  }
   if (p.endsWith('/')) p += 'index.html';
   const full = path.join(DIR, path.normalize(p));
   // 防路径穿越：normalize 之后必须仍在 out\ 内
