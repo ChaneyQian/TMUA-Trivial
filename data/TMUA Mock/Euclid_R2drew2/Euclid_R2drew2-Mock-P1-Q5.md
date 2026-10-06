@@ -9,7 +9,7 @@ section: MCQ
 difficulty: 0
 topics: [Number Theory]
 subtopics: [Diophantine Equations]
-tags: [Difference-of-Two-Squares, Powers-of-Two, Factor-Pairs]
+tags: [Difference-of-Squares, Powers-of-Two, Factor-Pairs]
 status: 待复核
 ---
 

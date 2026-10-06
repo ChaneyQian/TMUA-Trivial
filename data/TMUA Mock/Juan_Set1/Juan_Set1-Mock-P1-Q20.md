@@ -9,7 +9,7 @@ section: MCQ
 difficulty: 0
 topics: [Trigonometry]
 subtopics: [Trigonometry]
-tags: [Exact-Values, Casework, Ordering]
+tags: [Exact-Values, Case-Analysis, Ordering]
 status: 待复核
 ---
 

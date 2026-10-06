@@ -9,7 +9,7 @@ section: MCQ
 difficulty: 0
 topics: [Number Theory]
 subtopics: [Number Theory]
-tags: [Factor-Pairs, Casework, Digit-Placement]
+tags: [Factor-Pairs, Case-Analysis, Digit-Placement]
 status: 待复核
 ---
 

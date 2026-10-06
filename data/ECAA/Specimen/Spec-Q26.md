@@ -10,7 +10,7 @@ solution_source: 官方
 difficulty: 0
 topics: [Geometry]
 subtopics: [Coordinate Geometry]
-tags: [Circle-Equation, Inscribed-Circles]
+tags: [Equations-of-Circles, Inscribed-Circles]
 status: 已入库
 ---
 ## 题目

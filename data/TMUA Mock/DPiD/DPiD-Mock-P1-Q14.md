@@ -9,7 +9,7 @@ section: MCQ
 difficulty: 0
 topics: [Number Theory]
 subtopics: [Diophantine Equations]
-tags: [Counting-Solutions, Casework, Parity]
+tags: [Counting-Solutions, Case-Analysis, Parity]
 status: 待复核
 ---
 

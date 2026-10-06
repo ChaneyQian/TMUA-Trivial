@@ -9,7 +9,7 @@ section: MCQ
 difficulty: 0
 topics: [Miscellaneous Pure]
 subtopics: [Combinatorics]
-tags: [Derangement, Binomial-Coefficients, Fixed-Points]
+tags: [Derangement, Binomial-Coefficients, Fixed-Point]
 status: 已入库
 ---
 

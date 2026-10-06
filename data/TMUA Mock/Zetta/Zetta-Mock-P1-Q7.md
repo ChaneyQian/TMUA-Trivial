@@ -9,7 +9,7 @@ section: MCQ
 difficulty: 0
 topics: [Geometry, Trigonometry]
 subtopics: [Euclid Geometry, Trigonometry]
-tags: [Regular-Polygon, Isosceles, Area-Ratio, Apothem]
+tags: [Regular-Polygon, Isosceles-Triangle, Area-Ratio, Apothem]
 status: 已入库
 ---
 

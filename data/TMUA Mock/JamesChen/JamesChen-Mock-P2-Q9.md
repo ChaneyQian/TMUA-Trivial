@@ -9,7 +9,7 @@ section: MCQ
 difficulty: 0
 topics: [Sequences and Series, Number Theory]
 subtopics: [Sequences and Series, Modular Arithmetic and Congruences]
-tags: [Periodic-Sequence, Arithmetic-Series, Divisibility]
+tags: [Periodicity, Arithmetic-Series, Divisibility]
 status: 待复核
 ---
 

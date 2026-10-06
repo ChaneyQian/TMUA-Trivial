@@ -9,7 +9,7 @@ section: MCQ
 difficulty: 0
 topics: [Calculus, Algebra (Basic)]
 subtopics: [Differentiation, Algebra Manipulation]
-tags: [Difference-of-Two-Squares, Surd-Factorisation, Removable-Singularity, Fractional-Indices]
+tags: [Difference-of-Squares, Surd-Factorisation, Removable-Singularity, Fractional-Indices]
 status: 已入库
 ---
 

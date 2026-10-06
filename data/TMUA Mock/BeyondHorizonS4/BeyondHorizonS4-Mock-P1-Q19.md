@@ -9,7 +9,7 @@ section: MCQ
 difficulty: 0
 topics: [Trigonometry, Geometry]
 subtopics: [Sine and Cosine Rule, Coordinate Geometry]
-tags: [Cosine-Rule, Concentric-Circles, Exact-Values]
+tags: [Cosine-Law, Concentric-Circles, Exact-Values]
 status: 已入库
 ---
 

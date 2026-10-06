@@ -9,7 +9,7 @@ section: MCQ
 difficulty: 0
 topics: [Sequences and Series, Number Theory]
 subtopics: [Fibonacci Numbers, Modular Arithmetic and Congruences]
-tags: [Pisano-Period, Periodic-Sequence, Divisibility]
+tags: [Pisano-Period, Periodicity, Divisibility]
 status: 已入库
 ---
 

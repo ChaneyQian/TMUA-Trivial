@@ -9,7 +9,7 @@ section: MCQ
 difficulty: 0
 topics: [Algebra (Basic)]
 subtopics: [Algebra Manipulation]
-tags: [Difference-of-Two-Squares, Telescoping, Geometric-Series, Powers-of-Two]
+tags: [Difference-of-Squares, Telescoping, Geometric-Series, Powers-of-Two]
 status: 已入库
 ---
 

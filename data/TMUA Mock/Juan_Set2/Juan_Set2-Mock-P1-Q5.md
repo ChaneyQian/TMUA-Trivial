@@ -9,7 +9,7 @@ section: MCQ
 difficulty: 0
 topics: [Number Theory]
 subtopics: [Number Theory]
-tags: [Primes, Parity, Casework]
+tags: [Primes, Parity, Case-Analysis]
 status: 待复核
 ---
 

@@ -9,7 +9,7 @@ section: MCQ
 difficulty: 0
 topics: [Trigonometry]
 subtopics: [Sine and Cosine Rule]
-tags: [Cosine-Rule, Pythagorean-Identity, Obtuse-Angle]
+tags: [Cosine-Law, Pythagorean-Identity, Obtuse-Angle]
 status: 待复核
 ---
 

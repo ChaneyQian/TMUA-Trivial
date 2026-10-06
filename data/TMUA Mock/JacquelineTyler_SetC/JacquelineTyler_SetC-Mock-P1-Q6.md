@@ -9,7 +9,7 @@ section: MCQ
 difficulty: 0
 topics: [Geometry]
 subtopics: [Coordinate Geometry]
-tags: [Equations-of-Circles, Tangent-Circles, Distance-Between-Centres, Casework]
+tags: [Equations-of-Circles, Tangent-Circles, Distance-Between-Centres, Case-Analysis]
 status: 待复核
 ---
 

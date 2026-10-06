@@ -9,7 +9,7 @@ section: MCQ
 difficulty: 0
 topics: [Miscellaneous Pure]
 subtopics: [Combinatorics]
-tags: [Constraint-Satisfaction, Casework, Permutations, Logical-Elimination]
+tags: [Constraint-Satisfaction, Case-Analysis, Permutations, Logical-Elimination]
 status: 待复核
 ---
 

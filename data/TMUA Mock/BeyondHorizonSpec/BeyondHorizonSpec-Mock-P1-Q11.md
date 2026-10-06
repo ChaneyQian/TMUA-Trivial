@@ -9,7 +9,7 @@ section: MCQ
 difficulty: 0
 topics: [Geometry]
 subtopics: [Euclid Geometry]
-tags: [Pythagoras, Pythagorean-Triple, Area-Subtraction, Casework]
+tags: [Pythagoras, Pythagorean-Triple, Area-Subtraction, Case-Analysis]
 status: 已入库
 ---
 

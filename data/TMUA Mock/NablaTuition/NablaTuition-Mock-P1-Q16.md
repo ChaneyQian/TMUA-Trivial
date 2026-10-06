@@ -9,7 +9,7 @@ section: MCQ
 difficulty: 0
 topics: [Probability, Number Theory]
 subtopics: [Elementary Probability, Modular Arithmetic and Congruences]
-tags: [Residue-Classes, Combinations, Casework]
+tags: [Residue-Classes, Combinations, Case-Analysis]
 status: 待复核
 ---
 

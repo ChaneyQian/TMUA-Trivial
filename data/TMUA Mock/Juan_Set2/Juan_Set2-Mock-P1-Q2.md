@@ -9,7 +9,7 @@ section: MCQ
 difficulty: 0
 topics: [Number Theory]
 subtopics: [Number Theory]
-tags: [Place-Value, Carrying, Cryptarithm, Casework]
+tags: [Place-Value, Carrying, Cryptarithm, Case-Analysis]
 status: 待复核
 ---
 

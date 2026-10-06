@@ -9,7 +9,7 @@ section: MCQ
 difficulty: 0
 topics: [Sequences and Series]
 subtopics: [Recurrence Relations]
-tags: [Periodic-Sequence, Pairing, Sum-Formula]
+tags: [Periodicity, Pairing, Sum-Formula]
 status: 待复核
 ---
 

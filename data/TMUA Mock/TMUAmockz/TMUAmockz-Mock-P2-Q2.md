@@ -9,7 +9,7 @@ section: MCQ
 difficulty: 0
 topics: [Logic and Proof, Geometry]
 subtopics: [Logic, Coordinate Geometry]
-tags: [Iff, Counterexample, Chord-of-Parabola]
+tags: [Iff, Counterexample, Parabola-Chord]
 status: 待复核
 ---
 

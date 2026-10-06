@@ -9,7 +9,7 @@ section: MCQ
 difficulty: 0
 topics: [Sequences and Series]
 subtopics: [Recurrence Relations]
-tags: [Specimen, Periodic-Sequence, Pairing, Alternating-Signs]
+tags: [Specimen, Periodicity, Pairing, Alternating-Signs]
 status: 已入库
 ---
 

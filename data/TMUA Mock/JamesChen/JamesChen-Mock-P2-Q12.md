@@ -9,7 +9,7 @@ section: MCQ
 difficulty: 0
 topics: [Algebra (Basic)]
 subtopics: [Surds and indices]
-tags: [Factorials, Difference-of-Two-Squares, Negative-Indices]
+tags: [Factorials, Difference-of-Squares, Negative-Indices]
 status: 待复核
 ---
 

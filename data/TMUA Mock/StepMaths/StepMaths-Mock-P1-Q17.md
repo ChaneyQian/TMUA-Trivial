@@ -9,7 +9,7 @@ section: MCQ
 difficulty: 0
 topics: [Geometry]
 subtopics: [Solid Geometry]
-tags: [Net-Unfolding, Shortest-Path, Pythagoras, Casework]
+tags: [Net-Unfolding, Shortest-Path, Pythagoras, Case-Analysis]
 status: 待复核
 ---
 

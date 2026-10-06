@@ -9,7 +9,7 @@ section: MCQ
 difficulty: 0
 topics: [Algebra (Basic), Number Theory]
 subtopics: [Algebra Manipulation, Number Theory]
-tags: [SFFT, Prime-Factorisation, Symmetric-Expression]
+tags: [Simon-Favourite-Factoring, Prime-Factorisation, Symmetric-Expression]
 status: 已入库
 ---
 

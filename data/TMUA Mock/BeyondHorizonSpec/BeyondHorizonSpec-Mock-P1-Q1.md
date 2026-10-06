@@ -9,7 +9,7 @@ section: MCQ
 difficulty: 0
 topics: [Number Theory]
 subtopics: [Divisibility]
-tags: [Square-Both-Sides, Multiples, Counting-Solutions]
+tags: [Squaring-Both-Sides, Multiples, Counting-Solutions]
 status: 已入库
 ---
 

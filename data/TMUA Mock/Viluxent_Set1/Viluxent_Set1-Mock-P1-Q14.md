@@ -9,7 +9,7 @@ section: MCQ
 difficulty: 0
 topics: [Algebra (Basic)]
 subtopics: [Simultaneous Equations, Algebra Manipulation]
-tags: [Substitution, Difference-of-Two-Squares, Ratio, Quadratic-in-Disguise]
+tags: [Substitution, Difference-of-Squares, Ratio, Quadratic-in-Disguise]
 status: 待复核
 ---
 

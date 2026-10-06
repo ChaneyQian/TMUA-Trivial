@@ -9,7 +9,7 @@ section: MCQ
 difficulty: 0
 topics: [Geometry, Miscellaneous Pure]
 subtopics: [Euclid Geometry, Misc Pure]
-tags: [Fold-Symmetry, Isosceles, Area-Ratio, Geometry-to-Equation]
+tags: [Fold-Symmetry, Isosceles-Triangle, Area-Ratio, Geometry-to-Equation]
 status: 待复核
 ---
 

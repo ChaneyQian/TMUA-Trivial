@@ -9,7 +9,7 @@ section: MCQ
 difficulty: 0
 topics: [Function, Sequences and Series]
 subtopics: [Exponentials and Logarithms, Sequences and Series]
-tags: [Log-Laws, Telescoping, Product-Telescoping]
+tags: [Log-Laws, Telescoping, Telescoping-Product]
 status: 待复核
 ---
 

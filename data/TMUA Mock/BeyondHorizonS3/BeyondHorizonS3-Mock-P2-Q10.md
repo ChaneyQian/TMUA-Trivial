@@ -9,7 +9,7 @@ section: MCQ
 difficulty: 0
 topics: [Miscellaneous Pure]
 subtopics: [Combinatorics]
-tags: [Casework, Elementary-Symmetric-Sums, Counting]
+tags: [Case-Analysis, Elementary-Symmetric-Sums, Counting]
 status: 已入库
 ---
 

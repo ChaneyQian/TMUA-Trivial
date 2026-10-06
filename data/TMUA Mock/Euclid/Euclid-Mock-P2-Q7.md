@@ -9,7 +9,7 @@ section: MCQ
 difficulty: 0
 topics: [Logic and Proof, Sequences and Series]
 subtopics: [Logic, Proof, Recurrence Relations]
-tags: [Truth-Value-List, Deduction, Periodic-Sequence]
+tags: [Truth-Value-List, Deduction, Periodicity]
 status: 待复核
 ---
 

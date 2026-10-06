@@ -9,7 +9,7 @@ section: MCQ
 difficulty: 0
 topics: [Trigonometry]
 subtopics: [Trigonometric Equations, Trigonometric Identities]
-tags: [General-Solution, Complementary-Angle, Multiple-Angle]
+tags: [General-Solution, Complementary-Angles, Multiple-Angle]
 status: 待复核
 ---
 

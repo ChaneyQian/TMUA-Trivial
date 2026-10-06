@@ -9,7 +9,7 @@ section: MCQ
 difficulty: 0
 topics: [Sequences and Series]
 subtopics: [Recurrence Relations]
-tags: [Periodic-Sequence, Modular-Index, Closed-Form]
+tags: [Periodicity, Modular-Index, Closed-Form]
 status: 待复核
 ---
 

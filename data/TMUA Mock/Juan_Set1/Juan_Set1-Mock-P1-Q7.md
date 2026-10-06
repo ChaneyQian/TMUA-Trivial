@@ -9,7 +9,7 @@ section: MCQ
 difficulty: 0
 topics: [Polynomial]
 subtopics: [Polynomials]
-tags: [Degree-Argument, Leading-Coefficient, Factorisation, Casework]
+tags: [Degree-Argument, Leading-Coefficient, Factorisation, Case-Analysis]
 status: 待复核
 ---
 

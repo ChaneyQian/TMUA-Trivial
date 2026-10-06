@@ -9,7 +9,7 @@ section: MCQ
 difficulty: 0
 topics: [Sequences and Series, Miscellaneous Pure]
 subtopics: [Recurrence Relations, Estimation and Bounds]
-tags: [Integer-Constraints, Bounding, Counting-Values]
+tags: [Integer-Constraint, Bounding, Counting-Values]
 status: 待复核
 ---
 

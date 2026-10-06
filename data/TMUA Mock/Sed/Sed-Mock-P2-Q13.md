@@ -9,7 +9,7 @@ section: MCQ
 difficulty: 0
 topics: [Logic and Proof, Number Theory]
 subtopics: [Proof, Number Theory]
-tags: [Counterexample, Difference-of-Two-Squares, Primes, Divisor-Counting]
+tags: [Counterexample, Difference-of-Squares, Primes, Divisor-Counting]
 status: 待复核
 ---
 

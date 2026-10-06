@@ -10,7 +10,7 @@ solution_source: 官方
 difficulty: 0
 topics: [Sequences and Series]
 subtopics: [Recurrence Relations]
-tags: [Periodic-Sequence, Alternating-Increment]
+tags: [Periodicity, Alternating-Increment]
 status: 已入库
 ---
 ## 题目

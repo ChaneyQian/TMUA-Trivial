@@ -9,7 +9,7 @@ section: MCQ
 difficulty: 0
 topics: [Miscellaneous Pure]
 subtopics: [Combinatorics, Graph Theory]
-tags: [Hamiltonian-Cycle, Casework]
+tags: [Hamiltonian-Cycle, Case-Analysis]
 status: 待复核
 ---
 

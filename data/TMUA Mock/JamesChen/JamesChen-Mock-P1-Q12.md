@@ -9,7 +9,7 @@ section: MCQ
 difficulty: 0
 topics: [Logic and Proof]
 subtopics: [Proof]
-tags: [Error-Spotting, Division-by-Zero, Cancelling-Common-Factor, Difference-of-Two-Squares]
+tags: [Error-Spotting, Division-by-Zero, Cancelling-Common-Factor, Difference-of-Squares]
 status: 待复核
 ---
 

@@ -9,7 +9,7 @@ section: MCQ
 difficulty: 0
 topics: [Logic and Proof, Sequences and Series]
 subtopics: [Logic, Recurrence Relations]
-tags: [Iff, Periodic-Sequence, Fixed-Point]
+tags: [Iff, Periodicity, Fixed-Point]
 status: 待复核
 ---
 

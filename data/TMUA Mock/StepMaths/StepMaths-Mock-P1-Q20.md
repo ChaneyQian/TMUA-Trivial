@@ -9,7 +9,7 @@ section: MCQ
 difficulty: 0
 topics: [Number Theory]
 subtopics: [Diophantine Equations]
-tags: [Difference-of-Two-Squares, Factor-Pairs, Perfect-Square, Parity]
+tags: [Difference-of-Squares, Factor-Pairs, Perfect-Square, Parity]
 status: 待复核
 ---
 

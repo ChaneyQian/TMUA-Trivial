@@ -9,7 +9,7 @@ section: MCQ
 difficulty: 0
 topics: [Sequences and Series]
 subtopics: [Recurrence Relations]
-tags: [Periodic-Sequence, Rationalising-Denominator, Tangent-Addition]
+tags: [Periodicity, Rationalising-Denominator, Tangent-Addition]
 status: 待复核
 ---
 

@@ -9,7 +9,7 @@ section: MCQ
 difficulty: 0
 topics: [Probability, Miscellaneous Pure]
 subtopics: [Elementary Probability, Combinatorics]
-tags: [Casework, Permutations]
+tags: [Case-Analysis, Permutations]
 status: 待复核
 ---
 

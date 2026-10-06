@@ -9,7 +9,7 @@ section: MCQ
 difficulty: 0
 topics: [Number Theory]
 subtopics: [Number Theory]
-tags: [Digits, Factor-Pairs, Bounding, Casework]
+tags: [Digits, Factor-Pairs, Bounding, Case-Analysis]
 status: 待复核
 ---
 

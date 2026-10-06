@@ -9,7 +9,7 @@ section: MCQ
 difficulty: 0
 topics: [Function, Miscellaneous Pure]
 subtopics: [Absolute Value Functions, Combinatorics]
-tags: [Lattice-Points, Casework, Diamond-Region]
+tags: [Lattice-Points, Case-Analysis, Diamond-Region]
 status: 待复核
 ---
 

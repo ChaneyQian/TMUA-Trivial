@@ -9,7 +9,7 @@ section: MCQ
 difficulty: 0
 topics: [Calculus]
 subtopics: [Integration]
-tags: [Difference-of-Two-Squares, Definite-Integral]
+tags: [Difference-of-Squares, Definite-Integral]
 status: 已入库
 ---
 

@@ -9,7 +9,7 @@ section: MCQ
 difficulty: 0
 topics: [Function, Algebra (Basic)]
 subtopics: [Exponentials and Logarithms, Simultaneous Equations]
-tags: [Log-Laws, Index-Laws, Domain-Restriction, Difference-of-Two-Squares]
+tags: [Log-Laws, Index-Laws, Domain-Restriction, Difference-of-Squares]
 status: 待复核
 ---
 

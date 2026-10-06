@@ -9,7 +9,7 @@ section: MCQ
 difficulty: 0
 topics: [Geometry, Function]
 subtopics: [Coordinate Geometry, Functions]
-tags: [Graph-Transformations, Composite-Function, Casework]
+tags: [Graph-Transformations, Composite-Function, Case-Analysis]
 status: 已入库
 ---
 

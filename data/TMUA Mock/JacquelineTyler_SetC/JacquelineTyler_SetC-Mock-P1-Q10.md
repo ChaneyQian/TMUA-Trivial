@@ -9,7 +9,7 @@ section: MCQ
 difficulty: 0
 topics: [Number Theory]
 subtopics: [Divisibility]
-tags: [Periodic-Sequence, Place-Value, Digit-Chain]
+tags: [Periodicity, Place-Value, Digit-Chain]
 status: 待复核
 ---
 

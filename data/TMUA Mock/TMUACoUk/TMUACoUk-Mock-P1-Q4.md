@@ -9,7 +9,7 @@ section: MCQ
 difficulty: 0
 topics: [Sequences and Series]
 subtopics: [Recurrence Relations]
-tags: [Periodic-Sequence, Iteration, Cycle-Length]
+tags: [Periodicity, Iteration, Cycle-Length]
 status: 待复核
 ---
 

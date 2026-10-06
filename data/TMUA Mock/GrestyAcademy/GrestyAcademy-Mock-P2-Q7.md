@@ -9,7 +9,7 @@ section: MCQ
 difficulty: 0
 topics: [Sequences and Series, Algebra (Basic)]
 subtopics: [Sequences and Series, Algebra Manipulation]
-tags: [Difference-of-Two-Squares, Pairing, Sum-Formula]
+tags: [Difference-of-Squares, Pairing, Sum-Formula]
 status: 待复核
 ---
 

@@ -9,7 +9,7 @@ section: MCQ
 difficulty: 0
 topics: [Probability, Miscellaneous Pure]
 subtopics: [Elementary Probability, Combinatorics]
-tags: [Dice, Counting-Arrangements, Casework]
+tags: [Dice, Counting-Arrangements, Case-Analysis]
 status: 待复核
 ---
 
