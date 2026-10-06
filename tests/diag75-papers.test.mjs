@@ -190,7 +190,7 @@ function smtFile(bank, chapter, n, style) {
     style === 'MAT'
       ? mat({ qid, id, paper: `SMT Skills Ch${chapter}`, year: '', number: `Q${n}`, front: VERIFIED })
       : tmua({ qid, id, paper: `SMT Skills Ch${chapter}`, number: `Q${n}`, front: VERIFIED });
-  writeFile(bank, ['TMUA Addition', 'SMT Skills'], `${id}.md`, lines);
+  writeFile(bank, ['Addition Resources', 'SMT Skills'], `${id}.md`, lines);
   return qid;
 }
 
@@ -219,7 +219,7 @@ function makeBank({ smt = true } = {}) {
   writeFile(bank, ['MAT', '2023'], '23-Q1J.md', mat({ qid: 20230300110, id: '23-Q1J', year: 2023, number: 'Q1J', answer: 'C' }));
   writeFile(bank, ['TMUA', '2018'], '18-P1-Q19.md',
     tmua({ qid: 20180211900, id: '18-P1-Q19', paper: 'TMUA P1', year: 2018, number: 'Q19', options: 6, answer: 'D' }));
-  writeFile(bank, ['TMUA Addition', '野题'], 'Wild-Q01.md',
+  writeFile(bank, ['Addition Resources', '野题'], 'Wild-Q01.md',
     tmua({ qid: 99000200100, id: 'Wild-Q01', paper: 'TMUA Wild', number: 'Q1', options: 6, front: VERIFIED }));
   // 同卷的一道普通经典题：它不在考卷里，不该被 reserved 连带
   writeFile(bank, ['TMUA', '2018'], '18-P1-Q1.md',
@@ -238,9 +238,9 @@ function makeBank({ smt = true } = {}) {
     }
   }
   // 未复核的 SMT：进不了 index，也就进不了卷二
-  writeFile(bank, ['TMUA Addition', 'SMT Skills'], 'SMT-Ch3-Q9.md',
+  writeFile(bank, ['Addition Resources', 'SMT Skills'], 'SMT-Ch3-Q9.md',
     tmua({ qid: 90020210900, id: 'SMT-Ch3-Q9', paper: 'SMT Skills Ch3', number: 'Q9' }));
-  writeFile(bank, ['TMUA Addition', 'SMT Skills'], 'SMT-Ch4-Q1.md',
+  writeFile(bank, ['Addition Resources', 'SMT Skills'], 'SMT-Ch4-Q1.md',
     tmua({ qid: 90020220100, id: 'SMT-Ch4-Q1', paper: 'SMT Skills Ch4', number: 'Q1', front: ['answer_verified: false'] }));
 
   // GMAT：下线了的旧诊断。单题照常进 index，但一道都不许进卷；
@@ -371,7 +371,7 @@ test('a paper-1 question that is missing or ungradeable fails the build and is n
   // 缺题：野题那道整个没有
   const missing = makeBank();
   cleanup(t, missing.bank);
-  fs.rmSync(path.join(missing.bank, 'TMUA Addition', '野题', 'Wild-Q01.md'));
+  fs.rmSync(path.join(missing.bank, 'Addition Resources', '野题', 'Wild-Q01.md'));
   const gone = build(t, missing.bank);
   assert.notEqual(gone.built.status, 0, '卷一缺题必须让构建非零退出');
   assert.match(gone.built.stderr, /卷一不完整/);
@@ -392,7 +392,7 @@ test('a paper-1 question that is missing or ungradeable fails the build and is n
   // 复核闸没过的野题（answer_verified 被撤掉）：进不了 index，照样拦
   const unverified = makeBank();
   cleanup(t, unverified.bank);
-  const wild = path.join(unverified.bank, 'TMUA Addition', '野题', 'Wild-Q01.md');
+  const wild = path.join(unverified.bank, 'Addition Resources', '野题', 'Wild-Q01.md');
   fs.writeFileSync(wild, fs.readFileSync(wild, 'utf8').replace('answer_verified: true', 'answer_verified: false'));
   assert.notEqual(build(t, unverified.bank).built.status, 0);
 });

@@ -24,7 +24,7 @@ const BANKS = ['TMUA', 'TMUA Mock', 'MAT', 'SMC', 'ECAA', 'AMC'];
 /**
  * 只开了一部分子目录的库。
  *
- * 'TMUA Addition' 底下摆着好几批来源各异的题，用户裁定只启用 dirs 里这两个
+ * 'Addition Resources' 底下摆着好几批来源各异的题，用户裁定只启用 dirs 里这两个
  * （7.5+ Diagnostic 的专用题源：卷二的 SMT 章末题、卷一的野题）；Clarkson、Euclid Modification 等一律不碰——
  * 既不镜像过去，也不会因为「源侧不存在」被镜像删除逻辑扫掉。
  *
@@ -32,7 +32,7 @@ const BANKS = ['TMUA', 'TMUA Mock', 'MAT', 'SMC', 'ECAA', 'AMC'];
  * 整目录拷过去等于把没启用的那几批题的图也一并发出去。只拷 dirs 里的题
  * 真正引用到的那几张，目标侧多余的照常按镜像语义删掉。
  */
-const PARTIAL_BANKS = [{ bank: 'TMUA Addition', dirs: ['SMT Skills', '野题'], imageDir: 'Image' }];
+const PARTIAL_BANKS = [{ bank: 'Addition Resources', dirs: ['SMT Skills', '野题'], imageDir: 'Image' }];
 
 /** 题目文件的判据：frontmatter 里有 qid。没有的就是笔记，不同步。 */
 function isQuestion(file) {

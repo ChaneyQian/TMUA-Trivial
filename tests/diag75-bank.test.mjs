@@ -91,20 +91,20 @@ function matStyle({ qid, id, verified, figure }) {
 function makeBank() {
   const bank = fs.mkdtempSync(path.join(os.tmpdir(), 'mcq-diag75-bank-'));
 
-  write(bank, ['TMUA Addition', 'SMT Skills'], 'SMT-Ch3-Q3.md',
+  write(bank, ['Addition Resources', 'SMT Skills'], 'SMT-Ch3-Q3.md',
     tmuaStyle({ qid: 90020210300, id: 'SMT-Ch3-Q3', verified: 'true', figure: 'smt-fig1.png' }));
-  write(bank, ['TMUA Addition', 'SMT Skills'], 'SMT-Ch7-Q12.md',
+  write(bank, ['Addition Resources', 'SMT Skills'], 'SMT-Ch7-Q12.md',
     matStyle({ qid: 90020351200, id: 'SMT-Ch7-Q12', verified: 'true', figure: 'smt-fig2.png' }));
   // 未复核：一道缺字段，一道明写 false
-  write(bank, ['TMUA Addition', 'SMT Skills'], 'SMT-Ch5-Q3.md',
+  write(bank, ['Addition Resources', 'SMT Skills'], 'SMT-Ch5-Q3.md',
     tmuaStyle({ qid: 90020230300, id: 'SMT-Ch5-Q3', verified: undefined, figure: 'unverified1.png' }));
-  write(bank, ['TMUA Addition', '野题'], 'Wild-Q01.md',
+  write(bank, ['Addition Resources', '野题'], 'Wild-Q01.md',
     tmuaStyle({ qid: 99000200100, id: 'Wild-Q01', verified: 'false', figure: 'unverified2.png' }));
   // 没启用的子目录：整目录不该被扫到
-  write(bank, ['TMUA Addition', 'Clarkson'], 'Clark-Q1.md',
+  write(bank, ['Addition Resources', 'Clarkson'], 'Clark-Q1.md',
     tmuaStyle({ qid: 90030100100, id: 'Clark-Q1', verified: 'true', figure: 'clarkson.png' }));
 
-  const imageDir = path.join(bank, 'TMUA Addition', 'Image');
+  const imageDir = path.join(bank, 'Addition Resources', 'Image');
   fs.mkdirSync(imageDir, { recursive: true });
   for (const n of ['smt-fig1.png', 'smt-fig2.png', 'unverified1.png', 'unverified2.png', 'clarkson.png']) {
     fs.writeFileSync(path.join(imageDir, n), 'png');
@@ -209,8 +209,8 @@ test('an unverified Addition question leaves no trace at all', (t) => {
   // 缺字段 1 道 + 明写 false 1 道；Clarkson 整目录没被扫，不计入
   assert.equal(skippedCounts(built.stdout).unverified, 2);
   // 逐目录跳过报告要指名道姓，刷新题库时才看得见该去复核哪一批
-  assert.match(built.stdout, /\[build-data\] {3}TMUA Addition\/SMT Skills\s+unverified 1/);
-  assert.match(built.stdout, /\[build-data\] {3}TMUA Addition\/野题\s+unverified 1/);
+  assert.match(built.stdout, /\[build-data\] {3}Addition Resources\/SMT Skills\s+unverified 1/);
+  assert.match(built.stdout, /\[build-data\] {3}Addition Resources\/野题\s+unverified 1/);
 
   // 卷面墙与知识点倒排跟 GMAT 同规：这批题一条都不收
   const papers = JSON.parse(fs.readFileSync(path.join(out, 'papers.json'), 'utf8'));
@@ -382,12 +382,12 @@ test('retired GMAT questions never reach diag.json, whether or not they are in t
 });
 
 test('the shipped build carries DIAG75 only as diagnostic-only questions', (t) => {
-  // 真实产物的反向审计。TMUA Addition 要等 sync 之后才进 data\，
+  // 真实产物的反向审计。Addition Resources 要等 sync 之后才进 data\，
   // 在那之前这条让位——与 MAT Specimen 那条审计同一个体例，让位要在报告里看得见
   const index = readExamIndex();
   const diag75 = index.filter((entry) => entry.db === 'DIAG75');
   if (diag75.length === 0) {
-    t.skip('TMUA Addition 尚未同步进 data，本条审计让位');
+    t.skip('Addition Resources 尚未同步进 data，本条审计让位');
     return;
   }
   const qids = new Set(diag75.map((entry) => entry.qid));

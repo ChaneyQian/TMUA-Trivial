@@ -50,7 +50,7 @@ test('sync leaves the sync client’s leftovers in the vault', (t) => {
   assert.match(log, /2 个残留文件/);
 });
 
-test('TMUA Addition syncs two subdirectories and only the images they use', (t) => {
+test('Addition Resources syncs two subdirectories and only the images they use', (t) => {
   // Addition 底下摆着好几批来源各异的题，用户裁定只启用 SMT Skills 与 野题；
   // Clarkson、Euclid Modification 等一律不碰。Image 里装的是**所有**子目录的图，
   // 整目录拷过去等于把没启用的那几批题的图也发出去
@@ -67,19 +67,19 @@ test('TMUA Addition syncs two subdirectories and only the images they use', (t) 
     fs.writeFileSync(path.join(dir, name), lines.join('\n'));
   };
 
-  write(['TMUA Addition', 'SMT Skills'], 'a.md', [
+  write(['Addition Resources', 'SMT Skills'], 'a.md', [
     '---', 'database: TMUA', 'qid: 90020210300', 'id: SMT-Ch3-Q3', '---', '',
     '## 题目', 'See ![[Image/x.png|400]].', '',
   ]);
-  write(['TMUA Addition', '野题'], 'b.md', [
+  write(['Addition Resources', '野题'], 'b.md', [
     '---', 'database: TMUA', 'qid: 99000200100', 'id: Wild-Q01', '---', '',
     '## 题目', '略', '',
   ]);
-  write(['TMUA Addition', 'Clarkson'], 'c.md', [
+  write(['Addition Resources', 'Clarkson'], 'c.md', [
     '---', 'database: TMUA', 'qid: 90030100100', 'id: Clark-Q1', '---', '',
     '## 题目', '略', '',
   ]);
-  const imageDir = path.join(src, 'TMUA Addition', 'Image');
+  const imageDir = path.join(src, 'Addition Resources', 'Image');
   fs.mkdirSync(imageDir, { recursive: true });
   fs.writeFileSync(path.join(imageDir, 'x.png'), 'png');
   fs.writeFileSync(path.join(imageDir, 'unused.png'), 'png');
@@ -91,7 +91,7 @@ test('TMUA Addition syncs two subdirectories and only the images they use', (t) 
     env: { ...process.env, BANK_SRC: src, DATA_OUT: dst },
   });
 
-  const addition = path.join(dst, 'TMUA Addition');
+  const addition = path.join(dst, 'Addition Resources');
   assert.deepEqual(fs.readdirSync(addition).sort(), ['Image', 'SMT Skills', '野题'].sort());
   assert.deepEqual(fs.readdirSync(path.join(addition, 'SMT Skills')), ['a.md']);
   assert.deepEqual(fs.readdirSync(path.join(addition, '野题')), ['b.md']);
@@ -111,18 +111,18 @@ test('an image that stops being referenced is swept out of data', (t) => {
     fs.rmSync(dst, { recursive: true, force: true });
   });
 
-  const questionDir = path.join(src, 'TMUA Addition', 'SMT Skills');
+  const questionDir = path.join(src, 'Addition Resources', 'SMT Skills');
   fs.mkdirSync(questionDir, { recursive: true });
   fs.writeFileSync(
     path.join(questionDir, 'a.md'),
     ['---', 'database: TMUA', 'qid: 90020210300', 'id: SMT-Ch3-Q3', '---', '', '## 题目', 'See ![[Image/x.png]].', ''].join('\n'),
   );
-  const imageDir = path.join(src, 'TMUA Addition', 'Image');
+  const imageDir = path.join(src, 'Addition Resources', 'Image');
   fs.mkdirSync(imageDir, { recursive: true });
   for (const n of ['x.png', 'stale.png']) fs.writeFileSync(path.join(imageDir, n), 'png');
 
   // 上一轮留下的：源里图还在，但已经没有题引用它了
-  const dstImage = path.join(dst, 'TMUA Addition', 'Image');
+  const dstImage = path.join(dst, 'Addition Resources', 'Image');
   fs.mkdirSync(dstImage, { recursive: true });
   fs.writeFileSync(path.join(dstImage, 'stale.png'), 'png');
 

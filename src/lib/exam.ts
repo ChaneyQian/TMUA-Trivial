@@ -28,7 +28,7 @@ export interface ExamQuestion {
 export const EXAM_DATABASES = ['TMUA', 'TMUA_MOCK', 'MAT', 'SMC', 'ECAA', 'AMC'] as const;
 
 /**
- * 7.5+ Diagnostic 的专用题源（源侧的 `TMUA Addition/`：已复核的 SMT 章末题与野题），
+ * 7.5+ Diagnostic 的专用题源（源侧的 `Addition Resources/`：已复核的 SMT 章末题与野题），
  * index 里 db 取这个值并一律带 diag: true。卷二从这里的 SMT 题组；卷一的野题 Wild-Q01 也在这里。
  *
  * 刻意**不**进 EXAM_DATABASES：那个数组是选区里那排题库按钮的清单，

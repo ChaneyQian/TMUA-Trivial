@@ -931,3 +931,9 @@ SMT Skills 那 117 题的答案多数取自书后解答、尚未独立复核（�
 - **窄屏让位**（三颗圆钮占舞台右上 136 × 40）：配置页页签的右浮动占位 92 → 140px；视口 < 440 时卡组标题与进度面板的
   「返回 + 标题」挪到圆钮底边之下（375 宽不挪会压上 20px）。代价：这一档大厅多 40px 高，360 × 640 会多滚一小段
 - 本地静态服务 `scripts/serve.mjs` 补了视频 MIME 与 Range（Safari 不支持分段的服务器上不播视频）；线上 GitHub Pages 本来就对
+
+### 源目录改名（2026-10-06）
+vault 的 `题库/TMUA Addition` 按用户要求改名为 `题库/Addition Resources`（vault 提交 38d46092，子目录不变）。
+站内同步脚本、构建脚本、测试路径同步改名，`data/TMUA Addition` 用 git mv 改为 `data/Addition Resources`；
+产物逐字节不变（qid 写在题目文件里，与目录名无关）。上文各节提到的「TMUA Addition」即现在的 Addition Resources。
+新增的 `Addition Resources/Clarkson`（库码 24）按既有裁定仍不启用，白名单仍只开 SMT Skills 与 野题。
