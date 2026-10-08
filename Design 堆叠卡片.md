@@ -937,3 +937,92 @@ vault 的 `题库/TMUA Addition` 按用户要求改名为 `题库/Addition Resou
 站内同步脚本、构建脚本、测试路径同步改名，`data/TMUA Addition` 用 git mv 改为 `data/Addition Resources`；
 产物逐字节不变（qid 写在题目文件里，与目录名无关）。上文各节提到的「TMUA Addition」即现在的 Addition Resources。
 新增的 `Addition Resources/Clarkson`（库码 24）按既有裁定仍不启用，白名单仍只开 SMT Skills 与 野题。
+
+## 23. P10 05 密卷（限时开放）〔已交付 · 分支 p10-sealed，待审〕（2026-10-08）
+
+### 需求原话（2026-10-08）
+「限时开放一下 MAT/TMUA 2024/2025 密卷内容；输入密码（略）即可（单独出个卡片模块）」
+
+密码明文**不进仓库**——源码、测试、本文档里都只有它的 SHA-256；明文由用户自己掌握。
+（测试 `tests/sealed.test.mjs` 按词哈希扫 src / scripts / tests / docs / 根目录 md，撞上配置的哈希即红，测试自己也不写明文。）
+
+### 方案（主控定，照做）
+1. **第五张卡「05 密卷 / 05 Sealed Papers」**：区色酒红封蜡 `#8a1c35`、副色金 `#c9a24a`（环境光、前牌投影、页签都取它）。
+   副标题「MAT / TMUA 2024–2025 · 限时开放」/「MAT / TMUA 2024–2025 · limited time」。
+2. **题池**：build-data 的 `isSealedQuestion` 与 `isHiddenQuestion` 同处、按年份——index 库名为 TMUA / MAT 且 year ∈ {2024, 2025}，
+   打 `sealed: true`（只在为真时写）。现 124 道：MAT 2024 24、MAT 2025 20、TMUA 2024 Recall 41、TMUA 2025 CN Recall 34、TMUA 2025 Misc 5。
+   这批题照旧 hidden，9.0 Trivial 里照常有——密卷是 9.0 池按年份切出来的一片，**与 9.0 重叠、与经典互斥**。
+3. **开放窗口**：`src/lib/sealed.ts` 的 `SEALED_WINDOW`，北京时间 `2026-10-08T00:00:00+08:00` 起、`2026-10-31T23:59:59+08:00` 止（最后一秒含）。
+   `sealedPhase(now)` 三态 before / open / ended；字符串写坏一律按「已结束」（宁可关着）。
+   窗口外：卡可转到前位看；徽章「即将开放」/「已结束」、副文「MAT / TMUA 2024–2025 · 即将开放」/「本期开放已结束」；
+   不能进（提示行与读屏说原因，页签切过去同样退回卡组）；快速开始摆着但置灰，摘要行换成原因。
+4. **密码**：代码里只存 SHA-256 十六进制，输入经 `crypto.subtle.digest` 比对（首尾空白不算、大小写算）。
+   没有 `crypto.subtle`（非安全上下文，如 http 的局域网地址；localhost / 127.0.0.1 与线上 https 都有）时面板给一句兜底提示、输入框停用，不白屏。
+   锁定态展开 = 密码面板（照 9.0 锁定态展开成 Diagnostic 介绍页）：封蜡印、一句说明（本期开放至几月几日）、
+   `type="password"` + `autocomplete="off"`、确认按钮；输错只说「密码不对」；连续输错 5 次冷却 30 秒（读秒）。
+   「这是一道门槛，不是加密——题目 JSON 本身在静态站上公开」只写在 `lib/sealed.ts` 的注释里，界面上不出现（§16 先例），有测试钉住。
+5. **解锁持久化**：新键 `mcq-test:sealed-unlock:v1`，存「本期印记」`sealedStamp()` = `until|哈希前 12 位`。
+   改期（until 变）或换密码（哈希变）后旧印记对不上，解锁自然失效；窗口过期后印记还在也不生效。
+   与做题记录分开存：清空做题记录不影响它（同 9.0 解锁的既有裁定）。
+6. **解锁后**：展开即与 9.0 同款配置面板（题库按钮 TMUA 80 / MAT 44 / 混合 124；逻辑推理三档、模式、抽题范围、题数照常），
+   题库行下一句范围说明；抽题只在密卷池；卡上的快速开始同理。开考时按此刻时钟与存着的印记再核一遍（第二道闸）。
+7. **复盘可达范围**：`reachableIndex(index, unlocked, sealedAccess)` 在已解锁且窗口内时并入密卷池——复烤区「练这类题」、
+   进度页卷面墙随之可见；窗口一过不再并入（记录照留）。365 计数照旧数全量非诊断题。
+8. **卡组 4 → 5 张**：见下「卡槽」。配置页页签自动多出「05 密卷」。
+9. **/admin**：「05 密卷」一节——窗口起止、此刻开放与否、本机解锁状态，和一颗「密卷：清除解锁」（只删那一个键）。
+
+### 改期 / 换密码
+- 改期：只改 `src/lib/sealed.ts` 的 `SEALED_WINDOW.from / until`（带 `+08:00`）。旧解锁自动失效，用户重输一次密码。
+- 换密码：只改 `SEALED_PASSWORD_SHA256`，新值：`node -e "console.log(require('crypto').createHash('sha256').update('新密码').digest('hex'))"`。
+- 下一期换题：题池按年份认（`scripts/build-data.mjs` 的 `SEALED_YEARS` / `SEALED_DATABASES`），改那两个集合即可；
+  卡面副标题在 `lib/i18n.ts` 的 `zone.sub.sealed`。
+- 页面挂着跨过开门 / 关门那一刻：卡面与面板自己翻过去（计时器睡到下一次换相，切回前台也重取）。
+
+### 卡槽：五张起多一层 deep
+`zones.ts` 的 `slotForOffset(offset, total)`：0 前、1 右、末位左、2 第三层，**其余位次落到 deep**——
+与第三层同位同缩放、`opacity: 0`、不接指针。原因：两张牌叠在第三层同一处时，谁露在上面只由 DOM 顺序定，
+转牌那一下露边会在层级翻面的中点硬切成另一张封面；只留一张看得见，换牌就成了交叉淡变。
+所以任一时刻屏上是四张牌（前、左、右、第三层），第五张在第三层背后淡出，页码点是五个。四张卡时用不到 deep，行为不变。
+
+### 封面
+出图前是 CSS 渐变占位（`zones.ts` 的 `grad`，四层：金色封蜡印的金面与压纹圈 → 落影 → 横竖两道极淡网格 → 酒红底），零图片。
+出图后放 `public/cards/sealed.jpg` 即替换，零代码（与其它四张同一接法）。
+
+顺带修掉一个潜伏的老问题：`alt=""` 挡不住破图图标——有尺寸的 `<img>` 缺图时 Chrome 照样在左上角画一枚
+（前四张都有图，从没触发过；05 没图时实测露出来）。改成纯 CSS 兜底：`.cover` 继承 `.coverBox` 的渐变当底色，
+`.cover::after` 再盖一层同样的渐变——加载成功时替换元素不渲染伪元素，失败时 `::after` 盖住图标。首帧即生效。
+
+**出图提示词**（外部模型用；1536×1024，3:2，单张压到 ≤400KB；不含任何文字）——§8 的共用风格前缀照用：
+> Flat modern editorial illustration, soft airy gradients, minimalist academic aesthetic,
+> clean vector shapes, generous negative space, muted ivory background (#f5f6f8),
+> ink-navy line work (#1a1a2e), no text, no letters, no watermark, 3:2 aspect ratio
+
+**05 Sealed Papers**（酒红封蜡）：
+> + a sealed examination packet abstracted into geometry: a deep wine-red (#8a1c35) field
+> with a faint coordinate-grid lattice, a folded paper envelope seen slightly from above,
+> closed by a single antique-gold (#c9a24a) wax seal at the golden-ratio point —
+> an embossed concentric ring, softly irregular wax edge, no lettering or symbols on the seal —
+> a thin gold ribbon crossing beneath it, soft spotlight from upper left,
+> subtle paper grain, quietly exclusive, time-limited mood
+
+（底色以酒红为主、象牙色只作纸面；与 9.0 那张一样，主体的深色场覆盖前缀里的浅底。）
+
+### 取舍与偏离（主控方案之外的判断）
+- **印记 = until + 哈希前 12 位**，不只存 until：方案要求「换密码后旧解锁自然失效」，只存 until 做不到这一条。
+- **输错冷却只在页面内存里**（挂在 ExamApp 的 state，面板收起再展开、换区都不清零），刷新即清——这是门槛不是防线；
+  要防刷新绕过得再登记一个 sessionStorage 键，未做。
+- **需求原话里的密码在本文档里略去**（仓库会发布，明文进文档就等于进了公开仓库）。
+- **复烤区「最常做错」**：窗口过期后，用户在密卷里做错过的题仍会列在榜上，「重练这些」也练得到——沿用 §16 M3 的裁决
+  （本人历史不算剧透）。「练这类题」与卷面墙按 reachable，过期即不再并入。若用户要求过期后连错题榜也收口，改 GrillPanel 的练习池口径即可。
+- **窄屏页签行距 0.65rem → 0.75rem**：页签实测高 29.2px，原行距让第二行压上圆钮簇底边 0.4px（多一个页签之后实测发现，四张时就存在）。
+- 公告牌与片头未动：片头视频里仍是四张卡；公告要不要加一条「密卷限时开放」由用户定。
+
+### 实测（headless Chrome，本地静态服务）
+- 窗口内（真实时钟 2026-10-08）：五张卡、←→ 一圈五张各过前位一次、点后牌转前；05 前位徽章「🔒 需密码」、读屏「05 密卷，输入密码」；
+  输错提示「密码不对」并清空、标 aria-invalid；连输错 5 次进 30 秒冷却（读秒、按钮置灰，冷却中输对也进不去）；
+  冷却完输对进配置面板：TMUA 80 / MAT 44 / 混合 124；开 20 题全是 sealed（MAT + TMUA）；故意做错一道，复烤区「最常做错」列出、
+  卷面墙出现五套密卷卷；刷新后仍解锁、前位回到 05、徽章「124 题」；快速开始 10 题全是 sealed。
+- 窗口外（覆写 Date.now）：11-01 卡面「已结束 / 本期开放已结束」，Enter、点卡、点快速开始、点页签 05 都进不去，卷面墙不再有密卷卷；
+  10-07「即将开放」；23:59:57 停在配置面板，3 秒后面板就地换成「密卷本期开放已结束」、卡面翻成已结束。
+- 去掉 `crypto.subtle`：面板给兜底提示、输入框与按钮停用，不白屏。
+- 卡组截图：1280 与 375 × 浅色 / 深色 / 护眼，另中屏 800 宽一张；375 与 320 中英、640 / 1280 中英页签与圆钮簇零相交，无横向滚动；光效关无环境光层；减动效下槽位不过渡。
