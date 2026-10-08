@@ -28,13 +28,15 @@ function sourceFiles(dir) {
 test('every browser-storage key is registered in one place, namespaced and versioned', () => {
   const keys = Object.entries(storage).filter(([name]) => name.endsWith('_KEY'));
 
-  // 11 个键 + 一个待迁移的旧裸键（2026-10 加了光效开关 FX_KEY，2026-09-30 加了片头已看 INTRO_SEEN_KEY）
-  assert.equal(keys.length, 12, `storage.ts 登记了 ${keys.length} 个键，预期 12 个`);
+  // 12 个键 + 一个待迁移的旧裸键（2026-10 加了光效开关 FX_KEY，2026-09-30 加了片头已看 INTRO_SEEN_KEY，
+  // 2026-10-08 加了 05 密卷的解锁印记 SEALED_UNLOCK_KEY）
+  assert.equal(keys.length, 13, `storage.ts 登记了 ${keys.length} 个键，预期 13 个`);
 
   const namespaced = keys.filter(([name]) => name !== 'LEGACY_THEME_KEY');
-  assert.equal(namespaced.length, 11);
+  assert.equal(namespaced.length, 12);
   assert.equal(storage.FX_KEY, 'mcq-test:fx:v1');
   assert.equal(storage.INTRO_SEEN_KEY, 'mcq-test:intro-seen:v1');
+  assert.equal(storage.SEALED_UNLOCK_KEY, 'mcq-test:sealed-unlock:v1');
   for (const [name, value] of namespaced) {
     // GitHub Pages 上同 origin 住着这个账号的其他项目，localStorage 是共享的：
     // 裸键随时会和邻居撞上

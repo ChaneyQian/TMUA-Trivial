@@ -60,3 +60,10 @@ export const LOGIC_REASONING_KEY = 'mcq-test:logic-reasoning:v1';
 
 /** /admin 的登录态。**sessionStorage**，关标签页即失效——这道门只防误入 */
 export const ADMIN_SESSION_KEY = 'mcq-test:admin:v1';
+
+/**
+ * 05 密卷的解锁记录。存的不是布尔，是本期的「印记」（lib/sealed.ts 的 sealedStamp：
+ * 窗口的 until + 密码哈希的前 12 位）——改期或换密码之后，旧印记对不上，解锁自然失效；
+ * 窗口过期后印记还在也不再生效。与做题记录分开存：清空做题记录不影响它（同 9.0 解锁的既有裁定）
+ */
+export const SEALED_UNLOCK_KEY = 'mcq-test:sealed-unlock:v1';
