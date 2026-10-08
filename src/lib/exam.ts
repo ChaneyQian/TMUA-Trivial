@@ -51,6 +51,12 @@ export interface IndexEntry {
    * 复烤区（诊断考过之后）也照常取得到
    */
   reserved?: true;
+  /**
+   * 密卷：TMUA / MAT 的 2024、2025 卷（构建期按年份打，见 scripts/build-data.mjs 的 isSealedQuestion）。
+   * 它们同时也是 hidden——9.0 Trivial 里照常有；sealed 只给 05 密卷区在开放窗口内、
+   * 输对密码之后取池子用（窗口与密码见 lib/sealed.ts）
+   */
+  sealed?: true;
   /** 题库把它标成了逻辑推理题（topics 含 Logic and Proof，或 subtopics 是 Logic） */
   logic?: true;
   /**

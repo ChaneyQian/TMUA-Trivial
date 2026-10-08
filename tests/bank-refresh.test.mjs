@@ -72,6 +72,14 @@ test('static bank separates refreshed TMUA Mock and keeps expanded pools behind 
   assert.equal(index.find((entry) => entry.qid === 90010210100)?.hidden, undefined);
   assert.equal(index.find((entry) => entry.qid === 20060300101)?.hidden, true);
   assert.equal(index.find((entry) => entry.qid === 20070300101)?.hidden, undefined);
+
+  // 05 密卷（2026-10-08）：TMUA 2024 Recall 41 + 2025 CN Recall 34 + 2025 Misc 5，MAT 2024 24 + 2025 20。
+  // 全部也在 hidden 里（TMUA 那 81 道里只差 2026 Jan Misc 那一道）
+  const sealed = index.filter((entry) => entry.sealed);
+  assert.equal(sealed.length, 124);
+  assert.equal(sealed.filter((entry) => entry.db === 'TMUA').length, 80);
+  assert.equal(sealed.filter((entry) => entry.db === 'MAT').length, 44);
+  assert.equal(sealed.every((entry) => entry.hidden), true);
 });
 
 // 题库 2026-10-01 起 section 只表示题型：除 STEP 外只取 MCQ / 3-Digit Answer / Short Answer /

@@ -114,12 +114,12 @@ test('the diagnostic ships fixed 7.5+ papers, not a random draw', () => {
   assert.match(examLib, /export async function fetchQuestions/);
   // 卷定义单独一个文件，index 形状仍然冻结。
   // logic / tagged（逻辑推理开关及其覆盖率提示）与 reserved（7.5+ 卷里经典区那两道，
-  // 移出练习池）是后来加的可选标记，和 hidden / diag 同体例：这张白名单要拦的是
+  // 移出练习池）、sealed（05 密卷区的 TMUA / MAT 2024–2025）是后来加的可选标记，和 hidden / diag 同体例：这张白名单要拦的是
   // 「把整份固定卷塞进 index」那类膨胀，不是拦所有新字段
   for (const entry of index) {
     for (const key of Object.keys(entry)) {
       assert.ok(
-        ['qid', 'db', 'hidden', 'diag', 'logic', 'tagged', 'reserved'].includes(key),
+        ['qid', 'db', 'hidden', 'diag', 'logic', 'tagged', 'reserved', 'sealed'].includes(key),
         `unexpected index key ${key}`,
       );
     }

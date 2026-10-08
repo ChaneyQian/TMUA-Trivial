@@ -489,6 +489,21 @@ function isHiddenQuestion(database, data) {
   return false;
 }
 
+// ---------------- 密卷（05 Sealed Papers）----------------
+// 用户 2026-10-08：「限时开放一下 MAT/TMUA 2024/2025 密卷内容」。密卷 = TMUA 与 MAT 里
+// year 为 2024、2025 的题，按年份规则认，和 isHiddenQuestion 同一处、同一种判据。
+// 这批题照旧也是 hidden（9.0 Trivial 里照常有它们）；sealed 只是另一道门的标记：
+// 密卷区在开放窗口内、输对密码后从这里取池子（窗口与密码在 src/lib/sealed.ts）。
+//
+// database 是 index 里的库名（indexDatabase 之后）：TMUA_MOCK 不是 TMUA，
+// DIAG75（frontmatter 写着 TMUA / MAT 的诊断题源）也不是——两者都不进密卷
+const SEALED_DATABASES = new Set(['TMUA', 'MAT']);
+const SEALED_YEARS = new Set([2024, 2025]);
+
+function isSealedQuestion(database, data) {
+  return SEALED_DATABASES.has(database) && SEALED_YEARS.has(Number(data.year) || 0);
+}
+
 // ---------------- 诊断集 ----------------
 // Diagnostic 的卷（diag.json）由 scripts\diag75-papers.mjs 组：7.5+ 单卷 10 题、
 // 两次机会各一卷。GMAT 两卷制 2026-09 下线，它那套「按 level 奇偶拆卷」的逻辑随之删除——
@@ -835,6 +850,7 @@ function main() {
       );
       const indexEntry = { qid, db };
       if (isHiddenQuestion(db, data)) indexEntry.hidden = true;
+      if (isSealedQuestion(db, data)) indexEntry.sealed = true;
       // 两个标记都只在为真时写，和 hidden / diag 同体例：index.json 是每次冷启动
       // 都要下载的，给一千多条全都补一个 false 只是白白撑大它
       if (isLogicQuestion(data)) indexEntry.logic = true;
@@ -985,6 +1001,13 @@ function main() {
   for (const e of index) counts[e.db] = (counts[e.db] || 0) + 1;
 
   console.log('[build-data] 可判分题目：', JSON.stringify(counts), '合计', index.length);
+
+  // 密卷池逐库报：窗口一开用户就会按库看到这几个数，刷新题库时得当场核得上
+  // 按 SEALED_DATABASES 的固定顺序列（TMUA 在前），不随 index 的排序变
+  const sealedCounts = {};
+  for (const db of SEALED_DATABASES) sealedCounts[db] = index.filter((e) => e.sealed && e.db === db).length;
+  const sealedTotal = Object.values(sealedCounts).reduce((a, b) => a + b, 0);
+  console.log('[build-data] 密卷（sealed）：', JSON.stringify(sealedCounts), '合计', sealedTotal);
 
   // 卷面清单逐库报：卷数、题数、其中锁在 9.0 后面的卷数
   console.log(`[build-data] 卷面清单：${paperList.length} 套卷（不含诊断集）`);
