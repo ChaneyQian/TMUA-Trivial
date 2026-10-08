@@ -15,9 +15,18 @@ import { useLang } from '@/lib/LangContext';
 import examStyles from '../exam/Exam.module.css';
 import styles from './Deck.module.css';
 import { TURN_MS, acceptsActivation, activationSource, type ActivationSource } from './turnGuard';
-import { ZONES, ringOffset, stepZone, zoneById, type ZoneId } from './zones';
+import { ZONES, ringOffset, slotForOffset, stepZone, zoneById, type SlotName, type ZoneId } from './zones';
 
 const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH || '';
+
+/** 槽位名 → 样式类。deep（五张牌起才用到）与第三层同位、整张淡出，见 Deck.module.css 的 .slotDeep */
+const SLOT_CLASS: Record<SlotName, string> = {
+  front: styles.slotFront,
+  right: styles.slotRight,
+  left: styles.slotLeft,
+  back: styles.slotBack,
+  deep: styles.slotDeep,
+};
 
 // 手势判定：8px 死区内不锁轴（避免点击被误判成滑动），
 // 之后要么滑够 40px，要么甩得比 0.35px/ms 快
@@ -47,6 +56,12 @@ interface Props {
   badges: Record<ZoneId, string>;
   /** 哪些区当前是锁定态 */
   locked: Record<ZoneId, boolean>;
+  /**
+   * 此刻进不去的区与原因（开放窗口外的密卷）。卡照样能转到前位看；前位时命中层念的就是这句原因，
+   * 快速开始照样摆着但置灰（置灰由 quickStart.disabled 管）——与 locked 不同：
+   * 锁着等密码 / 等充能的卡压根不摆快速开始
+   */
+  closed?: Partial<Record<ZoneId, string>>;
   /** 覆盖卡面副文；给空/不传就用字典里的默认文案 */
   subs?: Partial<Record<ZoneId, string>>;
   charge: DeckCharge;
@@ -78,6 +93,7 @@ export default function CardDeck({
   onOpen,
   badges,
   locked,
+  closed,
   subs,
   charge,
   leaving,
@@ -235,19 +251,12 @@ export default function CardDeck({
         <div ref={stackRef} className={styles.stack}>
           {ZONES.map((zone) => {
             const offset = ringOffset(zone.id, front);
-            // 位次 → 槽位。三张牌时末位就是 2（左后牌），四张牌时末位是 3，
-            // 中间那张落到 slotBack（居中偏上、更小更暗的第三层）。
-            // 写成「末位即左后牌」而不是钉死数字，加卡才不用回来改这一行。
-            const slot =
-              offset === 0
-                ? styles.slotFront
-                : offset === 1
-                  ? styles.slotRight
-                  : offset === ZONES.length - 1
-                    ? styles.slotLeft
-                    : styles.slotBack;
+            // 位次 → 槽位（规则在 zones.ts 的 slotForOffset，按牌的张数算，加卡不用回来改这里）
+            const slot = SLOT_CLASS[slotForOffset(offset, ZONES.length)];
             const isFront = offset === 0;
             const openable = !zone.comingSoon && !locked[zone.id] && zone.quickStart;
+            // 开放窗口外的区：快速开始照样摆着，置灰（用户方案）；锁定态那种是压根不摆
+            const shut = !!closed?.[zone.id] && zone.quickStart;
             return (
               <div
                 key={zone.id}
@@ -332,7 +341,7 @@ export default function CardDeck({
                           同一张卡在前位和后位的高度才一致，转牌时不会有布局跳动；
                           后牌上再加 inert：不可点、不可聚焦、读屏跳过——不单靠 visibility
                           这一条样式兜着（它哪天被改成 opacity: 0，按钮就又能点、能 Tab 到了） */}
-                      {openable && (
+                      {(openable || shut) && (
                         <div
                           className={`${styles.quick} ${isFront ? '' : styles.quickIdle}`}
                           aria-hidden={isFront ? undefined : true}
@@ -352,6 +361,8 @@ export default function CardDeck({
                               // 刚转到前位、牌还在滑：不认（见 ./turnGuard）。不传来源 = 键盘按的也一样等——
                               // 快速开始直接开考，转牌中途误触的代价比多按一次大
                               if (!settled()) return;
+                              // 窗口外的区：置灰之外再挡一道，不靠调用方把 disabled 算对
+                              if (shut) return;
                               // 直调，不包任何异步：requestFullscreen 认的是同步手势链
                               quickStart.onStart();
                             }}
@@ -384,10 +395,16 @@ export default function CardDeck({
                             // 读屏念出来的就该是它真正会做的事
                             zone.unlockPath === 'progress' && locked[zone.id]
                             ? t.deck.diagnosticAria(zone.no, t.zone.title[zone.id])
-                            : // comingSoon 卡按 Enter 只会弹「即将开放」，念「展开配置」就是骗读屏
-                              zone.comingSoon
-                              ? t.block.comingSoon(t.zone.title[zone.id])
-                              : t.deck.openAria(zone.no, t.zone.title[zone.id])
+                            : // 窗口外的区按 Enter 只会弹原因，念的就是那句原因
+                              closed?.[zone.id]
+                              ? closed[zone.id]
+                              : // 锁着的密卷展开的是密码面板
+                                zone.unlockPath === 'password' && locked[zone.id]
+                                ? t.deck.passwordAria(zone.no, t.zone.title[zone.id])
+                                : // comingSoon 卡按 Enter 只会弹「即将开放」，念「展开配置」就是骗读屏
+                                  zone.comingSoon
+                                  ? t.block.comingSoon(t.zone.title[zone.id])
+                                  : t.deck.openAria(zone.no, t.zone.title[zone.id])
                       }
                       onClick={(e) => {
                         // 转牌之后 TURN_MS 内指针点的不认：双击侧牌的第二下会落在滑过来的新前牌上。

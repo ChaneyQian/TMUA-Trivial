@@ -18,8 +18,8 @@ export type ZoneId = 'classic' | 'grill' | 'trivial' | 'board';
 /** 展开后给哪套配置面板：全量 / 只开题数 / 不展开 */
 export type ZonePanel = 'full' | 'countOnly' | 'none';
 
-/** 解锁路径：免费 / 练习进度充能 / 通过 Diagnostic Test（P2） */
-export type ZoneUnlockPath = 'free' | 'progress' | 'diagnostic';
+/** 解锁路径：免费 / 练习进度充能 / 通过 Diagnostic Test（P2）/ 开放窗口内输密码（05 密卷） */
+export type ZoneUnlockPath = 'free' | 'progress' | 'diagnostic' | 'password';
 
 export interface ZoneDef {
   id: ZoneId;
@@ -112,12 +112,29 @@ export function zoneById(id: ZoneId): ZoneDef {
 
 /**
  * 环形位次：0=前牌，1=右后牌，末位=左后牌，中间的落到「更深的一层」。
- * 位次到 CSS 槽位的映射写在 CardDeck 里，那里才知道有几张牌；
+ * 位次到槽位的映射见下面的 slotForOffset（按牌的张数算）；
  * 这个函数只管环上的相对距离，加卡不用改它。
  */
 export function ringOffset(id: ZoneId, front: ZoneId): number {
   const total = ZONE_IDS.length;
   return (ZONE_IDS.indexOf(id) - ZONE_IDS.indexOf(front) + total) % total;
+}
+
+/** 卡组的槽位：前牌、右后牌、左后牌、第三层、第三层之后（与第三层同位、整张淡出） */
+export type SlotName = 'front' | 'right' | 'left' | 'back' | 'deep';
+
+/**
+ * 位次 → 槽位：0 前牌、1 右后牌、末位左后牌、2 第三层（居中偏上、更小更暗）；
+ * 五张牌起，第三层之后的位次落到 deep——与第三层同一个位置、整张淡出、不接指针。
+ * 两张牌叠在第三层的同一处时谁露在上面只由 DOM 顺序定，转牌时那道露边会在层级翻面的
+ * 中点瞬间换成另一张封面；只留一张看得见，换牌就成了交叉淡变（见 Deck.module.css 的 .slotDeep）。
+ * 写成「末位即左后牌」而不是钉死数字：三张牌时末位是 2，四张是 3，五张是 4，加卡不用回来改
+ */
+export function slotForOffset(offset: number, total: number): SlotName {
+  if (offset === 0) return 'front';
+  if (offset === 1) return 'right';
+  if (offset === total - 1) return 'left';
+  return offset === 2 ? 'back' : 'deep';
 }
 
 /** 按方向转牌：dir=1 右旋（下一张上前），dir=-1 左旋 */

@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import test from 'node:test';
 
 import { TURN_MS } from '../src/components/deck/turnGuard.ts';
-import { ZONE_IDS, ringOffset, stepZone } from '../src/components/deck/zones.ts';
+import { ZONE_IDS, ringOffset, slotForOffset, stepZone } from '../src/components/deck/zones.ts';
 import { indexForLibraryMode } from '../src/lib/records.ts';
 import {
   cascade,
@@ -166,13 +166,23 @@ test('the ring keeps cycling both ways once a fourth card joins it', () => {
 });
 
 test('the fourth card gets a slot of its own instead of piling onto the left one', () => {
-  const deck = fs.readFileSync(deckPath, 'utf8');
+  const deck = code(fs.readFileSync(deckPath, 'utf8'));
   const css = fs.readFileSync(deckCssPath, 'utf8');
 
   // 槽位映射写成「末位即左后牌」，中间的落到第三层。
-  // 钉死数字的话，下一张卡进表就会悄悄叠到左后牌上
-  assert.match(deck, /offset === ZONES\.length - 1/);
-  assert.match(deck, /styles\.slotBack/);
+  // 钉死数字的话，下一张卡进表就会悄悄叠到左后牌上。按张数逐一核：
+  // 三张 = 前 / 右 / 左；四张多一张第三层；五张起第三层之后的落到 deep（与第三层同位、整张淡出）
+  const slotsFor = (total) => Array.from({ length: total }, (_, offset) => slotForOffset(offset, total));
+  assert.deepEqual(slotsFor(3), ['front', 'right', 'left']);
+  assert.deepEqual(slotsFor(4), ['front', 'right', 'back', 'left']);
+  assert.deepEqual(slotsFor(5), ['front', 'right', 'back', 'deep', 'left']);
+  assert.deepEqual(slotsFor(6), ['front', 'right', 'back', 'deep', 'deep', 'left']);
+  // 组件按「位次 + 牌的张数」取槽位，不另写一套
+  assert.match(deck, /slotForOffset\(offset, ZONES\.length\)/);
+  const slotTable = deck.match(/const SLOT_CLASS: Record<SlotName, string> = (\{[^}]*\})/)?.[1] ?? '';
+  for (const [name, cls] of [['front', 'slotFront'], ['right', 'slotRight'], ['left', 'slotLeft'], ['back', 'slotBack'], ['deep', 'slotDeep']]) {
+    assert.match(slotTable, new RegExp(`\\b${name}: styles\\.${cls}\\b`), `${name} 槽位没接到 .${cls}`);
+  }
   assert.match(css, /\.slotBack\s*\{/);
 
   // 第三层比两张侧牌更靠后：z-index 更小、遮罩更暗
@@ -188,6 +198,17 @@ test('the fourth card gets a slot of its own instead of piling onto the left one
   // 窄屏 30px；中宽屏第三层退得更多，接它的内边距按卡宽取（见下一条几何测试）
   assert.equal(cascade(css, '.viewport')['padding-top'], 'var(--viewport-pad)');
   assert.equal(px(cascade(css, '.deck')['--viewport-pad']), 30);
+
+  // 更深一层：与第三层同一个位置（位移、缩放逐字相同），整张淡出、不接指针、不压过第三层。
+  // 叠在同一处的两张只留一张看得见，转牌时露边才是交叉淡变，不是层级翻面那一下的硬切
+  const back = cascade(css, '.slotBack');
+  const deep = cascade(css, '.slotDeep');
+  assert.equal(squash(deep.transform ?? ''), squash(back.transform ?? ''), '.slotDeep 要与第三层同位');
+  assert.equal(deep.opacity, '0');
+  assert.equal(deep['pointer-events'], 'none', '透明的牌叠在第三层上，不能替它接点击');
+  assert.ok(Number(deep['z-index']) <= Number(back['z-index']));
+  // 淡出走的是槽位层自己的 opacity 过渡（读 --turn-ms），不另起一条
+  assert.ok(parseTransition(cascade(css, '.card').transition).some((t) => t.property === 'opacity'));
 });
 
 test('the board card is a coming-soon skeleton: it turns to the front but never opens', () => {
@@ -422,7 +443,7 @@ test('a card off the front shows no clipped text: only a title that fits its exp
   assert.equal(sideTitles.length, 2, '每张牌只有左右两份侧位标题');
 
   // 非前位：正文整块淡出；窄屏连编号、徽章也淡出（露边太窄，它们会被前牌切成半个）
-  for (const slot of ['slotLeft', 'slotRight', 'slotBack']) {
+  for (const slot of ['slotLeft', 'slotRight', 'slotBack', 'slotDeep']) {
     assert.equal(cascade(css, `.${slot} .body`).opacity, '0', `${slot} 的正文没淡出`);
     for (const chip of ['no', 'badge']) {
       assert.equal(cascade(css, `.${slot} .${chip}`, { media: '(max-width: 639px)' }).opacity, '0', `窄屏 ${slot} 的 .${chip}`);
@@ -665,6 +686,26 @@ test('a card that just turned ignores clicks for as long as it is still sliding'
   const enter = keys.slice(keys.search(/e\.key === ['"]Enter['"]/));
   const yieldAt = enter.search(/if \([^;]*(?:\.tagName === ['"]BUTTON['"]|instanceof HTMLButtonElement)[^;]*\) return;/);
   assert.ok(yieldAt >= 0 && yieldAt < enter.indexOf('onOpen(front)'), '焦点在按钮上时 Enter / 空格要让给按钮');
+});
+
+test('a card outside its opening window keeps a greyed quick start and says why; a locked one shows none', () => {
+  const deck = code(fs.readFileSync(deckPath, 'utf8'));
+
+  // 渲染条件：开着的卡（openable）照常摆；窗口外的卡（closed 里有它）也摆——置灰由 quickStart.disabled 管；
+  // 锁着的卡（要密码 / 要充能）两样都不是，就不摆
+  const shutDecl = deck.match(/const (\w+) = !!closed\?\.\[zone\.id\] && zone\.quickStart;/);
+  assert.ok(shutDecl, '找不到「窗口外」的判定（closed 里有这张卡、且它本来有快速开始）');
+  const shut = shutDecl[1];
+  assert.match(deck, new RegExp(`\\{\\(openable \\|\\| ${shut}\\) && \\(`), '快速开始的渲染条件要把窗口外的卡算进来');
+  // 置灰之外再挡一道：点击在开考之前先认它，不靠调用方把 disabled 算对
+  const quick = fnBody(attrValue(jsxOpening(deck, 'className={styles.quickBtn}').attrs.get('onClick')));
+  const stop = quick.indexOf(`if (${shut}) return;`);
+  assert.ok(stop >= 0 && stop < quick.indexOf('quickStart.onStart()'), '窗口外的卡点快速开始不许开考');
+
+  // 读屏：前牌是窗口外的卡时，命中层念的就是那句原因；锁着的密卷念「输入密码」
+  const hitLabel = attrValue(jsxOpening(deck, 'className={styles.hit}').attrs.get('aria-label')) ?? '';
+  assert.match(hitLabel, /closed\?\.\[zone\.id\] \? closed\[zone\.id\]/);
+  assert.match(hitLabel, /zone\.unlockPath === 'password' && locked\[zone\.id\] \? t\.deck\.passwordAria\(/);
 });
 
 test('a side or back card keeps its quick start in the layout but it can be neither clicked nor focused', () => {

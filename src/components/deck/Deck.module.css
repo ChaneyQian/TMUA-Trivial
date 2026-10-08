@@ -375,6 +375,19 @@
     scale(var(--slot-back-scale));
 }
 
+/* 更深一层（五张牌起才会用到）：与第三层同一个位置、同一个缩放，整张淡出、不接指针。
+   两张牌叠在第三层的同一处时，谁露在上面只由 DOM 顺序定，转牌那一下露边会在层级翻面的中点
+   瞬间换成另一张封面（硬切）。只留一张看得见：从左后牌退进来的那张边走边淡出，
+   从这里升到第三层的那张原地淡入——换牌是一次交叉淡变。opacity 已在 .card 的过渡里（读 --turn-ms）。
+   pointer-events: none：它叠在第三层上、DOM 顺序又可能在后，透明了也不能替第三层接点击 */
+.slotDeep {
+  z-index: 0;
+  opacity: 0;
+  pointer-events: none;
+  transform: translate3d(var(--drag, 0px), var(--slot-back-y), 0)
+    scale(var(--slot-back-scale));
+}
+
 .slotRight::after,
 .slotLeft::after {
   opacity: 0.3;
@@ -494,7 +507,9 @@
   .slotRight .no,
   .slotRight .badge,
   .slotBack .no,
-  .slotBack .badge {
+  .slotBack .badge,
+  .slotDeep .no,
+  .slotDeep .badge {
     opacity: 0;
   }
 }
@@ -510,7 +525,8 @@
 
 .slotLeft .body,
 .slotRight .body,
-.slotBack .body {
+.slotBack .body,
+.slotDeep .body {
   opacity: 0;
 }
 

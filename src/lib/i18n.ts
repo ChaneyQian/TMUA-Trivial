@@ -48,6 +48,8 @@ const zh = {
     frontAria: (no: string, title: string) => `${no} ${title}，转到前位`,
     // 锁定的 9.0 卡展开的是 7.5+ Diagnostic 的介绍页，不是直接开考——读屏念的要是它真会做的事
     diagnosticAria: (no: string, title: string) => `${no} ${title}，查看 7.5+ Diagnostic 说明`,
+    // 锁着的密卷展开的是密码面板
+    passwordAria: (no: string, title: string) => `${no} ${title}，输入密码`,
   },
 
   cardBadge: {
@@ -346,6 +348,7 @@ const en: Strings = {
     openAria: (no: string, title: string) => `${no} ${title}, open settings`,
     frontAria: (no: string, title: string) => `${no} ${title}, bring to front`,
     diagnosticAria: (no: string, title: string) => `${no} ${title}, view the 7.5+ Diagnostic`,
+    passwordAria: (no: string, title: string) => `${no} ${title}, enter the password`,
   },
 
   cardBadge: {
