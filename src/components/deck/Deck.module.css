@@ -413,8 +413,11 @@
   background-size: cover;
 }
 
-/* 封面 <img> 垫在 CSS 渐变之上：图缺失时 alt="" 的 img 什么也不渲染，
-   渐变自然透出，无需 onError、无需组件状态。换图=换文件，零代码。 */
+/* 封面 <img> 垫在 CSS 渐变之上。换图=换文件，零代码。
+   缺图（404）时 alt="" 并不能让 img 什么都不画：有尺寸的 img，Chrome 照样在左上角画一枚破图图标
+   （P10 的 05 密卷卡还没出图时实测）。所以 img 自己也继承 .coverBox 的渐变当底色，再用 ::after 盖一层同样的渐变：
+   替换元素加载成功时伪元素根本不渲染、照片盖住自己的底色；加载失败时 img 退化成普通盒子，::after 才画出来，
+   把破图图标整块盖住。纯 CSS，首帧（水合之前）就生效，不需要 onError、不需要组件状态 */
 .cover {
   position: absolute;
   inset: 0;
@@ -422,6 +425,18 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
+  background-image: inherit;
+  background-position: center;
+  background-size: cover;
+}
+
+.cover::after {
+  position: absolute;
+  inset: 0;
+  background-image: inherit;
+  background-position: center;
+  background-size: cover;
+  content: '';
 }
 
 /* Ken Burns 只给前牌：切到前位时封面缓慢 settle，不做裁切跳变。

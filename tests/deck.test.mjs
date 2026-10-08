@@ -141,9 +141,20 @@ test('the deck ships five zones as one data table plus their cover art', () => {
   const deck = fs.readFileSync(deckPath, 'utf8');
   assert.match(deck, /NEXT_PUBLIC_BASE_PATH/);
   assert.match(deck, /\/cards\/\$\{zone\.cover\}/);
-  // 封面是装饰位：alt="" 时 404 的 img 什么也不画，渐变直接透出，
-  // 既不需要 onError，也不会冒出破图图标
+  // 封面是装饰位（alt=""）。但 alt="" 挡不住破图图标：有尺寸的 img 缺图时 Chrome 照样画一枚（P10 实测，
+  // 05 密卷还没出图）。兜底在样式里：img 继承 .coverBox 的渐变当底色，::after 再盖一层同样的渐变——
+  // 替换元素加载成功时伪元素不渲染；失败时 img 退化成普通盒子、::after 画出来盖住图标。纯 CSS，首帧即生效
   assert.match(deck, /alt=""/);
+  const deckCss = stripComments(fs.readFileSync(deckCssPath, 'utf8'));
+  const cover = cascade(deckCss, '.cover');
+  const veil = cascade(deckCss, '.cover::after');
+  assert.equal(cover['background-image'], 'inherit', '封面 img 自己要继承渐变当底色');
+  assert.equal(veil['background-image'], 'inherit', '::after 要画同一条渐变');
+  assert.ok(veil.content === "''" || veil.content === '""', '::after 得有 content 才画得出来');
+  assert.equal(veil.position, 'absolute');
+  assert.equal(veil.inset, '0', '盖满整个封面区');
+  // 渐变本身挂在 .coverBox 上（img 的父节点），img 继承的就是它
+  assert.match(deck, /className=\{styles\.coverBox\} style=\{\{ backgroundImage: zone\.grad \}\}/);
 });
 
 test('the ring keeps cycling both ways once a fourth and a fifth card join it', () => {
