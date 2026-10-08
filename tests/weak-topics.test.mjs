@@ -688,9 +688,10 @@ test('the app hands the panel a scope that honours the 9.0 gate and ignores the 
   // 站在 9.0 卡前面打开复盘，做过的经典卷题不该凭空消失。
   // useMemo 是刻意的：12 个知识点 × 全量索引的求交、107 套卷的 qid 求交
   // 都挂在这个引用上，每次重渲染换新数组等于 memo 白写
+  // 05 密卷（P10）：已解锁且在窗口内时并入密卷池，第三个参数与依赖跟着加
   assert.match(
     exam,
-    /const reachable = useMemo\(\s*\(\) => \(index \? reachableIndex\(index, hiddenUnlocked\) : \[\]\),\s*\[index, hiddenUnlocked\],\s*\);/,
+    /const reachable = useMemo\(\s*\(\) => \(index \? reachableIndex\(index, hiddenUnlocked, sealedUnlocked\) : \[\]\),\s*\[index, hiddenUnlocked, sealedUnlocked\],\s*\);/,
   );
   assert.match(exam, /topicScope=\{reachable\}/);
   assert.match(exam, /reachable=\{reachable\}/, '卷面进度墙的分母读的是同一个集合');

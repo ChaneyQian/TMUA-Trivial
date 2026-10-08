@@ -219,9 +219,10 @@ test('while an exam is being picked, both start buttons and the quick start spin
   }
 
   // 外层递进来的「正在开考」就是 phase 'loading'；快速开始的置灰条件里本来就有它
+  // （后面可以再并上别的条件——05 密卷在开放窗口外时也置灰——但开头这三条一条不少）
   assert.equal(attrValue(jsxOpening(exam, '<SetupPanel').attrs.get('busy')), "phase === 'loading'");
   assert.equal(attrValue(jsxOpening(exam, '<GrillPanel').attrs.get('starting')), "phase === 'loading'");
-  assert.match(exam, /disabled: phase === 'loading' \|\| !index \|\| totalPool === 0, busy: phase === 'loading',/);
+  assert.match(exam, /disabled: phase === 'loading' \|\| !index \|\| totalPool === 0(?: \|\| [^,]+)?, busy: phase === 'loading',/);
 
   // 转圈本身：只转 transform 的无限动画；减动效下停住；遮罩开着时暂停；光效关时照转（它是操作反馈）
   const spinner = css('src/components/setup/BusySpinner.module.css');

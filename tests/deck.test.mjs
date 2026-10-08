@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import test from 'node:test';
 
 import { TURN_MS } from '../src/components/deck/turnGuard.ts';
-import { ZONE_IDS, ringOffset, slotForOffset, stepZone } from '../src/components/deck/zones.ts';
+import { ZONES, ZONE_IDS, ringOffset, slotForOffset, stepZone } from '../src/components/deck/zones.ts';
 import { indexForLibraryMode } from '../src/lib/records.ts';
 import {
   cascade,
@@ -44,7 +44,7 @@ const examCssPath = 'src/components/exam/Exam.module.css';
 /** 经典区 / 9.0 区的配置面板（P8-A3 从 ExamApp 拆出） */
 const setupPanelPath = 'src/components/setup/SetupPanel.tsx';
 
-test('the deck ships four zones as one data table plus their cover art', () => {
+test('the deck ships five zones as one data table plus their cover art', () => {
   assert.equal(fs.existsSync(zonesPath), true, 'missing zones table');
   assert.equal(fs.existsSync(deckPath), true, 'missing CardDeck component');
   assert.equal(fs.existsSync(deckCssPath), true, 'missing deck styles');
@@ -57,11 +57,9 @@ test('the deck ships four zones as one data table plus their cover art', () => {
 
   const zones = fs.readFileSync(zonesPath, 'utf8');
 
-  // 四区、四个编号，卡面文案与解锁路径都从这张表来，组件里不写单卡分支
-  for (const id of ["'classic'", "'grill'", "'trivial'", "'board'"]) {
-    assert.match(zones, new RegExp(id));
-  }
-  for (const no of ["'01'", "'02'", "'03'", "'04'"]) assert.match(zones, new RegExp(no));
+  // 五区、五个编号，卡面文案与解锁路径都从这张表来，组件里不写单卡分支
+  assert.deepEqual(ZONES.map((zone) => zone.id), ['classic', 'grill', 'trivial', 'board', 'sealed']);
+  assert.deepEqual(ZONES.map((zone) => zone.no), ['01', '02', '03', '04', '05']);
   // 卡面文案已搬进 lib/i18n.ts（外层双语），zones.ts 只留与语言无关的结构。
   // 三区的标题/副文改由字典保证，两种语言各一份，见 tests/i18n.test.mjs。
   assert.doesNotMatch(zones, /title:\s*'/);
@@ -86,19 +84,36 @@ test('the deck ships four zones as one data table plus their cover art', () => {
   assert.match(i18n, /board: 'Standard Bank'/);
   assert.match(i18n, /board: '分类看板 · 即将开放'/);
   assert.match(i18n, /board: 'Browse-only board · Coming soon'/);
+  // P10 的第五张卡（05 密卷），双语齐备
+  assert.match(i18n, /sealed: '密卷'/);
+  assert.match(i18n, /sealed: 'Sealed Papers'/);
+  assert.match(i18n, /sealed: 'MAT \/ TMUA 2024–2025 · 限时开放'/);
+  assert.match(i18n, /sealed: 'MAT \/ TMUA 2024–2025 · limited time'/);
 
   // P2/P3 的留位：展开给哪套面板、解锁走哪条路
   assert.match(zones, /panel: 'full'/);
   assert.match(zones, /panel: 'countOnly'/);
   assert.match(zones, /unlockPath: 'progress'/);
   assert.match(zones, /'diagnostic'/, 'the diagnostic unlock path must stay reserved for P2');
-  // P3 起前三个区全部开放；这张表只保留结构，开放与否仍由 comingSoon 表达
+  // P3 起前三个区全部开放；这张表只保留结构，开放与否仍由 comingSoon 表达。
+  // 05 密卷也不是 comingSoon：开没开、解没解锁是运行时的事（窗口 + 密码），由 ExamApp 递进 locked / closed
   assert.match(zones, /comingSoon: boolean;/, 'the structural flag must stay on the table');
-  assert.equal(
-    (zones.match(/comingSoon: false/g) || []).length,
-    3,
-    'the first three zones stay open',
+  assert.deepEqual(
+    ZONES.filter((zone) => !zone.comingSoon).map((zone) => zone.id),
+    ['classic', 'grill', 'trivial', 'sealed'],
+    'every zone but the board is open',
   );
+  const sealed = ZONES.find((zone) => zone.id === 'sealed');
+  assert.equal(sealed.unlockPath, 'password');
+  assert.equal(sealed.panel, 'full', '解锁后展开的是与 9.0 同款的配置面板');
+  assert.equal(sealed.quickStart, true);
+  // 区色：酒红封蜡、副色金
+  assert.equal(sealed.tint, '#8a1c35');
+  assert.equal(sealed.tint2, '#c9a24a');
+  // 封面照其它卡的接法预留：public/cards/sealed.jpg，缺图走渐变（酒红底 + 网格 + 金色封蜡印）
+  assert.equal(sealed.cover, 'sealed.jpg');
+  assert.match(sealed.grad, /#8a1c35/);
+  assert.match(sealed.grad, /repeating-linear-gradient\(/, '酒红底上一层极淡的坐标纸网格');
   // 标化题库是骨架卡：只有它是 comingSoon，且刻意不设解锁门槛
   // （unlockPath 仍是 free）——它不是锁着，是内容还没进来
   const boardBlock = zones.slice(zones.indexOf("id: 'board'"));
@@ -114,11 +129,10 @@ test('the deck ships four zones as one data table plus their cover art', () => {
 
   // 图没就位时的兜底：每区一条 CSS 渐变，垫在封面 <img> 底下
   assert.match(zones, /grad: string;/);
-  assert.equal(
-    (zones.match(/'radial-gradient\(/g) || []).length,
-    4,
-    'every zone needs a gradient placeholder',
-  );
+  for (const zone of ZONES) {
+    assert.match(zone.grad, /^(?:repeating-)?(?:radial|linear)-gradient\(/, `${zone.id} needs a gradient placeholder`);
+  }
+  assert.equal(new Set(ZONES.map((zone) => zone.grad)).size, ZONES.length, '缺图期间每张卡全靠渐变认人');
   // 第四张的占位色与前三张分得开（鼠尾草绿 vs 蓝 / 橙 / 深青）：
   // 缺图期间四张卡全靠渐变认人，撞色就等于四张一样的卡
   assert.match(boardBlock, /#5a8a6a/, 'the board placeholder is the sage-green one');
@@ -132,8 +146,8 @@ test('the deck ships four zones as one data table plus their cover art', () => {
   assert.match(deck, /alt=""/);
 });
 
-test('the ring keeps cycling both ways once a fourth card joins it', () => {
-  assert.equal(ZONE_IDS.length, 4, '第四张卡进表之后，环上就是四张');
+test('the ring keeps cycling both ways once a fourth and a fifth card join it', () => {
+  assert.equal(ZONE_IDS.length, 5, '第五张卡（05 密卷）进表之后，环上就是五张');
 
   // 按同一方向走满一圈：必须回到出发的那张，且路上每张各出现一次。
   // 这是 ←→ 循环的全部承诺，比钉死「按右键从 classic 到 grill」耐改得多
@@ -160,7 +174,7 @@ test('the ring keeps cycling both ways once a fourth card joins it', () => {
     assert.equal(ringOffset(front, front), 0);
     assert.deepEqual(
       ZONE_IDS.map((id) => ringOffset(id, front)).sort(),
-      [0, 1, 2, 3],
+      ZONE_IDS.map((_, i) => i),
     );
   }
 });
@@ -216,11 +230,19 @@ test('the board card is a coming-soon skeleton: it turns to the front but never 
 
   // 徽章走 comingSoon 体例，不报「0 题」—— 那会被读成「这个库空了」
   assert.match(exam, /board: t\.cardBadge\.comingSoon/);
-  // 不锁定：它没有门槛，只是内容还没进来。锁定态在卡面是另一套读法
-  assert.match(
-    exam,
-    /locked=\{\{ classic: false, grill: false, trivial: !hiddenUnlocked, board: false \}\}/,
+  // 不锁定：它没有门槛，只是内容还没进来。锁定态在卡面是另一套读法。
+  // 按对象字面量的结构取：换行、键的先后都不论
+  const lockedAttr = attrValue(jsxOpening(code(exam), '<CardDeck').attrs.get('locked')) ?? '';
+  const lockedMap = Object.fromEntries(
+    lockedAttr.replace(/^\{|\}$/g, '').split(',').map((pair) => pair.split(':').map((part) => part.trim())).filter((pair) => pair[0]),
   );
+  assert.deepEqual(lockedMap, {
+    classic: 'false',
+    grill: 'false',
+    trivial: '!hiddenUnlocked',
+    board: 'false',
+    sealed: '!sealedUnlocked',
+  });
   // 展不开走的仍是 P1 那套 block.comingSoon，没有为第四张卡新写分支
   assert.match(exam, /if \(zone\.comingSoon\) return t\.block\.comingSoon\(t\.zone\.title\[id\]\);/);
   // 选区落盘的白名单里没有 board：存进去只会在下次回读时被判非法，

@@ -1,0 +1,178 @@
+/* 05 密卷的密码面板（components/sealed/SealedGate）。
+   外框与 Diagnostic 介绍页同一套（边框、圆角、底色、阴影），顶上一枚酒红封蜡、金色内圈。
+   区色：酒红 #8a1c35、金 #c9a24a（与 zones.ts 里 sealed 的 tint / tint2 同源）。
+   动效只有按钮的按压（transform），减动效下瞬时到位。 */
+
+.gate {
+  --wine: #8a1c35;
+  --gold: #c9a24a;
+  --gate-error: #c62828;
+
+  position: relative;
+  box-sizing: border-box;
+  width: 100%;
+  overflow: hidden;
+  padding: 1.6rem 1.4rem 1.3rem;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: 0 2px 12px rgb(0 0 0 / 6%);
+  font-family: var(--font-ui);
+  text-align: center;
+}
+
+/* 顶边一道酒红—金—酒红的细线：只是区色的落款 */
+.gate::before {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--wine), var(--gold) 50%, var(--wine));
+  content: '';
+}
+
+:global([data-theme='dark']) .gate {
+  --wine: #a8304d;
+  --gate-error: #ff8a80;
+}
+
+:global([data-theme='sepia']) .gate {
+  --gate-error: #a52a1f;
+}
+
+/* 封蜡印：酒红蜡面 + 金色外圈与内圈，中间压一个「05」。纯装饰，读屏跳过 */
+.seal {
+  position: relative;
+  display: grid;
+  width: 68px;
+  height: 68px;
+  margin: 0 auto 0.75rem;
+  border-radius: 50%;
+  background: radial-gradient(circle at 34% 28%, #c2425f 0%, #8a1c35 52%, #5a0e21 100%);
+  box-shadow:
+    inset 0 0 0 3px rgb(0 0 0 / 12%),
+    0 0 0 2px var(--gold),
+    0 8px 18px -6px rgb(90 14 33 / 55%);
+  place-items: center;
+}
+
+.seal::before {
+  position: absolute;
+  inset: 7px;
+  border: 1.5px solid rgb(201 162 74 / 85%);
+  border-radius: 50%;
+  content: '';
+}
+
+.sealMark {
+  font-family: var(--font-content);
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #ecd398;
+  letter-spacing: 0.06em;
+  text-shadow: 0 1px 0 rgb(0 0 0 / 30%);
+}
+
+.title {
+  font-family: var(--font-content);
+  font-size: 1.5rem;
+  color: var(--text);
+}
+
+.lead {
+  margin-top: 0.4rem;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  line-height: 1.6;
+}
+
+.form {
+  max-width: 360px;
+  margin: 1.1rem auto 0;
+  text-align: left;
+}
+
+.label {
+  display: block;
+  margin-bottom: 0.4rem;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  letter-spacing: 0.05em;
+}
+
+.row {
+  display: flex;
+  gap: 0.5rem;
+}
+
+/* 字号 16px：iOS 上小于 16px 的输入框一聚焦就整页放大 */
+.input {
+  flex: 1 1 auto;
+  box-sizing: border-box;
+  min-width: 0;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-size: 1rem;
+}
+
+.input:focus {
+  border-color: var(--accent);
+}
+
+.input[aria-invalid='true'] {
+  border-color: var(--gate-error);
+}
+
+.input:disabled {
+  opacity: 0.6;
+}
+
+.submit {
+  flex: 0 0 auto;
+  padding: 0.6rem 1.1rem;
+  border: 0;
+  border-radius: 8px;
+  background: var(--wine);
+  color: #fff;
+  font-family: var(--font-ui);
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 100ms cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+/* 与配置面板的按钮同一套按压态 */
+.submit:active:not(:disabled) {
+  transform: scale(0.97);
+  filter: brightness(0.94);
+}
+
+.submit:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.submit[aria-busy='true']:disabled {
+  opacity: 0.85;
+  cursor: progress;
+}
+
+/* 提示行常驻、空着也占一行：出错时不把下面的东西顶下去 */
+.message {
+  min-height: 1.35rem;
+  margin-top: 0.5rem;
+  color: var(--gate-error);
+  font-size: 0.82rem;
+  line-height: 1.6;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .submit {
+    transition: none;
+  }
+}

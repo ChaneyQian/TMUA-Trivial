@@ -26,7 +26,7 @@ const zh = {
   },
 
   zone: {
-    title: { classic: '经典题库', grill: '复烤区', trivial: '9.0 Trivial', board: '标化题库' },
+    title: { classic: '经典题库', grill: '复烤区', trivial: '9.0 Trivial', board: '标化题库', sealed: '密卷' },
     // grill 的副文由 ExamApp 按绑定题 / 错题数覆盖，这里是兜底的定位说明
     sub: {
       classic: 'TMUA · MAT · SMC · ECAA',
@@ -34,11 +34,13 @@ const zh = {
       trivial: '扩展题库',
       // 副文先把定位说破：它是看板不是考场，进去只看题不作答
       board: '分类看板 · 即将开放',
+      // 窗口外由 ExamApp 换成 sealed.subNotYet / sealed.subEnded
+      sealed: 'MAT / TMUA 2024–2025 · 限时开放',
     },
   },
 
   deck: {
-    headSub: 'TMUA 公益 · 四个功能区，选一张卡开始',
+    headSub: 'TMUA 公益 · 五个功能区，选一张卡开始',
     groupAria: '功能区选择',
     keys: '← → 切换功能区 · Enter 展开 · 也可左右滑动',
     chargeLabel: (value: number, max: number) => `充能 ${value} / ${max}`,
@@ -59,10 +61,32 @@ const zh = {
     // P1 的体例原样取回（P3「三区全开」时删过一次）：还没上内容的卡报这一句，
     // 与「🔒 充能中」刻意不同——那是锁着等你充能，这是压根还没开门
     comingSoon: '即将开放',
+    // 05 密卷：窗口内还没输密码 / 本期已结束（开始前用上面的 comingSoon）
+    password: '🔒 需密码',
+    ended: '已结束',
   },
 
   block: {
     comingSoon: (title: string) => `${title}即将开放`,
+  },
+
+  // 05 密卷（P10，2026-10-08）：锁定态展开后的密码面板、窗口外的卡面与提示行、配置面板的范围说明。
+  // 只写给用户看的话：这道门是什么性质，只写在 lib/sealed.ts 的注释里（Design §16 的先例）
+  sealed: {
+    lead: (month: number, day: number) => `输入密码进入。本期开放至 ${month} 月 ${day} 日。`,
+    passwordLabel: '密码',
+    submit: '进入',
+    wrong: '密码不对',
+    cooldown: (seconds: number) => `输错次数太多，${seconds} 秒后再试`,
+    // crypto.subtle 只在 https / localhost 下有：拿不到时给的兜底
+    unsupported: '当前浏览器无法验证密码，请通过 https 链接打开本站再试。',
+    subNotYet: 'MAT / TMUA 2024–2025 · 即将开放',
+    subEnded: '本期开放已结束',
+    // 窗口外点卡 / 点页签时提示行里的那句，也是前牌命中层念的
+    blockNotYet: '密卷即将开放',
+    blockEnded: '密卷本期开放已结束',
+    // 配置面板题库行下的范围说明：同一批题在 9.0 Trivial 里也有，按钮上只有题数看不出来
+    scopeNote: '此区只收 MAT 与 TMUA 2024–2025 的题，限时开放。',
   },
 
   setup: {
@@ -314,6 +338,22 @@ const zh = {
 /** 字典形状由中文这份定义；en 少写或多写一个键都会编译失败 */
 export type Strings = typeof zh;
 
+/** 英文日期里的月份名（密卷面板的「开放至 31 October」） */
+const EN_MONTHS = [
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
+];
+
 const en: Strings = {
   langToggle: { label: '中', aria: 'Switch to Chinese', title: '中 / EN' },
   fxToggle: { aria: 'Visual effects', title: 'Turn off if things feel laggy' },
@@ -329,17 +369,19 @@ const en: Strings = {
       grill: 'Grill',
       trivial: '9.0 Trivial',
       board: 'Standard Bank',
+      sealed: 'Sealed Papers',
     },
     sub: {
       classic: 'TMUA · MAT · SMC · ECAA',
       grill: 'Wrong answers & weak spots',
       trivial: 'Extended Library',
       board: 'Browse-only board · Coming soon',
+      sealed: 'MAT / TMUA 2024–2025 · limited time',
     },
   },
 
   deck: {
-    headSub: 'Free for TMUA · Four zones — pick a card to begin',
+    headSub: 'Free for TMUA · Five zones — pick a card to begin',
     groupAria: 'Zone selection',
     keys: '← → switch zone · Enter to open · or swipe sideways',
     chargeLabel: (value: number, max: number) => `Charging ${value} / ${max}`,
@@ -356,10 +398,27 @@ const en: Strings = {
     expanded: (n: number) => `🔥 ${n} Qs`,
     charging: '🔒 Charging',
     comingSoon: 'Coming Soon',
+    password: '🔒 Password',
+    ended: 'Ended',
   },
 
   block: {
     comingSoon: (title: string) => `${title} is coming soon`,
+  },
+
+  sealed: {
+    lead: (month: number, day: number) =>
+      `Enter the password to open. This round is open until ${day} ${EN_MONTHS[month - 1] ?? month}.`,
+    passwordLabel: 'Password',
+    submit: 'Enter',
+    wrong: 'Wrong password',
+    cooldown: (seconds: number) => `Too many wrong tries — try again in ${seconds}s`,
+    unsupported: 'This browser cannot check the password here. Open the site over https and try again.',
+    subNotYet: 'MAT / TMUA 2024–2025 · opening soon',
+    subEnded: 'This round has ended',
+    blockNotYet: 'Sealed Papers opens soon',
+    blockEnded: 'This round of Sealed Papers has ended',
+    scopeNote: 'This zone holds only the 2024–2025 MAT and TMUA questions, open for a limited time.',
   },
 
   setup: {

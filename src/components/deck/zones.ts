@@ -1,4 +1,4 @@
-// 堆叠卡片的四个功能区。这里是唯一的数据源：封面、
+// 堆叠卡片的五个功能区。这里是唯一的数据源：封面、
 // 展开后开哪套配置、以及解锁走哪条路，全部由这张表驱动，
 // CardDeck 里不写任何「如果是某张卡就……」的分支。
 //
@@ -12,8 +12,12 @@
 // P7-C1 接入点：
 //   - board（标化题库）是分类看板的骨架卡，先摆位不接内容。C2 上看板阅读器时
 //     把 comingSoon 翻成 false、panel 从 'none' 改成看板自己的那一档
+//
+// P10（2026-10-08）：
+//   - sealed（05 密卷）限时开放 MAT / TMUA 2024–2025：开放窗口与密码在 lib/sealed.ts，
+//     题池是 build-data 打了 sealed 的那批题。卡面态（即将开放 / 要密码 / 已解锁 / 已结束）由 ExamApp 按窗口与解锁算
 
-export type ZoneId = 'classic' | 'grill' | 'trivial' | 'board';
+export type ZoneId = 'classic' | 'grill' | 'trivial' | 'board' | 'sealed';
 
 /** 展开后给哪套配置面板：全量 / 只开题数 / 不展开 */
 export type ZonePanel = 'full' | 'countOnly' | 'none';
@@ -23,7 +27,7 @@ export type ZoneUnlockPath = 'free' | 'progress' | 'diagnostic' | 'password';
 
 export interface ZoneDef {
   id: ZoneId;
-  /** 卡面编号 01–04 */
+  /** 卡面编号 01–05 */
   no: string;
   /** public/cards/ 下的文件名；缺图时卡片露出 grad 兜底，不需要任何 JS */
   cover: string;
@@ -101,6 +105,29 @@ export const ZONES: ZoneDef[] = [
     unlockPath: 'free',
     comingSoon: true,
     quickStart: false,
+  },
+  {
+    // 05 密卷（P10，用户 2026-10-08）：限时开放的 MAT / TMUA 2024–2025。
+    // 区色酒红封蜡、副色金（环境光、前牌投影、页签都取它）。不是 comingSoon：开没开、
+    // 解没解锁是运行时的事（窗口 + 密码，lib/sealed.ts），由 ExamApp 递进 locked / closed。
+    // 封面图出来之前是这条 CSS 渐变：酒红底、极淡的坐标纸网格、一枚金色封蜡印；
+    // 图放到 public/cards/sealed.jpg 即替换（出图提示词见 Design 文档 §23），零代码。
+    // 渐变分四层（上层先画）：封蜡印的金面与压纹圈 → 蜡印的落影 → 横竖两道网格 → 酒红底
+    id: 'sealed',
+    no: '05',
+    cover: 'sealed.jpg',
+    grad:
+      'radial-gradient(circle at 70% 56%, #f6e2a8 0%, #d8b15a 6.2%, #f0d28a 7.3%, #b48530 8.4%, #c99b45 11.6%, #8c6420 13.2%, transparent 14%), ' +
+      'radial-gradient(circle at 71.5% 59%, rgb(40 4 12 / 45%) 0%, rgb(40 4 12 / 45%) 13.5%, transparent 17%), ' +
+      'repeating-linear-gradient(0deg, rgb(255 255 255 / 5%) 0 1px, transparent 1px 24px), ' +
+      'repeating-linear-gradient(90deg, rgb(255 255 255 / 5%) 0 1px, transparent 1px 24px), ' +
+      'radial-gradient(120% 100% at 28% 12%, #b23a55 0%, #8a1c35 48%, #3d0816 100%)',
+    tint: '#8a1c35',
+    tint2: '#c9a24a',
+    panel: 'full',
+    unlockPath: 'password',
+    comingSoon: false,
+    quickStart: true,
   },
 ];
 

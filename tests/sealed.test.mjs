@@ -296,3 +296,91 @@ test('the shipped sealed pool holds 124 questions: TMUA 80 and MAT 44', () => {
   assert.equal(pool.filter((entry) => entry.db === 'MAT').length, 44);
   assert.deepEqual([...new Set(pool.map((entry) => entry.db))].sort(), ['MAT', 'TMUA'], '题库按钮只有 TMUA / MAT / 混合');
 });
+
+// ---- 界面接线（源码级：剥注释、归一空白之后按结构查）----
+
+const { code, jsxOpening, attrValue, fnBody, namedFn } = await import('./helpers/source.mjs');
+const { DICT } = await import('../src/lib/i18n.ts');
+const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
+
+test('the password panel is a plain form: a masked field, one button, and only "wrong password" when it fails', () => {
+  const gate = code(read('src/components/sealed/SealedGate.tsx'));
+  const input = jsxOpening(gate, 'className={styles.input}');
+  assert.ok(input && input.name === 'input', '找不到密码框');
+  assert.equal(input.attrs.get('type'), '"password"');
+  assert.equal(input.attrs.get('autoComplete'), '"off"');
+  // 输入框与提示行连上：读屏聚焦就念到出错原因
+  assert.ok(input.attrs.has('aria-describedby'));
+  const submit = jsxOpening(gate, 'className={styles.submit}');
+  assert.equal(submit.attrs.get('type'), '"submit"');
+  // 冷却中、验证中、环境不支持、没输东西都按不动
+  assert.match(attrValue(submit.attrs.get('disabled')) ?? '', /cooling > 0/);
+  assert.match(attrValue(submit.attrs.get('disabled')) ?? '', /\bunsupported\b/);
+
+  // 提交走 lib/sealed 的比对与冷却，不自己另写一套；冷却中直接不验
+  const body = fnBody(namedFn(gate, 'submit'));
+  assert.match(body, /sealedCooldownLeft\(tries, Date\.now\(\)\) > 0\) return;/);
+  assert.match(body, /await checkSealedPassword\(password\)/);
+  assert.match(body, /noteSealedFailure\(tries, Date\.now\(\)\)/);
+  assert.ok(body.indexOf('onUnlock()') > body.indexOf("result === 'ok'"), '只有比对通过才解锁');
+  // 错误提示只有这几句：密码不对 / 冷却读秒 / 环境不支持
+  assert.match(gate, /t\.sealed\.wrong/);
+  assert.match(gate, /t\.sealed\.cooldown\(Math\.ceil\(cooling \/ 1000\)\)/);
+  assert.match(gate, /t\.sealed\.unsupported/);
+});
+
+test('nothing on screen tells the user the gate is not encryption — that note lives in code comments only', () => {
+  // 用户不想在界面上看到写给维护者的话（Design §16 的先例）：字典里密卷相关的文案一句都不许谈这道门的性质
+  const flat = (value) => (typeof value === 'function' ? String(value(10, 31)) : typeof value === 'object' ? Object.values(value).map(flat).join('\n') : String(value));
+  for (const lang of ['zh', 'en']) {
+    const text = flat(DICT[lang].sealed) + flat(DICT[lang].zone) + flat(DICT[lang].cardBadge);
+    assert.doesNotMatch(text, /加密|门槛|安全|公开|静态站|encrypt|security|secure|public|static/i, `${lang} 的密卷文案在谈这道门的性质`);
+  }
+  // 那句话确实写在了代码注释里
+  assert.match(read('src/lib/sealed.ts'), /这是一道门槛，不是加密/);
+});
+
+test('both languages carry the sealed copy and interpolate the date and the cooldown', () => {
+  for (const lang of ['zh', 'en']) {
+    const t = DICT[lang];
+    assert.match(t.sealed.lead(10, 31), /31/, `${lang} lead 要写出截止那天`);
+    assert.match(t.sealed.cooldown(30), /30/, `${lang} cooldown 要写出秒数`);
+    assert.match(t.deck.passwordAria('05', t.zone.title.sealed), /05/);
+  }
+  assert.equal(DICT.zh.sealed.wrong, '密码不对');
+  assert.equal(DICT.zh.sealed.subEnded, '本期开放已结束');
+  assert.match(DICT.zh.sealed.subNotYet, /即将开放/);
+  assert.match(DICT.en.sealed.lead(10, 31), /31 October/);
+});
+
+test('the app gates the sealed pool on the window and the stamp, at render time and again at start', () => {
+  const exam = code(read('src/components/exam/ExamApp.tsx'));
+
+  // 进得去 = 本期印记 + 窗口内；题库范围只有这时才落到密卷
+  assert.match(exam, /const sealedUnlocked = sealedNow !== null && sealedAccess\(sealedStampSaved, sealedNow\);/);
+  assert.match(exam, /frontZone === 'sealed' && sealedUnlocked \? 'sealed'/);
+  assert.match(exam, /const scopedIndex = indexForLibraryMode\(index \|\| \[\], libraryMode\);/);
+  // 窗口外：展不开（提示行说原因），快速开始置灰
+  assert.match(exam, /if \(id === 'sealed' && sealedPhaseNow === 'before'\) return t\.sealed\.blockNotYet;/);
+  assert.match(exam, /if \(id === 'sealed' && sealedPhaseNow === 'ended'\) return t\.sealed\.blockEnded;/);
+  const deck = jsxOpening(exam, '<CardDeck');
+  assert.match(attrValue(deck.attrs.get('closed')) ?? '', /sealedClosedReason \? \{ sealed: sealedClosedReason \}/);
+  assert.match(attrValue(deck.attrs.get('quickStart')) ?? '', /\(frontZone === 'sealed' && !!sealedClosedReason\)/);
+
+  // 锁着时展开的是密码面板，输对了落盘本期印记
+  assert.match(exam, /frontZone === 'sealed' && !sealedUnlocked \? \(<SealedGate/);
+  const unlock = fnBody(namedFn(exam, 'unlockSealed'));
+  assert.match(unlock, /saveSealedUnlock\(stamp\)/);
+  assert.match(unlock, /const stamp = sealedStamp\(\);/);
+
+  // 第二道闸：开考那一刻按此刻的时钟与存着的印记再核一遍（指定 qid 的复烤区路径不走密卷池，不拦）
+  const start = fnBody(namedFn(exam, 'startExam'));
+  const gate = start.indexOf("if (!override?.qids && libraryMode === 'sealed') {");
+  assert.ok(gate >= 0 && gate < start.indexOf("setPhase('loading')"), '开考之前要先过密卷的闸');
+  assert.match(start, /if \(!sealedAccess\(stored, now\)\) \{/);
+  assert.match(start, /const stored = loadSealedStamp\(\);/);
+
+  // 解锁记录与做题记录分开：清空做题记录碰不到它
+  assert.doesNotMatch(read('src/lib/records.ts'), /SEALED_UNLOCK_KEY|sealed-unlock/);
+  assert.doesNotMatch(fnBody(namedFn(exam, 'removeRecords')), /Sealed/);
+});

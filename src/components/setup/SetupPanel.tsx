@@ -1,7 +1,7 @@
 'use client';
 
-// 经典区 / 9.0 区的配置面板：题库、逻辑推理题、模式、抽题范围、题目数量（Mock 另有限时），
-// 收尾是开始按钮。
+// 经典区 / 9.0 区 / 05 密卷（解锁后）的配置面板：题库、逻辑推理题、模式、抽题范围、
+// 题目数量（Mock 另有限时），收尾是开始按钮。
 //
 // 从 ExamApp 拆出来的（Design §22 P8-A3，R2 拆分的第一刀）：状态一律还在 ExamApp，
 // 这里只管画和回调——抽题池、题数、兜底题库这些口径都在外层算好了递进来，
@@ -121,6 +121,8 @@ export default function SetupPanel({
       {libraryMode === 'hidden' && (
         <p className={styles.zoneScopeNote}>{t.setup.trivialScopeNote}</p>
       )}
+      {/* 05 密卷同理：它是从 9.0 池按年份切出来的一片，同名库在三个区各是各的一批题 */}
+      {libraryMode === 'sealed' && <p className={styles.zoneScopeNote}>{t.sealed.scopeNote}</p>}
 
       {/* 逻辑推理三档（用户裁定 2026-09-16）：全部 / 仅逻辑题 / 排除。
           当前 db 一道标注过的逻辑题都没有时整组不渲染——摆着也只是三个按不动的按钮。

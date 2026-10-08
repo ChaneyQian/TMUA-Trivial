@@ -18,6 +18,7 @@ import DiagnosticResult from '@/components/diagnostic/DiagnosticResult';
 import GrillPanel from '@/components/grill/GrillPanel';
 import IntroOverlay from '@/components/intro/IntroOverlay';
 import NoticeBoard from '@/components/notice/NoticeBoard';
+import SealedGate from '@/components/sealed/SealedGate';
 import SetupPanel, { type Db, type Mode } from '@/components/setup/SetupPanel';
 import { holdOverlay } from '@/lib/overlay';
 import { runExclusive } from '@/lib/exclusive';
@@ -80,6 +81,17 @@ import {
   type Records,
 } from '@/lib/records';
 import { useLang } from '@/lib/LangContext';
+import {
+  NO_SEALED_TRIES,
+  loadSealedStamp,
+  msUntilSealedChange,
+  saveSealedUnlock,
+  sealedAccess,
+  sealedPhase,
+  sealedStamp,
+  type SealedPhase,
+  type SealedTries,
+} from '@/lib/sealed';
 import { useFx } from '@/lib/useFx';
 import { useTheme } from '@/lib/useTheme';
 import styles from './Exam.module.css';
@@ -253,12 +265,55 @@ export default function ExamApp() {
   const completedCount = index ? validCompletedCount(index, records) : 0;
   const unlockProgress = index ? hiddenUnlockProgress(index, records) : 0;
   const hiddenUnlocked = index ? isHiddenModeUnlocked(index, records) : false;
-  // 题库范围不再是独立 state：前位卡就是唯一真源
-  const libraryMode: LibraryMode = frontZone === 'trivial' && hiddenUnlocked ? 'hidden' : 'classic';
-  // 抽题池分两层收窄：先按题库范围（classic / 9.0），再按逻辑推理开关。
+
+  // ---- 05 密卷（P10，2026-10-08）：开放窗口 + 密码（规则在 lib/sealed）----
+  // 「现在」放进 state：静态导出的预渲染没有「现在」，首帧按 null（未知）画，挂载后才定——
+  // 同步读时钟会让预渲染的卡面与水合后的对不上。之后在下一次换相（开门 / 关门）那一刻自己再取一次，
+  // 页面挂着跨过边界时卡面自己翻过去；切回前台也重取（睡眠唤醒后计时器可能误点）
+  const [sealedNow, setSealedNow] = useState<number | null>(null);
+  // 存着的解锁印记（lib/sealed 的 sealedStamp）；回读放 effect，理由同上
+  const [sealedStampSaved, setSealedStampSaved] = useState<string | null>(null);
+  // 连续输错的计数与冷却：挂在这一层，密码面板收起再展开、换区再回来都不清零（刷新才清）
+  const [sealedTries, setSealedTries] = useState<SealedTries>(NO_SEALED_TRIES);
+
+  useEffect(() => {
+    setSealedStampSaved(loadSealedStamp());
+    let timer = 0;
+    const tick = () => {
+      window.clearTimeout(timer);
+      const now = Date.now();
+      setSealedNow(now);
+      const wait = msUntilSealedChange(now);
+      // setTimeout 的上限约 24.8 天：更远的边界先睡到上限，醒来再算
+      if (wait !== null) timer = window.setTimeout(tick, Math.min(wait + 50, 2_000_000_000));
+    };
+    tick();
+    const onVisible = () => {
+      if (!document.hidden) tick();
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => {
+      window.clearTimeout(timer);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
+  }, []);
+
+  const sealedPhaseNow: SealedPhase | null = sealedNow === null ? null : sealedPhase(sealedNow);
+  // 进得去 = 存着本期印记 + 此刻在窗口内（窗口一过，印记还在也不算）
+  const sealedUnlocked = sealedNow !== null && sealedAccess(sealedStampSaved, sealedNow);
+
+  // 题库范围不再是独立 state：前位卡就是唯一真源。门槛已经折进这一个值里——
+  // 9.0 没解锁、密卷没解锁（或窗口外）时一律落回经典，抽题池不会越过门槛
+  const libraryMode: LibraryMode =
+    frontZone === 'trivial' && hiddenUnlocked
+      ? 'hidden'
+      : frontZone === 'sealed' && sealedUnlocked
+        ? 'sealed'
+        : 'classic';
+  // 抽题池分两层收窄：先按题库范围（classic / 9.0 / 密卷），再按逻辑推理开关。
   // 中间那层单独留个名字，因为覆盖率提示要读的正是「开关生效之前」的池子——
   // 提示说的是这个开关能做什么，不能自己跟着勾选状态变
-  const scopedIndex = indexForLibraryMode(index || [], hiddenUnlocked ? libraryMode : 'classic');
+  const scopedIndex = indexForLibraryMode(index || [], libraryMode);
   const activeIndex = indexForLogicReasoning(scopedIndex, logicFilter);
 
   /** 转牌并落盘。写在 setter 里而不是 effect 里，免得首帧把回读结果覆盖掉 */
@@ -271,11 +326,11 @@ export default function ExamApp() {
 
   // 回读上次的选区。三个区现在都开放了，都接受；
   // 'trivial' 要等索引到位才知道解不解得开（锁着也进得去，只是给 Diagnostic 介绍页），
-  // 所以先挂起、下一个 effect 再定。
+  // 所以先挂起、下一个 effect 再定。'sealed' 同理：解没解锁、窗口开没开都要挂载后才知道。
   useEffect(() => {
     try {
       const saved = localStorage.getItem(ZONE_KEY);
-      if (saved === 'trivial' || saved === 'classic' || saved === 'grill') {
+      if (saved === 'trivial' || saved === 'classic' || saved === 'grill' || saved === 'sealed') {
         pendingZoneRef.current = saved;
       }
     } catch {}
@@ -285,8 +340,10 @@ export default function ExamApp() {
     if (!index || !pendingZoneRef.current) return;
     const want = pendingZoneRef.current;
     pendingZoneRef.current = null;
-    setFrontZone(want === 'trivial' && !hiddenUnlocked ? 'classic' : want);
-  }, [index, hiddenUnlocked]);
+    // 锁着的区回落经典：上次停在密卷、这次印记失效或窗口已过，就不再把它摆在前面
+    const locked = (want === 'trivial' && !hiddenUnlocked) || (want === 'sealed' && !sealedUnlocked);
+    setFrontZone(locked ? 'classic' : want);
+  }, [index, hiddenUnlocked, sealedUnlocked]);
 
   useEffect(() => {
     if (!hiddenUnlocked) return;
@@ -325,8 +382,14 @@ export default function ExamApp() {
   const zoneBlockReason = (id: ZoneId): string => {
     const zone = zoneById(id);
     if (zone.comingSoon) return t.block.comingSoon(t.zone.title[id]);
+    // 05 密卷在开放窗口外：卡照样能转到前位看，但不展开、页签也不进。
+    // 锁着（窗口内、还没输密码）不算展不开——展开动作就是密码面板，同 9.0 锁定态展开成介绍页
+    if (id === 'sealed' && sealedPhaseNow === 'before') return t.sealed.blockNotYet;
+    if (id === 'sealed' && sealedPhaseNow === 'ended') return t.sealed.blockEnded;
     return '';
   };
+  /** 密卷此刻为什么进不去（窗口外）；空串＝窗口内（锁不锁另说） */
+  const sealedClosedReason = zoneBlockReason('sealed');
 
   /** 离开 deck 去某个覆盖视图：deck 淡出，280ms 后卸载 */
   const leaveDeckFor = (view: Exclude<StageView, 'deck'>) => {
@@ -386,6 +449,19 @@ export default function ExamApp() {
     if (stageView !== 'deck') panelRef.current?.focus();
   }, [stageView]);
 
+  /**
+   * 密码面板输对了：落盘本期印记、对齐时钟，面板就地换成配置面板。
+   * 密码面板一卸载焦点就掉回 <body>，收回到面板层上（与展开时同一个落点）
+   */
+  const unlockSealed = () => {
+    const stamp = sealedStamp();
+    saveSealedUnlock(stamp);
+    setSealedStampSaved(stamp);
+    setSealedNow(Date.now());
+    chooseZone('sealed');
+    window.requestAnimationFrame(() => panelRef.current?.focus());
+  };
+
   // 卡面徽章要的是各区自己的题量，跟当前前位无关，所以两边都单独算一次。
   // 互斥之后 expandedCount 报的是扩展池本身的题数（不再是「经典 + 扩展」的全集）——
   // 9.0 卡上写 583 题，进去抽到的就是这 583 道，徽章与池子终于是同一件事。
@@ -393,6 +469,8 @@ export default function ExamApp() {
   // 跟着一个抽题偏好上下跳会让人以为题库缩水了
   const classicCount = index ? indexForLibraryMode(index, 'classic').length : 0;
   const expandedCount = index ? indexForLibraryMode(index, 'hidden').length : 0;
+  // 密卷卡解锁后的徽章：密卷池本身的题数（与 9.0 重叠，与经典互斥）
+  const sealedCount = index ? indexForLibraryMode(index, 'sealed').length : 0;
 
   // 复盘视图能摸到的范围：经典卷 ∪（解锁后的）扩展卷。
   // 「练这类题」的池子和卷面进度墙的分母都读它——两者都是跨区的复盘口径，
@@ -406,9 +484,12 @@ export default function ExamApp() {
   //
   // useMemo 不是装饰：GrillPanel 里 12 个知识点 × 全量索引的求交、
   // ProgressPanel 里 107 套卷的 qid 求交，都挂在这个引用上
+  //
+  // 05 密卷已解锁且在窗口内时并入密卷池：密卷里做错的题要能在复烤区「练这类题」、
+  // 卷面墙上要看得到那几套卷；窗口一过 sealedUnlocked 翻回 false，不再并入（记录照留）
   const reachable = useMemo(
-    () => (index ? reachableIndex(index, hiddenUnlocked) : []),
-    [index, hiddenUnlocked],
+    () => (index ? reachableIndex(index, hiddenUnlocked, sealedUnlocked) : []),
+    [index, hiddenUnlocked, sealedUnlocked],
   );
 
   // 两套计数各有各的问题要回答：
@@ -661,6 +742,22 @@ export default function ExamApp() {
     origin?: GrillOrigin;
   }) => {
     if (!index) return;
+    // 密卷的第二道闸：卡面与面板上的门只是展示层。点下去这一刻按此刻的时钟与存着的印记再核一遍——
+    // 页面挂着跨过关门那一刻、计时器还没来得及把卡面翻过去时，也抽不到密卷
+    if (!override?.qids && libraryMode === 'sealed') {
+      const now = Date.now();
+      const stored = loadSealedStamp();
+      if (!sealedAccess(stored, now)) {
+        // 窗口外说原因；窗口内只是印记没了（别的标签页清掉了），把状态对齐，面板自己换回密码框
+        const phase = sealedPhase(now);
+        const message = phase === 'before' ? t.sealed.blockNotYet : phase === 'ended' ? t.sealed.blockEnded : '';
+        setError(message);
+        setDeckHint(message);
+        setSealedNow(now);
+        setSealedStampSaved(stored);
+        return;
+      }
+    }
     const useDb = override?.db ?? db;
     const usePick = override?.pickMode ?? pickMode;
     const useCount = override?.count ?? count;
@@ -1201,10 +1298,28 @@ export default function ExamApp() {
                 // 标化题库还没上内容，报的是「即将开放」而不是题数——
                 // 一个 0 会被读成「这个库空了」，而它是还没开门
                 board: t.cardBadge.comingSoon,
+                // 密卷四态：还没开 / 本期已结束 / 窗口内要密码 / 已解锁报题数。
+                // 首帧还不知道「现在」（null）时按要密码画——正常窗口内不会闪一下别的字
+                sealed:
+                  sealedPhaseNow === 'before'
+                    ? t.cardBadge.comingSoon
+                    : sealedPhaseNow === 'ended'
+                      ? t.cardBadge.ended
+                      : sealedUnlocked
+                        ? t.cardBadge.questions(sealedCount)
+                        : t.cardBadge.password,
               }}
               // board 刻意不锁：它没有门槛，只是内容没到（Design §17-C）。
-              // 锁定态在卡面是另一套读法（充能中 / 去考 Diagnostic），别混用
-              locked={{ classic: false, grill: false, trivial: !hiddenUnlocked, board: false }}
+              // 锁定态在卡面是另一套读法（充能中 / 去考 Diagnostic / 输密码），别混用
+              locked={{
+                classic: false,
+                grill: false,
+                trivial: !hiddenUnlocked,
+                board: false,
+                sealed: !sealedUnlocked,
+              }}
+              // 窗口外的密卷：能转到前位看，不能进，快速开始置灰（置灰见下面 quickStart.disabled）
+              closed={sealedClosedReason ? { sealed: sealedClosedReason } : undefined}
               // Grill 卡面副文：复烤区现在管两批题（诊断绑定 + 全站错题），
               // 只报绑定数会让「一次诊断没考过、但有一堆错题」的人以为这张卡是空的。
               // 两个数都为 0 时才说定位，其余情况直接报数
@@ -1213,6 +1328,13 @@ export default function ExamApp() {
                   grillCount(records) > 0 || grillMissedCount > 0
                     ? t.grill.sub(grillCount(records), grillMissedCount)
                     : t.grill.emptySub,
+                // 窗口外换成「即将开放」/「本期开放已结束」；窗口内用字典里的默认副文
+                sealed:
+                  sealedPhaseNow === 'before'
+                    ? t.sealed.subNotYet
+                    : sealedPhaseNow === 'ended'
+                      ? t.sealed.subEnded
+                      : undefined,
               }}
               charge={{
                 unlocked: hiddenUnlocked,
@@ -1225,12 +1347,20 @@ export default function ExamApp() {
               hint={deckHint}
               quickStart={{
                 label: phase === 'loading' ? t.setup.picking : t.setup.quickStart,
-                summary: t.setup.quickSummary(
-                  dbName(db),
-                  mode === 'mock' ? t.setup.mockShort : t.setup.practice,
-                  count,
-                ),
-                disabled: phase === 'loading' || !index || totalPool === 0,
+                // 前牌是窗口外的密卷：摘要那行换成原因，按钮置灰
+                summary:
+                  frontZone === 'sealed' && sealedClosedReason
+                    ? sealedClosedReason
+                    : t.setup.quickSummary(
+                        dbName(db),
+                        mode === 'mock' ? t.setup.mockShort : t.setup.practice,
+                        count,
+                      ),
+                disabled:
+                  phase === 'loading' ||
+                  !index ||
+                  totalPool === 0 ||
+                  (frontZone === 'sealed' && !!sealedClosedReason),
                 // 点下去到题目载入完成：按钮挂转圈与 aria-busy（置灰已由上一行管）
                 busy: phase === 'loading',
                 // 同一条 start 路径。不能包 setTimeout：
@@ -1308,6 +1438,15 @@ export default function ExamApp() {
               />
               {error && <div className={styles.errMsg}>{error}</div>}
             </>
+          ) : frontZone === 'sealed' && !sealedUnlocked ? (
+            /* 05 密卷锁着时，展开动作给的是密码面板（同 9.0 锁定态展开成介绍页）。
+               窗口外正常进不来；页面挂着跨过关门那一刻，面板就地换成「本期开放已结束」 */
+            <SealedGate
+              phase={sealedPhaseNow}
+              tries={sealedTries}
+              onTries={setSealedTries}
+              onUnlock={unlockSealed}
+            />
           ) : frontZone === 'grill' ? (
             /* 复烤区：诊断绑定集 + 全站错题榜 + 知识点复盘，三块都走既有的练习通道 */
             <GrillPanel
