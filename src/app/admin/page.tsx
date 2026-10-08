@@ -21,6 +21,14 @@ import {
   type DiagState,
   type Records,
 } from '@/lib/records';
+import {
+  SEALED_WINDOW,
+  clearSealedUnlock,
+  loadSealedStamp,
+  sealedAccess,
+  sealedPhase,
+  sealedStamp,
+} from '@/lib/sealed';
 import { ADMIN_SESSION_KEY as ADMIN_KEY } from '@/lib/storage';
 import styles from './admin.module.css';
 
@@ -122,6 +130,27 @@ function AdminPanel() {
   };
 
   const stats = overview(records);
+
+  // ---- 05 密卷的解锁印记（单独一个键，不在做题记录里）----
+  // 回读放 effect：静态导出首帧没有 localStorage，也没有「现在」
+  const [sealedNote, setSealedNote] = useState('');
+  const [sealedMsg, setSealedMsg] = useState('');
+  const describeSealed = () => {
+    const stored = loadSealedStamp();
+    const now = Date.now();
+    const phase = { before: '未开放', open: '开放中', ended: '已结束' }[sealedPhase(now)];
+    const unlock = sealedAccess(stored, now)
+      ? '已解锁'
+      : stored === sealedStamp()
+        ? '存着本期印记，但不在窗口内'
+        : stored
+          ? '存着旧印记（改期或换过密码，已失效）'
+          : '未解锁';
+    return `窗口 ${SEALED_WINDOW.from} – ${SEALED_WINDOW.until}（${phase}）· 本机：${unlock}`;
+  };
+  useEffect(() => {
+    setSealedNote(describeSealed());
+  }, []);
 
   // ---- qid 检查器 ----
   const [qidInput, setQidInput] = useState('');
@@ -228,6 +257,26 @@ function AdminPanel() {
           </button>
         </div>
         {message && <p className={styles.ok}>{message}</p>}
+      </section>
+
+      <section className={styles.section}>
+        <h2 className={styles.head}>05 密卷</h2>
+        <p className={styles.mono}>{sealedNote}</p>
+        <div className={styles.row}>
+          <button
+            type="button"
+            className={styles.btn}
+            onClick={() => {
+              // 只清本机的解锁印记：下次进密卷要重新输密码。做题记录一个字不碰
+              clearSealedUnlock();
+              setSealedNote(describeSealed());
+              setSealedMsg('已清除密卷解锁（本机）。改完刷新主站页面生效');
+            }}
+          >
+            密卷：清除解锁
+          </button>
+        </div>
+        {sealedMsg && <p className={styles.ok}>{sealedMsg}</p>}
       </section>
 
       <section className={styles.section}>

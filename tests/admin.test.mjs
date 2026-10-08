@@ -60,6 +60,22 @@ test('the two diagnostic switches act on the 7.5+ record and leave the GMAT one 
   assert.match(page, /describeDiag\(records\.diag\)/);
 });
 
+test('the admin page can clear the sealed-papers unlock on this machine, and only that', () => {
+  const page = fs.readFileSync(pagePath, 'utf8');
+  // 与其它调试按钮同款（styles.btn），点下去走 lib/sealed 的 clearSealedUnlock——只删解锁印记那一个键
+  const at = page.indexOf('密卷：清除解锁');
+  assert.ok(at >= 0, '缺「密卷：清除解锁」按钮');
+  const button = page.slice(page.lastIndexOf('<button', at), at);
+  assert.match(button, /className=\{styles\.btn\}/);
+  assert.match(button, /clearSealedUnlock\(\);/);
+  // 不碰做题记录：这个按钮的点击里没有 apply / saveRecords
+  assert.doesNotMatch(button, /apply\(|saveRecords\(/);
+  assert.match(page, /import \{[^}]*\bclearSealedUnlock\b[^}]*\} from '@\/lib\/sealed';/);
+  // 窗口与本机状态摆出来，方便调试改期
+  assert.match(page, /SEALED_WINDOW\.from/);
+  assert.match(page, /SEALED_WINDOW\.until/);
+});
+
 test('the main site never links to the admin page', () => {
   // 入口只靠手输 URL。主站任何可见组件都不该出现 admin 字样
   for (const file of [
