@@ -243,3 +243,56 @@ test('the stamp is stored under its registered key, and a broken storage never t
   assert.doesNotThrow(() => saveSealedUnlock());
   assert.doesNotThrow(() => clearSealedUnlock());
 });
+
+// ---- 题池（lib/records.ts）----
+
+const { indexForLibraryMode, reachableIndex, validCompletedCount, createEmptyRecords } = await import(
+  '../src/lib/records.ts'
+);
+const { readExamIndex } = await import('./helpers/exam-data.mjs');
+
+/** 一份小索引：经典、9.0 扩展、密卷（也是 hidden）、诊断、reserved 各一两道 */
+const SCOPE = [
+  { qid: 1, db: 'TMUA' },
+  { qid: 2, db: 'MAT' },
+  { qid: 3, db: 'TMUA_MOCK', hidden: true },
+  { qid: 4, db: 'MAT', hidden: true },
+  { qid: 5, db: 'TMUA', hidden: true, sealed: true },
+  { qid: 6, db: 'MAT', hidden: true, sealed: true },
+  { qid: 7, db: 'DIAG75', diag: true },
+  { qid: 8, db: 'TMUA', reserved: true },
+];
+const qidsOf = (entries) => entries.map((entry) => entry.qid);
+
+test('the sealed pool is the sealed slice of 9.0: it overlaps 9.0, never the classic pool', () => {
+  assert.deepEqual(qidsOf(indexForLibraryMode(SCOPE, 'sealed')), [5, 6]);
+  assert.deepEqual(qidsOf(indexForLibraryMode(SCOPE, 'hidden')), [3, 4, 5, 6], '9.0 池照旧含密卷');
+  assert.deepEqual(qidsOf(indexForLibraryMode(SCOPE, 'classic')), [1, 2]);
+  // diag / reserved 哪怕被误打了 sealed 也不进
+  const tainted = [...SCOPE, { qid: 9, db: 'TMUA', diag: true, sealed: true }, { qid: 10, db: 'MAT', reserved: true, sealed: true }];
+  assert.deepEqual(qidsOf(indexForLibraryMode(tainted, 'sealed')), [5, 6]);
+});
+
+test('review scope takes in the sealed slice only while it is unlocked and open', () => {
+  // 没解锁 9.0、密卷也没开：只有经典卷
+  assert.deepEqual(qidsOf(reachableIndex(SCOPE, false)), [1, 2]);
+  assert.deepEqual(qidsOf(reachableIndex(SCOPE, false, false)), [1, 2]);
+  // 密卷开着且已解锁：多出密卷那一片，其余扩展卷照样摸不到
+  assert.deepEqual(qidsOf(reachableIndex(SCOPE, false, true)), [1, 2, 5, 6]);
+  // 9.0 已解锁：密卷本来就在里面，开不开都一样
+  assert.deepEqual(qidsOf(reachableIndex(SCOPE, true, false)), [1, 2, 3, 4, 5, 6]);
+  assert.deepEqual(qidsOf(reachableIndex(SCOPE, true, true)), [1, 2, 3, 4, 5, 6]);
+
+  // 365 计数照旧数全量非诊断题：密卷开不开、做过的密卷题都算
+  const records = createEmptyRecords();
+  for (const qid of [1, 5, 6, 7, 8]) records.q[String(qid)] = { a: 1, w: 0, t: 1, c: 1 };
+  assert.equal(validCompletedCount(SCOPE, records), 4, '诊断题不算，其余（含密卷、reserved）都算');
+});
+
+test('the shipped sealed pool holds 124 questions: TMUA 80 and MAT 44', () => {
+  const pool = indexForLibraryMode(readExamIndex(), 'sealed');
+  assert.equal(pool.length, 124);
+  assert.equal(pool.filter((entry) => entry.db === 'TMUA').length, 80);
+  assert.equal(pool.filter((entry) => entry.db === 'MAT').length, 44);
+  assert.deepEqual([...new Set(pool.map((entry) => entry.db))].sort(), ['MAT', 'TMUA'], '题库按钮只有 TMUA / MAT / 混合');
+});

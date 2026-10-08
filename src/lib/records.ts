@@ -289,7 +289,8 @@ export interface PickOptions {
 }
 
 export type PickMode = 'random' | 'wrong-and-new' | 'new-only';
-export type LibraryMode = 'classic' | 'hidden';
+/** 抽题池的题库范围：经典 / 9.0 扩展 / 05 密卷（见 indexForLibraryMode） */
+export type LibraryMode = 'classic' | 'hidden' | 'sealed';
 
 export function validCompletedCount(index: IndexEntry[], records: Records): number {
   // 365 题解锁进度不认 diag（诊断集）：它们另有自己的解锁路径（通过诊断），
@@ -331,12 +332,18 @@ export function hiddenUnlockProgress(index: IndexEntry[], records: Records): num
  * reserved（7.5+ 卷一里原本在经典区的两道）同样两个区都不进：还没考诊断的人
  * 不该在经典区先把它们练一遍、看过答案再进考场。抽题范围三档、逻辑推理开关、
  * 卡面题数都建在这一层之上，所以一并生效
+ *
+ * 'sealed'（05 密卷，2026-10-08）只给打了 sealed 的题：TMUA / MAT 的 2024、2025 卷。
+ * 它是从 9.0 池里按年份切出来的一片——这批题照旧 hidden，9.0 里照常有（用户方案），
+ * 所以密卷与 9.0 **重叠**、与经典池仍互斥。diag / reserved 照样不进。
+ * 能不能用这一档（窗口内 + 输对密码）由调用方判，这里只管划池子
  */
 export function indexForLibraryMode(index: IndexEntry[], mode: LibraryMode): IndexEntry[] {
-  return index.filter(
-    (entry) =>
-      !entry.diag && !entry.reserved && (mode === 'hidden' ? !!entry.hidden : !entry.hidden),
-  );
+  return index.filter((entry) => {
+    if (entry.diag || entry.reserved) return false;
+    if (mode === 'sealed') return !!entry.sealed;
+    return mode === 'hidden' ? !!entry.hidden : !entry.hidden;
+  });
 }
 
 /**
@@ -353,9 +360,20 @@ export function indexForLibraryMode(index: IndexEntry[], mode: LibraryMode): Ind
  * reserved 也不算「够得着」：「练这类题」从这里取池子，不能成为练到考题的后门；
  * 卷面进度墙与完卷横幅也从这里取分母——那两套卷（TMUA 2018 P1、MAT 2023）
  * 于是按剩下的题算，不用那道再也抽不到的题也能做满，墙与横幅口径一致
+ *
+ * sealedAccess（05 密卷已解锁且此刻在开放窗口内）时并入密卷池：在密卷里做错的题要能在复烤区
+ * 「练这类题」里出现、进度页的卷面墙要能看到那几套卷。窗口一过就不再并入——记录照旧留着，
+ * 只是不再「够得着」；没解锁 9.0 的人也只多出密卷那一片，其余扩展卷照样摸不到
  */
-export function reachableIndex(index: IndexEntry[], unlocked: boolean): IndexEntry[] {
-  return index.filter((entry) => !entry.diag && !entry.reserved && (unlocked || !entry.hidden));
+export function reachableIndex(
+  index: IndexEntry[],
+  unlocked: boolean,
+  sealedAccess = false,
+): IndexEntry[] {
+  return index.filter(
+    (entry) =>
+      !entry.diag && !entry.reserved && (unlocked || !entry.hidden || (sealedAccess && !!entry.sealed)),
+  );
 }
 
 // ---- 逻辑推理题开关 ----
