@@ -1747,3 +1747,54 @@
   font-size: 0.74rem;
   color: var(--text-muted);
 }
+
+/* ============ 成绩页的 TMUA 估分（Design §24） ============ */
+
+/* 全 TMUA 族、20 / 40 题、不是「重练这些」的场次才有这一块。在成绩卡里单占一整行，
+   垫一层 --surface-alt 和细边：它是分数的换算读法，不是第二个主角——全卡最大的字仍是分数。
+   静态、无动效：成绩页属于答题流程，保持安静（光效只在大厅）。
+   对比度（WCAG 2，压在 --surface-alt 上）：--text-muted 浅色 4.59 / 深色 5.38 / 护眼 4.97，
+   --text 都在 10 以上；--accent 在浅色这层底上只有 4.17，所以字一律不用它 */
+.tmuaGrade {
+  flex: 1 1 100%;
+  box-sizing: border-box;
+  min-width: 0;
+  padding: 0.7rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-alt);
+  color: var(--text-muted);
+  font-family: var(--font-ui);
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+/* 估分本身：与大比分同一套内容字体，加粗、数字等宽；区间不在连接号处断行 */
+.tmuaGradeValue {
+  margin-left: 0.1rem;
+  color: var(--text);
+  font-family: var(--font-content);
+  font-size: 1.45rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* 口径小字：哪年的表、20 题 ×2 折算、本场折合几分、仅供参考 */
+.tmuaGradeNote {
+  margin-top: 0.1rem;
+  font-size: 0.76rem;
+}
+
+/* 宽屏：DOM 里估分在按钮组之前（读屏与窄屏先读到它），视觉上挪到「分数 · 说明 · 按钮」那一行之下，
+   「查看进度」仍压在最后。只动 order 不动 DOM：估分不可聚焦，Tab 顺序不受影响；
+   没有估分的场次 order 也无可挪，版面与原来一样 */
+@media (min-width: 641px) {
+  .tmuaGrade {
+    order: 1;
+  }
+
+  .progressLink {
+    order: 2;
+  }
+}

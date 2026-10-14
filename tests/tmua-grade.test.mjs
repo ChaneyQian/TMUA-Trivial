@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import test from 'node:test';
 
 // 成绩页的「TMUA 估分」（lib/tmuaGrade.ts，Design §24）。
@@ -8,6 +9,7 @@ import test from 'node:test';
 //   2. 估分口径：20 题 ×2 折算、40 题直接查、其它题数不估
 //   3. 成绩页的显示条件：全 TMUA 族、题数 20 / 40、不是「重练这些」场次——判断收在纯函数里，
 //      ExamApp 只是把本场的题、对题数和来源标记交给它
+// 另有一条样式守卫：估分那一块三套主题下文字对比度都过 AA，且不带动效（成绩页属答题流程，保持安静）
 
 import {
   TMUA_GRADE_TABLES,
@@ -17,7 +19,13 @@ import {
   isTmuaFamily,
   resultTmuaEstimate,
 } from '../src/lib/tmuaGrade.ts';
+import { cascade } from './helpers/css-rules.mjs';
 import { readExamJson } from './helpers/exam-data.mjs';
+import { calls, code, jsxByClass, jsxChildren, namedImports } from './helpers/source.mjs';
+
+const EXAM_PATH = 'src/components/exam/ExamApp.tsx';
+const EXAM_CSS = 'src/components/exam/Exam.module.css';
+const GLOBALS = 'src/app/globals.css';
 
 /**
  * 用户给的 2025 年换算表，原样抄进来（「原始分 成绩」，档与档之间用 | 隔开）。
@@ -193,4 +201,93 @@ test('the result page estimate: whole TMUA family, 20 or 40 questions, never a "
   assert.equal(resultTmuaEstimate({ questions: [...session(19), { database: 'MAT' }], right: 17, origin: null }), null);
   assert.equal(resultTmuaEstimate({ questions: session(19), right: 17, origin: null }), null);
   assert.equal(resultTmuaEstimate({ questions: session(10), right: 10, origin: null }), null);
+});
+
+test('ExamApp asks resultTmuaEstimate, hands it the session origin, and shows it inside the score card', () => {
+  const source = fs.readFileSync(EXAM_PATH, 'utf8');
+  const exam = code(source);
+
+  const imported = namedImports(source, '@/lib/tmuaGrade');
+  for (const name of ['resultTmuaEstimate', 'formatTmuaGrade']) {
+    assert.ok(imported.has(name), `ExamApp 没有从 lib/tmuaGrade 引入 ${name}`);
+  }
+
+  // 显示条件只走纯函数这一处，不在组件里另起一套判断
+  const asks = calls(exam, 'resultTmuaEstimate');
+  assert.equal(asks.length, 1, '成绩页应当恰好问一次 resultTmuaEstimate');
+  const args = asks[0].args;
+  assert.match(args, /\bquestions\b/, '没把本场的题交给 resultTmuaEstimate');
+  assert.match(args, /\bright\b/, '没把本场的对题数交给 resultTmuaEstimate');
+  // 「重练这些」的排除靠来源标记：交出去的必须就是本场那一个
+  assert.match(args, /\borigin: sessionOriginRef\.current\b/, '没把本场的来源标记交给 resultTmuaEstimate');
+  // 组件里不另写库名判断（那是 isTmuaFamily 的事）
+  assert.doesNotMatch(exam, /isTmuaFamily\(/);
+  assert.doesNotMatch(exam, /database === 'TMUA/);
+
+  // 估分那一行在成绩卡里，开关就是 resultTmuaEstimate 的结果本身，显示的也是它
+  const assigned = exam.match(/const (\w+) = resultTmuaEstimate\(/);
+  assert.ok(assigned, 'resultTmuaEstimate 的结果没有存成变量');
+  const estimate = assigned[1];
+  const [card] = jsxByClass(source, 'scoreCard');
+  assert.ok(card, '成绩卡不见了');
+  const inside = code(jsxChildren(source, card));
+  assert.match(
+    inside,
+    new RegExp(`\\{${estimate} && \\(<div className=\\{styles\\.tmuaGrade\\}>`),
+    '估分那一块不在成绩卡里，或者不是只由 resultTmuaEstimate 的结果开关',
+  );
+  assert.match(inside, new RegExp(`formatTmuaGrade\\(${estimate}\\)`), '显示的不是这一场的估分');
+
+  // 7.5+ Diagnostic 是另一条流程：它的成绩页不接估分
+  const diagResult = fs.readFileSync('src/components/diagnostic/DiagnosticResult.tsx', 'utf8');
+  assert.doesNotMatch(diagResult, /tmuaGrade/);
+});
+
+test('the estimate reads at AA in light, dark and sepia, and never moves', () => {
+  const css = fs.readFileSync(EXAM_CSS, 'utf8');
+  // 先剥掉顶上的 @import 语句：parseRules 不认无块的 @ 语句，会把它和紧跟的 :root 粘成一个 @ 块，
+  // 浅色那套 token 就整个读不出来
+  const globals = fs.readFileSync(GLOBALS, 'utf8').replace(/@import[^;]*;/g, '');
+  const base = cascade(globals, ':root');
+  assert.ok(base['--surface-alt'] && base['--text-muted'], '浅色主题的 token 没读出来');
+  const tokens = (theme) => (theme === 'light' ? base : { ...base, ...cascade(globals, `:root[data-theme="${theme}"]`) });
+  /** 只认 #rrggbb 与 var()：估分这几条规则只用主题 token */
+  const rgb = (value, env) => {
+    const v = String(value).trim().replace(/^var\((--[\w-]+)\)$/, (_, name) => env[name] ?? name);
+    const m = v.match(/^#([0-9a-f]{6})$/i);
+    assert.ok(m, `认不出的颜色：${value} → ${v}`);
+    return [0, 2, 4].map((i) => parseInt(m[1].slice(i, i + 2), 16));
+  };
+  const luminance = (c) => {
+    const [r, g, b] = c.map((v) => (v / 255 <= 0.04045 ? v / 255 / 12.92 : ((v / 255 + 0.055) / 1.055) ** 2.4));
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  };
+  const contrast = (a, b) => {
+    const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x);
+    return (hi + 0.05) / (lo + 0.05);
+  };
+
+  const box = cascade(css, '.tmuaGrade');
+  const value = cascade(css, '.tmuaGradeValue');
+  const note = cascade(css, '.tmuaGradeNote');
+  assert.ok(box.background ?? box['background-color'], '估分那一块该有自己的底色');
+  for (const theme of ['light', 'dark', 'sepia']) {
+    const env = tokens(theme);
+    const bg = rgb(box.background ?? box['background-color'], env);
+    // 没写 color 的继承容器的
+    for (const [name, color] of [
+      ['.tmuaGrade', box.color],
+      ['.tmuaGradeValue', value.color ?? box.color],
+      ['.tmuaGradeNote', note.color ?? box.color],
+    ]) {
+      const ratio = contrast(rgb(color, env), bg);
+      assert.ok(ratio >= 4.5, `${theme} 主题下 ${name} 只有 ${ratio.toFixed(2)} : 1`);
+    }
+  }
+
+  for (const rule of [box, value, note]) {
+    for (const prop of ['animation', 'animation-name', 'transition', 'transition-property']) {
+      assert.equal(rule[prop], undefined, `估分的样式里出现了 ${prop}`);
+    }
+  }
 });

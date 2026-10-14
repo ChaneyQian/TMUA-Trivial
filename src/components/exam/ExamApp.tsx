@@ -92,6 +92,7 @@ import {
   type SealedPhase,
   type SealedTries,
 } from '@/lib/sealed';
+import { formatTmuaGrade, resultTmuaEstimate } from '@/lib/tmuaGrade';
 import { useFx } from '@/lib/useFx';
 import { useTheme } from '@/lib/useTheme';
 import styles from './Exam.module.css';
@@ -1539,6 +1540,9 @@ export default function ExamApp() {
   if (phase === 'result') {
     const right = questions.filter((qq, i) => sameLabel(answers[i], qq.answer)).length;
     const answered = answers.filter(Boolean).length;
+    // TMUA 估分（Design §24）。显示条件全在 resultTmuaEstimate 里：逐题看库名、全是 TMUA / TMUA Mock，
+    // 题数 20（×2 折算）或 40（直查），且不是复烤区「重练这些」进来的场次；不满足就是 null，整行不渲染
+    const tmuaEstimate = resultTmuaEstimate({ questions, right, origin: sessionOriginRef.current });
     return (
       <div className={styles.wrap}>
         <div className={styles.resultWrap}>
@@ -1590,6 +1594,21 @@ export default function ExamApp() {
                 </>
               )}
             </div>
+            {/* 放在按钮组之前：读屏与窄屏的顺序是「成绩 → 估分 → 操作」；
+                宽屏用 order 挪到按钮那一行之下，首行仍是分数、说明、三颗按钮（见 Exam.module.css） */}
+            {tmuaEstimate && (
+              <div className={styles.tmuaGrade}>
+                <div>
+                  TMUA 估分{' '}
+                  <span className={styles.tmuaGradeValue}>{formatTmuaGrade(tmuaEstimate)}</span>
+                </div>
+                <div className={styles.tmuaGradeNote}>
+                  {tmuaEstimate.scaled
+                    ? `按 ${tmuaEstimate.year} 年换算表；20 题得分 ×2 折算为 40 分制（本场 ${tmuaEstimate.raw}/40），仅供参考`
+                    : `按 ${tmuaEstimate.year} 年换算表（本场 ${tmuaEstimate.raw}/40），仅供参考`}
+                </div>
+              </div>
+            )}
             <div className={styles.scoreBtns}>
               <button
                 className={styles.btnGhost}
