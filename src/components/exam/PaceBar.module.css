@@ -1,0 +1,84 @@
+/* 限时节奏条（PaceBar，Design §27）。压在 CBT 顶栏的固定蓝 #3c5c9e 上（顶栏不随主题换色），
+   所以这里的颜色也是固定值，不用主题 token——当初 Diagnostic 副栏的提示就是拿主题 token 压在
+   固定蓝上才看不见的（见 tests/diagnostic-contrast.test.mjs）。
+   对比度（WCAG 2，tests/pace.test.mjs 逐主题现算）：
+     文字 #e3eaf8 / 警示 #ffd54d 对顶栏 5.41 / 4.62 : 1；
+     填充 #fff / 警示 #ffd54d 对槽 10.79 / 7.65、对顶栏 6.53 / 4.62 : 1；刻度 #c9d6f2 对顶栏 4.47、对槽 7.39 : 1。
+   槽 #253c6d 只是容器（比顶栏深一档的凹槽），信息在填充的长度上。
+   不闪、不脉冲、无循环动画；答题页不加光晕。唯一的动效是填充每秒往前挪的那 1s linear 补间，
+   减动效与光效关（<html data-fx="off">）时取消，每秒直接跳一格。 */
+
+.pace {
+  --pace-text: #e3eaf8;
+  --pace-fill: #ffffff;
+  --pace-track: #253c6d;
+  --pace-mark: #c9d6f2;
+
+  /* 顶栏右栏是 text-align: right + nowrap（.cbtHeaderRight），这里照继承：字靠右、不折行 */
+  margin: 0.15rem 0 0.05rem;
+}
+
+/* 最后 5 分钟：填充与那句话换成倒计时 timeWarn 的同一个黄，只换色，不闪 */
+.warn {
+  --pace-text: #ffd54d;
+  --pace-fill: #ffd54d;
+}
+
+/* 槽本身不裁切：刻度要从条的上下各探出 3px（见 .mark） */
+.track {
+  position: relative;
+  height: 4px;
+  margin: 3px 0;
+}
+
+.rail {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: 2px;
+  background: var(--pace-track);
+}
+
+/* 填充铺满整条、从左端按比例 scaleX，不动 width：每秒只改一次合成层的 transform */
+.fill {
+  position: absolute;
+  inset: 0;
+  background: var(--pace-fill);
+  transform-origin: left center;
+  transition: transform 1s linear;
+}
+
+/* 节奏位置：已作答 / 题数 处的一道细刻度，比条高出上下各 3px（子弹图的目标线）。
+   刻度落在已用的白填充里时，条内那一段和填充同色，探出来的两头仍然看得见。
+   left 按 (100% − 刻度宽) 折算：0 贴左端、1 贴右端，不探出槽外 */
+.mark {
+  position: absolute;
+  top: -3px;
+  bottom: -3px;
+  left: calc(var(--pace-at, 0) * (100% - 2px));
+  width: 2px;
+  border-radius: 1px;
+  background: var(--pace-mark);
+}
+
+.text {
+  font-size: 0.75rem;
+  line-height: 1.3;
+  color: var(--pace-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.warn .text {
+  font-weight: 600;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fill {
+    transition: none;
+  }
+}
+
+/* 光效关：同样每秒直接跳一格。:root[data-fx] 前缀让它在层叠上压过基础规则 */
+:global(:root[data-fx='off']) .fill {
+  transition: none;
+}

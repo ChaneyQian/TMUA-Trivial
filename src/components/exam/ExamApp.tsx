@@ -39,6 +39,8 @@ import {
   type DiagnosticPapers,
 } from '@/lib/diagnostic';
 import MathText from '@/components/MathText';
+import PaceBar from '@/components/exam/PaceBar';
+import { PACE_WARN_SECONDS } from '@/lib/pace';
 // 存储键一律从 lib/storage.ts 取，组件里不再散落字面量（见那份登记表）
 import { UNLOCK_SEEN_KEY, ZONE_KEY } from '@/lib/storage';
 import { isTheme, setTheme } from '@/lib/theme';
@@ -1715,9 +1717,13 @@ export default function ExamApp() {
         <div className={styles.cbtTitle}>{DB_TITLES[db]}</div>
         <div className={styles.cbtHeaderRight}>
           {mode === 'mock' ? (
-            <div className={secondsLeft <= 300 ? styles.timeWarn : undefined}>
-              🕐 Time Remaining {fmtClock(secondsLeft)}
-            </div>
+            <>
+              <div className={secondsLeft <= PACE_WARN_SECONDS ? styles.timeWarn : undefined}>
+                🕐 Time Remaining {fmtClock(secondsLeft)}
+              </div>
+              {/* 限时节奏条（Design §27）：只在 Mock；总时长与开考定截止时刻用的是同一个 minutes */}
+              <PaceBar totalSec={minutes * 60} secondsLeft={secondsLeft} answers={answers} />
+            </>
           ) : (
             <div>🕐 Elapsed {fmtClock(elapsed)}</div>
           )}
