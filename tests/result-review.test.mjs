@@ -655,3 +655,299 @@ test('the estimate sits beside its ruler; sighted readers see 8.1–8.3, screen 
   const diag = fs.readFileSync('src/components/diagnostic/DiagnosticResult.tsx', 'utf8');
   assert.doesNotMatch(diag, /TmuaRuler|ScoreCount|components\/result/);
 });
+
+// ---------------------------------------------------------------------------
+// 4. 题号结果条 + 只看错题
+
+const REVIEW = 'src/components/result/ReviewSection.tsx';
+const resultReview = await import('../src/lib/resultReview.ts');
+
+/**
+ * 把一个组件模块整份去类型、转成 CommonJS 跑起来：react 的钩子换成可控的替身，
+ * jsx 运行时只留下 { type, props }，CSS Module 的类名就是键名本身，lib 用真的
+ */
+function loadComponent(file, { state = {} } = {}) {
+  const js = ts.transpileModule(fs.readFileSync(file, 'utf8'), {
+    fileName: file,
+    compilerOptions: {
+      target: ts.ScriptTarget.ES2022,
+      module: ts.ModuleKind.CommonJS,
+      jsx: ts.JsxEmit.ReactJSX,
+      esModuleInterop: true,
+    },
+  }).outputText;
+  const jsx = (type, props) => ({ type, props: props ?? {} });
+  const hooks = {
+    useState: (initial) => ['value' in state ? state.value : typeof initial === 'function' ? initial() : initial, (v) => (state.set = v)],
+    useId: () => ':r1:',
+  };
+  const modules = {
+    react: hooks,
+    'react/jsx-runtime': { jsx, jsxs: jsx, Fragment: 'Fragment' },
+    '@/lib/resultReview': resultReview,
+    './Result.module.css': { __esModule: true, default: STYLES },
+  };
+  const module = { exports: {} };
+  new Function('require', 'module', 'exports', js)(
+    (name) => {
+      assert.ok(name in modules, `${file} 引了测试没准备的模块 ${name}`);
+      return modules[name];
+    },
+    module,
+    module.exports,
+  );
+  return module.exports.default;
+}
+
+/** 渲染树（jsx 运行时版：子节点在 props.children）里按条件找元素 */
+function walk(node, pick, out = []) {
+  if (Array.isArray(node)) {
+    for (const n of node) walk(n, pick, out);
+    return out;
+  }
+  if (!node || typeof node !== 'object') return out;
+  if (pick(node)) out.push(node);
+  walk(node.props?.children, pick, out);
+  return out;
+}
+const byClass = (tree, cls) => walk(tree, (n) => String(n.props?.className ?? '').split(/\s+/).includes(cls));
+const textOf = (node) =>
+  Array.isArray(node) ? node.map(textOf).join('') : node && typeof node === 'object' ? textOf(node.props?.children) : node == null || node === false ? '' : String(node);
+
+/** 渲染一次 ReviewSection：wrongOnly 是它那颗开关此刻的状态；children 收到的 shown 记下来 */
+function renderReview(cells, wrongOnly = false) {
+  const state = { value: wrongOnly };
+  const Review = loadComponent(REVIEW, { state });
+  let shown = null;
+  const tree = Review({
+    cells,
+    children: (fn) => {
+      shown = fn;
+      return 'CARDS';
+    },
+  });
+  return { tree, shown, state };
+}
+
+const SESSION = reviewCells(
+  [{ answer: 'a' }, { answer: 'b' }, { answer: 'c' }, { answer: 'd' }, { answer: 'e' }],
+  ['a', 'c', null, 'D', null],
+  [false, true, false, true, false],
+);
+
+test('the strip has one button per question that says its state in words, with marks and a flag shape', () => {
+  const { tree } = renderReview(SESSION);
+  const cells = byClass(tree, 'cell');
+  assert.equal(cells.length, 5);
+  for (const [i, button] of cells.entries()) {
+    const cell = SESSION[i];
+    assert.equal(button.type, 'button');
+    assert.equal(button.props.type, 'button');
+    assert.equal(button.props['aria-label'], reviewCellLabel(cell));
+    // 符号随结局走（不只靠颜色）、题号照写
+    assert.equal(textOf(byClass(button, 'cellMark')), VERDICT_MARK[cell.verdict]);
+    assert.equal(textOf(byClass(button, 'cellNum')), String(i + 1));
+    // 旗标：只有本场标记过的才有那枚角标
+    assert.equal(byClass(button, 'cellFlag').length, cell.flagged ? 1 : 0, `第 ${i + 1} 题的旗标`);
+    // 结局类：答错 / 未答各有自己的类，答对只是底类
+    const cls = button.props.className.split(' ');
+    assert.equal(cls.includes('cellWrong'), cell.verdict === 'wrong');
+    assert.equal(cls.includes('cellBlank'), cell.verdict === 'blank');
+    assert.equal(button.props.disabled, false, '没开筛选时每一格都点得动');
+  }
+  // 标题与区块关联、题数汇总
+  const [section] = walk(tree, (n) => n.type === 'section');
+  const [title] = walk(tree, (n) => n.type === 'h2');
+  assert.equal(section.props['aria-labelledby'], title.props.id);
+  assert.equal(textOf(title), '逐题回顾');
+  assert.match(textOf(byClass(tree, 'navTally')), /答对 2 · ✗ 答错 1 · – 未答 2 · 标记 2/);
+  // 有序列表：读屏报「共 5 项」
+  assert.equal(walk(tree, (n) => n.type === 'ol').length, 1);
+
+  // 100 题也一格不少
+  const many = reviewCells(Array.from({ length: 100 }, () => ({ answer: 'a' })), [], []);
+  assert.equal(byClass(renderReview(many).tree, 'cell').length, 100);
+});
+
+test('the "wrong only" switch is a real toggle button, labelled for unanswered too, and disabled with "全部答对" when nothing is wrong', () => {
+  const off = renderReview(SESSION, false);
+  const [filter] = byClass(off.tree, 'filter');
+  assert.equal(filter.type, 'button');
+  assert.equal(filter.props['aria-pressed'], false);
+  assert.equal(filter.props.disabled, false);
+  assert.match(textOf(filter), /只看错题（含未答）/);
+  // 点一下就翻转开关状态（函数式更新，连点不丢）
+  filter.props.onClick();
+  assert.equal(typeof off.state.set, 'function');
+  assert.equal(off.state.set(false), true);
+  assert.equal(off.state.set(true), false);
+
+  const on = renderReview(SESSION, true);
+  assert.equal(byClass(on.tree, 'filter')[0].props['aria-pressed'], true);
+
+  // 全对：禁用、写「全部答对」；就算状态里残留着「开」，也不算在筛
+  const perfect = reviewCells([{ answer: 'a' }, { answer: 'b' }], ['a', 'b'], []);
+  const done = renderReview(perfect, true);
+  const [locked] = byClass(done.tree, 'filter');
+  assert.equal(locked.props.disabled, true);
+  assert.equal(locked.props['aria-pressed'], false);
+  assert.match(textOf(locked), /全部答对/);
+  assert.doesNotMatch(textOf(locked), /只看错题/);
+  assert.deepEqual(perfect.map((_, i) => done.shown(i)), [true, true]);
+  assert.equal(byClass(done.tree, 'listFiltered').length, 0);
+});
+
+test('with "wrong only" on, right answers fade out of reach on the strip and their cards are hidden, wrong and blank stay', () => {
+  const off = renderReview(SESSION, false);
+  assert.deepEqual(SESSION.map((_, i) => off.shown(i)), [true, true, true, true, true]);
+  assert.equal(byClass(off.tree, 'list').length, 1);
+  assert.equal(byClass(off.tree, 'listFiltered').length, 0);
+
+  const on = renderReview(SESSION, true);
+  // 卡片：只剩答错与未答
+  assert.deepEqual(
+    SESSION.map((_, i) => on.shown(i)),
+    SESSION.map((c) => c.verdict !== 'right'),
+  );
+  // 题号条：答对的格子还在（看得见整卷分布），只是禁用
+  const cells = byClass(on.tree, 'cell');
+  assert.equal(cells.length, SESSION.length);
+  assert.deepEqual(
+    cells.map((c) => c.props.disabled),
+    SESSION.map((c) => c.verdict === 'right'),
+  );
+  // 列表至少一屏高，页面不会短到滚动位置被夹回去
+  assert.equal(byClass(on.tree, 'listFiltered').length, 1);
+  assert.equal(cascade(fs.readFileSync(RESULT_CSS, 'utf8'), '.listFiltered')['min-height'], '100vh');
+  assert.equal(textOf(byClass(on.tree, 'list')), 'CARDS', '卡片由调用方画，放在列表里');
+});
+
+test('clicking a cell scrolls to that card (instantly under reduced motion) and moves focus to its title', (t) => {
+  t.after(restoreGlobals);
+  for (const reduced of [false, true]) {
+    const dom = installFakeDom({ reduced });
+    const calls = [];
+    const target = {
+      focus: (opts) => calls.push(['focus', opts]),
+      scrollIntoView: (opts) => calls.push(['scroll', opts]),
+    };
+    dom.doc.getElementById = (id) => (id === reviewAnchorId(3) ? target : null);
+    const [, , , fourth] = byClass(renderReview(SESSION).tree, 'cell');
+    fourth.props.onClick();
+    assert.deepEqual(calls, [
+      // 先给焦点、不让 focus 自己瞬移；再按偏好平滑或瞬时滚过去
+      ['focus', { preventScroll: true }],
+      ['scroll', { behavior: reduced ? 'auto' : 'smooth', block: 'start' }],
+    ]);
+    // 找不到卡（不该发生）就什么也不做，不抛错
+    dom.doc.getElementById = () => null;
+    fourth.props.onClick();
+    restoreGlobals();
+  }
+});
+
+test('ExamApp hands the session to reviewCells and renders the cards inside ReviewSection, hidden rather than unmounted', () => {
+  const source = fs.readFileSync(EXAM_PATH, 'utf8');
+  const exam = code(source);
+  assert.match(exam, /import ReviewSection from '@\/components\/result\/ReviewSection';/);
+  const imported = namedImports(source, '@/lib/resultReview');
+  for (const name of ['reviewCells', 'reviewAnchorId', 'VERDICT_TEXT']) assert.ok(imported.has(name), `没有引入 ${name}`);
+
+  // 本场的题、作答、标记三张表原样交给纯函数，组件里不另判对错
+  const made = exam.match(/const (\w+) = reviewCells\(questions, answers, flagged\);/);
+  assert.ok(made, '题号条的数据不是 reviewCells(questions, answers, flagged)');
+  const cellsVar = made[1];
+  const section = jsxOpening(source, '<ReviewSection');
+  assert.ok(section, '成绩页里没有 ReviewSection');
+  assert.equal(attrValue(section.attrs.get('cells')), cellsVar);
+  // 结果条在成绩卡之后、成绩页之内
+  assert.ok(source.indexOf('<ReviewSection') > jsxByClass(source, 'scoreCard')[0].end);
+  assert.ok(source.indexOf('<ReviewSection') < source.indexOf('// ================= CBT 考试界面 ================='));
+
+  // 回顾卡在 ReviewSection 的 children 里：按它给的 shown 收起（hidden，不卸载）
+  const inside = jsxChildren(source, section);
+  const param = code(inside).match(/^\{\((\w+)\) =>/)?.[1];
+  assert.ok(param, 'ReviewSection 的 children 应当是 (shown) => 卡片');
+  const [card] = jsxByClass(inside, 'reviewCard');
+  assert.ok(card, '回顾卡不在 ReviewSection 里');
+  assert.equal(attrValue(card.attrs.get('hidden')), `!${param}(i)`);
+  // 卡片标题是跳转与焦点的落点：id 与题号条同一个来源、可被程序聚焦但不进 Tab 顺序
+  const title = jsxOpening(inside, 'id={reviewAnchorId(i)}');
+  assert.ok(title, '回顾卡标题没有 reviewAnchorId(i)');
+  assert.equal(title.name, 'h3');
+  assert.equal(attrValue(title.attrs.get('tabIndex')), '-1');
+  assert.match(attrValue(title.attrs.get('className')), /resultStyles\.cardTitle/);
+  // 标题的结局说明给读屏，与题号条同一个口径
+  assert.match(code(jsxChildren(inside, title)), new RegExp(`VERDICT_TEXT\\[${cellsVar}\\[i\\]\\.verdict\\]`));
+  // 只有一处画回顾卡
+  assert.equal(jsxByClass(source, 'reviewCard').length, 1);
+});
+
+test('the strip reads at AA in light, dark and sepia, and tells the states apart without colour', () => {
+  const css = fs.readFileSync(RESULT_CSS, 'utf8');
+  const nav = cascade(css, '.nav');
+  const cell = cascade(css, '.cell');
+  const wrong = cascade(css, '.cellWrong');
+  const blank = cascade(css, '.cellBlank');
+  const figures = [];
+  for (const theme of THEMES) {
+    const vars = theme === 'light' ? {} : cascade(css, `:global(:root[data-theme='${theme}']) .nav`);
+    const env = { ...themeTokens(theme), ...nav, ...vars };
+    assert.ok(env['--rv-ok'] && env['--rv-bad'] && env['--rv-flag'], `${theme} 的结局色没读出来`);
+    const navBg = rgb(nav.background, env);
+    const kinds = [
+      ['答对', cell, cascade(css, '.cellMark').color],
+      ['答错', { ...cell, ...wrong }, cascade(css, '.cellWrong .cellMark').color],
+      ['未答', { ...cell, ...blank }, cascade(css, '.cellBlank .cellMark').color],
+    ];
+    const check = (what, fg, bg, min) => {
+      const ratio = contrast(rgb(fg, env), bg);
+      figures.push(`${theme} ${what} ${ratio.toFixed(2)}`);
+      assert.ok(ratio >= min, `${theme} 主题下${what}只有 ${ratio.toFixed(2)} : 1（要 ${min}）`);
+    };
+    for (const [kind, rule, mark] of kinds) {
+      const bg = rgb(rule.background, env);
+      check(`${kind}格的题号`, rule.color ?? cell.color, bg, 4.5);
+      check(`${kind}格的符号`, mark, bg, 4.5);
+      // 边框是图形：对格子外面（区块底色）3:1
+      const borderColor = rule.border.split(/\s+/).slice(2).join(' ');
+      check(`${kind}格的边框`, borderColor, navBg, 3);
+      check(`${kind}格上的旗标`, cascade(css, '.cellFlag').background, bg, 3);
+    }
+    check('题数汇总', cascade(css, '.navTally').color, navBg, 4.5);
+    check('开关的字', cascade(css, '.filter').color, rgb(cascade(css, '.filter').background, env), 4.5);
+    check('开关的字（全对禁用）', cascade(css, '.filter:disabled').color, rgb(cascade(css, '.filter').background, env), 4.5);
+    check('拨杆（关）', cascade(css, '.knob').background, navBg, 3);
+    check('拨杆底（开）', cascade(css, ".filter[aria-pressed='true'] .switch").background, navBg, 3);
+    check(
+      '拨杆钮（开）',
+      cascade(css, ".filter[aria-pressed='true'] .knob").background,
+      rgb(cascade(css, ".filter[aria-pressed='true'] .switch").background, env),
+      3,
+    );
+  }
+
+  // 不只靠颜色：三种结局的边框（粗细 + 线型）两两不同；旗标是个形状
+  const shapes = [cell, { ...cell, ...wrong }, { ...cell, ...blank }].map((r) => r.border.split(/\s+/).slice(0, 2).join(' '));
+  assert.equal(new Set(shapes).size, 3, `边框分不开：${shapes.join(' / ')}`);
+  assert.match(cascade(css, '.cellFlag')['clip-path'], /polygon\(/);
+});
+
+test('the strip wraps instead of scrolling sideways, and the switch knob snaps under reduced motion', () => {
+  const css = fs.readFileSync(RESULT_CSS, 'utf8');
+  const cells = cascade(css, '.cells');
+  assert.equal(cells.display, 'grid');
+  const track = cells['grid-template-columns'].match(/^repeat\(auto-fill, minmax\(([\d.]+)rem, 1fr\)\)$/);
+  assert.ok(track, `题号格要自动换行铺满：${cells['grid-template-columns']}`);
+  // 320px 宽（卡片内约 270px）也至少排得下 5 列
+  assert.ok(Number(track[1]) * 16 * 5 + 4 * 0.4 * 16 <= 270, `格子最窄 ${track[1]}rem，320px 宽排不下 5 列`);
+  assert.equal(cascade(css, '.cell').width, '100%');
+
+  const rules = parseRules(stripComments(css));
+  const knob = rules.find((r) => !r.inReduced && r.selector === '.knob');
+  assert.match(knob.body, /transition: transform/);
+  assert.ok(
+    rules.some((r) => r.inReduced && /transition:\s*none/.test(r.body) && r.selector.split(',').some((sel) => overrides(r, sel, knob, '.knob'))),
+    '减动效下拨杆还在滑',
+  );
+});

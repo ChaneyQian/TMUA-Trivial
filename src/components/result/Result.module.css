@@ -149,3 +149,236 @@
 :global(:root[data-fx='off']) .rulerSweep {
   animation: none;
 }
+
+/* ============ 题号结果条 + 只看错题 ============ */
+
+/* 结局色只在这一块里用：三套主题各一组，全部现算过（tests/result-review.test.mjs）——
+   格里的题号是 --text、符号是结局色，都 ≥ 4.5:1；结局色当边框、旗标当角标，对格子底色 ≥ 3:1 */
+.nav {
+  --rv-ok: #1e6b2a;
+  --rv-ok-bg: #e6f4e8;
+  --rv-bad: #b42318;
+  --rv-bad-bg: #fdeceb;
+  --rv-flag: #b45309;
+
+  margin-top: 1rem;
+  padding: 1rem 1.5rem 1.1rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--text);
+  font-family: var(--font-ui);
+}
+
+:global(:root[data-theme='dark']) .nav {
+  --rv-ok: #7ad48a;
+  --rv-ok-bg: #1d3327;
+  --rv-bad: #ff8f86;
+  --rv-bad-bg: #3d2229;
+  --rv-flag: #f5b544;
+}
+
+:global(:root[data-theme='sepia']) .nav {
+  --rv-ok: #2f6a26;
+  --rv-ok-bg: #e3ebcd;
+  --rv-bad: #a2301c;
+  --rv-bad-bg: #f5ddcf;
+  --rv-flag: #9a4f00;
+}
+
+.navHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem 1rem;
+  margin-bottom: 0.85rem;
+}
+
+.navTitle {
+  font-size: 0.95rem;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.navTally {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+}
+
+/* 「只看错题（含未答）」：按钮本身是 aria-pressed 的开关，左边画一个小拨杆示意开 / 关。
+   开着：拨杆底是 --accent、钮在右；字始终是 --text 压 --surface，不靠强调色底上的白字（浅色只有 4.39） */
+.filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 2.25rem;
+  margin-left: auto;
+  padding: 0.3rem 0.8rem 0.3rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+
+/* 全对：开关禁用，字写「全部答对」；字照常可读（--text-muted），拨杆淡下去 */
+.filter:disabled {
+  color: var(--text-muted);
+  cursor: default;
+}
+
+.filter:disabled .switch {
+  opacity: 0.5;
+}
+
+.switch {
+  position: relative;
+  flex: none;
+  box-sizing: border-box;
+  width: 1.9rem;
+  height: 1.1rem;
+  border: 1.5px solid var(--text-muted);
+  border-radius: 999px;
+}
+
+.knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: calc(1.1rem - 7px);
+  height: calc(1.1rem - 7px);
+  border-radius: 50%;
+  background: var(--text-muted);
+  transition: transform 140ms ease;
+}
+
+.filter[aria-pressed='true'] .switch {
+  border-color: var(--accent);
+  background: var(--accent);
+}
+
+.filter[aria-pressed='true'] .knob {
+  background: var(--surface);
+  transform: translateX(0.8rem);
+}
+
+/* 题号格：自动换行铺满，最多 100 题也不横向溢出（格子最窄 2.5rem，320px 宽也排得下 6 列） */
+.cells {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(2.5rem, 1fr));
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cells > li {
+  margin: 0;
+}
+
+/* 三种结局不只靠颜色：符号 ✓ ✗ – 各不相同；边框也不同——答对细实线、答错粗实线、未答虚线 */
+.cell {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.15rem;
+  box-sizing: border-box;
+  width: 100%;
+  height: 2.5rem;
+  padding: 0 0.1rem;
+  border: 1px solid var(--rv-ok);
+  border-radius: 6px;
+  background: var(--rv-ok-bg);
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-size: 0.82rem;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+
+.cellWrong {
+  border: 2px solid var(--rv-bad);
+  background: var(--rv-bad-bg);
+}
+
+.cellBlank {
+  border: 1px dashed var(--text-muted);
+  background: var(--surface);
+}
+
+.cellMark {
+  color: var(--rv-ok);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.cellWrong .cellMark {
+  color: var(--rv-bad);
+}
+
+.cellBlank .cellMark {
+  color: var(--text-muted);
+}
+
+.cellNum {
+  font-weight: 600;
+}
+
+.cell:hover:not(:disabled) .cellNum {
+  text-decoration: underline;
+}
+
+/* 本场标记过：右上角一枚三角旗标（形状，不靠颜色） */
+.cellFlag {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 0.55rem;
+  height: 0.55rem;
+  background: var(--rv-flag);
+  clip-path: polygon(0 0, 100% 0, 100% 100%);
+}
+
+/* 「只看错题」开着：答对的格子留在条上（整卷对错的分布仍看得见），淡下去、点不了——它的卡已经收起来了 */
+.cell:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* 回顾卡的列表：本身不画东西，只是卡片的容器（窄屏横滚的规则也挂在它底下） */
+.list {
+  min-width: 0;
+}
+
+/* 筛选开着时至少一屏高：卡片收起后页面不会短到浏览器把滚动位置往回夹，开关不会从手指底下跑开 */
+.listFiltered {
+  min-height: 100vh;
+}
+
+/* 回顾卡标题（跳转与焦点的落点）：沿用 reviewHead 的字号，滚到位时上面留出卡片的边 */
+.cardTitle {
+  font-size: inherit;
+  line-height: inherit;
+  scroll-margin-top: 1.5rem;
+}
+
+@media (max-width: 640px) {
+  .nav {
+    padding: 0.9rem 1rem 1rem;
+  }
+
+  .filter {
+    margin-left: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* 拨杆瞬时切换（平滑滚动在 ReviewSection 里按同一条媒体查询改成瞬时） */
+  .knob {
+    transition: none;
+  }
+}

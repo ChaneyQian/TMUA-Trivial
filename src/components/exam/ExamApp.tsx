@@ -100,7 +100,8 @@ import { useFx } from '@/lib/useFx';
 import { useTheme } from '@/lib/useTheme';
 import ScoreCount from '@/components/result/ScoreCount';
 import TmuaRuler from '@/components/result/TmuaRuler';
-import { speakTmuaGrade } from '@/lib/resultReview';
+import ReviewSection from '@/components/result/ReviewSection';
+import { VERDICT_TEXT, reviewAnchorId, reviewCells, speakTmuaGrade } from '@/lib/resultReview';
 import resultStyles from '@/components/result/Result.module.css';
 import styles from './Exam.module.css';
 
@@ -1567,6 +1568,8 @@ export default function ExamApp() {
     // TMUA 估分（Design §24）。显示条件全在 resultTmuaEstimate 里：逐题看库名、全是 TMUA / TMUA Mock，
     // 题数 20（×2 折算）或 40（直查），且不是复烤区「重练这些」进来的场次；不满足就是 null，整行不渲染
     const tmuaEstimate = resultTmuaEstimate({ questions, right, origin: sessionOriginRef.current });
+    // 题号结果条（Design §26）：每题答对 / 答错 / 未答 + 本场标记过没有，对错口径与上面的 right 同一个
+    const reviewCellList = reviewCells(questions, answers, flagged);
     return (
       <div className={styles.wrap}>
         <div className={styles.resultWrap}>
@@ -1671,59 +1674,71 @@ export default function ExamApp() {
           </div>
           {resultActionError && <div className={styles.errMsg}>{resultActionError}</div>}
 
-          {questions.map((qq, i) => {
-            const ok = sameLabel(answers[i], qq.answer);
-            // 本场之前的历史。读快照而不是 records：导出那条路径会先写入本场再 await，
-            // 直接读 records 会让这行数字在导出转圈时跳一下
-            const past = historyFor(historyAtStartRef.current, qq.qid);
-            return (
-              <div key={qq.qid} className={styles.reviewCard}>
-                <div className={styles.reviewHead}>
-                  <span className={ok ? styles.verdictOk : styles.verdictBad}>
-                    {ok ? '✓' : '✗'} 第 {i + 1} 题
-                  </span>
-                  <span>
-                    {sourceLabel(qq.paper, qq.year)} · {qq.number}
-                  </span>
-                  <span>
-                    你的答案:{answers[i]?.toUpperCase() || '—'} · 正确答案:{qq.answer.toUpperCase()}
-                  </span>
-                  <span className={styles.reviewHistory}>
-                    {past ? `做过 ${past.a} 次 · 错过 ${past.w} 次` : '首次作答'}
-                  </span>
-                </div>
-                <div className={styles.stem}>
-                  <MathText text={qq.statement} />
-                </div>
-                <div className={styles.choiceList}>
-                  {qq.choices.map((c) => {
-                    const cls = [styles.choiceRow];
-                    if (sameLabel(c.label, qq.answer)) cls.push(styles.optCorrect);
-                    else if (sameLabel(answers[i], c.label)) cls.push(styles.optWrong);
-                    return (
-                      <div key={c.label} className={cls.join(' ')} style={{ cursor: 'default' }}>
-                        <span className={styles.radio} />
-                        <span className={styles.choiceLabel}>{c.label.toUpperCase()}</span>
-                        {c.text && (
-                          <span className={styles.choiceText}>
-                            <MathText text={c.text} />
-                          </span>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-                {qq.solution && (
-                  <details className={styles.reviewSol}>
-                    <summary>解析</summary>
-                    <div className={styles.solBox}>
-                      <MathText text={qq.solution} />
+          {/* 逐题回顾（Design §26）：题号结果条 + 「只看错题（含未答）」，下面是回顾卡。
+              筛选状态与跳转在 ReviewSection 里；卡片仍在这里画，筛掉的用 hidden 收起（不卸载） */}
+          <ReviewSection cells={reviewCellList}>
+            {(shown) =>
+              questions.map((qq, i) => {
+                const ok = sameLabel(answers[i], qq.answer);
+                // 本场之前的历史。读快照而不是 records：导出那条路径会先写入本场再 await，
+                // 直接读 records 会让这行数字在导出转圈时跳一下
+                const past = historyFor(historyAtStartRef.current, qq.qid);
+                return (
+                  <div key={qq.qid} className={styles.reviewCard} hidden={!shown(i)}>
+                    <div className={styles.reviewHead}>
+                      {/* 卡片标题：题号条跳过来的落点（id + tabIndex -1），读屏念「第 3 题，答错」 */}
+                      <h3
+                        id={reviewAnchorId(i)}
+                        tabIndex={-1}
+                        className={`${ok ? styles.verdictOk : styles.verdictBad} ${resultStyles.cardTitle}`}
+                      >
+                        <span aria-hidden="true">{ok ? '✓' : '✗'}</span> 第 {i + 1} 题
+                        <span className={resultStyles.srOnly}>，{VERDICT_TEXT[reviewCellList[i].verdict]}</span>
+                      </h3>
+                      <span>
+                        {sourceLabel(qq.paper, qq.year)} · {qq.number}
+                      </span>
+                      <span>
+                        你的答案:{answers[i]?.toUpperCase() || '—'} · 正确答案:{qq.answer.toUpperCase()}
+                      </span>
+                      <span className={styles.reviewHistory}>
+                        {past ? `做过 ${past.a} 次 · 错过 ${past.w} 次` : '首次作答'}
+                      </span>
                     </div>
-                  </details>
-                )}
-              </div>
-            );
-          })}
+                    <div className={styles.stem}>
+                      <MathText text={qq.statement} />
+                    </div>
+                    <div className={styles.choiceList}>
+                      {qq.choices.map((c) => {
+                        const cls = [styles.choiceRow];
+                        if (sameLabel(c.label, qq.answer)) cls.push(styles.optCorrect);
+                        else if (sameLabel(answers[i], c.label)) cls.push(styles.optWrong);
+                        return (
+                          <div key={c.label} className={cls.join(' ')} style={{ cursor: 'default' }}>
+                            <span className={styles.radio} />
+                            <span className={styles.choiceLabel}>{c.label.toUpperCase()}</span>
+                            {c.text && (
+                              <span className={styles.choiceText}>
+                                <MathText text={c.text} />
+                              </span>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                    {qq.solution && (
+                      <details className={styles.reviewSol}>
+                        <summary>解析</summary>
+                        <div className={styles.solBox}>
+                          <MathText text={qq.solution} />
+                        </div>
+                      </details>
+                    )}
+                  </div>
+                );
+              })
+            }
+          </ReviewSection>
         </div>
       </div>
     );
