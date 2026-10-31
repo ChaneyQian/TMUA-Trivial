@@ -36,7 +36,21 @@ const SWIPE_VELOCITY = 0.35;
 /** 跟手位移打个折，滑到底也不会把后牌拽出容器 */
 const DRAG_RUBBER = 0.55;
 
+/**
+ * 卡面印章的「盖章」动效放过一次的卡（本页内）。挂在模块上而不是组件 state 里：
+ * deck 去配置 / 进度视图时会整个卸载，回来重新挂载，章不该每回来一次就再盖一遍。
+ * 动效放完（animationend）才记上：转牌把它打断了，下次转到前位再盖。
+ * 只读不写也不触发重渲染——下一次渲染自然摘掉动效类，终点就是静态的样子，摘掉不会跳
+ */
+const pressedStamps = new Set<ZoneId>();
+
 type Axis = 'none' | 'x' | 'y';
+
+/** 卡面印章：印面字（纯装饰，aria-hidden）+ 给读屏的那句话 */
+export interface DeckStamp {
+  glyph: string;
+  label: string;
+}
 
 export interface DeckCharge {
   unlocked: boolean;
@@ -62,6 +76,12 @@ interface Props {
    * 锁着等密码 / 等充能的卡压根不摆快速开始
    */
   closed?: Partial<Record<ZoneId, string>>;
+  /**
+   * 压在封面上的印章（本期已封存的密卷：一枚朱红「封」）。有才画，没有的卡 DOM 与样式一个字都不变。
+   * 印章本身 aria-hidden；label 转到前位时随卡名进播报、后位时挂在命中层的 aria-description 上
+   * （前位命中层念的已经是 closed 那句原因，不重复）。第一次以前牌出现时盖一次章（≤ 400ms，只放一次）
+   */
+  stamps?: Partial<Record<ZoneId, DeckStamp>>;
   /** 覆盖卡面副文；给空/不传就用字典里的默认文案 */
   subs?: Partial<Record<ZoneId, string>>;
   charge: DeckCharge;
@@ -94,6 +114,7 @@ export default function CardDeck({
   badges,
   locked,
   closed,
+  stamps,
   subs,
   charge,
   leaving,
@@ -223,6 +244,7 @@ export default function CardDeck({
   };
 
   const frontZone = zoneById(front);
+  const frontStamp = stamps?.[front];
 
   return (
     <div
@@ -257,6 +279,8 @@ export default function CardDeck({
             const openable = !zone.comingSoon && !locked[zone.id] && zone.quickStart;
             // 开放窗口外的区：快速开始照样摆着，置灰（用户方案）；锁定态那种是压根不摆
             const shut = !!closed?.[zone.id] && zone.quickStart;
+            // 封面上的印章（本期已封存的密卷）。没有就什么都不多画
+            const stamp = stamps?.[zone.id];
             return (
               <div
                 key={zone.id}
@@ -291,10 +315,28 @@ export default function CardDeck({
                       {zone.no}
                     </span>
                     <span
-                      className={`${styles.badge} ${locked[zone.id] ? styles.badgeLocked : ''}`}
+                      className={`${styles.badge} ${locked[zone.id] ? styles.badgeLocked : ''}${
+                        stamp ? ` ${styles.badgeStamped}` : ''
+                      }`}
                     >
                       {badges[zone.id]}
                     </span>
+                    {/* 印章：与编号、徽章同一层（挂在 .face 上、不进 .coverBox，理由同上），压在封面中左，
+                        不碰下面的卡名。纯装饰，读屏跳过；那句话在命中层与转牌播报里。
+                        第一次以前牌出现时挂 .stampPress 盖一次章，放完记进 pressedStamps，之后静态 */}
+                    {stamp && (
+                      <span
+                        className={`${styles.stamp} ${
+                          isFront && !pressedStamps.has(zone.id) ? styles.stampPress : ''
+                        }`}
+                        aria-hidden="true"
+                        onAnimationEnd={(e) => {
+                          if (e.target === e.currentTarget) pressedStamps.add(zone.id);
+                        }}
+                      >
+                        <span className={styles.stampGlyph}>{stamp.glyph}</span>
+                      </span>
+                    )}
 
                     <div className={styles.body}>
                       <div className={styles.title}>{t.zone.title[zone.id]}</div>
@@ -347,7 +389,11 @@ export default function CardDeck({
                           aria-hidden={isFront ? undefined : true}
                           inert={isFront ? undefined : true}
                         >
-                          <div className={styles.quickSummary}>{quickStart.summary}</div>
+                          {/* 带印章的卡（本期已封存）摘要行是那句原因，英文一行放不下「封存 + 明年再见」：
+                              允许折行，不截成省略号（正文区本来就有 .spacer 留出的空） */}
+                          <div className={`${styles.quickSummary}${stamp ? ` ${styles.quickSummaryWrap}` : ''}`}>
+                            {quickStart.summary}
+                          </div>
                           <button
                             type="button"
                             className={styles.quickBtn}
@@ -406,6 +452,8 @@ export default function CardDeck({
                                   ? t.block.comingSoon(t.zone.title[zone.id])
                                   : t.deck.openAria(zone.no, t.zone.title[zone.id])
                       }
+                      // 带印章的后牌：名字念「05 密卷，转到前位」，印章那句话放在描述里（前牌念的就是 closed 那句，不重复）
+                      aria-description={stamp && !isFront ? stamp.label : undefined}
                       onClick={(e) => {
                         // 转牌之后 TURN_MS 内指针点的不认：双击侧牌的第二下会落在滑过来的新前牌上。
                         // 键盘按的照常：鼠标点侧牌后焦点就停在这层上，紧接着按 Enter / 空格展开是有意的
@@ -447,6 +495,8 @@ export default function CardDeck({
         <div className={styles.hint} role="status">
           <span className={styles.srOnly}>
             {frontZone.no} {t.zone.title[frontZone.id]}
+            {/* 前牌带印章：印章是 aria-hidden 的，那句话由这里念出来（转到它时听得到「已封存，期待明年再见」） */}
+            {frontStamp && ` ${frontStamp.label}`}
           </span>
           {hint}
         </div>

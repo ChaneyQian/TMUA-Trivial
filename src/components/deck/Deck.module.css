@@ -495,6 +495,100 @@
   color: var(--text);
 }
 
+/* ---- 封存印章（§25：本期已结束的密卷，用户 2026-10-31「密卷改成封 图标（期待明年再见）」）----
+   一枚朱红印章压在封面中左：圆角方框、内外两道边（印章的子母边）、一个「封」字，左旋 6°。
+   只在 CardDeck 拿到 stamps 的卡上渲染（现在只有 phase 'ended' 的 05 密卷），别的卡 DOM 与样式都不变。
+   和编号、徽章一样自带底板：封面图不随主题换，靠一张「印泥 + 纸」的小方块各自翻面——
+   朱红（--stamp-ink）压在纸色（--stamp-paper）上，三套主题都 ≥ 4.5 : 1（印面字按图形对象只要 3 : 1，
+   旁边那枚徽章的字要 AA，徽章与印章共用这一对颜色，一次满足两条）；深色主题朱红提亮一档。
+   尺寸按卡宽走（--card-w 在 .deck 上），窄屏卡小、章跟着小，位置落在编号下方、金色封蜡印左侧，碰不到卡名 */
+.stamp,
+.badgeStamped {
+  --stamp-ink: #b3261e;
+  --stamp-paper: #fdf6ea;
+}
+
+:global([data-theme='dark']) .stamp,
+:global([data-theme='dark']) .badgeStamped {
+  --stamp-ink: #ff8a73;
+  --stamp-paper: #2a1c22;
+}
+
+:global([data-theme='sepia']) .stamp,
+:global([data-theme='sepia']) .badgeStamped {
+  --stamp-ink: #a3271a;
+  --stamp-paper: #fbf2dc;
+}
+
+/* 徽章「已封存」：与印章同一对颜色，读成一套；底板不透明（半透明底板压在酒红封面上，浅色只剩 4 : 1 上下） */
+.badgeStamped {
+  border-color: color-mix(in srgb, var(--stamp-ink) 55%, var(--stamp-paper));
+  background: var(--stamp-paper);
+  color: var(--stamp-ink);
+}
+
+.stamp {
+  --stamp-size: calc(var(--card-w) * 0.3);
+  --stamp-rot: -6deg;
+  position: absolute;
+  top: calc(var(--card-w) * 0.2);
+  left: calc(var(--card-w) * 0.16);
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: var(--stamp-size);
+  height: var(--stamp-size);
+  box-sizing: border-box;
+  border: calc(var(--stamp-size) * 0.05) solid var(--stamp-ink);
+  border-radius: calc(var(--stamp-size) * 0.14);
+  background: var(--stamp-paper);
+  /* 子母边：外框之内留一道纸色、再一道细朱红；最外一圈很淡的落影把章从封面上托起来 */
+  box-shadow:
+    inset 0 0 0 calc(var(--stamp-size) * 0.035) var(--stamp-paper),
+    inset 0 0 0 calc(var(--stamp-size) * 0.055) var(--stamp-ink),
+    0 2px 8px rgb(0 0 0 / 28%);
+  color: var(--stamp-ink);
+  pointer-events: none;
+  transform: rotate(var(--stamp-rot));
+}
+
+/* 印面字：系统里的中文衬线（宋体 / 思源宋体），一个都没有时落到通用 serif——笔画粗细不论，朱红压纸色照样读得清 */
+.stampGlyph {
+  font-family: 'Noto Serif SC', 'Source Han Serif SC', 'Songti SC', 'STSong', 'SimSun', serif;
+  font-size: calc(var(--stamp-size) * 0.6);
+  font-weight: 700;
+  line-height: 1;
+  /* 宋体的「封」字面略偏上，往下压一点才居中 */
+  transform: translateY(2%);
+}
+
+/* 盖章：第一次以前牌出现时放一次——从略大、透明处压下来，落定时轻轻一顿。
+   只动 transform / opacity；等牌滑到位再盖（延时 100ms），连延时一共 400ms。
+   终点就是 .stamp 的静态样子，动效类摘掉时不会跳；backwards 让延时期间停在起点（不先露出静态的章再盖） */
+.stampPress {
+  animation: stampPress 300ms cubic-bezier(0.2, 0.7, 0.2, 1) 100ms backwards;
+}
+
+@keyframes stampPress {
+  from {
+    opacity: 0;
+    transform: rotate(var(--stamp-rot)) scale(1.2);
+  }
+  70% {
+    opacity: 1;
+    transform: rotate(var(--stamp-rot)) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: rotate(var(--stamp-rot)) scale(1);
+  }
+}
+
+/* 光效关（lib/fx）：不盖章，章直接静态显示 */
+:global(:root[data-fx='off']) .stampPress {
+  animation: none;
+}
+
 /* ---- 非前位的字：只留读得全的 ----
    侧牌只有外侧那一截露在前牌之外（窄屏约 0.16W、中屏 0.35W、宽屏 0.6W）。正文左对齐的话，
    右侧牌的字从被挡住的内侧起笔、只从前牌边上漏出半截，左侧牌的副文也被前牌边切掉；
@@ -647,6 +741,12 @@
   font-size: 0.72rem;
   white-space: nowrap;
   text-overflow: ellipsis;
+}
+
+/* 带印章的卡（§25）：摘要行是「本期已封存、明年再见」那句原因，英文在窄屏一行放不下，折行而不截断 */
+.quickSummaryWrap {
+  line-height: 1.45;
+  white-space: normal;
 }
 
 /* 抬到命中层（z-index 3）之上，否则点击会被整卡展开吃掉 */
@@ -836,7 +936,8 @@
   .slotFront .body,
   .sideTitle,
   .slotLeft .sideTitleL,
-  .slotRight .sideTitleR {
+  .slotRight .sideTitleR,
+  .stampPress {
     transition: none;
     animation: none;
   }
