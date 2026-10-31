@@ -38,3 +38,114 @@
 .countRest {
   font-variant-numeric: tabular-nums;
 }
+
+/* ============ TMUA 估分刻度尺 ============ */
+
+/* 估分块（Exam.module.css 的 .tmuaGrade）里的一行：左边估分文字与口径小字，右边刻度尺；窄了就换行到下面 */
+.gradeRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.55rem 1.5rem;
+}
+
+.gradeText {
+  flex: 1 1 15rem;
+  min-width: 0;
+}
+
+/* 1.0–9.0 横尺。左右各留半个数字宽的内边距：两端的「1」「9」以刻度为中心，不探出去。
+   颜色（压在 --surface-alt 上，图形 3:1、文字 4.5:1）：基线、刻度、数字都是 --text-muted
+   （浅色 4.59 / 深色 5.38 / 护眼 4.97），色块是 --accent（4.17 / 5.26 / 4.59）。
+   尺上只有刻度和本场估分，不标任何「录取线」「目标分」 */
+.ruler {
+  flex: 1 1 15rem;
+  box-sizing: border-box;
+  min-width: 0;
+  max-width: 26rem;
+  padding: 0 0.45rem;
+  color: var(--text-muted);
+}
+
+.rulerTrack {
+  position: relative;
+  height: 14px;
+}
+
+/* 基线 */
+.rulerTrack::before {
+  content: '';
+  position: absolute;
+  top: 6.5px;
+  right: 0;
+  left: 0;
+  height: 1px;
+  background: var(--text-muted);
+}
+
+.rulerTick {
+  position: absolute;
+  top: 3px;
+  width: 1px;
+  height: 8px;
+  margin-left: -0.5px;
+  background: var(--text-muted);
+}
+
+/* 扫出层：从尺的左端铺到色块右缘，进场时整层 scaleX 0 → 1（原点在左），色块就从左端一路长到位。
+   一次、约 450ms、ease-out；停下来之后与直接画色块一模一样 */
+.rulerSweep {
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  left: 0;
+  transform-origin: left center;
+  animation: rulerSweep 450ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+/* 估分区间 [lo, hi]；单值档按最小宽度画（lib/resultReview 的 rulerBand） */
+.rulerBand {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: 3px;
+  background: var(--accent);
+}
+
+.rulerLabels {
+  position: relative;
+  height: 1em;
+  margin-top: 3px;
+  font-size: 0.7rem;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.rulerLabel {
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+}
+
+@keyframes rulerSweep {
+  from {
+    transform: scaleX(0);
+  }
+
+  to {
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* 色块直接到位 */
+  .rulerSweep {
+    animation: none;
+  }
+}
+
+/* 光效关：色块直接到位（分子的滚动在 ScoreCount 里按同一个开关判断） */
+:global(:root[data-fx='off']) .rulerSweep {
+  animation: none;
+}

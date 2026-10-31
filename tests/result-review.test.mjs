@@ -37,7 +37,7 @@ import {
 } from '../src/lib/resultReview.ts';
 import { TMUA_GRADE_TABLES, formatTmuaGrade } from '../src/lib/tmuaGrade.ts';
 import { currentFx, subscribeFx } from '../src/lib/fx.ts';
-import { cascade } from './helpers/css-rules.mjs';
+import { FX_OFF_ROOT, cascade, overrides, parseRules, stripComments, timeMs } from './helpers/css-rules.mjs';
 import { REDUCED_MOTION as FAKE_REDUCED_MOTION, installFakeDom, restoreGlobals } from './helpers/fake-dom.mjs';
 import { attrValue, code, effects, jsxByClass, jsxChildren, jsxOpening, namedFn, namedImports } from './helpers/source.mjs';
 
@@ -476,4 +476,182 @@ test('ExamApp shows the score through ScoreCount, inside the big score', () => {
   assert.equal(attrValue(count.attrs.get('total')), 'questions.length');
   // 分子就是成绩页算的那个对题数
   assert.match(code(source), /const right = questions\.filter\(\(qq, i\) => sameLabel\(answers\[i\], qq\.answer\)\)\.length;/);
+});
+
+// ---------------------------------------------------------------------------
+// 3. TMUA 估分刻度尺
+
+const RULER = 'src/components/result/TmuaRuler.tsx';
+
+/** createElement 的替身：只留下 type / props / children（同 answer-feedback.test 的做法） */
+const REACT = { createElement: (type, props, ...children) => ({ type, props: props ?? {}, children: children.flat() }) };
+/** CSS Modules 的替身：styles.xxx 就是 'xxx' */
+const STYLES = new Proxy({}, { get: (_, key) => (typeof key === 'string' ? key : undefined) });
+
+/** 渲染树里按类名找元素 */
+function findAll(node, cls, out = []) {
+  if (!node || typeof node !== 'object') return out;
+  if (String(node.props?.className ?? '').split(/\s+/).includes(cls)) out.push(node);
+  for (const child of node.children ?? []) findAll(child, cls, out);
+  return out;
+}
+
+/** 把 TmuaRuler 原样跑一遍（JSX 转 createElement），返回渲染树 */
+function renderRuler(lo, hi) {
+  const Ruler = componentFn(RULER, 'TmuaRuler', {
+    React: REACT,
+    styles: STYLES,
+    rulerBand,
+    rulerSweep,
+    rulerTicks,
+    TICKS: rulerTicks(),
+  });
+  return Ruler({ lo, hi });
+}
+
+const pct = (value) => Number.parseFloat(String(value).replace('%', ''));
+
+test('the ruler is a silent picture: integer ticks 1…9 and one band where rulerBand puts it', () => {
+  for (const [lo, hi] of [
+    [8.1, 8.3],
+    [8.7, 8.7],
+    [9, 9],
+    [1, 1],
+    [3.8, 4.1],
+  ]) {
+    const tree = renderRuler(lo, hi);
+    assert.equal(tree.props.className, 'ruler');
+    assert.equal(tree.props['aria-hidden'], 'true', '刻度尺是纯图形，读屏不念（估分的字就在旁边）');
+    const ticks = findAll(tree, 'rulerTick');
+    const labels = findAll(tree, 'rulerLabel');
+    assert.deepEqual(
+      ticks.map((t) => pct(t.props.style.left)),
+      [0, 12.5, 25, 37.5, 50, 62.5, 75, 87.5, 100],
+    );
+    assert.deepEqual(
+      labels.map((l) => l.children.join('')),
+      ['1', '2', '3', '4', '5', '6', '7', '8', '9'],
+    );
+    // 色块：扫出层宽到色块右缘，色块在扫出层里的左缘换回全尺正好是 rulerBand 的 left
+    const [sweep] = findAll(tree, 'rulerSweep');
+    const [band] = findAll(tree, 'rulerBand');
+    assert.ok(sweep && band, `${lo}–${hi}：色块不见了`);
+    assert.ok(findAll(sweep, 'rulerBand').length === 1, '色块得在扫出层里面');
+    const want = rulerBand(lo, hi);
+    near(pct(sweep.props.style.width), want.left + want.width, `${lo}–${hi} 扫出层宽度`);
+    near((pct(band.props.style.left) / 100) * pct(sweep.props.style.width), want.left, `${lo}–${hi} 色块左缘`);
+    assert.equal(findAll(tree, 'rulerBand').length, 1, '尺上只有本场估分这一块');
+  }
+  // 不标任何主观阈值
+  assert.doesNotMatch(fs.readFileSync(RULER, 'utf8').replace(/\/\/.*$/gm, ''), /录取|目标|cutoff|target|threshold/i);
+});
+
+test('the band sweeps in once from the left (transform only, ≤ 500ms) and stays put under reduced motion or effects off', () => {
+  const css = fs.readFileSync(RESULT_CSS, 'utf8');
+  const sweep = cascade(css, '.rulerSweep');
+  assert.equal(sweep['transform-origin'], 'left center', '从尺的左端扫出来');
+  const [name, duration, ...rest] = sweep.animation.split(/\s+(?![^(]*\))/);
+  assert.equal(name, 'rulerSweep');
+  assert.ok(timeMs(duration) > 0 && timeMs(duration) <= 500, `扫出 ${duration}，要 ≤ 500ms`);
+  assert.doesNotMatch(sweep.animation, /infinite/, '只放一次');
+  assert.ok(!rest.some((part) => /^\d+$/.test(part) && Number(part) > 1), '只放一次');
+  // 关键帧只动 transform
+  const frames = stripComments(css).match(/@keyframes rulerSweep \{([\s\S]*?)\n\}/);
+  assert.ok(frames, '找不到 rulerSweep 的关键帧');
+  const props = [...frames[1].matchAll(/([\w-]+):/g)].map((m) => m[1]);
+  assert.deepEqual([...new Set(props)], ['transform']);
+
+  // 减动效与光效关各有一条把它关掉、且在层叠上真的赢了的规则
+  const rules = parseRules(stripComments(css));
+  const on = rules.find((r) => !r.inReduced && r.selector === '.rulerSweep');
+  const offBy = (pick, allow) =>
+    rules.some(
+      (r) =>
+        pick(r) &&
+        /animation:\s*none/.test(r.body) &&
+        r.selector.split(',').some((sel) => overrides(r, sel, on, '.rulerSweep', { allow })),
+    );
+  assert.ok(offBy((r) => r.inReduced), '减动效下色块还在扫');
+  assert.ok(
+    offBy((r) => !r.inReduced && /data-fx='off'/.test(r.selector), FX_OFF_ROOT),
+    '光效关时色块还在扫',
+  );
+});
+
+/** 颜色值 → [r, g, b]：#rrggbb 与 var()（按主题 token 展开） */
+function rgb(value, env) {
+  let v = String(value ?? '').trim();
+  for (let i = 0; i < 5 && /var\(/.test(v); i++) {
+    v = v.replace(/var\((--[\w-]+)\)/g, (_, name) => {
+      assert.ok(name in env, `token ${name} 没定义`);
+      return env[name];
+    });
+  }
+  const m = v.match(/^#([0-9a-f]{6})$/i);
+  assert.ok(m, `认不出的颜色：${value} → ${v}`);
+  return [0, 2, 4].map((i) => parseInt(m[1].slice(i, i + 2), 16));
+}
+function luminance(c) {
+  const [r, g, b] = c.map((v) => (v / 255 <= 0.04045 ? v / 255 / 12.92 : ((v / 255 + 0.055) / 1.055) ** 2.4));
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+function contrast(a, b) {
+  const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x);
+  return (hi + 0.05) / (lo + 0.05);
+}
+/** 三套主题的 token。globals.css 先剥掉 @import（parseRules 不认无块的 @ 语句，见 tmua-grade.test） */
+function themeTokens(theme) {
+  const globals = fs.readFileSync(GLOBALS, 'utf8').replace(/@import[^;]*;/g, '');
+  const base = cascade(globals, ':root');
+  assert.ok(base['--surface'] && base['--text-muted'], '浅色主题的 token 没读出来');
+  return theme === 'light' ? base : { ...base, ...cascade(globals, `:root[data-theme="${theme}"]`) };
+}
+const THEMES = ['light', 'dark', 'sepia'];
+
+test('the ruler reads at AA in light, dark and sepia: labels 4.5:1, band, ticks and baseline 3:1', () => {
+  const css = fs.readFileSync(RESULT_CSS, 'utf8');
+  const exam = fs.readFileSync(EXAM_CSS, 'utf8');
+  const box = cascade(exam, '.tmuaGrade');
+  const figures = [];
+  for (const theme of THEMES) {
+    const env = themeTokens(theme);
+    const bg = rgb(box.background ?? box['background-color'], env);
+    const label = cascade(css, '.rulerLabels').color ?? cascade(css, '.ruler').color ?? box.color;
+    const ratio = contrast(rgb(label, env), bg);
+    figures.push(`${theme} 数字 ${ratio.toFixed(2)}`);
+    assert.ok(ratio >= 4.5, `${theme} 主题下刻度数字只有 ${ratio.toFixed(2)} : 1`);
+    for (const sel of ['.rulerBand', '.rulerTick', '.rulerTrack::before']) {
+      const rule = cascade(css, sel);
+      const g = contrast(rgb(rule.background ?? rule['background-color'], env), bg);
+      figures.push(`${theme} ${sel} ${g.toFixed(2)}`);
+      assert.ok(g >= 3, `${theme} 主题下 ${sel} 只有 ${g.toFixed(2)} : 1`);
+    }
+  }
+});
+
+test('the estimate sits beside its ruler; sighted readers see 8.1–8.3, screen readers hear 8.1 至 8.3', () => {
+  const source = fs.readFileSync(EXAM_PATH, 'utf8');
+  assert.ok(namedImports(source, '@/lib/resultReview').has('speakTmuaGrade'));
+  assert.match(code(source), /import TmuaRuler from '@\/components\/result\/TmuaRuler';/);
+  const [grade] = jsxByClass(source, 'tmuaGrade');
+  assert.ok(grade, '估分块不见了');
+  const inside = jsxChildren(source, grade);
+  const estimate = code(source).match(/const (\w+) = resultTmuaEstimate\(/)[1];
+
+  // 视觉上的 8.1–8.3：读屏跳过
+  const [value] = jsxByClass(inside, 'tmuaGradeValue');
+  assert.equal(value.attrs.get('aria-hidden'), '"true"', '带 en dash 的估分值要对读屏藏起来');
+  assert.equal(code(jsxChildren(inside, value)), `{formatTmuaGrade(${estimate})}`);
+  // 读屏念的是「至」
+  const sr = jsxOpening(inside, 'resultStyles.srOnly');
+  assert.ok(sr, '估分块里没有读屏用的文本');
+  assert.equal(code(jsxChildren(inside, sr)), `{speakTmuaGrade(${estimate})}`);
+  // 刻度尺拿的就是这一场的区间
+  const ruler = jsxOpening(inside, '<TmuaRuler');
+  assert.ok(ruler, '估分块里没有刻度尺');
+  assert.equal(attrValue(ruler.attrs.get('lo')), `${estimate}.lo`);
+  assert.equal(attrValue(ruler.attrs.get('hi')), `${estimate}.hi`);
+  // 7.5+ Diagnostic 的成绩页不接这些
+  const diag = fs.readFileSync('src/components/diagnostic/DiagnosticResult.tsx', 'utf8');
+  assert.doesNotMatch(diag, /TmuaRuler|ScoreCount|components\/result/);
 });

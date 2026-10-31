@@ -99,6 +99,9 @@ import { formatTmuaGrade, resultTmuaEstimate } from '@/lib/tmuaGrade';
 import { useFx } from '@/lib/useFx';
 import { useTheme } from '@/lib/useTheme';
 import ScoreCount from '@/components/result/ScoreCount';
+import TmuaRuler from '@/components/result/TmuaRuler';
+import { speakTmuaGrade } from '@/lib/resultReview';
+import resultStyles from '@/components/result/Result.module.css';
 import styles from './Exam.module.css';
 
 /**
@@ -1620,14 +1623,24 @@ export default function ExamApp() {
                 宽屏用 order 挪到按钮那一行之下，首行仍是分数、说明、三颗按钮（见 Exam.module.css） */}
             {tmuaEstimate && (
               <div className={styles.tmuaGrade}>
-                <div>
-                  TMUA 估分{' '}
-                  <span className={styles.tmuaGradeValue}>{formatTmuaGrade(tmuaEstimate)}</span>
-                </div>
-                <div className={styles.tmuaGradeNote}>
-                  {tmuaEstimate.scaled
-                    ? `按 ${tmuaEstimate.year} 年换算表；20 题得分 ×2 折算为 40 分制（本场 ${tmuaEstimate.raw}/40），仅供参考`
-                    : `按 ${tmuaEstimate.year} 年换算表（本场 ${tmuaEstimate.raw}/40），仅供参考`}
+                <div className={resultStyles.gradeRow}>
+                  <div className={resultStyles.gradeText}>
+                    <div>
+                      TMUA 估分{' '}
+                      {/* 视觉上是 8.1–8.3；en dash 会被读屏念成「短横」，读屏另念「8.1 至 8.3」（Design §26） */}
+                      <span className={styles.tmuaGradeValue} aria-hidden="true">
+                        {formatTmuaGrade(tmuaEstimate)}
+                      </span>
+                      <span className={resultStyles.srOnly}>{speakTmuaGrade(tmuaEstimate)}</span>
+                    </div>
+                    <div className={styles.tmuaGradeNote}>
+                      {tmuaEstimate.scaled
+                        ? `按 ${tmuaEstimate.year} 年换算表；20 题得分 ×2 折算为 40 分制（本场 ${tmuaEstimate.raw}/40），仅供参考`
+                        : `按 ${tmuaEstimate.year} 年换算表（本场 ${tmuaEstimate.raw}/40），仅供参考`}
+                    </div>
+                  </div>
+                  {/* 1.0–9.0 刻度尺，色块标出估分区间；纯图形、aria-hidden（字已经在左边） */}
+                  <TmuaRuler lo={tmuaEstimate.lo} hi={tmuaEstimate.hi} />
                 </div>
               </div>
             )}
