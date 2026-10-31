@@ -1105,3 +1105,105 @@ TMUA 一卷 20 题、一题一分；正式成绩是两卷合计 40 分，再按�
 - 1280 × 浅色 / 深色 / 护眼、375 × 浅色 / 深色 / 护眼，另 800 / 641 / 640 / 320 浅色：成绩卡内零溢出；藏掉逐题回顾卡后页宽正好等于视口。
   375 / 320 下整页的横向滚动来自逐题回顾卡里的长公式（KaTeX），是既有现象，与本改动无关。
 - 「重练这些」场次没在浏览器里实测：现上限 10 题，凑不出 20 题的重练场；由单测与接线断言覆盖。
+
+## 25. 密卷封存态（期待明年再见）〔已交付 · 分支 p11-sealed-closed，待审〕（2026-10-31）
+
+### 需求原话（2026-10-31）
+「密卷改成封 图标（期待明年再见）」
+
+05 密卷本期窗口（§23，`SEALED_WINDOW.until = 2026-10-31T23:59:59+08:00`）一过，卡面从「已结束」的纯文字换成一枚朱红「封」字印章，
+文案统一成「封存」+「期待明年再见」两层意思。窗口、密码哈希、题池、门槛逻辑一律不动。
+
+### 做法
+1. **印章**：`CardDeck` 新增可选属性 `stamps?: Partial<Record<ZoneId, { glyph, label }>>`，有才画——没拿到印章的卡 DOM 与样式一字不变。
+   ExamApp 只在 `sealedPhaseNow === 'ended'` 时递 `{ sealed: { glyph: SEALED_STAMP_GLYPH, label: t.sealed.stampLabel } }`；
+   before / open / 首帧不知道「现在」（null）一律不递。
+   - 画在 `.face` 上（与编号、徽章同层，不进 `.coverBox` 的混合隔离组，理由见 `Deck.module.css` 里 `.glare` 那段），封面中左、编号下方、金色封蜡印左侧；
+     尺寸与位置按 `--card-w` 走（0.3 卡宽见方，左 0.16、上 0.2 卡宽），1280 宽约 119px、375 宽约 86px，碰不到卡名。
+   - 纯 CSS，不加图片、不加依赖：圆角方框外框 + 两道 inset 阴影（一道纸色、一道细朱红）做出印章的子母边，中间一个「封」字，
+     `rotate(-6deg)`，外加一圈很淡的落影把章从封面上托起来。
+   - 印面字体栈 `'Noto Serif SC', 'Source Han Serif SC', 'Songti SC', 'STSong', 'SimSun', serif`。
+     本机实测落在 Noto Serif SC Bold；强制只给 SimSun（合成粗体）也清楚，朱红压纸色不靠笔画粗细。
+   - 颜色：印章自带「印泥 + 纸」一对 token（`--stamp-ink` / `--stamp-paper`，按主题换）——封面图不随主题换，
+     和编号、徽章自带底板是同一个道理。深色主题朱红提亮一档。
+
+     | 主题 | 印泥 `--stamp-ink` | 纸 `--stamp-paper` | 对比度 |
+     |---|---|---|---|
+     | 浅色 | `#b3261e` | `#fdf6ea` | 6.08 : 1 |
+     | 深色 | `#ff8a73` | `#2a1c22` | 7.09 : 1 |
+     | 护眼 | `#a3271a` | `#fbf2dc` | 6.58 : 1 |
+
+     浅色 / 护眼的纸色压在酒红封面上 8 : 1 以上；深色的纸与酒红相近，章的轮廓由亮朱红外框撑着（对酒红约 4 : 1）。
+   - 印章 `aria-hidden`。读屏那句是 `t.sealed.stampLabel`（「已封存，期待明年再见」）：转到前位时进转牌播报
+     （role=status 里的 srOnly：「05 密卷 已封存，期待明年再见」）；后位时挂在命中层的 `aria-description`
+     （名字仍是「05 密卷，转到前位」）；前位命中层念的本来就是 closed 那句原因（`blockEnded`），不重复。
+   - 印面字 `SEALED_STAMP_GLYPH = '封'` 放在 `lib/sealed.ts`：中英界面同一个字（它是一枚章，不是要翻译的文案，所以不进字典）。
+2. **盖章动效**（方案里的可选项，做了）：第一次以前牌出现时挂 `.stampPress`——从 `scale(1.2)`、透明压到 `scale(0.97)` 再落定 `scale(1)`，
+   300ms + 延时 100ms（等牌滑到位），连延时 400ms；只动 transform / opacity；只放一次、不循环。
+   放完（`animationend`）记进 CardDeck 模块级的 `pressedStamps`：deck 去配置 / 进度视图会整个卸载再挂载，回来不重盖；
+   转牌把它打断了的，下次转到前位再盖。减动效块与 `:root[data-fx='off']` 各有一条真盖得住它的 `animation: none`，直接静态显示。
+   页面挂着跨过关门那一秒、密卷正好在前位时，章就在那一刻盖下来。
+3. **徽章与摘要行**：带印章的卡，徽章加 `.badgeStamped`（与印章同一对颜色、不透明底板）——原来那块半透明底板压在酒红封面上，
+   `--text-muted` 浅色只剩约 4.0 : 1、护眼约 4.2 : 1，换成印泥配纸之后三套主题都在 6 以上。
+   快速开始摘要行加 `.quickSummaryWrap` 允许折行：英文那句原因在 375 宽一行放不下，原样会被截成「…closed for this yea…」。
+4. **文案**（`lib/i18n.ts`）：
+
+   | 键 | 中文 | English |
+   |---|---|---|
+   | `cardBadge.ended` | 已封存 | Sealed |
+   | `sealed.subEnded` | 本期已封存 · 期待明年再见 | Sealed for this year · See you next year |
+   | `sealed.blockEnded` | 密卷本期已封存，期待明年再见 | The Sealed Papers are closed for this year — see you next year |
+   | `sealed.stampLabel`（新） | 已封存，期待明年再见 | Sealed for this year — see you next year |
+
+   `blockEnded` 同时是：提示行（点卡 / Enter / 页签）、前牌命中层、快速开始摘要、开考第二道闸的提示、
+   配置页密码面板跨过关门那一刻就地换成的那句（SealedGate）——一处改、处处跟。
+5. **不变的**：before / open 态的卡面、徽章、副文、面板一字不变；前四张卡 DOM 与样式不变；ended 照旧进不了密卷题池、
+   快速开始置灰、点卡 / Enter / 页签都只给原因；复盘可达范围照 `reachableIndex` 原逻辑。
+   /admin 页「05 密卷」一节的「已结束」是写给维护者的状态词，没改。
+
+### 明年重开要改哪里
+1. `src/lib/sealed.ts` 的 `SEALED_WINDOW.from / until` 改成下一期（带 `+08:00`）。旧解锁印记自动失效（§23）。
+   **印章与「封存 / 明年再见」文案只跟着 `sealedPhase` 走**：改完窗口，开门前是 before（「即将开放」，章自动消失），
+   开着是 open，到期又自动盖章、文案翻回封存态。组件、样式都不用动。
+2. 换密码、换题池同 §23「改期 / 换密码」（`SEALED_PASSWORD_SHA256`；`scripts/build-data.mjs` 的 `SEALED_YEARS` / `SEALED_DATABASES`）。
+3. 文案里写死了「明年」：如果下一期在同一年内重开（比如寒假），把 `lib/i18n.ts` 的 `subEnded / blockEnded / stampLabel`
+   里的「期待明年再见 / see you next year」改成「下期再见」之类；`tests/sealed-stamp.test.mjs` 钉着这几句，同步改。
+4. 不想要印章了：删掉 ExamApp 里 `<CardDeck stamps=…>` 那一个属性即可（CardDeck 没拿到就什么都不画）。
+
+### 测试
+- 新增 `tests/sealed-stamp.test.mjs`（5 条）：
+  - 把 ExamApp 递给 CardDeck 的 `stamps` 表达式按 phase 真求值：null / before / open 不盖、ended 只盖 05；拿真实时刻过一遍边界
+    （until 的最后一毫秒没有章、下一毫秒有）；表达式里引用别的变量（比如解锁态）会直接报错，等于钉死「只看 phase」。
+    CardDeck 只在这张卡拿到 stamp 时才渲染印章、徽章与摘要行的附加类。
+  - 印章 `aria-hidden`；后位命中层的 `aria-description`、转牌播报里的那句话、ended 的原因是 `blockEnded`、SealedGate 跨过关门换成的也是它。
+  - 中英文案逐字；「封存 / sealed|closed」+「期待明年再见 / see you next year」两层都在；阻挡那句带卡名。
+  - 动效按层叠语义查（`tests/helpers/css-rules.mjs`）：只用 animation、不循环、连延时 ≤ 400ms、关键帧只动 transform / opacity 且
+    从 `scale(1.2)` + 透明到 `scale(1)` + 不透明；减动效块与光效关各有一条真赢得了层叠的 `animation: none`；
+    组件里动效类只挂在前牌、只挂到放完一次（模块级记忆）。
+  - 三主题对比度（照 §24 的写法先剥 `@import` 再读 globals 的 token）：「封」字与外框对纸 ≥ 3 : 1，「已封存」徽章 ≥ 4.5，
+    副文 `--text-muted` 对 `--surface` ≥ 4.5；印泥是红色、深色那枚比浅色亮；字体栈是中文衬线、落到通用 serif。
+- `tests/sealed.test.mjs`：`subEnded` 的断言随文案更新，其余不动。
+- 变异检查（临时改源码跑这份测试、再改回）：ended 改成「非 open」、要求解锁才盖章、去掉 aria-hidden、每次转到前位都重盖、
+  去掉后位描述、减动效块漏了 `.stampPress`、光效关漏了、时长拉到 420ms、加 infinite、关键帧动 width、深色朱红不提亮、
+  深色纸色压低对比、中文副文丢了「明年再见」、英文徽章改回 Ended——14 种全部变红。
+
+### 取舍与偏离（主控方案之外的判断）
+- **徽章换成印泥配纸**（`.badgeStamped`）：方案没要求，为了「旁边的说明文字 AA 4.5」——原来的半透明底板在酒红封面上不够。只挂在带印章的卡上。
+- **摘要行允许折行**（`.quickSummaryWrap`）：方案给的英文阻挡句较长，在快速开始摘要那一行会被截断；只挂在带印章的卡上，中文仍是一行。
+- **后位用 `aria-description`**（ARIA 1.3）：支持的读屏会在名字后念出那句；不支持的只是少念一句，名字不受影响。
+  主要通道是转牌播报（role=status），键盘 ←→ 转到 05 时一定听得到。
+- **侧牌上也显示印章**（不像编号、徽章那样在窄屏非前位淡出）：它是封面的一部分，露多少看多少；窄屏侧牌只露 0.16 卡宽，章本来就几乎全压在前牌下。
+  代价：侧牌上已经看得见的章，第一次转到前位时会先淡掉再「盖」一次——只这一次。
+- **「只放一次」按页面算，不落盘**：刷新后再转到前位会再盖一次；要「一辈子只盖一次」得再登记一个存储键，未做。
+- 光效关着、密卷在前位、还没盖过章时，再把光效打开会补盖一次（动效类还挂着、`animation` 从 none 变回来）——无害，未处理。
+
+### 实测（headless Chrome 156，本地静态服务 out/；时刻用测试脚本里注入的 `Date.now` 偏移模拟，源码未改）
+- ended（11-01 00:00:05）× 1280 / 375 × 浅色 / 深色 / 护眼：章在封面中左、编号下方，与卡名、编号、徽章零相交；
+  徽章「已封存」、副文「本期已封存 · 期待明年再见」、摘要「密卷本期已封存，期待明年再见」、快速开始置灰；无横向滚动。
+- 英文 1280 / 375：「Sealed」「Sealed for this year · See you next year」；摘要在 375 宽折成两行、不截断。
+- 读屏：转到 05 播报「05 密卷 已封存，期待明年再见」；前位命中层「密卷本期已封存，期待明年再见」；
+  后位命中层「05 密卷，转到前位」+ 描述「已封存，期待明年再见」；印章 aria-hidden。
+- 动效：第一次转到前位 `getAnimations()` 有一条 stampPress（running），转走再转回来没有；光效关、减动效下都没有；
+  前位按 Enter 只给原因、不出密码面板。
+- 跨过关门：23:59:55 起、密卷在前位（「🔒 需密码」、无章）→ 00:00:00 那一刻章出现并盖章，徽章翻成「已封存」、副文翻成封存态。
+- before（10-07）/ open（10-20）：无章，徽章「即将开放」/「🔒 需密码」，副文原样；01–04 四张卡的 outerHTML 在三种 phase 下逐字相同。
