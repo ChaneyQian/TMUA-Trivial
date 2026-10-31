@@ -4,8 +4,9 @@ import test from 'node:test';
 
 // 限时节奏条（P11，Design §27）：Mock 答题页倒计时下面那一条细进度条 + 一句节奏提示。
 // 这组测试盯四件事：
-//   1. 口径（lib/pace.ts 纯函数）：领先秒数＝已作答 × 每题预算 − 已用秒数；|领先| < 60 正好，
-//      ≥ 60 快 / 慢 N 分钟（向下取整）；剩余 ≤ 300 秒警示；不可信的输入一律不炸、不出 NaN
+//   1. 口径（lib/pace.ts 纯函数）：earned＝已作答 × 每题预算；已用 ≤ earned 时领先 earned − 已用；
+//      正在做的那题享有完整预算（主控 2026-10-31 裁定），超出 earned + 预算才算落后；|领先|、|落后| < 60 正好，
+//      ≥ 60 快 / 慢 N 分钟（向下取整）；均匀节奏全程正好；剩余 ≤ 300 秒警示；不可信的输入一律不炸、不出 NaN
 //   2. 动效：只有填充那 1s linear 的 scaleX 补间；减动效、光效关时真的没有（按层叠现算谁赢）；
 //      全程无 animation——不闪、不脉冲、不循环
 //   3. 对比度：三套主题下文字 ≥ 4.5 : 1、条与刻度 ≥ 3 : 1（顶栏是固定蓝，主题换了也得照算一遍）
@@ -43,7 +44,7 @@ const at = (elapsed, answered, { total = 20, totalSec = 4500 } = {}) =>
 
 // ================= 1. 口径 =================
 
-test('the even band is 60 s wide each way: 59 s is on pace, 60 and 61 tip over, ahead and behind alike', () => {
+test('ahead counts from the time earned: 59 s is on pace, 60 and 61 tip over', () => {
   assert.equal(PACE_EVEN_SECONDS, 60);
   // 答了 2 题＝挣到 450 秒
   assert.equal(at(450, 2).leadSec, 0);
@@ -53,20 +54,74 @@ test('the even band is 60 s wide each way: 59 s is on pace, 60 and 61 tip over, 
     [391, 59, 'even'],
     [390, 60, 'ahead'],
     [389, 61, 'ahead'],
-    [509, -59, 'even'],
-    [510, -60, 'behind'],
-    [511, -61, 'behind'],
   ]) {
     const p = at(elapsed, 2);
     assert.equal(p.leadSec, lead, `用了 ${elapsed} 秒答了 2 题，领先应是 ${lead} 秒`);
     assert.equal(p.band, band, `领先 ${lead} 秒应是 ${band}`);
     assert.equal(p.minutes, band === 'even' ? 0 : 1);
   }
+});
 
-  // 一题没答、刚开考：正好；一分钟过去还一题没答：慢 1 分钟（口径如此，见 §27 取舍）
-  assert.equal(at(0, 0).band, 'even');
-  assert.equal(at(59, 0).band, 'even');
-  assert.deepEqual([at(60, 0).band, at(60, 0).minutes], ['behind', 1]);
+test('the question in hand gets its whole budget; behind starts 60 s past it (59 / 60 / 61)', () => {
+  // 答了 2 题：挣到 450 秒，第 3 题的预算到 675 秒为止。这一段里一律正好，领先记 0
+  for (const elapsed of [451, 500, 600, 674, 675]) {
+    const p = at(elapsed, 2);
+    assert.deepEqual([p.leadSec, p.band, p.minutes], [0, 'even', 0], `用了 ${elapsed} 秒答了 2 题`);
+  }
+  // 超出当前题预算的部分才算落后
+  for (const [elapsed, lead, band] of [
+    [675 + 59, -59, 'even'],
+    [675 + 60, -60, 'behind'],
+    [675 + 61, -61, 'behind'],
+  ]) {
+    const p = at(elapsed, 2);
+    assert.equal(p.leadSec, lead, `用了 ${elapsed} 秒答了 2 题，落后应是 ${-lead} 秒`);
+    assert.equal(p.band, band, `当前题超出预算 ${-lead} 秒应是 ${band}`);
+    assert.equal(p.minutes, band === 'even' ? 0 : 1);
+  }
+
+  // 预算不整秒（7 题 27 分钟）：答了 2 题，第 3 题到 3 × 1620 / 7 ≈ 694.29 秒为止；过了它，落后从零点几秒起算，不凑整
+  assert.equal(at(694, 2, { total: 7, totalSec: 1620 }).leadSec, 0);
+  assert.ok(Math.abs(at(695, 2, { total: 7, totalSec: 1620 }).leadSec - ((3 * 1620) / 7 - 695)) < 1e-9);
+
+  // 一题没答：第 1 题有整整 225 秒，开考 1 分钟、3 分 45 秒都是正好；再过 59 秒仍正好，60 秒才慢 1 分钟
+  for (const elapsed of [0, 60, 225, 225 + 59]) assert.equal(at(elapsed, 0).band, 'even', `开考 ${elapsed} 秒`);
+  assert.deepEqual([at(225 + 60, 0).band, at(225 + 60, 0).minutes], ['behind', 1]);
+  assert.equal(at(225 + 61, 0).leadSec, -61);
+});
+
+test('an even pace reads On pace the whole way: every question used to its last second, never behind', () => {
+  // 每题恰好用完预算再作答：第 k 题在 k × 预算 秒交。逐秒看，交之前的那一刻（还算 k − 1 题）与交了之后都看一遍。
+  // 预算整秒（20 题 75 分钟，225 秒）与不整秒（7 题 27 分钟，231.43 秒）各走一遍
+  for (const { total, totalSec } of [
+    { total: 20, totalSec: 4500 },
+    { total: 7, totalSec: 1620 },
+  ]) {
+    for (let t = 0; t <= totalSec; t++) {
+      const after = Math.floor((t * total) / totalSec);
+      const before = (t * total) % totalSec === 0 ? Math.max(0, after - 1) : after;
+      for (const answered of new Set([before, after])) {
+        const p = at(t, answered, { total, totalSec });
+        assert.equal(p.band, 'even', `${total} 题 ${totalSec} 秒：第 ${t} 秒答了 ${answered} 题是 ${p.band}`);
+        assert.equal(p.leadSec, 0, `${total} 题 ${totalSec} 秒：第 ${t} 秒答了 ${answered} 题领先 ${p.leadSec}`);
+      }
+    }
+  }
+});
+
+test('with every question answered there is no question in hand, and nothing can read behind', () => {
+  // 全部答完：earned 就是总时长，已用不会超过它；任何时刻都只会是领先或正好
+  for (const { total, totalSec } of [
+    { total: 20, totalSec: 4500 },
+    { total: 7, totalSec: 1980 },
+  ]) {
+    for (let t = 0; t <= totalSec; t += 7) {
+      const p = at(t, total, { total, totalSec });
+      assert.notEqual(p.band, 'behind', `${total} 题全答完、第 ${t} 秒`);
+      assert.equal(p.leadSec, totalSec - t);
+    }
+    assert.deepEqual([at(totalSec, total, { total, totalSec }).band, at(totalSec, total, { total, totalSec }).leadSec], ['even', 0]);
+  }
 });
 
 test('minutes are whole minutes rounded down, never rounded to nearest', () => {
@@ -75,11 +130,12 @@ test('minutes are whole minutes rounded down, never rounded to nearest', () => {
     [450 - 120, 2, 'ahead', 2],
     [450 - 179, 2, 'ahead', 2],
     [450 - 180, 2, 'ahead', 3],
-    [450 + 119, 2, 'behind', 1],
-    [450 + 120, 2, 'behind', 2],
-    [450 + 179, 2, 'behind', 2],
-    // 一题没答就过了 10 分 59 秒
-    [659, 0, 'behind', 10],
+    // 答了 2 题，第 3 题的预算到 675 秒
+    [675 + 119, 2, 'behind', 1],
+    [675 + 120, 2, 'behind', 2],
+    [675 + 179, 2, 'behind', 2],
+    // 一题没答，第 1 题已超出预算 10 分 59 秒
+    [225 + 659, 0, 'behind', 10],
   ]) {
     const p = at(elapsed, answered);
     assert.deepEqual([p.band, p.minutes], [band, minutes], `用 ${elapsed} 秒答 ${answered} 题`);
@@ -181,7 +237,8 @@ test('the line reads On pace / N min ahead / N min behind', () => {
   assert.equal(formatPace(at(450, 2)), 'On pace');
   assert.equal(formatPace(at(391, 2)), 'On pace');
   assert.equal(formatPace(at(390, 2)), '1 min ahead');
-  assert.equal(formatPace(at(450 + 185, 2)), '3 min behind');
+  assert.equal(formatPace(at(450 + 185, 2)), 'On pace');
+  assert.equal(formatPace(at(675 + 185, 2)), '3 min behind');
   assert.equal(formatPace({ band: 'ahead', minutes: 12 }), '12 min ahead');
 });
 
