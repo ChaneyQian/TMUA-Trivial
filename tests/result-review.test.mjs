@@ -11,6 +11,7 @@ import ts from 'typescript';
 //   4. 接线：ExamApp 把本场的题、作答、标记交给纯函数，组件只管画——按语义查，不写死整段 JSX
 
 import {
+  COUNT_UP_GRACE_MS,
   COUNT_UP_MS,
   RULER_MAX,
   RULER_MIN,
@@ -32,9 +33,13 @@ import {
   rulerTicks,
   shouldCountUp,
   speakTmuaGrade,
+  startCountUp,
 } from '../src/lib/resultReview.ts';
 import { TMUA_GRADE_TABLES, formatTmuaGrade } from '../src/lib/tmuaGrade.ts';
-import { namedFn } from './helpers/source.mjs';
+import { currentFx, subscribeFx } from '../src/lib/fx.ts';
+import { cascade } from './helpers/css-rules.mjs';
+import { REDUCED_MOTION as FAKE_REDUCED_MOTION, installFakeDom, restoreGlobals } from './helpers/fake-dom.mjs';
+import { attrValue, code, effects, jsxByClass, jsxChildren, jsxOpening, namedFn, namedImports } from './helpers/source.mjs';
 
 const EXAM_PATH = 'src/components/exam/ExamApp.tsx';
 
@@ -242,10 +247,233 @@ test('"wrong only" keeps wrong and unanswered cards, and is switched off when ev
   assert.equal(isReviewShown(undefined, true), true);
 });
 
+/**
+ * 手摇的计数宿主：帧按给定时间戳一帧一帧地放，定时器手动到点，中断信号手动发。
+ * 记下挂着的帧 / 定时器 / 监听，验收尾时都摘干净了
+ */
+function fakeHost() {
+  const frames = new Map();
+  const timers = new Map();
+  const interrupts = new Set();
+  let next = 1;
+  return {
+    host: {
+      requestFrame: (cb) => (frames.set(next, cb), next++),
+      cancelFrame: (id) => frames.delete(id),
+      setTimer: (cb, ms) => (timers.set(next, { cb, ms }), next++),
+      clearTimer: (id) => timers.delete(id),
+      onInterrupt: (cb) => (interrupts.add(cb), () => interrupts.delete(cb)),
+    },
+    frame(now) {
+      const due = [...frames.values()];
+      frames.clear();
+      for (const cb of due) cb(now);
+    },
+    fireTimer() {
+      const due = [...timers.values()];
+      timers.clear();
+      for (const { cb } of due) cb();
+    },
+    interrupt: () => [...interrupts].forEach((cb) => cb()),
+    timerMs: () => [...timers.values()].map((t) => t.ms),
+    live: () => frames.size + timers.size + interrupts.size,
+  };
+}
+
+test('the count-up driver steps once per frame from the first frame on, and lands exactly on the score', () => {
+  const fake = fakeHost();
+  const seen = [];
+  startCountUp(17, (v) => seen.push(v), fake.host);
+  assert.deepEqual(fake.timerMs(), [COUNT_UP_MS + COUNT_UP_GRACE_MS], '兜底定时器比时长多等一点');
+  // 时间从第一帧算起：第一帧在 5000ms（之前主线程在排公式），这一帧报的是 0
+  for (let now = 5000; now <= 5000 + COUNT_UP_MS + 32; now += 16) fake.frame(now);
+  assert.equal(seen[0], 0);
+  assert.equal(seen.at(-1), 17, '最后停在终值');
+  assert.equal(seen.filter((v) => v === 17).length >= 1, true);
+  for (let i = 1; i < seen.length; i++) assert.ok(seen[i] >= seen[i - 1], `第 ${i} 帧倒退：${seen[i - 1]} → ${seen[i]}`);
+  // 收尾后一切都摘干净，之后再怎么走帧、定时器到点，都不再报值
+  assert.equal(fake.live(), 0, '帧 / 定时器 / 监听没摘干净');
+  const count = seen.length;
+  fake.frame(99999);
+  fake.fireTimer();
+  fake.interrupt();
+  assert.equal(seen.length, count);
+});
+
+test('a frozen rAF (background tab) still lands on the score: the fallback timer finishes it', () => {
+  const fake = fakeHost();
+  const seen = [];
+  startCountUp(17, (v) => seen.push(v), fake.host);
+  fake.frame(0);
+  fake.frame(100);
+  // 之后 rAF 不再来（标签页被藏起来了）
+  fake.fireTimer();
+  assert.equal(seen.at(-1), 17);
+  assert.equal(fake.live(), 0);
+});
+
+test('hiding the tab or switching effects off mid-count jumps straight to the score', () => {
+  const fake = fakeHost();
+  const seen = [];
+  startCountUp(20, (v) => seen.push(v), fake.host);
+  fake.frame(0);
+  fake.frame(48);
+  fake.interrupt();
+  assert.equal(seen.at(-1), 20);
+  assert.ok(seen.length <= 3, '中断之后不再一帧帧地走');
+  assert.equal(fake.live(), 0);
+});
+
+test('stopping (unmount) mid-count removes everything and reports nothing more', () => {
+  const fake = fakeHost();
+  const seen = [];
+  const stop = startCountUp(20, (v) => seen.push(v), fake.host);
+  fake.frame(0);
+  stop();
+  assert.equal(fake.live(), 0);
+  fake.frame(1000);
+  fake.fireTimer();
+  fake.interrupt();
+  assert.deepEqual(seen, [0], '卸载后不补终值（组件都没了）');
+  stop();
+});
+
 test('each review card gets its own anchor id', () => {
   assert.equal(reviewAnchorId(0), 'review-q-1');
   assert.equal(reviewAnchorId(19), 'review-q-20');
   const ids = Array.from({ length: 100 }, (_, i) => reviewAnchorId(i));
   assert.equal(new Set(ids).size, 100);
   for (const id of ids) assert.match(id, /^[a-z][\w-]*$/, `${id} 不是合法的 id`);
+});
+
+// ---------------------------------------------------------------------------
+// 2. 大比分滚动计数：组件接线、减动效 / 光效关、读屏
+
+const SCORE_COUNT = 'src/components/result/ScoreCount.tsx';
+const RESULT_CSS = 'src/components/result/Result.module.css';
+const EXAM_CSS = 'src/components/exam/Exam.module.css';
+const GLOBALS = 'src/app/globals.css';
+
+/** 组件源码里的一个顶层 function，去类型后求出来；scope 里的名字当外部变量传进去 */
+function componentFn(file, name, scope = {}) {
+  const fn = namedFn(fs.readFileSync(file, 'utf8'), name);
+  assert.ok(fn, `${file} 里找不到 ${name}`);
+  const js = ts.transpileModule(`__out = function ${name}${fn};`, {
+    fileName: 'snippet.tsx',
+    compilerOptions: { target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.React },
+  }).outputText;
+  const names = Object.keys(scope);
+  return new Function(...names, `let __out;\n${js}\nreturn __out;`)(...names.map((n) => scope[n]));
+}
+
+test('the score counts up only when motion is welcome: reduced motion, effects off and a hidden tab all show the final value', (t) => {
+  t.after(restoreGlobals);
+  const allowedIn = ({ reduced = false, fx = 'on', hidden = false } = {}, target = 17) => {
+    const dom = installFakeDom({ reduced, fx });
+    dom.doc.hidden = hidden;
+    const allowed = componentFn(SCORE_COUNT, 'countUpAllowed', {
+      window: dom.win,
+      document: dom.doc,
+      shouldCountUp,
+      currentFx,
+      REDUCED_MOTION: FAKE_REDUCED_MOTION,
+    });
+    return allowed(target);
+  };
+  assert.equal(allowedIn(), true);
+  assert.equal(allowedIn({ reduced: true }), false, '减动效下不滚');
+  assert.equal(allowedIn({ fx: 'off' }), false, '光效关时不滚');
+  assert.equal(allowedIn({ hidden: true }), false, '后台标签页里不滚');
+  assert.equal(allowedIn({}, 0), false, '0 分不滚');
+  // 组件问的就是减动效这条媒体查询
+  assert.match(fs.readFileSync(SCORE_COUNT, 'utf8'), /'\(prefers-reduced-motion: reduce\)'/);
+});
+
+test('the browser host ends the count when the tab is hidden or effects are switched off, and lets go of both on cleanup', (t) => {
+  t.after(restoreGlobals);
+  const dom = installFakeDom();
+  const host = componentFn(SCORE_COUNT, 'browserHost', { window: dom.win, document: dom.doc, subscribeFx })();
+  let hits = 0;
+  const off = host.onInterrupt(() => hits++);
+  dom.doc.emit('visibilitychange');
+  assert.equal(hits, 1, '切到后台要收尾');
+  dom.setFx('off');
+  assert.equal(hits, 2, '中途关光效要收尾');
+  off();
+  assert.equal(dom.doc.count() + dom.win.count(), 0, '退订后监听要摘干净');
+  dom.doc.emit('visibilitychange');
+  assert.equal(hits, 2);
+  // 帧与定时器就是浏览器的 rAF / setTimeout
+  const frame = host.requestFrame(() => {});
+  assert.equal(dom.pending(), 1);
+  host.cancelFrame(frame);
+  assert.equal(dom.pending(), 0);
+});
+
+test('ScoreCount decides on the first render, counts through startCountUp once, and never restarts', () => {
+  const src = code(fs.readFileSync(SCORE_COUNT, 'utf8'));
+  const imported = namedImports(fs.readFileSync(SCORE_COUNT, 'utf8'), '@/lib/resultReview');
+  for (const name of ['shouldCountUp', 'startCountUp']) assert.ok(imported.has(name), `ScoreCount 没有从 lib/resultReview 引入 ${name}`);
+  // 首帧就定好：能滚从 0 起，不能滚直接是终值——不会先闪一帧 0
+  const init = src.match(/const \[(\w+), (\w+)\] = useState\(\(\) => \((.+?)\)\);/);
+  assert.ok(init, '显示值得用惰性初值的 useState');
+  const [, shown, setShown, initial] = init;
+  assert.equal(initial, 'countUpAllowed(right) ? 0 : right');
+
+  // 只有一个 effect，只跟 right 走（成绩页里的重渲染不让它重跑）
+  const all = effects(src);
+  assert.equal(all.length, 1, 'ScoreCount 只该有一个 effect');
+  const [effect] = all;
+  assert.deepEqual(effect.deps, ['right']);
+  // 跑过帧了、或此刻不该滚：直接终值；否则把清理函数交还给 React（卸载即停）
+  assert.match(effect.body, new RegExp(`if \\((\\w+)\\.current \\|\\| !countUpAllowed\\(right\\)\\) \\{ ${setShown}\\(right\\); return; \\}`));
+  assert.match(effect.body, /return startCountUp\(right, /);
+  assert.match(effect.body, /browserHost\(\)/);
+  // 显示的就是这个值
+  assert.match(src, new RegExp(`\\{${shown}\\}`));
+});
+
+test('screen readers get the final score at once; the rolling digits are hidden from them and cannot shift the layout', () => {
+  const source = fs.readFileSync(SCORE_COUNT, 'utf8');
+  // 读屏念的是视觉隐藏的静态终值
+  const sr = jsxByClass(source, 'srOnly');
+  assert.equal(sr.length, 1);
+  assert.equal(code(jsxChildren(source, sr[0])), '{right} / {total}');
+  // 滚动的那串数（连同分母）整块 aria-hidden
+  const slot = jsxByClass(source, 'countSlot')[0];
+  assert.ok(slot, '分子的格子不见了');
+  const hiddenWrap = source.lastIndexOf('aria-hidden="true"', slot.start);
+  assert.ok(hiddenWrap > sr[0].end && hiddenWrap < slot.start, '滚动的数字不在 aria-hidden 里');
+  // 格子由看不见的终值撑定宽度
+  const ghost = jsxByClass(source, 'countGhost')[0];
+  assert.equal(code(jsxChildren(source, ghost)), '{right}');
+
+  const css = fs.readFileSync(RESULT_CSS, 'utf8');
+  const slotRule = cascade(css, '.countSlot');
+  assert.equal(slotRule.display, 'inline-grid');
+  assert.equal(slotRule['font-variant-numeric'], 'tabular-nums', '数字要等宽');
+  assert.equal(cascade(css, '.countSlot > *')['grid-area'], '1 / 1', '终值与滚动的数叠在同一格');
+  assert.equal(cascade(css, '.countGhost').visibility, 'hidden');
+  assert.equal(cascade(css, '.srOnly').position, 'absolute');
+  // 计数是 rAF 换字，样式上一条动画 / 过渡都没有
+  for (const sel of ['.countSlot', '.countGhost', '.countRest']) {
+    const rule = cascade(css, sel);
+    for (const prop of ['animation', 'animation-name', 'transition', 'transition-property']) {
+      assert.equal(rule[prop], undefined, `${sel} 带了 ${prop}`);
+    }
+  }
+});
+
+test('ExamApp shows the score through ScoreCount, inside the big score', () => {
+  const source = fs.readFileSync(EXAM_PATH, 'utf8');
+  assert.match(code(source), /import ScoreCount from '@\/components\/result\/ScoreCount';/);
+  const [big] = jsxByClass(source, 'scoreBig');
+  assert.ok(big, '大比分不见了');
+  const inside = code(jsxChildren(source, big));
+  const count = jsxOpening(inside, '<ScoreCount');
+  assert.ok(count, '大比分里没有 ScoreCount');
+  assert.equal(attrValue(count.attrs.get('right')), 'right');
+  assert.equal(attrValue(count.attrs.get('total')), 'questions.length');
+  // 分子就是成绩页算的那个对题数
+  assert.match(code(source), /const right = questions\.filter\(\(qq, i\) => sameLabel\(answers\[i\], qq\.answer\)\)\.length;/);
 });

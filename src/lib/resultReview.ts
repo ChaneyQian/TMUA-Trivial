@@ -47,6 +47,68 @@ export function shouldCountUp({
   return Number.isInteger(target) && target > 0 && !reducedMotion && fx !== 'off' && !hidden;
 }
 
+/** 计数驱动要用到的几样宿主能力：组件里接 window / document，测试里接假的 */
+export interface CountUpHost {
+  requestFrame: (cb: (now: number) => void) => number;
+  cancelFrame: (id: number) => void;
+  setTimer: (cb: () => void, ms: number) => number;
+  clearTimer: (id: number) => void;
+  /** 「立刻收尾」的信号（标签页切到后台、中途关了光效）；返回退订函数 */
+  onInterrupt: (cb: () => void) => () => void;
+}
+
+/** 兜底定时器比时长多等的那一点：正常情况下帧早就收尾了，它只管 rAF 被冻住的时候 */
+export const COUNT_UP_GRACE_MS = 250;
+
+/**
+ * 跑一次滚动计数：每帧 onValue(此刻的值)，最后一定 onValue(target) 收尾一次——
+ * 帧走满时长、兜底定时器到点、收到中断信号，三者谁先到谁收尾，之后再不报值。
+ * 时间从第一帧算起（不是从调用时）：第一帧之前主线程忙着排公式，也不会一上来就跳过半程。
+ * 返回 stop（卸载时调）：停掉帧、定时器与监听，不再报值、也不补终值（组件都没了）
+ */
+export function startCountUp(
+  target: number,
+  onValue: (value: number) => void,
+  host: CountUpHost,
+  durationMs: number = COUNT_UP_MS,
+): () => void {
+  let start: number | null = null;
+  let frame = 0;
+  let timer = 0;
+  let unsubscribe = () => {};
+  let over = false;
+  const teardown = () => {
+    over = true;
+    host.cancelFrame(frame);
+    host.clearTimer(timer);
+    unsubscribe();
+  };
+  const finish = () => {
+    if (over) return;
+    teardown();
+    onValue(target);
+  };
+  const step = (now: number) => {
+    if (over) return;
+    if (start === null) start = now;
+    const elapsed = now - start;
+    if (elapsed >= durationMs) {
+      finish();
+      return;
+    }
+    onValue(countUpValue(target, elapsed, durationMs));
+    frame = host.requestFrame(step);
+  };
+  frame = host.requestFrame(step);
+  timer = host.setTimer(finish, durationMs + COUNT_UP_GRACE_MS);
+  unsubscribe = host.onInterrupt(finish);
+  // 宿主同步就收了尾（假宿主里可能）：刚挂上的监听也得摘掉
+  if (over) unsubscribe();
+  return () => {
+    if (!over) teardown();
+  };
+}
+
 // ---------------------------------------------------------------------------
 // TMUA 估分刻度尺
 

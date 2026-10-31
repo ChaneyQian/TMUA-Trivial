@@ -98,6 +98,7 @@ import {
 import { formatTmuaGrade, resultTmuaEstimate } from '@/lib/tmuaGrade';
 import { useFx } from '@/lib/useFx';
 import { useTheme } from '@/lib/useTheme';
+import ScoreCount from '@/components/result/ScoreCount';
 import styles from './Exam.module.css';
 
 /**
@@ -1595,8 +1596,9 @@ export default function ExamApp() {
           )}
 
           <div className={styles.scoreCard}>
+            {/* 分子进场时从 0 滚到做对题数一次（Design §26）；读屏只念静态终值，减动效 / 光效关直接是终值 */}
             <div className={styles.scoreBig}>
-              {right} / {questions.length}
+              <ScoreCount right={right} total={questions.length} />
             </div>
             <div className={styles.scoreMeta}>
               {DB_NAMES[db]} · {mode === 'mock' ? 'Mock 限时' : '练习'}模式

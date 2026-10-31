@@ -1,0 +1,40 @@
+/* 成绩页 P11（Design §26）：大比分滚动计数、TMUA 估分刻度尺、题号结果条与「只看错题」、回顾卡的窄屏横滚。
+   成绩页属于答题流程，保持克制：没有环境光、光晕、粒子；动效只有两处一次性的入场（分子滚动走 rAF 改字，
+   刻度尺的色块 scaleX 扫出），只动 transform / opacity（分子只换字，格子宽度固定），不循环。
+   减动效与光效关（<html data-fx="off">）下两处都静态：分子直接是终值（ScoreCount 里判断），色块直接到位（本文件）。
+   成绩页其余的类（scoreCard / tmuaGrade / reviewCard……）仍在 Exam.module.css，这里只放 P11 新加的。 */
+
+/* 视觉隐藏、读屏照念：大比分的静态终值、估分的「8.1 至 8.3」、回顾卡标题后的「答对 / 答错 / 未答」 */
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ============ 大比分滚动计数 ============ */
+
+/* 分子的格子：终值（看不见）与滚动中的数叠在同一格里，格子宽度由终值撑定——
+   0 → 17 一路上位数变了，分母和斜杠也不挪一像素。数字等宽，滚动中的数靠右对齐 */
+.countSlot {
+  display: inline-grid;
+  justify-items: end;
+  font-variant-numeric: tabular-nums;
+}
+
+.countSlot > * {
+  grid-area: 1 / 1;
+}
+
+.countGhost {
+  visibility: hidden;
+}
+
+.countRest {
+  font-variant-numeric: tabular-nums;
+}
