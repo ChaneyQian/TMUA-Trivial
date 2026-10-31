@@ -34,6 +34,13 @@ export const SEALED_WINDOW: SealedWindow = {
   until: '2026-10-31T23:59:59+08:00',
 };
 
+/**
+ * 本期结束（phase 'ended'）后压在卡面上的那枚朱红印章的印面字（用户 2026-10-31：「密卷改成封 图标（期待明年再见）」）。
+ * 印章是纯装饰（aria-hidden），中英界面同一个字——它是一枚章，不是要翻译的文案；
+ * 读屏听到的是字典里的 sealed.stampLabel。只跟着 sealedPhase 走：改到下一期的窗口后，开门前是 before、开门后是 open，章自己就没了
+ */
+export const SEALED_STAMP_GLYPH = '封';
+
 /** 密码的 SHA-256（小写十六进制）。明文不进代码 */
 export const SEALED_PASSWORD_SHA256 = '933d3878fadd4b2b69ca6fb316d454612d1696e832a497d77487adc8b404581e';
 

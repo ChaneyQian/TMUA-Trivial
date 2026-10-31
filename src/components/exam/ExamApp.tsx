@@ -83,6 +83,7 @@ import {
 import { useLang } from '@/lib/LangContext';
 import {
   NO_SEALED_TRIES,
+  SEALED_STAMP_GLYPH,
   loadSealedStamp,
   msUntilSealedChange,
   saveSealedUnlock,
@@ -1299,7 +1300,7 @@ export default function ExamApp() {
                 // 标化题库还没上内容，报的是「即将开放」而不是题数——
                 // 一个 0 会被读成「这个库空了」，而它是还没开门
                 board: t.cardBadge.comingSoon,
-                // 密卷四态：还没开 / 本期已结束 / 窗口内要密码 / 已解锁报题数。
+                // 密卷四态：还没开 / 本期已封存 / 窗口内要密码 / 已解锁报题数。
                 // 首帧还不知道「现在」（null）时按要密码画——正常窗口内不会闪一下别的字
                 sealed:
                   sealedPhaseNow === 'before'
@@ -1321,6 +1322,13 @@ export default function ExamApp() {
               }}
               // 窗口外的密卷：能转到前位看，不能进，快速开始置灰（置灰见下面 quickStart.disabled）
               closed={sealedClosedReason ? { sealed: sealedClosedReason } : undefined}
+              // 本期已结束的密卷压一枚朱红「封」字印章（§25）。只看 phase：还没开 / 开着（解没解锁都一样）/ 首帧不知道「现在」
+              // 一律不画；下一期改了窗口，开门前回到 before、章自己就没了
+              stamps={
+                sealedPhaseNow === 'ended'
+                  ? { sealed: { glyph: SEALED_STAMP_GLYPH, label: t.sealed.stampLabel } }
+                  : undefined
+              }
               // Grill 卡面副文：复烤区现在管两批题（诊断绑定 + 全站错题），
               // 只报绑定数会让「一次诊断没考过、但有一堆错题」的人以为这张卡是空的。
               // 两个数都为 0 时才说定位，其余情况直接报数
@@ -1329,7 +1337,7 @@ export default function ExamApp() {
                   grillCount(records) > 0 || grillMissedCount > 0
                     ? t.grill.sub(grillCount(records), grillMissedCount)
                     : t.grill.emptySub,
-                // 窗口外换成「即将开放」/「本期开放已结束」；窗口内用字典里的默认副文
+                // 窗口外换成「即将开放」/「本期已封存 · 期待明年再见」；窗口内用字典里的默认副文
                 sealed:
                   sealedPhaseNow === 'before'
                     ? t.sealed.subNotYet
@@ -1441,7 +1449,7 @@ export default function ExamApp() {
             </>
           ) : frontZone === 'sealed' && !sealedUnlocked ? (
             /* 05 密卷锁着时，展开动作给的是密码面板（同 9.0 锁定态展开成介绍页）。
-               窗口外正常进不来；页面挂着跨过关门那一刻，面板就地换成「本期开放已结束」 */
+               窗口外正常进不来；页面挂着跨过关门那一刻，面板就地换成「密卷本期已封存，期待明年再见」 */
             <SealedGate
               phase={sealedPhaseNow}
               tries={sealedTries}
