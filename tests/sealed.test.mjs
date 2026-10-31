@@ -348,7 +348,7 @@ test('both languages carry the sealed copy and interpolate the date and the cool
     assert.match(t.deck.passwordAria('05', t.zone.title.sealed), /05/);
   }
   assert.equal(DICT.zh.sealed.wrong, '密码不对');
-  assert.equal(DICT.zh.sealed.subEnded, '本期开放已结束');
+  assert.equal(DICT.zh.sealed.subEnded, '本期已封存 · 期待明年再见');
   assert.match(DICT.zh.sealed.subNotYet, /即将开放/);
   assert.match(DICT.en.sealed.lead(10, 31), /31 October/);
 });

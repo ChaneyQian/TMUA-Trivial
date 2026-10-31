@@ -7,7 +7,7 @@
 //
 // 输错计数放在外层（ExamApp 的 state）：面板收起再展开、换区再回来，冷却都不该被重置。
 // 窗口外（还没开 / 已结束）正常走不到这里——卡与页签都会先挡下；页面挂着跨过关门那一刻时，
-// 面板就地换成「本期开放已结束」，不再给输入框
+// 面板就地换成「密卷本期已封存，期待明年再见」（t.sealed.blockEnded），不再给输入框
 
 import { useEffect, useId, useRef, useState, type FormEvent } from 'react';
 import { useLang } from '@/lib/LangContext';

@@ -61,9 +61,10 @@ const zh = {
     // P1 的体例原样取回（P3「三区全开」时删过一次）：还没上内容的卡报这一句，
     // 与「🔒 充能中」刻意不同——那是锁着等你充能，这是压根还没开门
     comingSoon: '即将开放',
-    // 05 密卷：窗口内还没输密码 / 本期已结束（开始前用上面的 comingSoon）
+    // 05 密卷：窗口内还没输密码 / 本期已封存（开始前用上面的 comingSoon）。
+    // 「已封存」与卡面那枚朱红「封」字印章是一套（用户 2026-10-31：「密卷改成封 图标（期待明年再见）」）
     password: '🔒 需密码',
-    ended: '已结束',
+    ended: '已封存',
   },
 
   block: {
@@ -81,10 +82,13 @@ const zh = {
     // crypto.subtle 只在 https / localhost 下有：拿不到时给的兜底
     unsupported: '当前浏览器无法验证密码，请通过 https 链接打开本站再试。',
     subNotYet: 'MAT / TMUA 2024–2025 · 即将开放',
-    subEnded: '本期开放已结束',
+    // 本期结束后：「封存」+「期待明年再见」两层意思都要在（副文、提示行、读屏三处同一口径）
+    subEnded: '本期已封存 · 期待明年再见',
     // 窗口外点卡 / 点页签时提示行里的那句，也是前牌命中层念的
     blockNotYet: '密卷即将开放',
-    blockEnded: '密卷本期开放已结束',
+    blockEnded: '密卷本期已封存，期待明年再见',
+    // 卡面「封」字印章是纯装饰（aria-hidden），读屏听到的是这句：转到前位时随卡名播报，后位时挂在命中层上
+    stampLabel: '已封存，期待明年再见',
     // 配置面板题库行下的范围说明：同一批题在 9.0 Trivial 里也有，按钮上只有题数看不出来
     scopeNote: '此区只收 MAT 与 TMUA 2024–2025 的题，限时开放。',
   },
@@ -399,7 +403,7 @@ const en: Strings = {
     charging: '🔒 Charging',
     comingSoon: 'Coming Soon',
     password: '🔒 Password',
-    ended: 'Ended',
+    ended: 'Sealed',
   },
 
   block: {
@@ -415,9 +419,10 @@ const en: Strings = {
     cooldown: (seconds: number) => `Too many wrong tries — try again in ${seconds}s`,
     unsupported: 'This browser cannot check the password here. Open the site over https and try again.',
     subNotYet: 'MAT / TMUA 2024–2025 · opening soon',
-    subEnded: 'This round has ended',
+    subEnded: 'Sealed for this year · See you next year',
     blockNotYet: 'Sealed Papers opens soon',
-    blockEnded: 'This round of Sealed Papers has ended',
+    blockEnded: 'The Sealed Papers are closed for this year — see you next year',
+    stampLabel: 'Sealed for this year — see you next year',
     scopeNote: 'This zone holds only the 2024–2025 MAT and TMUA questions, open for a limited time.',
   },
 
