@@ -12,6 +12,7 @@ import ts from 'typescript';
 
 import {
   COUNT_UP_GRACE_MS,
+  COUNT_UP_MAX_FRAME_MS,
   COUNT_UP_MS,
   RULER_MAX,
   RULER_MIN,
@@ -298,6 +299,30 @@ test('the count-up driver steps once per frame from the first frame on, and land
   fake.fireTimer();
   fake.interrupt();
   assert.equal(seen.length, count);
+});
+
+test('a long stall right after mount only pauses the count — it does not skip straight to the end', () => {
+  // 成绩页刚挂上时主线程排公式：第一帧之后隔了快一秒才来第二帧
+  const fake = fakeHost();
+  const seen = [];
+  startCountUp(20, (v) => seen.push(v), fake.host);
+  fake.frame(1000);
+  fake.frame(1900);
+  assert.ok(seen.at(-1) < 20, `卡了 900ms 之后分子直接到了 ${seen.at(-1)}`);
+  near(COUNT_UP_MAX_FRAME_MS, 50);
+  assert.equal(seen.at(-1), countUpValue(20, COUNT_UP_MAX_FRAME_MS), '卡住的一帧最多推进 COUNT_UP_MAX_FRAME_MS');
+  // 之后照常一帧帧地滚完：中间的数都看得见
+  for (let now = 1916; seen.at(-1) !== 20 && now < 4000; now += 16) fake.frame(now);
+  assert.equal(seen.at(-1), 20);
+  assert.ok(new Set(seen).size >= 10, `中间的数太少：${[...new Set(seen)].join(',')}`);
+  // 时钟回拨（不该发生）按 0 算，不倒退
+  const back = fakeHost();
+  const vals = [];
+  startCountUp(20, (v) => vals.push(v), back.host);
+  back.frame(500);
+  back.frame(540);
+  back.frame(300);
+  assert.ok(vals[2] >= vals[1]);
 });
 
 test('a frozen rAF (background tab) still lands on the score: the fallback timer finishes it', () => {
@@ -951,3 +976,4 @@ test('the strip wraps instead of scrolling sideways, and the switch knob snaps u
     '减动效下拨杆还在滑',
   );
 });
+

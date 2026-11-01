@@ -57,13 +57,23 @@ export interface CountUpHost {
   onInterrupt: (cb: () => void) => () => void;
 }
 
-/** 兜底定时器比时长多等的那一点：正常情况下帧早就收尾了，它只管 rAF 被冻住的时候 */
-export const COUNT_UP_GRACE_MS = 250;
+/**
+ * 一帧最多算多少毫秒的动画进度。成绩页刚挂上时主线程要排二十来张卡的公式，两帧之间可能隔好几百毫秒；
+ * 照墙钟算，第二帧就已经过了时长、分子直接从 0 跳到终值，滚动等于没放。每帧最多推进这么多，
+ * 卡住的那段只是「暂停」，主线程一空下来接着滚完（50ms ≈ 60Hz 下三帧）
+ */
+export const COUNT_UP_MAX_FRAME_MS = 50;
+
+/**
+ * 兜底定时器比时长多等的那一截。它只管 rAF 被冻住的情况（切后台另有 visibilitychange 直接收尾）；
+ * 留得宽一些，免得开头那段卡顿把正常的滚动半路截断
+ */
+export const COUNT_UP_GRACE_MS = 1400;
 
 /**
  * 跑一次滚动计数：每帧 onValue(此刻的值)，最后一定 onValue(target) 收尾一次——
  * 帧走满时长、兜底定时器到点、收到中断信号，三者谁先到谁收尾，之后再不报值。
- * 时间从第一帧算起（不是从调用时）：第一帧之前主线程忙着排公式，也不会一上来就跳过半程。
+ * 进度按帧累加（从第一帧算起，每帧最多 COUNT_UP_MAX_FRAME_MS），不按墙钟：主线程卡一下只是暂停，不会一上来就跳过半程。
  * 返回 stop（卸载时调）：停掉帧、定时器与监听，不再报值、也不补终值（组件都没了）
  */
 export function startCountUp(
@@ -72,7 +82,8 @@ export function startCountUp(
   host: CountUpHost,
   durationMs: number = COUNT_UP_MS,
 ): () => void {
-  let start: number | null = null;
+  let last: number | null = null;
+  let elapsed = 0;
   let frame = 0;
   let timer = 0;
   let unsubscribe = () => {};
@@ -90,8 +101,9 @@ export function startCountUp(
   };
   const step = (now: number) => {
     if (over) return;
-    if (start === null) start = now;
-    const elapsed = now - start;
+    // 第一帧是起点（0）；之后每帧按实际间隔推进，但最多 COUNT_UP_MAX_FRAME_MS（时钟回拨按 0 算）
+    if (last !== null) elapsed += Math.min(COUNT_UP_MAX_FRAME_MS, Math.max(0, now - last));
+    last = now;
     if (elapsed >= durationMs) {
       finish();
       return;

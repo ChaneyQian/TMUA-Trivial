@@ -6,7 +6,8 @@
 // - 减动效、光效关（<html data-fx="off">）、标签页在后台、0 分：直接显示终值，不滚（lib/resultReview 的 shouldCountUp）。
 // - 只在挂上时滚一次：成绩页里的重渲染（导出转圈、横幅冒出来）不会让它重来。
 // - 兜底：后台标签页里 rAF 不跑——切走（visibilitychange）、中途关了光效，都立刻跳到终值；
-//   另有一个比时长多等一点的定时器，rAF 卡住了也保证最后停在正确的数上（lib/resultReview 的 startCountUp）。
+//   另有一个比时长多等一截的定时器，rAF 卡住了也保证最后停在正确的数上（lib/resultReview 的 startCountUp）。
+// - 刚挂上时主线程要排一页公式，帧会卡；进度按帧累加、每帧有上限，卡住只是暂停，不会从 0 直接跳到终值。
 // - 不抖：分子的格子由看不见的终值撑定宽度，数字等宽（Result.module.css 的 .countSlot），只换字。
 
 import { useEffect, useRef, useState } from 'react';
