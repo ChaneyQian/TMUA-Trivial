@@ -20,8 +20,11 @@ function codeOnly(source) {
 test('the mock countdown is driven by a deadline, never by counting ticks', () => {
   const exam = codeOnly(fs.readFileSync(examPath, 'utf8'));
 
-  // 开考记死截止时刻，此后剩余秒数一律现算
-  assert.match(exam, /deadlineRef\.current = Date\.now\(\) \+ minutes \* 60 \* 1000/);
+  // 开考记死截止时刻，此后剩余秒数一律现算。截止时刻用的秒数是开考时从配置时限定下的那一个
+  // （与倒计时初值、节奏条总时长同一个值，见 tests/pace.test.mjs）
+  const deadline = exam.match(/deadlineRef\.current = Date\.now\(\) \+ (\w+) \* 1000/);
+  assert.ok(deadline, '开考没有记死截止时刻');
+  assert.match(exam, new RegExp(`const ${deadline[1]} = minutes \\* 60;`));
   assert.match(exam, /setSecondsLeft\(remainingSeconds\(deadlineRef\.current\)\)/);
   // 累减那一版必须绝迹：后台标签页被限流时 setInterval 会被拉长甚至冻住，
   // 数 tick 等于把 Alt-Tab 变成一个免费暂停键

@@ -29,7 +29,17 @@ import {
   timeMs,
   unwrapGlobal,
 } from './helpers/css-rules.mjs';
-import { attrValue, balanced, calls, code, jsxByClass, jsxChildren, jsxOpening } from './helpers/source.mjs';
+import {
+  attrValue,
+  balanced,
+  calls,
+  code,
+  fnBody,
+  jsxByClass,
+  jsxChildren,
+  jsxOpening,
+  namedFn,
+} from './helpers/source.mjs';
 
 const EXAM_PATH = 'src/components/exam/ExamApp.tsx';
 const BAR_PATH = 'src/components/exam/PaceBar.tsx';
@@ -491,10 +501,8 @@ test('the pace bar renders once, inside the Mock branch of the exam header, and 
   assert.match(inside, /<PaceBar\b/, 'PaceBar 不在顶栏右侧');
   assert.ok(inside.indexOf('Time Remaining') < inside.indexOf('<PaceBar'), 'PaceBar 应当在倒计时下面');
 
-  // 喂的数：总时长与开考定截止时刻同一个 minutes；剩余秒数就是倒计时那个；题数与作答从 answers 来
-  assert.match(exam, /deadlineRef\.current = Date\.now\(\) \+ minutes \* 60 \* 1000/);
+  // 喂的数：剩余秒数就是倒计时那个；题数与作答从 answers 来（总时长另见下一条）
   const bar = jsxOpening(exam, '<PaceBar');
-  assert.equal(attrValue(bar.attrs.get('totalSec')), 'minutes * 60');
   assert.equal(attrValue(bar.attrs.get('secondsLeft')), 'secondsLeft');
   assert.equal(attrValue(bar.attrs.get('answers')), 'answers');
   // 不喂内联对象 / 箭头函数：memo 才不会每次都被新引用打穿
@@ -510,6 +518,43 @@ test('the pace bar renders once, inside the Mock branch of the exam header, and 
   // 7.5+ Diagnostic 有自己的时钟，不在本次范围
   const runner = code(fs.readFileSync('src/components/diagnostic/DiagnosticRunner.tsx', 'utf8'));
   assert.doesNotMatch(runner, /PaceBar|lib\/pace/);
+});
+
+test("the bar's total is fixed at the start together with the deadline, never read from the live setting", () => {
+  // 交叉审查实测过的坑：抽题 await 期间（phase 'loading'）配置面板还在，时长还能改；改题数也会经 setCountAnd 重设 minutes。
+  // 倒计时按点下去那一刻的时限走，节奏条若在渲染时读 minutes，就按改过的值算——开考第 1 秒就「67 min behind」。
+  // 所以总时长必须是开考时与截止时刻一起定下的同一个值
+  const exam = code(fs.readFileSync(EXAM_PATH, 'utf8'));
+  const bar = jsxOpening(exam, '<PaceBar');
+  const total = attrValue(bar.attrs.get('totalSec'));
+
+  // 1. 一个 state，不是渲染时现算的表达式，更不碰 minutes
+  assert.match(total, /^\w+$/, `PaceBar 的 totalSec 是渲染时现算的：${total}`);
+  assert.doesNotMatch(total, /minutes/);
+  const decl = exam.match(new RegExp(`const \\[${total}, (\\w+)\\] = useState\\b`));
+  assert.ok(decl, `${total} 不是一个 useState`);
+  const setter = decl[1];
+
+  // 2. 开考那一处：截止时刻、倒计时初值、这个 state 用的是同一个值
+  const start = namedFn(exam, 'startExam');
+  assert.ok(start, 'startExam 不见了');
+  const body = fnBody(start);
+  const deadline = body.match(/deadlineRef\.current = Date\.now\(\) \+ (\w+) \* 1000;/);
+  assert.ok(deadline, '开考没有拿一个定好的秒数记截止时刻');
+  const sec = deadline[1];
+  assert.match(body, new RegExp(`\\bsetSecondsLeft\\(${sec}\\)`), '倒计时初值和截止时刻不是同一个数');
+  assert.match(body, new RegExp(`\\b${setter}\\(${sec}\\)`), '节奏条的总时长和截止时刻不是同一个数');
+
+  // 3. 那个数只定一次：const、取自配置的时限、在 await 抽题之前（点下去那一刻的值）
+  const defs = [...body.matchAll(new RegExp(`\\b(?:const|let|var) ${sec} = ([^;]+);`, 'g'))];
+  assert.equal(defs.length, 1, `${sec} 应当只声明一次`);
+  assert.equal(defs[0][0].split(' ')[0], 'const', `${sec} 得是 const`);
+  assert.equal(defs[0][1], 'minutes * 60', `${sec} 不是取自配置的时限`);
+  assert.ok(body.indexOf(defs[0][0]) < body.indexOf('await '), `${sec} 要在 await 抽题之前定下`);
+
+  // 4. 这个 state 只在开考时写；截止时刻也只在这一处定
+  assert.equal(calls(exam, setter).length, 1, `${setter} 只该在开考时调一次`);
+  assert.equal([...exam.matchAll(/deadlineRef\.current =/g)].length, 1, '截止时刻不止一处在定');
 });
 
 test('the bar is aria-hidden, the pace line is plain text, and nothing here is a live region', () => {

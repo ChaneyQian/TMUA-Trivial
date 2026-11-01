@@ -12,7 +12,7 @@ import { formatPace, pace } from '@/lib/pace';
 import styles from './PaceBar.module.css';
 
 interface PaceBarProps {
-  /** 本场总时长（秒），与开考时定截止时刻用的是同一个分钟数 */
+  /** 本场总时长（秒）：开考时与截止时刻一起定死的那个数（ExamApp 的 examSec），不是渲染时的配置 */
   totalSec: number;
   secondsLeft: number;
   /** 本场每题的作答（非空即已作答）；长度就是题数 */

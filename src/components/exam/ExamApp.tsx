@@ -569,6 +569,12 @@ export default function ExamApp() {
    * （240s）+ 时间银行，跟整卷时限不是一回事；共用的是 remainingSeconds 这个算法。
    */
   const deadlineRef = useRef(0);
+  /**
+   * 本场总秒数，开考时与截止时刻用同一个值一起定死（节奏条 PaceBar 读它，Design §27）。
+   * 不能在渲染时读 minutes：抽题 await 期间（phase 'loading'）配置面板还在、时长还能改，
+   * 改题数也会经 setCountAnd 重设 minutes——那样倒计时按旧值走、节奏条按新值算，整场都对不上
+   */
+  const [examSec, setExamSec] = useState(0);
   const [elapsed, setElapsed] = useState(0);
   const [resultActionError, setResultActionError] = useState('');
   const savedResultRef = useRef<Records | null>(null);
@@ -765,6 +771,9 @@ export default function ExamApp() {
     const useDb = override?.db ?? db;
     const usePick = override?.pickMode ?? pickMode;
     const useCount = override?.count ?? count;
+    // 本场时限也在点下去这一刻定：下面 await 抽题期间配置面板还能改时长（改题数也会重设 minutes），
+    // 截止时刻、倒计时初值、节奏条的总时长三处都只认这一个数
+    const sessionSec = minutes * 60;
     if (override?.db) setDb(override.db);
     if (override?.pickMode) setPickMode(override.pickMode);
     if (override?.count) setCountAnd(override.count);
@@ -800,8 +809,9 @@ export default function ExamApp() {
       setJustGraded(null);
       setSolShown(new Set());
       // 开考即定死截止时刻；练习模式不显示倒计时，写了也没人读
-      deadlineRef.current = Date.now() + minutes * 60 * 1000;
-      setSecondsLeft(minutes * 60);
+      deadlineRef.current = Date.now() + sessionSec * 1000;
+      setSecondsLeft(sessionSec);
+      setExamSec(sessionSec);
       setElapsed(0);
       setResultActionError('');
       savedResultRef.current = null;
@@ -1721,8 +1731,8 @@ export default function ExamApp() {
               <div className={secondsLeft <= PACE_WARN_SECONDS ? styles.timeWarn : undefined}>
                 🕐 Time Remaining {fmtClock(secondsLeft)}
               </div>
-              {/* 限时节奏条（Design §27）：只在 Mock；总时长与开考定截止时刻用的是同一个 minutes */}
-              <PaceBar totalSec={minutes * 60} secondsLeft={secondsLeft} answers={answers} />
+              {/* 限时节奏条（Design §27）：只在 Mock；总时长是开考时与截止时刻一起定死的 examSec */}
+              <PaceBar totalSec={examSec} secondsLeft={secondsLeft} answers={answers} />
             </>
           ) : (
             <div>🕐 Elapsed {fmtClock(elapsed)}</div>
