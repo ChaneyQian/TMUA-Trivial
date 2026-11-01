@@ -1272,14 +1272,33 @@ TMUA 一卷 20 题、一题一分；正式成绩是两卷合计 40 分，再按�
    落在填充里时条内那段与填充同色，探出的两头对顶栏 4.47、对槽 7.39。
 6. **槽对顶栏只有 1.65 : 1**（主控已接受）：槽只是容器，信息在填充的长度上（填充对槽 10.79 / 警示 7.65，对顶栏 6.53 / 4.62）。
    要槽本身也 ≥ 3 : 1，只能近黑（压在蓝顶栏上太重）或浅到填充对它不足 3 : 1，两头不讨好。
-7. **总时长取 `minutes * 60`**：与开考时定 `deadlineRef` 的是同一个 state，答题阶段配置面板不渲染，minutes 不会变。
-   留意：`startExam` 的 `override.count` 会在开考同一拍 `setMinutes`，而截止时刻用的是闭包里的旧值——现在带 count 开考的路径不存在
-   （复烤区三个入口都走 qids、且是练习模式），所以不触发；将来若 Mock 也带 count 开考，应改为开考时把总秒数存进 ref 再交给 PaceBar。
+7. **总时长是开考时定死的 `examSec`，不在渲染时读 `minutes`**（交叉审查必改项，已修）。
+   原先 PaceBar 的 `totalSec` 写成 `minutes * 60`，在渲染时取；而 `deadlineRef` 用的是点下去那一刻闭包里的 `minutes`。
+   两者之间有一段窗口：**抽题的 `await buildExam` 期间 phase 是 'loading'，配置面板仍挂着、时长还能改**，改题数也会经 `setCountAnd`
+   重设 `minutes`。实测抽题延迟 3 秒、期间把时长改成 150，倒计时显示 74:59，节奏条却在开考第 1 秒就 `scaleX(0.5)`、显示「67 min behind」，
+   此后整场都是错的。
+   修法：`startExam` 在点下去那一刻（与 `useDb` / `useCount` 同一处、`await` 之前）定 `const sessionSec = minutes * 60`；
+   `await` 之后 `deadlineRef`、`setSecondsLeft`、新 state `setExamSec` 三处都用它，PaceBar 读 `examSec`。
+   这样也顺带解决了原先记在这条里的 `override.count` 隐患（它会在开考同一拍 `setMinutes`）：现在三处同源，不再有第二个真源。
+   测试按语义钉：`totalSec` 必须是一个只在开考时写一次的 state，它与截止时刻、倒计时初值出自同一个 `const`，且那个 `const` 在 `await` 之前。
 8. **补间**：长场次每秒挪不到 1px，补间几乎看不出；几分钟的短场次每秒几 px，补间让它连续。代价是每秒一次合成层 transform。
 9. **版面**（主控已接受）：1280 下 Mock 顶栏从约 51px 长到 77px（右栏多了条与那句话）；375 / 320 下顶栏高度由折行的标题决定，右栏变高不影响整体。
    右栏宽随倒计时那行变（10:00 → 9:59 少一位、进最后 5 分钟加粗），条跟着同宽，一场只发生一两次；数字等宽，逐秒宽度实测不变。
 10. **渲染**：ExamApp 本来就因 `secondsLeft` 每秒重渲染整棵答题页树（既有状态，没动）；PaceBar 自身 `memo`、只做几次四则运算，
     选选项 / 标记引起的重渲染在 `secondsLeft` 与 `answers` 未变时不连带它。
+
+### 后续建议（交叉审查提出，本批不做，留给以后）
+1. **抽题期间锁住配置面板**：上面第 7 条只保证了「改了也不影响本场」——三处同源，改的是没用的那份。
+   但 phase 'loading' 那一两秒里输入框仍然可改、改完数字还留在面板上，用户会以为改生效了。
+   要治本该在 busy 时把时长 / 题数置灰（`SetupPanel` 已有 `busy`，开始按钮就是靠它置灰的）。那是配置面板的事，不在节奏条这一批里。
+2. **forced-colors（Windows 高对比度）**：节奏条的槽与填充都是背景色，强制配色下会被系统色覆盖，可能连条带刻度一起看不出来。
+   要做得加 `@media (forced-colors: active)`，把填充与刻度改成 `CanvasText` 之类的系统色、或给槽补一圈 `border`。
+   顶栏其它部分（固定蓝底 + 白字）本来就没处理过 forced-colors，要做该整页一起做。
+3. **节奏文字字号**：现在 0.75rem（12px），比倒计时那行（0.82rem）小一档，是刻意让它退到次要位置；
+   但它是这条功能唯一的文字出口，小字在手机上偏吃力。要不要提到 0.78–0.82rem，等用户看过真机再定。
+4. **`MathTextRender` 每秒重渲染**：倒计时每秒改 state → 整棵答题页树重渲染，题干与选项里的 `MathTextRender` 也跟着走一遍。
+   这是改动前就有的（节奏条没有加重它，自己已 `memo`），但既然查到了就记下：给 `MathTextRender` 按 `text` 加一层 `memo` 能省掉这部分。
+   属于答题页整体性能，单独一批做、单独实测。
 
 ### 实测（headless Chrome，本地静态服务 out/、端口 3311；页面注入可冻结 / 快进的 `Date.now`）
 - Mock TMUA 20 题 75 分钟：开考「On pace」、无刻度；键盘 a / → 连答 5 题后「18 min ahead」，刻度在填充前方的空槽上；
@@ -1292,4 +1311,4 @@ TMUA 一卷 20 题、一题一分；正式成绩是两卷合计 40 分，再按�
 - 光效关（`data-fx="off"`）与减动效（CDP 模拟 `prefers-reduced-motion: reduce`）下填充的 computed transition 为 `none`；平时为 `transform 1s linear`。
 - 1280 / 375 / 320 × 浅色 / 深色 / 护眼（落后态与警示态各一套）：页面 scrollWidth＝视口宽，顶栏与右栏零溢出，右栏各行不折行。
 - 练习模式：顶栏只有 Elapsed 与题号，页面里没有 PaceBar 的任何节点；顶栏高度与改动前相同。
-- `npm run build` 通过；`npm test` 390 / 390（原 375 + 新 15）；`npx tsc --noEmit` 通过。
+- `npm run build` 通过；`npm test` 396 / 396（rebase 到含 §25 的 main 之后：该基线 381 + 本批新增 15）；`npx tsc --noEmit` 通过。
