@@ -1240,13 +1240,17 @@ TMUA 一卷 20 题、一题一分；正式成绩是两卷合计 40 分，再按�
 - `src/lib/pace.ts`：上面的口径。
 - `src/components/exam/PaceBar.tsx` + `PaceBar.module.css`（新组件、自带样式，没往 `Exam.module.css` 追加）：
   条（`.track` 里 `.rail` 槽 + `.fill` 填充）、刻度 `.mark`、一句 `.text`；`memo` 住。
-- `src/components/exam/ExamApp.tsx`：只动顶栏计时那一小段——Mock 分支把倒计时和 `<PaceBar totalSec={minutes * 60} secondsLeft={secondsLeft} answers={answers} />`
-  包进一个 fragment；倒计时变黄改读 `PACE_WARN_SECONDS`（值仍是 300，两处同一条线）；外加两行 import。成绩页与练习分支一行没动。
-- `tests/pace.test.mjs`（15 条）：领先 59 / 60 / 61、当前题超出预算 59 / 60 / 61、均匀节奏逐秒走完全程都是正好（整秒与不整秒的预算各一遍）、
+- `src/components/exam/ExamApp.tsx`：顶栏计时那一小段——Mock 分支把倒计时和 `<PaceBar totalSec={examSec} secondsLeft={secondsLeft} answers={answers} />`
+  包进一个 fragment；倒计时变黄改读 `PACE_WARN_SECONDS`（值仍是 300，两处同一条线）；外加两行 import。
+  另有第 7 条的修复：新 state `examSec`，`startExam` 里定 `sessionSec` 并与截止时刻、倒计时初值一起写入。成绩页与练习分支一行没动。
+  `tests/exam-timer.test.mjs` 原先钉 `minutes * 60 * 1000` 字面的那句改成同口径的语义断言。
+- `tests/pace.test.mjs`（16 条）：领先 59 / 60 / 61、当前题超出预算 59 / 60 / 61、均匀节奏逐秒走完全程都是正好（整秒与不整秒的预算各一遍）、
   全答完不落后、向下取整、先乘后除、300 秒边界、≤ 5 分钟的场次、坏输入；
   按层叠现算 `.fill` 在减动效 / 光效关 / 警示各处境下最终的 transition；三主题对比度（先剥 globals.css 的 `@import`）；
-  接线（只在 `mode === 'mock'` 守着的那一支、在顶栏右侧倒计时之下、喂的是与截止时刻同一个 `minutes`、不喂内联引用；
-  条 aria-hidden、无 live 区、Diagnostic 不接）。另做了 22 处变异（删降级块、改阈值、`floor`→`round`、去掉当前题预算、挪到练习分支……），全部能打红。
+  接线（只在 `mode === 'mock'` 守着的那一支、在顶栏右侧倒计时之下、不喂内联引用；条 aria-hidden、无 live 区、Diagnostic 不接）；
+  总时长（`totalSec` 是只在开考时写一次的 state，与截止时刻、倒计时初值出自 `await` 之前定下的同一个 `const`）。
+  另做了 28 处变异（删降级块、改阈值、`floor`→`round`、去掉当前题预算、挪到练习分支、`totalSec` 改回 `minutes * 60`、
+  把 `sessionSec` 挪到 `await` 之后……），全部能打红。
 
 ### 版式
 - 顶栏右栏（`.cbtHeaderRight`，右对齐、不折行）自上而下：`🕐 Time Remaining 61:12` / 细条 / 节奏那句 / `6 of 20`。条宽＝右栏宽，和倒计时那行齐。
@@ -1311,4 +1315,6 @@ TMUA 一卷 20 题、一题一分；正式成绩是两卷合计 40 分，再按�
 - 光效关（`data-fx="off"`）与减动效（CDP 模拟 `prefers-reduced-motion: reduce`）下填充的 computed transition 为 `none`；平时为 `transform 1s linear`。
 - 1280 / 375 / 320 × 浅色 / 深色 / 护眼（落后态与警示态各一套）：页面 scrollWidth＝视口宽，顶栏与右栏零溢出，右栏各行不折行。
 - 练习模式：顶栏只有 Elapsed 与题号，页面里没有 PaceBar 的任何节点；顶栏高度与改动前相同。
-- `npm run build` 通过；`npm test` 396 / 396（rebase 到含 §25 的 main 之后：该基线 381 + 本批新增 15）；`npx tsc --noEmit` 通过。
+- 第 7 条修复后复现交叉审查的场景：题目 JSON 拖 3 秒，`loading` 期间配置面板的时长框仍在、改成 150 生效（框里读回 150）；
+  开考后倒计时 74:59、填充 `scaleX(0.0002)`、「On pace」；连答 2 题「7 min ahead」（按 75 分钟算 2 × 225 − 3 ≈ 447 秒；若按 150 分钟会是 14 分钟）。
+- `npm run build` 通过；`npm test` 396 / 396（rebase 到含 §25 的 main 之后：该基线 380 + 本批 `pace.test.mjs` 16）；`npx tsc --noEmit` 通过。
