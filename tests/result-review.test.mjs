@@ -38,7 +38,7 @@ import {
 } from '../src/lib/resultReview.ts';
 import { TMUA_GRADE_TABLES, formatTmuaGrade } from '../src/lib/tmuaGrade.ts';
 import { currentFx, subscribeFx } from '../src/lib/fx.ts';
-import { FX_OFF_ROOT, cascade, overrides, parseRules, stripComments, timeMs } from './helpers/css-rules.mjs';
+import { FX_OFF_ROOT, cascade, evalLength, overrides, parseRules, stripComments, timeMs } from './helpers/css-rules.mjs';
 import { REDUCED_MOTION as FAKE_REDUCED_MOTION, installFakeDom, restoreGlobals } from './helpers/fake-dom.mjs';
 import { attrValue, code, effects, jsxByClass, jsxChildren, jsxOpening, namedFn, namedImports } from './helpers/source.mjs';
 
@@ -977,3 +977,58 @@ test('the strip wraps instead of scrolling sideways, and the switch knob snaps u
   );
 });
 
+// ---------------------------------------------------------------------------
+// 5. 手机宽度的横向滚动
+
+test('long formulas in the review cards scroll inside their own block instead of widening the page, at full size', () => {
+  const css = fs.readFileSync(RESULT_CSS, 'utf8');
+  // 只挂在回顾卡的列表底下：答题页、大厅、Diagnostic 的公式一概不碰
+  const rules = parseRules(stripComments(css)).filter((r) => /katex|mathtext|\bimg\b/.test(r.selector));
+  assert.ok(rules.length >= 3);
+  for (const rule of rules) {
+    for (const sel of rule.selector.split(',')) assert.match(sel.trim(), /^\.list /, `${sel.trim()} 不在回顾卡列表的范围里`);
+    // 字号不缩：这几条规则一个字号、缩放都不改
+    assert.doesNotMatch(rule.body, /font-size|zoom|transform|scale/, `${rule.selector} 动了字号或缩放`);
+  }
+  // display 公式：横滚放在里层的 .katex 上，不留竖滚动条；上下垫给墨迹的余地与负外边距等量，
+  // 外层 flow-root 把这对负外边距关在公式块里面（它自己的外边距照旧与上下文合并：版面不挪）
+  const inner = cascade(css, '.list :global(.katex-display > .katex)');
+  assert.deepEqual([inner['overflow-x'], inner['overflow-y']], ['auto', 'hidden']);
+  assert.ok(evalLength(inner['padding-top'], { em: 16 }) > 0, '公式墨迹没有余地，overflow-y: hidden 会裁字');
+  for (const side of ['top', 'bottom']) {
+    assert.equal(
+      evalLength(inner[`margin-${side}`], { em: 16 }),
+      -evalLength(inner[`padding-${side}`], { em: 16 }),
+      `${side} 的负外边距没有把内边距等量收回`,
+    );
+  }
+  assert.equal(cascade(css, '.list :global(.katex-display)').display, 'flow-root');
+  // 行内长公式：所在段落横滚；含 display 公式的段落除外（段落成了滚动容器，公式块的外边距就不再合并）
+  const para = cascade(css, '.list :global(.mathtext p:not(:has(.katex-display)))');
+  assert.deepEqual([para['overflow-x'], para['overflow-y']], ['auto', 'hidden']);
+  // 列表整块横滚（li 自己横滚会把列表符号裁掉）；首尾列表项的外边距照原来并完的结果给 0
+  for (const list of ['ul', 'ol']) {
+    const rule = cascade(css, `.list :global(.mathtext ${list})`);
+    assert.deepEqual([rule['overflow-x'], rule['overflow-y']], ['auto', 'hidden']);
+  }
+  assert.ok(
+    !rules.some((r) => /\bli\b/.test(r.selector) && /overflow/.test(r.body)),
+    '列表项自己横滚会把列表符号裁掉',
+  );
+  assert.equal(cascade(css, '.list :global(.mathtext li:first-child)')['margin-top'], '0');
+  assert.equal(cascade(css, '.list :global(.mathtext li:last-child)')['margin-bottom'], '0');
+  // 解析里的表格自己横滚
+  const table = cascade(css, '.list :global(.mathtext table)');
+  assert.deepEqual([table.display, table['max-width'], table['overflow-x'], table['overflow-y']], ['block', '100%', 'auto', 'hidden']);
+  // 带固定宽度的题图压到卡片宽度以内，等比
+  assert.deepEqual(cascade(css, '.list img'), { 'max-width': '100%', height: 'auto' });
+
+  // 回顾卡确实都在那个列表里（ReviewSection 把 children 放进 .list）
+  const reviewSrc = fs.readFileSync(REVIEW, 'utf8');
+  const lists = jsxByClass(reviewSrc, 'list');
+  assert.equal(lists.length, 1, 'ReviewSection 里只该有一个卡片列表');
+  assert.equal(code(jsxChildren(reviewSrc, lists[0])), '{children(shown)}', '回顾卡（children）不在 .list 里');
+  // 选项那一格本来就能横滚（Exam.module.css），这里不重复
+  const choice = cascade(fs.readFileSync(EXAM_CSS, 'utf8'), '.choiceText');
+  assert.equal(choice['overflow-x'], 'auto');
+});

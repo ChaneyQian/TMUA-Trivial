@@ -359,11 +359,71 @@
   min-height: 100vh;
 }
 
-/* 回顾卡标题（跳转与焦点的落点）：沿用 reviewHead 的字号，滚到位时上面留出卡片的边 */
+/* 回顾卡标题（跳转与焦点的落点）：沿用 reviewHead 的字号；滚到位时标题离视口顶约 2.2rem，
+   卡片自己的上内边距（1.2rem）与边框之外还留出一截空，看得出这是一张卡的开头 */
 .cardTitle {
   font-size: inherit;
   line-height: inherit;
-  scroll-margin-top: 1.5rem;
+  scroll-margin-top: 2.2rem;
+}
+
+/* 手机宽度的横向滚动（375 / 320）：回顾卡里的长公式（题干、选项、展开的解析）只在自己那一块里横滚，
+   不再把整页撑宽、把视口缩放出去。字号不缩。
+   横滚容器的 overflow-y 不能留 visible（会被算成 auto，墨迹探出一点就多一道竖滚动条），只能 hidden。
+   - display 公式：KaTeX 的墨迹常探出自己的盒子几像素（分式的分子分母、上下标），直接在公式块上 hidden 会把字裁掉
+     （实测「180°/π」的分子顶、分母底都被削了一截）。所以横滚放在里层的 .katex 上，上下各垫 0.5em 给墨迹留余地，
+     再用等量的负外边距收回去；外层 .katex-display 改成 flow-root，把这对负外边距关在自己里面——
+     它自己的外边距照旧与上下文合并，版面一像素不挪；
+   - 长的行内公式：所在段落横滚，不垫内边距。段落的外边距要和前后兄弟合并，垫了就得靠负外边距收回，
+     而和它合并的可能是另一段、也可能是 display 公式或列表，收不准——实测整页会漂十几到上百像素。
+     代价是行内分式、高上下标的墨迹可能被削掉 1–3px（行距 1.75 的半行距兜住了大部分）：
+     宁可偶尔削掉几像素，也不让回顾卡的版面整体位移。含 display 公式的段落不在此列（段落成了滚动容器，
+     公式块的外边距就不再与段落的合并，行距会凭空多一截；那种段落里的公式块自己会滚）；
+   - 列表：ul / ol 整块横滚（li 自己横滚会把列表符号裁掉；符号在 ul 的左内边距里，不会被裁）；
+   - 解析里的 Markdown 表格：表格自己横滚（display: block 才能当滚动容器）；
+   - 题图带固定宽度的（![[x|500]]）也压到卡片宽度以内。
+   选项（.choiceText）在 Exam.module.css 里本来就能横滚 */
+.list :global(.katex-display) {
+  display: flow-root;
+}
+
+.list :global(.katex-display > .katex) {
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-block: 0.5em;
+  margin-block: -0.5em;
+}
+
+.list :global(.mathtext p:not(:has(.katex-display))) {
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.list :global(.mathtext ul),
+.list :global(.mathtext ol) {
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+/* 列表成了滚动容器，首尾列表项的 0.15em 外边距就不再并进列表自己的 0.4em 里；原来并完就是 0，这里照样给 0 */
+.list :global(.mathtext li:first-child) {
+  margin-top: 0;
+}
+
+.list :global(.mathtext li:last-child) {
+  margin-bottom: 0;
+}
+
+.list :global(.mathtext table) {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.list img {
+  max-width: 100%;
+  height: auto;
 }
 
 @media (max-width: 640px) {
